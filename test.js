@@ -249,7 +249,11 @@ async function generateSimplePDFReport(doc, mode = 'download') {
         // Capture location map
         let mapDataURL = null;
         if (bridgeData.latitude && bridgeData.longitude) {
-            mapDataURL = await captureLocationMap(bridgeData.latitude, bridgeData.longitude, structureName);
+            mapDataURL = await captureLocationMap(
+                parseFloat(bridgeData.latitude) || null,
+                parseFloat(bridgeData.longitude) || null,
+                structureName
+            );
         }
 
         // Load all defect photos
@@ -717,7 +721,7 @@ async function generateSimplePDFReport(doc, mode = 'download') {
                     widths: ['20%', '30%', '20%', '30%'],
                     body: [
                         ['Easting:', bridgeData.easting || 'N/A', 'Northing:', bridgeData.northing || 'N/A'],
-                        ['Latitude:', bridgeData.latitude?.toFixed(6) || 'N/A', 'Longitude:', bridgeData.longitude?.toFixed(6) || 'N/A']
+                        ['Latitude:', (parseFloat(bridgeData.latitude) || 0).toFixed(6) || 'N/A', 'Longitude:', (parseFloat(bridgeData.longitude) || 0).toFixed(6) || 'N/A']
                     ]
                 },
                 layout: 'noBorders',
