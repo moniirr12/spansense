@@ -532,6 +532,27 @@ app.get('/api/defectsbci', async (req, res) => {
     }
 });
 
+// GET ALL BRIDGES (with last inspection date)
+app.get('/api/bridges', async (req, res) => {
+    try {
+        const rows = await dbAll(`
+            SELECT b.id, b.name, b.location, b.latitude, b.longitude, b.span, b.length, 
+                    b.built_year, b.type, b.span_number, b.OSE, b.OSN,
+                    b.primary_material, b.secondary_material, b.organization_id,
+                    MAX(i.inspection_date) as last_inspected
+            FROM bridges b
+            LEFT JOIN inspections i ON b.id = i.structure_id
+            GROUP BY b.id, b.name, b.location, b.latitude, b.longitude, b.span, b.length, 
+                     b.built_year, b.type, b.span_number, b.OSE, b.OSN,
+                     b.primary_material, b.secondary_material, b.organization_id
+            ORDER BY b.name
+        `);
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Get complete bridge data (PostgreSQL version)
 app.get('/api/bridges/:id', async (req, res) => {
     try {
@@ -1728,27 +1749,6 @@ app.get('/api/condition-distribution', async (req, res) => {
     } catch (err) {
         console.error('Condition distribution error:', err);
         res.status(500).json({ success: false, error: err.message });
-    }
-});
-
-// GET ALL BRIDGES (with last inspection date)
-app.get('/api/bridges', async (req, res) => {
-    try {
-        const rows = await dbAll(`
-            SELECT b.id, b.name, b.location, b.latitude, b.longitude, b.span, b.length, 
-                    b.built_year, b.type, b.span_number, b.OSE, b.OSN,
-                    b.primary_material, b.secondary_material, b.organization_id,
-                    MAX(i.inspection_date) as last_inspected
-            FROM bridges b
-            LEFT JOIN inspections i ON b.id = i.structure_id
-            GROUP BY b.id, b.name, b.location, b.latitude, b.longitude, b.span, b.length, 
-                     b.built_year, b.type, b.span_number, b.OSE, b.OSN,
-                     b.primary_material, b.secondary_material, b.organization_id
-            ORDER BY b.name
-        `);
-        res.json(rows);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
     }
 });
 
