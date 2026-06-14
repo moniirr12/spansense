@@ -202,7 +202,7 @@
                     '<td>' + typeLabel + '</td>' +
                     '<td>' + (row.built_year || '--') + '</td>' +
                     '<td>' + (row.span_number || '0') + '</td>' +
-                    '<td>' + (row.last_inspected || '--') + '</td>' +
+                    '<td>' + formatDate(row.last_inspected) + '</td>' +
                     '<td></td>' +
                 '</tr>';
             });
