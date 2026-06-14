@@ -1653,33 +1653,47 @@ app.get('/api/check-session', (req, res) => {
 app.get('/api/bci-distribution', async (req, res) => {
     try {
         const rows = await dbAll(`
+            WITH latest_inspections AS (
+                SELECT 
+                    i.structure_id,
+                    i.id as inspection_id,
+                    s.bci_av
+                FROM inspections i
+                JOIN (
+                    SELECT structure_id, MAX(inspection_date) as latest_date
+                    FROM inspections
+                    GROUP BY structure_id
+                ) latest ON i.structure_id = latest.structure_id 
+                         AND i.inspection_date = latest.latest_date
+                JOIN inspection_spans s ON i.id = s.inspection_id
+                WHERE s.bci_av IS NOT NULL
+            ),
+            bci_ranges AS (
+                SELECT 
+                    structure_id,
+                    CASE 
+                        WHEN bci_av < 40 THEN '0-39'
+                        WHEN bci_av >= 40 AND bci_av < 50 THEN '40-49'
+                        WHEN bci_av >= 50 AND bci_av < 65 THEN '50-64'
+                        WHEN bci_av >= 65 AND bci_av < 80 THEN '65-79'
+                        WHEN bci_av >= 80 AND bci_av < 90 THEN '80-89'
+                        ELSE '90-100'
+                    END as bci_range
+                FROM latest_inspections
+            )
             SELECT 
-                CASE 
-                    WHEN s.bci_av < 40 THEN '0-39'
-                    WHEN s.bci_av >= 40 AND s.bci_av < 50 THEN '40-49'
-                    WHEN s.bci_av >= 50 AND s.bci_av < 65 THEN '50-64'
-                    WHEN s.bci_av >= 65 AND s.bci_av < 80 THEN '65-79'
-                    WHEN s.bci_av >= 80 AND s.bci_av < 90 THEN '80-89'
-                    ELSE '90-100'
-                END as bci_range,
-                COUNT(DISTINCT i.structure_id) as count
-            FROM inspections i
-            JOIN (
-                SELECT structure_id, MAX(inspection_date) as latest_date
-                FROM inspections
-                GROUP BY structure_id
-            ) latest ON i.structure_id = latest.structure_id AND i.inspection_date = latest.latest_date
-            JOIN inspection_spans s ON i.id = s.inspection_id
-            WHERE s.bci_av IS NOT NULL
-            GROUP BY 1
+                bci_range,
+                COUNT(DISTINCT structure_id) as count
+            FROM bci_ranges
+            GROUP BY bci_range
             ORDER BY 
-                CASE 
-                    WHEN s.bci_av < 40 THEN 1
-                    WHEN s.bci_av >= 40 AND s.bci_av < 50 THEN 2
-                    WHEN s.bci_av >= 50 AND s.bci_av < 65 THEN 3
-                    WHEN s.bci_av >= 65 AND s.bci_av < 80 THEN 4
-                    WHEN s.bci_av >= 80 AND s.bci_av < 90 THEN 5
-                    ELSE 6
+                CASE bci_range
+                    WHEN '0-39' THEN 1
+                    WHEN '40-49' THEN 2
+                    WHEN '50-64' THEN 3
+                    WHEN '65-79' THEN 4
+                    WHEN '80-89' THEN 5
+                    WHEN '90-100' THEN 6
                 END
         `);
 
