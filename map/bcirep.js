@@ -11,21 +11,21 @@ async function generateBCIForm(doc) {
         }
 
         // 2. Fetch bridge data to get span count
-        const bridgeResponse = await fetch(`http://localhost:3000/api/bridges/${structureId}`);
+        const bridgeResponse = await fetch(`/api/bridges/${structureId}`);
         if (!bridgeResponse.ok) throw new Error('Failed to fetch bridge data');
         const bridge = await bridgeResponse.json();
         const totalSpans = bridge.span_number || 1;
 
         // 3. Fetch ALL defects for this structure and date
         const defectsResponse = await fetch(
-            `http://localhost:3000/api/defectsbci?structureId=${structureId}&date=${inspectionDate}`
+            `/api/defectsbci?structureId=${structureId}&date=${inspectionDate}`
         );
         if (!defectsResponse.ok) throw new Error('Failed to fetch defects');
         const allSpansWithDefects = await defectsResponse.json();
 
         // 4. Fetch defects for works required
         const worksResponse = await fetch(
-            `http://localhost:3000/api/worksrequired?structureId=${structureId}&date=${inspectionDate}`
+            `/api/worksrequired?structureId=${structureId}&date=${inspectionDate}`
         );
         if (!worksResponse.ok) throw new Error('Failed to fetch works required');
         const worksRequired = await worksResponse.json();
@@ -258,7 +258,7 @@ async function generateBCIForm(doc) {
             const spanDefects = spanData?.defects || [];
 
             // Get elements
-            const elementsResponse = await fetch('http://localhost:3000/api/elements');
+            const elementsResponse = await fetch('/api/elements');
             if (!elementsResponse.ok) throw new Error('Failed to fetch elements');
             const elements = await elementsResponse.json();
             const spanElements = elements.filter(el => 
@@ -664,7 +664,7 @@ async function updateBridgeModalData(structureId) {
     
     try {
         // Use the SAME endpoint that works in the Previous Inspections modal
-        const response = await fetch(`http://localhost:3000/api/previousInspections?structureId=${structureId}`);
+        const response = await fetch(`/api/previousInspections?structureId=${structureId}`);
         const data = await response.json();
         
         if (data.documents && data.documents.length > 0) {
