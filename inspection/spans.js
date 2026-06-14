@@ -79,7 +79,7 @@ function showPostSaveModal(inspectionData, defects, isEditMode) {
 
 function goHome(e) {
     e.preventDefault();
-    window.location.href = '../index/index.html';
+    window.location.href = '../map/map.html';
 }
 
 function newInspection(e) {
