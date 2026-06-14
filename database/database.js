@@ -387,7 +387,7 @@
                     '<td>' + (row.structure_id || '--') + '</td>' +
                     '<td>' + (row.structure_name || '--') + '</td>' +
                     '<td>' + (row.inspector_name || '--') + '</td>' +
-                    '<td>' + (row.inspection_date || '--') + '</td>' +
+                    '<td>' + formatDate(row.inspection_date) + '</td>' +
                     '<td><span style="color:#5b8c8a;font-weight:600;">' + bciAv + '</span></td>' +
                     '<td><span style="color:#e8a87c;font-weight:600;">' + bciCrit + '</span></td>' +
                     '<td><span class="status-badge completed"><i class="fas fa-check-circle"></i> ' + typeLabel + '</span></td>' +
@@ -510,7 +510,7 @@
                     '<td><span class="status-badge ' +
                         (row.type === 'PI' ? 'active' : row.type === 'GI' ? 'completed' : 'monitoring') + '">' +
                         (row.display_type || '--') + '</span></td>' +
-                    '<td>' + (row.generated || '--') + '</td>' +
+                    '<td>' + formatDate(row.generated) + '</td>' +
                     '<td>' + (row.size || '--') + '</td>' +
                     '<td><div class="row-actions">' +
                         '<button title="Generate BCI Proforma" onclick="generateReport(' + row.inspection_id + ')" class="btn-report"><i class="fas fa-file-pdf"></i></button>' +
@@ -520,6 +520,17 @@
                 '</tr>';
             });
         }
+
+       function formatDate(dateString) {
+          if (!dateString) return '--';
+          const date = new Date(dateString);
+          if (isNaN(date.getTime())) return dateString;
+          return date.toLocaleDateString('en-GB', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric'
+          });
+      }
 
         tbody.innerHTML = rowsHtml;
         
