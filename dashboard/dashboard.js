@@ -78,6 +78,8 @@ async function fetchTypeDistribution() {
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     
     const result = await response.json();
+
+      console.log('BCI API response:', result);
     
     if (result.success && result.data) {
       renderPieChart(result.data);
