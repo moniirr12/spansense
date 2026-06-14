@@ -943,6 +943,11 @@
     <div class="glass-scrollbar" id="glassScrollbar"><div class="thumb" id="glassThumb"></div></div>
 
     <script>
+
+        const API_BASE = window.location.hostname === 'localhost' 
+        ? 'http://localhost:3000' 
+        : 'https://spansense.onrender.com';
+        
         // Glass Scrollbar
         (function(){
             const sb=document.getElementById('glassScrollbar'), th=document.getElementById('glassThumb');
@@ -976,14 +981,14 @@
             const loadingSpinner = document.getElementById('loadingSpinner');
             loadingSpinner.style.display = 'flex';
             try {
-                const bridgesResponse = await fetch('http://localhost:3000/api/bridges');
+                const bridgesResponse = await fetch(API_BASE + '/api/bridges');
                 if (!bridgesResponse.ok) throw new Error('Failed to fetch bridges');
                 const bridgesResult = await bridgesResponse.json();
                 bridgesData = bridgesResult.bridges || bridgesResult;
 
                 const inspectionPromises = bridgesData.map(async (bridge) => {
                     try {
-                        const inspResponse = await fetch(`http://localhost:3000/api/inspection-dates/${bridge.id}`);
+                        const inspResponse = await fetch(`${API_BASE}/api/inspection-dates/${bridge.id}`);
                         if (inspResponse.ok) {
                             const inspections = await inspResponse.json();
                             if (inspections && inspections.length > 0) {
