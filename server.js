@@ -1671,14 +1671,14 @@ app.get('/api/bci-distribution', async (req, res) => {
             ) latest ON i.structure_id = latest.structure_id AND i.inspection_date = latest.latest_date
             JOIN inspection_spans s ON i.id = s.inspection_id
             WHERE s.bci_av IS NOT NULL
-            GROUP BY bci_range
+            GROUP BY 1
             ORDER BY 
-                CASE bci_range
-                    WHEN '0-39' THEN 1
-                    WHEN '40-49' THEN 2
-                    WHEN '50-64' THEN 3
-                    WHEN '65-79' THEN 4
-                    WHEN '80-89' THEN 5
+                CASE 
+                    WHEN s.bci_av < 40 THEN 1
+                    WHEN s.bci_av >= 40 AND s.bci_av < 50 THEN 2
+                    WHEN s.bci_av >= 50 AND s.bci_av < 65 THEN 3
+                    WHEN s.bci_av >= 65 AND s.bci_av < 80 THEN 4
+                    WHEN s.bci_av >= 80 AND s.bci_av < 90 THEN 5
                     ELSE 6
                 END
         `);
@@ -1686,7 +1686,7 @@ app.get('/api/bci-distribution', async (req, res) => {
         const ranges = ['0-39', '40-49', '50-64', '65-79', '80-89', '90-100'];
         const result = ranges.map(range => {
             const found = rows.find(r => r.bci_range === range);
-            return { bci_range: range, count: found ? found.count : 0 };
+            return { bci_range: range, count: found ? parseInt(found.count) : 0 };
         });
 
         res.json({ success: true, data: result });
