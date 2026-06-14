@@ -1125,7 +1125,19 @@ app.get('/api/debug/count-test', (req, res) => {
 });
 
 // ============================================
-// 6. ERROR HANDLER (must be last)
+// 6. STATIC FILE SERVING (frontend HTML/JS/CSS)
+// ============================================
+// Serve frontend static files from the same directory as server.js
+// Adjust the path if your HTML files are in a different folder
+app.use(express.static(path.join(__dirname)));
+
+// If no API route matched, serve index.html for SPA routing
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// ============================================
+// 7. ERROR HANDLER (must be last)
 // ============================================
 app.use((err, req, res, next) => {
     console.error(err);
@@ -1133,7 +1145,7 @@ app.use((err, req, res, next) => {
 });
 
 // ============================================
-// 7. START SERVER (must be LAST!)
+// 8. START SERVER (must be LAST!)
 // ============================================
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
