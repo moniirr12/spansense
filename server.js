@@ -2056,8 +2056,6 @@ app.get('/api/dashboard/critical-bridges', (req, res) => {
 
 
 
-
-
 // Start the server
 const PORT = 3000;
 app.listen(PORT, () => {
