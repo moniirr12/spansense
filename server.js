@@ -12,6 +12,39 @@ const fs = require('fs');
 const app = express();
 const db = new sqlite3.Database("./bridges.db");
 
+// Initialize database tables if they don't exist
+db.serialize(() => {
+    // Users table for authentication
+    db.run(`CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        full_name TEXT,
+        role TEXT DEFAULT 'inspector',
+        organization_id INTEGER,
+        last_login TIMESTAMP
+    )`);
+
+    // Insert default admin user if table is empty
+    db.get("SELECT COUNT(*) as count FROM users", (err, row) => {
+        if (err) {
+            console.error('Error checking users:', err);
+            return;
+        }
+        if (row.count === 0) {
+            db.run(
+                `INSERT INTO users (username, password, full_name, role) 
+                 VALUES (?, ?, ?, ?)`,
+                ['admin', 'admin123', 'System Admin', 'admin'],
+                function(err) {
+                    if (err) console.error('Error creating default user:', err);
+                    else console.log('Default user created: admin / admin123');
+                }
+            );
+        }
+    });
+});
+
 const session = require('express-session'); // for authentication sessions
 
 // Enable CORS for specific origins
