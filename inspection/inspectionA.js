@@ -354,7 +354,7 @@ async function loadInspectionDates() {
     if (!structureId || !dropdown) return;
     
     try {
-        const response = await fetch(`http://localhost:3000/api/inspection-dates/${structureId}`);
+        const response = await fetch(`/api/inspection-dates/${structureId}`);
         const data = await response.json();
         
         console.log('API Response:', data);
@@ -371,7 +371,7 @@ async function loadInspectionDates() {
                     
                     // Fetch inspection type for each date
                     try {
-                        const detailResponse = await fetch(`http://localhost:3000/api/inspection/full?structure_id=${structureId}&date=${date}`);
+                        const detailResponse = await fetch(`/api/inspection/full?structure_id=${structureId}&date=${date}`);
                         const inspectionData = await detailResponse.json();
                         const inspectionType = inspectionData?.inspectionType || '';
                         
@@ -466,7 +466,7 @@ if (inspectionDatesElement) {
             console.log('Fetching defects from API...');
             
             const response = await fetch(
-                `http://localhost:3000/api/defects-by-date?structure_number=${structureId}&date=${date}`
+                `/api/defects-by-date?structure_number=${structureId}&date=${date}`
             );
             
             if (!response.ok) {
@@ -690,7 +690,7 @@ function closePhoModal() {
 
 async function fetchPhotos() {
     try {
-        const response = await fetch('http://localhost:3000/photos');
+        const response = await fetch('/photos');
         const photos = await response.json();
         const photosContainer = document.getElementById('photos-container');
         if (!photosContainer) return;
@@ -725,7 +725,7 @@ async function fetchPhotos() {
 
             deleteButton.addEventListener('click', async () => {
                 try {
-                    const deleteResponse = await fetch(`http://localhost:3000/delete-photo/${photo.id}`, {
+                    const deleteResponse = await fetch(`/delete-photo/${photo.id}`, {
                         method: 'DELETE',
                     });
                     if (deleteResponse.ok) {
@@ -763,7 +763,7 @@ if (photoUploadForm) {
         formData.append('description', descriptionInput?.value || '');
         
         try {
-            const response = await fetch('http://localhost:3000/upload', {
+            const response = await fetch('/upload', {
                 method: 'POST',
                 body: formData,
             });
