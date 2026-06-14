@@ -33,6 +33,15 @@ app.use(cors({
 
 
 
+// SERVE STATIC FILES
+app.use(express.static(path.join(__dirname)));
+
+// ROOT ROUTE
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+
 // GET type distribution counts
 app.get('/api/bridges/type-distribution', (req, res) => {
   const query = `
