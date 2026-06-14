@@ -184,8 +184,8 @@
             }
 
             filteredData.forEach(function(row) {
-                var lat = row.latitude ? row.latitude.toFixed(6) : '--';
-                var lon = row.longitude ? row.longitude.toFixed(6) : '--';
+                var lat = row.latitude ? parseFloat(row.latitude).toFixed(6) : '--';
+                var lon = row.longitude ? parseFloat(row.longitude).toFixed(6) : '--';
                 var typeMap = {
                     'bridge': 'Bridge', 'footbridge': 'Footbridge',
                     'retaining_wall': 'Retaining Wall', 'culvert': 'Culvert',
