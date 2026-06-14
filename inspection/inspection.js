@@ -645,7 +645,7 @@ window.addEventListener('load', async function() {
 
 async function loadInspectionElements() {
   try {
-    const elementsResponse = await fetch("http://localhost:3000/get_elements");
+    const elementsResponse = await fetch("/get_elements");
     const elementsData = await elementsResponse.json();
     const tableBody = document.querySelector("#inspectionElementsTable tbody");
     tableBody.innerHTML = "";
@@ -685,7 +685,7 @@ async function loadInspectionElements() {
 async function loadDefectsFromAPI(structureId, inspectionDate, currentSpan) {
     console.log("Loading defects for span:", currentSpan);
     try {
-        const url = `http://localhost:3000/api/inspection/full?structure_id=${structureId}&date=${inspectionDate}`;
+        const url = `/api/inspection/full?structure_id=${structureId}&date=${inspectionDate}`;
         const response = await fetch(url);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const inspectionData = await response.json();
