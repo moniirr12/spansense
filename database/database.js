@@ -22,7 +22,9 @@
 (function() {
     'use strict';
 
-    var API_BASE = 'http://localhost:3000';
+    var API_BASE = window.location.hostname === 'localhost' 
+    ? 'http://localhost:3000' 
+    : 'https://your-service-name.onrender.com';
     var currentCategory = 'bridges';
     var currentFilter = 'all';
     var bridgesData = [];
