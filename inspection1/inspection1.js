@@ -17,6 +17,10 @@
     window.updateGlassScrollbar=u;
 })();
 
+const API_BASE = window.location.hostname === 'localhost' 
+    ? 'http://localhost:3000' 
+    : 'https://spansense.onrender.com';
+
 // ============================================
 // DARK MODE TOGGLE
 // ============================================
@@ -135,7 +139,7 @@ function showDraftToast(message, isError = false) {
 // Check for duplicate inspection dates
 async function checkDuplicateInspectionDate(structureId, date, excludeCurrentDate = false, currentDate = null) {
     try {
-        const response = await fetch(`http://localhost:3000/api/inspection-dates/${structureId}`);
+        const response = await fetch(`${API_BASE}/api/inspection-dates/${structureId}`);
         if (!response.ok) {
             if (response.status === 404) return false;
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -312,7 +316,7 @@ function updateBridgeStatus(bridgeData) {
 // Function to fetch BCI scores for a specific inspection
 async function fetchBCIForInspection(bridgeId, inspectionDate) {
     try {
-        const response = await fetch(`http://localhost:3000/api/defectsbci?structureId=${bridgeId}&date=${inspectionDate}`);
+        const response = await fetch(`${API_BASE}/api/defectsbci?structureId=${bridgeId}&date=${inspectionDate}`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         
         const data = await response.json();
@@ -356,7 +360,7 @@ async function fetchLatestInspectionDate(bridgeId) {
         const isEditMode = inspectionMode === 'edit';
         const currentInspectionDate = sessionStorage.getItem('inspectionDate');
 
-        const response = await fetch(`http://localhost:3000/api/inspection-dates/${bridgeId}`);
+        const response = await fetch(`${API_BASE}/api/inspection-dates/${bridgeId}`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         
         const dates = await response.json();
@@ -411,7 +415,7 @@ async function fetchAndUpdateBridgeData(bridgeId) {
         if (lastInspEl) lastInspEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         if (builtYearEl) builtYearEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         
-        const response = await fetch(`http://localhost:3000/api/bridges/${bridgeId}`);
+        const response = await fetch(`${API_BASE}/api/bridges/${bridgeId}`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         
         const bridgeData = await response.json();
@@ -460,7 +464,7 @@ async function loadBridgePhoto(bridgeId) {
         
         if (!bridgeId || bridgeId === 'null' || bridgeId === 'undefined') throw new Error('Invalid bridge ID');
         
-        const response = await fetch(`http://localhost:3000/getBridgePhoto?bridgeId=${bridgeId}`);
+        const response = await fetch(`${API_BASE}/getBridgePhoto?bridgeId=${bridgeId}`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         
         const data = await response.json();
@@ -544,7 +548,7 @@ async function fetchSpans(bridgeId) {
         const sidebarSpanCount = document.getElementById('sidebarSpanCount');
         if (sidebarSpanCount) sidebarSpanCount.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         
-        const response = await fetch(`http://localhost:3000/get-spans?bridgeId=${bridgeId}`);
+        const response = await fetch(`${API_BASE}/get-spans?bridgeId=${bridgeId}`);
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         
         const data = await response.json();
@@ -810,7 +814,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const inspectionDate = sessionStorage.getItem('inspectionDate');
         
         if (inspectionStructureNumber && inspectionDate) {
-            fetch(`http://localhost:3000/api/inspection/full?structure_id=${inspectionStructureNumber}&date=${inspectionDate}`)
+            fetch(`${API_BASE}/api/inspection/full?structure_id=${inspectionStructureNumber}&date=${inspectionDate}`)
                 .then(response => response.json())
                 .then(data => {
                     console.log('📊 Loaded existing inspection:', data);
