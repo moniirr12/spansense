@@ -1999,3 +1999,11 @@ app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     db.exec("PRAGMA foreign_keys = ON");  // Optional safety measure
 });
+
+// Serve frontend static files
+app.use(express.static(path.join(__dirname)));
+
+// Fallback to index.html for SPA routes
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
