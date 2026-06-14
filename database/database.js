@@ -338,6 +338,18 @@
 
     // ============================================
     // INSPECTIONS TABLE (with pagination)
+
+       function formatDate(dateString) {
+          if (!dateString) return '--';
+          const date = new Date(dateString);
+          if (isNaN(date.getTime())) return dateString;
+          return date.toLocaleDateString('en-GB', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric'
+          });
+      }
+
     // ============================================
     function rebuildInspectionsTable() {
         var tbody = document.getElementById('tableBody');
@@ -521,16 +533,6 @@
             });
         }
 
-       function formatDate(dateString) {
-          if (!dateString) return '--';
-          const date = new Date(dateString);
-          if (isNaN(date.getTime())) return dateString;
-          return date.toLocaleDateString('en-GB', {
-              day: 'numeric',
-              month: 'short',
-              year: 'numeric'
-          });
-      }
 
         tbody.innerHTML = rowsHtml;
         
