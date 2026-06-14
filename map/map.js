@@ -318,7 +318,7 @@ function updateModalTitle() {
 }
 
 function fetchBridgePhoto(bridgeId) {
-    fetch(`http://localhost:3000/getBridgePhoto?bridgeId=${bridgeId}`)
+    fetch(`/getBridgePhoto?bridgeId=${bridgeId}`)
         .then(response => {
             if (!response.ok) throw new Error('Network response was not ok');
             return response.json();
@@ -525,7 +525,7 @@ if (chatSend && chatInput) {
 
 // Fetch previous documents
 function fetchPreviousDocuments(structureId) {
-    return fetch(`http://localhost:3000/api/previousInspections?structureId=${structureId}`, {
+    return fetch(`/api/previousInspections?structureId=${structureId}`, {
         headers: { 'Content-Type': 'application/json' }
     })
     .then(response => {
@@ -817,7 +817,7 @@ function populateDocumentsQuickStats(documents) {
     if (list) list.innerHTML = '<div class="ss-empty"><i class="fas fa-spinner fa-spin"></i><span>Loading inspections...</span></div>';
     modal.style.display = 'flex';
 
-    fetch(`http://localhost:3000/api/previousInspections?structureId=${structureId}`)
+    fetch(`/api/previousInspections?structureId=${structureId}`)
       .then(r => {
         if (!r.ok) throw new Error('Failed to fetch');
         return r.json();
@@ -921,19 +921,19 @@ async function generateBCIProformaForDate(structureId, structureName, date) {
             return;
         }
 
-        const bridgeRes = await fetch(`http://localhost:3000/api/bridges/${structureId}`);
+        const bridgeRes = await fetch(`/api/bridges/${structureId}`);
         if (!bridgeRes.ok) throw new Error('Failed to fetch bridge data');
         const bridge = await bridgeRes.json();
         const totalSpans = bridge.span_number || 1;
 
         const defectsRes = await fetch(
-            `http://localhost:3000/api/defectsbci?structureId=${structureId}&date=${date}`
+            `/api/defectsbci?structureId=${structureId}&date=${date}`
         );
         if (!defectsRes.ok) throw new Error('Failed to fetch defects');
         const spansData = await defectsRes.json();
 
         const worksRes = await fetch(
-            `http://localhost:3000/api/worksrequired?structureId=${structureId}&date=${date}`
+            `/api/worksrequired?structureId=${structureId}&date=${date}`
         );
         if (!worksRes.ok) throw new Error('Failed to fetch works required');
         const worksRequired = await worksRes.json();
@@ -969,7 +969,7 @@ async function generateBCIProformaForDate(structureId, structureName, date) {
 // Helper function to update bridge modal data (needs to be defined)
 function updateBridgeModalData(structureId) {
     // Fetch and update bridge data in modal
-    fetch(`http://localhost:3000/api/bridges/${structureId}`)
+    fetch(`/api/bridges/${structureId}`)
         .then(response => response.json())
         .then(bridge => {
             const bciScoreElement = document.getElementById('bciScore');
