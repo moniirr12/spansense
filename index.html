@@ -151,19 +151,22 @@ body {
 .navbar {
     position: fixed;
     top: 20px;
-    left: 20px;
-    right: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    max-width: 1100px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 60px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
     z-index: 1000;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 32px;
+    padding: 0 28px;
     height: 64px;
-    background: white;
-    border: 1px solid var(--border);
-    border-radius: 60px;
-    box-shadow: var(--shadow-md);
-    transition: all 0.3s ease;
 }
 
 .navbar .left {
@@ -181,10 +184,58 @@ body {
     letter-spacing: 0.02em;
 }
 
+.navbar .menu {
+    display: flex;
+    gap: 24px;
+}
+
+.navbar .menu a {
+    text-decoration: none;
+    color: #4a5b6e;
+    font-weight: 500;
+    font-size: 0.85rem;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.navbar .menu a:hover,
+.navbar .menu a.active {
+    color: #5b8c8a;
+}
+
+.navbar .menu a.active {
+    background: rgba(91, 140, 138, 0.1);
+    padding: 6px 14px;
+    border-radius: 20px;
+}
+
 .navbar .right {
     display: flex;
     align-items: center;
     gap: 20px;
+}
+
+.mode-toggle {
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: #8a9ba8;
+    transition: all 0.2s;
+    background: #f0f2f5;
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mode-toggle:hover {
+    background: #e2e8f0;
+    color: #5b8c8a;
+    transform: scale(1.05);
 }
 
 .navbar .account-links {
@@ -204,39 +255,41 @@ body {
 }
 
 .navbar .account-links a:hover {
-    color: var(--primary);
-}
-
-.mode-toggle {
-    cursor: pointer;
-    font-size: 1.2rem;
-    color: var(--primary);
-    transition: all 0.2s;
-    background: #f0f2f5;
-    border: none;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.mode-toggle:hover {
-    background: #e2e8f0;
-    transform: scale(1.05);
+    color: #5b8c8a;
 }
 
 /* Dark mode navbar styles */
 [data-theme="dark"] .navbar {
-    background: #2f3e48;
-    border-color: #3e525e;
+    background: rgba(35, 46, 52, 0.95);
+    border-color: #2f3e45;
 }
 
 [data-theme="dark"] .navbar .logo {
-    background: linear-gradient(135deg, #9ec8c4 0%, #b8dbd8 100%);
+    background: linear-gradient(135deg, #8ab4b0 0%, #a0c8c4 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+}
+
+[data-theme="dark"] .navbar .menu a {
+    color: #9ab0b8;
+}
+
+[data-theme="dark"] .navbar .menu a:hover,
+[data-theme="dark"] .navbar .menu a.active {
+    color: #8ab4b0;
+}
+
+[data-theme="dark"] .navbar .menu a.active {
+    background: rgba(138, 180, 176, 0.15);
+}
+
+[data-theme="dark"] .mode-toggle {
+    background: #3e525e;
+    color: #c5e0e6;
+}
+
+[data-theme="dark"] .mode-toggle:hover {
+    background: #4a6570;
 }
 
 [data-theme="dark"] .navbar .account-links a {
@@ -247,13 +300,21 @@ body {
     color: #b8d4d0;
 }
 
-[data-theme="dark"] .mode-toggle {
-    background: #3e525e;
-    color: #c5e0e6;
+/* Responsive */
+@media (max-width: 1024px) {
+    .navbar {
+        width: 70%;
+    }
 }
 
-[data-theme="dark"] .mode-toggle:hover {
-    background: #4a6570;
+@media (max-width: 768px) {
+    .navbar {
+        width: 95%;
+        padding: 0 16px;
+    }
+    .navbar .menu {
+        display: none;
+    }
 }
 /* ============================================
    HERO SECTION
@@ -1263,7 +1324,7 @@ html::-webkit-scrollbar { display: none; }
     .glass-scrollbar { display: none !important; }
 }
 </style>
-<base target="_blank">
+<base target="_self">
 </head>
 
 <body>
@@ -1329,12 +1390,14 @@ html::-webkit-scrollbar { display: none; }
 <nav class="navbar">
     <div class="left">
         <div class="logo">spanSense</div>
+        <div class="menu">
+        </div>
     </div>
     <div class="right">
         <div class="mode-toggle" onclick="toggleTheme()" id="themeToggle"><i class="fas fa-moon"></i></div>
         <div class="account-links">
-            <a>Account</a>
-            <a>Contact Us</a>
+            <a href="#">Account</a>
+            <a href="contacts/contacts.html">Contact Us</a>
         </div>
     </div>
 </nav>
