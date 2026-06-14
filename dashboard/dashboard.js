@@ -436,7 +436,7 @@ function renderCriticalBridges(data) {
                     <span class="bridge-location">${bridge.structure_name}</span>
                 </div>
                 <div><span class="risk-badge ${badgeClass}">${badgeLabel} · ${bci}</span></div>
-                <div>${bridge.inspection_date}</div>
+                <div>${formatDate(bridge.inspection_date)}</div>
                 <div>
                     <button class="action-btn download-btn" onclick="downloadReport('${bridge.structure_id}', '${bridge.structure_name.replace(/'/g, "\\'")}', '${bridge.inspection_date}')">
                         <i class="fas fa-download"></i> Report
@@ -446,6 +446,16 @@ function renderCriticalBridges(data) {
     }).join('');
 }
 
+function formatDate(dateString) {
+    if (!dateString) return '—';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+    return date.toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+    });
+}
 
 
 window.downloadReport = async function downloadReport(structureId, structureName, inspectionDate) {
