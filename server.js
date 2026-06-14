@@ -862,19 +862,7 @@ app.delete('/api/bridges/:structureId/folders/:folderId', async (req, res) => {
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Serve frontend static files (must be before error handler and listen)
-app.use(express.static(path.join(__dirname)));
 
-// Fallback to index.html for SPA routes
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-// Error handler
-app.use((err, req, res, next) => {
-    console.error(err);
-    res.status(500).json({ error: err.message });
-});
 
 // Backend route for getting folder path
 app.get('/api/bridges/:structureId/folders/:folderId/path', async (req, res) => {
@@ -1802,4 +1790,20 @@ app.get('/api/dashboard/critical-bridges', async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+});
+
+
+
+// Serve frontend static files (must be before error handler and listen)
+app.use(express.static(path.join(__dirname)));
+
+// Fallback to index.html for SPA routes
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Error handler
+app.use((err, req, res, next) => {
+    console.error(err);
+    res.status(500).json({ error: err.message });
 });
