@@ -1,5 +1,10 @@
 let criticalBridgesCount = 0;
 
+
+const API_BASE = window.location.hostname === 'localhost' 
+    ? 'http://localhost:3000' 
+    : 'https://spansense.onrender.com';
+
 document.addEventListener('DOMContentLoaded', function () {
     fetchBridgeCount();
     fetchTypeDistribution();
@@ -42,7 +47,7 @@ async function fetchBridgeCount() {
   
   try {
     countElement.textContent = 'Loading...';
-    const response = await fetch('http://localhost:3000/api/debug/count-test');
+    const response = await fetch(API_BASE + '/api/debug/count-test');
     
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     
@@ -68,7 +73,7 @@ async function fetchBridgeCount() {
 
 async function fetchTypeDistribution() {
   try {
-    const response = await fetch('http://localhost:3000/api/bridges/type-distribution');
+    const response = await fetch(API_BASE + '/api/bridges/type-distribution');
     
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     
@@ -136,7 +141,7 @@ function renderPieChart(typeData) {
 // Fetch BCI distribution data
 async function fetchBCIDistribution() {
     try {
-        const response = await fetch('http://localhost:3000/api/bci-distribution', {
+        const response = await fetch(API_BASE + '/api/bci-distribution', {
             credentials: 'include'
         });
         
@@ -155,7 +160,7 @@ async function fetchBCIDistribution() {
 // Fetch condition distribution over time
 async function fetchConditionDistribution() {
     try {
-        const response = await fetch('http://localhost:3000/api/condition-distribution', {
+        const response = await fetch(API_BASE + '/api/condition-distribution', {
             credentials: 'include'
         });
         
@@ -374,7 +379,7 @@ function renderConditionDistributionChart(data) {
 
 async function fetchCriticalBridges() {
     try {
-        const response = await fetch('http://localhost:3000/api/dashboard/critical-bridges', {
+        const response = await fetch(API_BASE + '/api/dashboard/critical-bridges', {
             credentials: 'include'
         });
 
