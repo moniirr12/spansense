@@ -1,8 +1,17 @@
+// ============================================
+// SpanSense - Bridge Map & Modal Logic
+// ============================================
+
+// --- Dynamic API Base URL (works on localhost AND production) ---
+const API_BASE = window.location.origin.includes('localhost')
+    ? 'http://localhost:3000'
+    : window.location.origin;  // e.g. https://spansense.onrender.com
+
 let map;
-let bridgeMarkers = L.layerGroup(); // Layer group to hold all markers
-let darkMap, openStreetMap, satelliteMap; // Base map layers
-let bridgeData = []; // Store bridge data for search
-let fuse; // Fuse.js instance for fuzzy search
+let bridgeMarkers = L.layerGroup();
+let darkMap, openStreetMap, satelliteMap;
+let bridgeData = [];
+let fuse;
 let bridgeModalWasOpen = false;
 
 // Helper: close documents modal and restore bridge modal if it was open
@@ -19,19 +28,15 @@ function closeDocumentsModalAndRestore() {
 
 // Clear, recognizable icons for each structure type - PERMANENT mapping
 const getStructureIcon = (type) => {
-    // Normalize type (handle both 'retaining_wall' and 'retaining wall')
-    const normalizedType = type?.toLowerCase().replace(' ', '_') || 'bridge';
-    
+    const normalizedType = type?.toLowerCase().replace(/\s+/g, '_') || 'bridge';
+
     const icons = {
         bridge: L.divIcon({
             html: `<div style="
                 background: #2c5f8a;
-                width: 36px;
-                height: 36px;
+                width: 36px; height: 36px;
                 border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
+                display: flex; align-items: center; justify-content: center;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.2);
                 border: 2px solid white;
             ">
@@ -54,12 +59,9 @@ const getStructureIcon = (type) => {
         footbridge: L.divIcon({
             html: `<div style="
                 background: #2d7a4b;
-                width: 36px;
-                height: 36px;
+                width: 36px; height: 36px;
                 border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
+                display: flex; align-items: center; justify-content: center;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.2);
                 border: 2px solid white;
             ">
@@ -71,7 +73,6 @@ const getStructureIcon = (type) => {
                     <path d="M12 18 L12 14" stroke="white" fill="none"/>
                     <path d="M18 18 L18 14" stroke="white" fill="none"/>
                     <circle cx="12" cy="20" r="1.5" fill="white" stroke="none"/>
-                    <path d="M12 18 L12 14" stroke="white" fill="none"/>
                     <path d="M10 15 L12 17 L14 15" stroke="white" fill="none"/>
                     <path d="M12 14 L10 11" stroke="white" fill="none"/>
                     <path d="M12 14 L14 11" stroke="white" fill="none"/>
@@ -84,12 +85,9 @@ const getStructureIcon = (type) => {
         culvert: L.divIcon({
             html: `<div style="
                 background: #d97706;
-                width: 36px;
-                height: 36px;
+                width: 36px; height: 36px;
                 border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
+                display: flex; align-items: center; justify-content: center;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.2);
                 border: 2px solid white;
             ">
@@ -110,12 +108,9 @@ const getStructureIcon = (type) => {
         retaining_wall: L.divIcon({
             html: `<div style="
                 background: #991b1b;
-                width: 36px;
-                height: 36px;
+                width: 36px; height: 36px;
                 border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
+                display: flex; align-items: center; justify-content: center;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.2);
                 border: 2px solid white;
             ">
@@ -134,20 +129,20 @@ const getStructureIcon = (type) => {
             className: 'custom-marker'
         })
     };
-    
+
     return icons[normalizedType] || icons.bridge;
 };
 
 // Function to create a marker with proper icon
 function createStructureMarker(bridge) {
-    const structureType = bridge.type; // Store the type once
-    
-    const marker = L.marker([bridge.latitude, bridge.longitude], { 
+    const structureType = bridge.type;
+
+    const marker = L.marker([bridge.latitude, bridge.longitude], {
         icon: getStructureIcon(structureType),
-        structureType: structureType, // Store for filtering
+        structureType: structureType,
         structureId: bridge.id,
         structureName: bridge.name,
-        originalType: structureType // Backup reference
+        originalType: structureType
     });
 
     marker.bindPopup(`
@@ -176,22 +171,18 @@ function createStructureMarker(bridge) {
 
 // Rebuild markers based on selected types
 function rebuildMarkersFromFilter() {
-    // Clear all existing markers
     bridgeMarkers.clearLayers();
-    
-    // Get selected structure types
+
     const selectedTypes = Array.from(document.querySelectorAll('#typeOptions input[name="structureType"]:checked'))
         .map(checkbox => checkbox.value);
-    
-    // Filter and recreate markers
+
     bridgeData.forEach(bridge => {
         if (selectedTypes.includes(bridge.type)) {
             const marker = createStructureMarker(bridge);
             bridgeMarkers.addLayer(marker);
         }
     });
-    
-    // Save filter state
+
     localStorage.setItem('selectedStructureTypes', JSON.stringify(selectedTypes));
 }
 
@@ -201,11 +192,9 @@ function restoreFilterState() {
     if (saved) {
         try {
             const selectedTypes = JSON.parse(saved);
-            // Update checkboxes
             document.querySelectorAll('#typeOptions input[name="structureType"]').forEach(checkbox => {
                 checkbox.checked = selectedTypes.includes(checkbox.value);
             });
-            // Apply filter
             rebuildMarkersFromFilter();
         } catch(e) {
             console.error('Error restoring filter state:', e);
@@ -216,20 +205,17 @@ function restoreFilterState() {
 // Load the bridge data from the JSON file
 fetch('bridges.json')
     .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
+        if (!response.ok) throw new Error('Network response was not ok');
         return response.json();
     })
     .then(data => {
         bridgeData = data;
 
         // Setup Fuse.js for search
-        const options = {
+        fuse = new Fuse(bridgeData, {
             keys: ['name', 'location'],
             threshold: 0.3
-        };
-        fuse = new Fuse(bridgeData, options);
+        });
 
         // Initialize map
         map = L.map('map').setView([54.0, -2.0], 6);
@@ -261,10 +247,7 @@ fetch('bridges.json')
             bridgeMarkers.addLayer(marker);
         });
 
-        // Add markers to map
         bridgeMarkers.addTo(map);
-
-        // Restore filter state after markers are created
         restoreFilterState();
 
         // Setup layer controls
@@ -273,19 +256,13 @@ fetch('bridges.json')
             "Satellite": satelliteMap,
             "Dark Mode": darkMap
         };
-
-        const overlayMaps = {
-            "Structures": bridgeMarkers
-        };
-
+        const overlayMaps = { "Structures": bridgeMarkers };
         L.control.layers(baseMaps, overlayMaps).addTo(map);
 
         // Modal click handler
         window.addEventListener('click', function(event) {
             const modal = document.getElementById('bridgeModal');
-            if (event.target === modal) {
-                modal.style.display = 'none';
-            }
+            if (event.target === modal) modal.style.display = 'none';
         });
     })
     .catch(error => {
@@ -318,20 +295,16 @@ function updateModalTitle() {
 }
 
 function fetchBridgePhoto(bridgeId) {
-    fetch(`/getBridgePhoto?bridgeId=${bridgeId}`)
+    fetch(`${API_BASE}/getBridgePhoto?bridgeId=${bridgeId}`)
         .then(response => {
             if (!response.ok) throw new Error('Network response was not ok');
             return response.json();
         })
         .then(data => {
             const bridgePhoto = document.getElementById('bridgePhoto');
-            if (bridgePhoto && data.photo_url) {
-                bridgePhoto.src = data.photo_url;
-            }
+            if (bridgePhoto && data.photo_url) bridgePhoto.src = data.photo_url;
         })
-        .catch(error => {
-            console.error('Error fetching bridge photo:', error);
-        });
+        .catch(error => console.error('Error fetching bridge photo:', error));
 }
 
 // Toggle submenu when "View" is clicked
@@ -354,12 +327,13 @@ if (typeLink) {
     });
 }
 
-// Filter markers by structure type - REBUILD APPROACH (preserves icons)
-document.querySelectorAll('#typeOptions input[name="structureType"]').forEach(checkbox => {
-    checkbox.addEventListener('change', function () {
-        rebuildMarkersFromFilter();
+// Filter markers by structure type
+const typeCheckboxes = document.querySelectorAll('#typeOptions input[name="structureType"]');
+if (typeCheckboxes.length) {
+    typeCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', rebuildMarkersFromFilter);
     });
-});
+}
 
 // Night Mode Toggle with Map Support
 (function() {
@@ -368,24 +342,23 @@ document.querySelectorAll('#typeOptions input[name="structureType"]').forEach(ch
         console.log('Night mode button not found');
         return;
     }
-    
+
     let mapReady = false;
     let checkInterval = setInterval(function() {
         if (typeof map !== 'undefined' && map && darkMap && openStreetMap) {
             mapReady = true;
             clearInterval(checkInterval);
-            
             if (localStorage.getItem('nightMode') === 'on' && darkMap) {
                 if (openStreetMap) map.removeLayer(openStreetMap);
                 darkMap.addTo(map);
             }
         }
     }, 100);
-    
+
     toggleBtn.onclick = function(e) {
         e.preventDefault();
         const isNightMode = document.body.classList.toggle('night-mode');
-        
+
         if (isNightMode) {
             this.innerHTML = '<i class="fas fa-sun"></i>';
             localStorage.setItem('nightMode', 'on');
@@ -402,7 +375,7 @@ document.querySelectorAll('#typeOptions input[name="structureType"]').forEach(ch
             }
         }
     };
-    
+
     if (localStorage.getItem('nightMode') === 'on') {
         document.body.classList.add('night-mode');
         toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
@@ -419,7 +392,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
-// Planning page navigation - add this with your other link handlers
+// Planning page navigation
 const planningLink = document.getElementById('planningLink');
 if (planningLink) {
     planningLink.addEventListener('click', function(e) {
@@ -432,10 +405,10 @@ if (planningLink) {
 const searchInput = document.getElementById('searchInput');
 const searchResults = document.getElementById('searchResults');
 
-if (searchInput && searchResults && typeof fuse !== 'undefined') {
+if (searchInput && searchResults) {
     searchInput.addEventListener('input', function () {
         const query = searchInput.value.trim();
-        if (query.length === 0) {
+        if (query.length === 0 || typeof fuse === 'undefined') {
             searchResults.style.display = 'none';
             return;
         }
@@ -493,10 +466,10 @@ const chatBox = document.querySelector('.chat-box');
 const chatClose = document.querySelector('.chat-close');
 
 if (chatToggle && chatBox) {
-    chatToggle.addEventListener('click', () => { chatBox.classList.toggle('active'); });
+    chatToggle.addEventListener('click', () => chatBox.classList.toggle('active'));
 }
 if (chatClose && chatBox) {
-    chatClose.addEventListener('click', () => { chatBox.classList.remove('active'); });
+    chatClose.addEventListener('click', () => chatBox.classList.remove('active'));
 }
 
 const chatInput = document.querySelector('.chat-input input');
@@ -525,7 +498,11 @@ if (chatSend && chatInput) {
 
 // Fetch previous documents
 function fetchPreviousDocuments(structureId) {
-    return fetch(`/api/previousInspections?structureId=${structureId}`, {
+    if (!structureId) {
+        console.warn('fetchPreviousDocuments: No structureId provided');
+        return Promise.reject(new Error('No structureId provided'));
+    }
+    return fetch(`${API_BASE}/api/previousInspections?structureId=${structureId}`, {
         headers: { 'Content-Type': 'application/json' }
     })
     .then(response => {
@@ -633,7 +610,9 @@ function populateDocumentsQuickStats(documents) {
     }
 }
 
+// ============================================
 // SS PREVIOUS INSPECTIONS MODAL
+// ============================================
 (function () {
   const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   let ssAllDocs = [];
@@ -740,6 +719,12 @@ function populateDocumentsQuickStats(documents) {
         const structureId = sessionStorage.getItem('structureId');
         const structureName = sessionStorage.getItem('structureName');
 
+        if (!structureId) {
+            console.warn('No structure selected for action:', action);
+            alert('No structure selected. Please click on a bridge marker first.');
+            return;
+        }
+
         if (action === 'report') {
           if (typeof generateSimplePDFReport === 'function') {
             generateSimplePDFReport({
@@ -795,6 +780,11 @@ function populateDocumentsQuickStats(documents) {
     const modal = document.getElementById('ssPrevModal');
     if (!modal) return;
 
+    if (!structureId) {
+        console.warn('ssOpenModal: No structureId provided');
+        return;
+    }
+
     const nameEl = document.getElementById('ssBridgeName');
     const idEl   = document.getElementById('ssStructureId');
     const avEl   = document.getElementById('ssAvatar');
@@ -817,7 +807,7 @@ function populateDocumentsQuickStats(documents) {
     if (list) list.innerHTML = '<div class="ss-empty"><i class="fas fa-spinner fa-spin"></i><span>Loading inspections...</span></div>';
     modal.style.display = 'flex';
 
-    fetch(`/api/previousInspections?structureId=${structureId}`)
+    fetch(`${API_BASE}/api/previousInspections?structureId=${structureId}`)
       .then(r => {
         if (!r.ok) throw new Error('Failed to fetch');
         return r.json();
@@ -914,26 +904,33 @@ function populateDocumentsQuickStats(documents) {
   });
 })();
 
+// ============================================
+// BCI Proforma Generation
+// ============================================
 async function generateBCIProformaForDate(structureId, structureName, date) {
     try {
+        if (!structureId) {
+            alert('No structure selected. Please click on a bridge marker first.');
+            return;
+        }
         if (typeof pdfMake === 'undefined' || typeof buildBCIProformaContent !== 'function') {
             alert('PDF libraries not loaded. Please refresh the page and try again.');
             return;
         }
 
-        const bridgeRes = await fetch(`/api/bridges/${structureId}`);
+        const bridgeRes = await fetch(`${API_BASE}/api/bridges/${structureId}`);
         if (!bridgeRes.ok) throw new Error('Failed to fetch bridge data');
         const bridge = await bridgeRes.json();
         const totalSpans = bridge.span_number || 1;
 
         const defectsRes = await fetch(
-            `/api/defectsbci?structureId=${structureId}&date=${date}`
+            `${API_BASE}/api/defectsbci?structureId=${structureId}&date=${date}`
         );
         if (!defectsRes.ok) throw new Error('Failed to fetch defects');
         const spansData = await defectsRes.json();
 
         const worksRes = await fetch(
-            `/api/worksrequired?structureId=${structureId}&date=${date}`
+            `${API_BASE}/api/worksrequired?structureId=${structureId}&date=${date}`
         );
         if (!worksRes.ok) throw new Error('Failed to fetch works required');
         const worksRequired = await worksRes.json();
@@ -966,15 +963,23 @@ async function generateBCIProformaForDate(structureId, structureName, date) {
     }
 }
 
-// Helper function to update bridge modal data (needs to be defined)
+// ============================================
+// Helper: Update bridge modal data
+// ============================================
 function updateBridgeModalData(structureId) {
-    // Fetch and update bridge data in modal
-    fetch(`/api/bridges/${structureId}`)
-        .then(response => response.json())
+    if (!structureId) {
+        console.warn('updateBridgeModalData: No structureId provided');
+        return;
+    }
+    fetch(`${API_BASE}/api/bridges/${structureId}`)
+        .then(response => {
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return response.json();
+        })
         .then(bridge => {
             const bciScoreElement = document.getElementById('bciScore');
             const lastInspectedElement = document.getElementById('lastInspected');
-            
+
             if (bciScoreElement && bridge.bci_av) {
                 const bciValue = Math.round(parseFloat(bridge.bci_av));
                 bciScoreElement.innerHTML = bciValue;
@@ -983,12 +988,10 @@ function updateBridgeModalData(structureId) {
                 else if (bciValue >= 40) bciScoreElement.style.color = '#f97316';
                 else bciScoreElement.style.color = '#dc2626';
             }
-            
+
             if (lastInspectedElement && bridge.last_inspection) {
                 lastInspectedElement.textContent = bridge.last_inspection;
             }
         })
-        .catch(error => {
-            console.error('Error fetching bridge data:', error);
-        });
+        .catch(error => console.error('Error fetching bridge data:', error));
 }
