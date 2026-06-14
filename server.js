@@ -12,8 +12,20 @@ const fs = require('fs');
 const app = express();
 
 
-app.get('/api/test', (req, res) => {
-    res.json({ message: 'API is working', timestamp: new Date() });
+app.get('/api/routes', (req, res) => {
+    const routes = [];
+    app._router.stack.forEach(middleware => {
+        if (middleware.route) {
+            routes.push(Object.keys(middleware.route.methods)[0].toUpperCase() + ' ' + middleware.route.path);
+        } else if (middleware.name === 'router') {
+            middleware.handle.stack.forEach(handler => {
+                if (handler.route) {
+                    routes.push(Object.keys(handler.route.methods)[0].toUpperCase() + ' ' + handler.route.path);
+                }
+            });
+        }
+    });
+    res.json({ routes });
 });
 
 // PostgreSQL connection
