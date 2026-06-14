@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpanSense — Inspection Planning</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* Hide native scrollbar */
+        html { scrollbar-width: none; -ms-overflow-style: none; }
+        html::-webkit-scrollbar { display: none; }
+        body::-webkit-scrollbar { display: none; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fb;
+            color: #2c3e44;
+            transition: background 0.3s ease, color 0.3s ease;
+            overflow-y: scroll;
+            overflow-x: hidden;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        /* ---------- NAVIGATION BAR (60% width, centered) ---------- */
+        .navbar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            max-width: 1100px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 60px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+            z-index: 1100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 28px;
+            height: 64px;
+        }
+        .navbar .left { display: flex; align-items: center; gap: 24px; }
+        .navbar .logo {
+            font-size: 1.2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #5b8c8a 0%, #7ba8a5 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .navbar .menu { display: flex; gap: 24px; }
+        .navbar .menu a {
+            text-decoration: none;
+            color: #4a5b6e;
+            font-weight: 500;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .navbar .menu a:hover, .navbar .menu a.active { color: #5b8c8a; }
+        .navbar .menu a.active {
+            background: rgba(91, 140, 138, 0.1);
+            padding: 6px 14px;
+            border-radius: 20px;
+        }
+        .navbar .right { display: flex; align-items: center; gap: 20px; }
+        .night-mode-toggle {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            color: #8a9ba8;
+            transition: all 0.2s;
+        }
+        .night-mode-toggle:hover { background: #f0f4f8; color: #5b8c8a; }
+        .navbar .account-links a {
+            text-decoration: none;
+            color: #6a7c8e;
+            margin-left: 16px;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+        .navbar .account-links a:hover { color: #5b8c8a; }
+
+        /* ---------- MAIN WRAPPER - 75% WIDTH ---------- */
+        .page-wrapper {
+            max-width: 75%;
+            margin: 0 auto;
+            padding: 100px 0 60px 0;
+        }
+
+        /* ---------- BACK PILL ---------- */
+        .back-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(138, 180, 176, 0.3);
+            color: #5b8c8a;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 12px rgba(91, 140, 138, 0.1);
+        }
+        .back-pill:hover {
+            background: #5b8c8a;
+            color: white;
+            border-color: #5b8c8a;
+            transform: translateX(-4px);
+            box-shadow: 0 4px 20px rgba(91, 140, 138, 0.25);
+        }
+
+        /* Today button - now near calendar nav */
+        .today-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 30px;
+            background: rgba(91, 140, 138, 0.15);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(138, 180, 176, 0.4);
+            color: #5b8c8a;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+        .today-btn:hover {
+            background: #5b8c8a;
+            color: white;
+            border-color: #5b8c8a;
+        }
+
+        /* ---------- PAGE HEADER ---------- */
+        .page-header { margin-bottom: 28px; }
+        .page-header h1 {
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: #2c5a57;
+            border-left: 4px solid #8ab4b0;
+            padding-left: 14px;
+            margin-bottom: 8px;
+        }
+        .page-header p {
+            color: #8a9ba8;
+            font-size: 0.85rem;
+            padding-left: 18px;
+        }
+
+        /* ---------- STATS ROW ---------- */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 24px;
+            padding: 20px 24px;
+            border: 1px solid #e9edf2;
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+            border-color: #c5dbd8;
+        }
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .stat-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #8a9ba8;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+        }
+        .stat-icon.teal { background: #eef4f2; color: #5b8c8a; }
+        .stat-icon.red { background: #fdf2f2; color: #c47070; }
+        .stat-icon.amber { background: #fef5ed; color: #e8a87c; }
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2c4a48;
+            margin-bottom: 4px;
+        }
+        .stat-sub {
+            font-size: 0.7rem;
+            color: #8a9ba8;
+        }
+        .stat-sub .positive { color: #5b8c8a; font-weight: 600; }
+        .stat-sub .negative { color: #c47070; font-weight: 600; }
+
+        /* Calendar Toolbar */
+        .calendar-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            background: white;
+            border-radius: 20px 20px 0 0;
+            border: 1px solid #e9edf2;
+            border-bottom: none;
+        }
+        .calendar-nav {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .calendar-nav h2 {
+            font-size: 1rem;
+            font-weight: 700;
+            min-width: 140px;
+            text-align: center;
+            color: #2c4a48;
+        }
+        .nav-arrow {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 1px solid #e2e8f0;
+            background: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6a7c8e;
+            transition: all 0.2s;
+        }
+        .nav-arrow:hover {
+            background: #eef4f2;
+            border-color: #8ab4b0;
+            color: #5b8c8a;
+        }
+        .today-calendar-btn {
+            margin-left: 8px;
+        }
+        .view-toggle {
+            display: flex;
+            gap: 4px;
+            background: #f5f7fb;
+            padding: 4px;
+            border-radius: 40px;
+        }
+        .view-btn {
+            padding: 6px 20px;
+            border-radius: 30px;
+            border: none;
+            background: transparent;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6a7c8e;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .view-btn.active {
+            background: white;
+            color: #2c4a48;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .view-section { display: none; }
+        .view-section.active { display: block; }
+
+        /* Calendar Section */
+        .calendar-section {
+            background: white;
+            border-radius: 0 0 20px 20px;
+            border: 1px solid #e9edf2;
+            border-top: none;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+            overflow-x: auto;
+        }
+
+        .calendar-grid {
+            padding: 20px 24px;
+            min-width: 700px;
+        }
+
+        .weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        .weekday {
+            text-align: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #8a9ba8;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 10px 0;
+        }
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+        }
+        .day-cell {
+            min-height: 100px;
+            background: #fafbfc;
+            border-radius: 12px;
+            padding: 8px;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+            cursor: pointer;
+        }
+        .day-cell:hover {
+            border-color: #8ab4b0;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+        }
+        .day-cell.other-month { opacity: 0.4; }
+        .day-cell.today {
+            background: #eef4f2;
+            border-color: #5b8c8a;
+        }
+        .day-number {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #2c4a48;
+            margin-bottom: 6px;
+        }
+        .day-cell.today .day-number { color: #5b8c8a; }
+
+        .day-events { display: flex; flex-direction: column; gap: 3px; }
+        .event-chip {
+            font-size: 0.65rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .event-chip:hover { transform: scale(1.02); }
+        .event-chip.gi { background: #eef4f2; color: #5b8c8a; border-left: 3px solid #5b8c8a; }
+        .event-chip.pi { background: #eef2f8; color: #2c5f8a; border-left: 3px solid #2c5f8a; }
+        .event-chip.overdue { background: #fdf2f2; color: #c47070; border-left: 3px solid #c47070; animation: pulse 2s infinite; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .event-more { font-size: 0.6rem; color: #8a9ba8; text-align: center; margin-top: 2px; }
+
+        .calendar-legend {
+            display: flex;
+            gap: 20px;
+            padding: 12px 24px;
+            border-top: 1px solid #eef2f6;
+            background: #fafbfc;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.7rem;
+            color: #6a7c8e;
+            font-weight: 500;
+        }
+        .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+
+        /* YEAR VIEW */
+        .year-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            padding: 24px;
+        }
+        .month-card {
+            background: white;
+            border: 1px solid #e9edf2;
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .month-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            border-color: #c5dbd8;
+        }
+        .month-header {
+            background: #f8fafc;
+            padding: 12px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #2c4a48;
+            border-bottom: 1px solid #e9edf2;
+        }
+        .month-events {
+            padding: 12px;
+            min-height: 100px;
+        }
+        .month-event {
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            margin-bottom: 4px;
+            border-radius: 6px;
+            background: #fafbfc;
+            color: #6a7c8e;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .month-event.gi { background: #eef4f2; color: #5b8c8a; border-left: 3px solid #5b8c8a; }
+        .month-event.pi { background: #eef2f8; color: #2c5f8a; border-left: 3px solid #2c5f8a; }
+        .month-event.overdue { background: #fdf2f2; color: #c47070; border-left: 3px solid #c47070; }
+        .month-count {
+            font-size: 0.65rem;
+            color: #8a9ba8;
+            text-align: center;
+            padding: 8px;
+            border-top: 1px solid #eef2f6;
+        }
+
+        /* GANTT VIEW */
+        .gantt-section {
+            background: white;
+            border-radius: 0 0 20px 20px;
+            border: 1px solid #e9edf2;
+            border-top: none;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+            overflow: hidden;
+        }
+        .gantt-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 24px;
+            border-bottom: 1px solid #eef2f6;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .gantt-toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .gantt-toolbar-left h2 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #2c4a48;
+        }
+        .gantt-filters {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .filter-chip {
+            padding: 5px 14px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1.5px solid #e2e8f0;
+            background: white;
+            color: #6a7c8e;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+        .filter-chip:hover { border-color: #8ab4b0; color: #5b8c8a; }
+        .filter-chip.active { background: #eef4f2; border-color: #8ab4b0; color: #2c5a57; }
+
+        .gantt-body {
+            display: flex;
+            width: 100%;
+        }
+        .gantt-sidebar {
+            width: 240px;
+            min-width: 240px;
+            flex-shrink: 0;
+            background: #fafbfc;
+            border-right: 1px solid #eef2f6;
+            position: sticky;
+            left: 0;
+            z-index: 10;
+        }
+        .gantt-sidebar-header {
+            padding: 12px 20px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: #8a9ba8;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            border-bottom: 1px solid #eef2f6;
+            background: #fafbfc;
+            height: 44px;
+            display: flex;
+            align-items: center;
+        }
+        .gantt-bridge-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 20px;
+            border-bottom: 1px solid #eef2f6;
+            cursor: pointer;
+            transition: all 0.15s;
+            height: 52px;
+        }
+        .gantt-bridge-row:hover { background: #eef4f2; }
+        .bridge-id {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: #8a9ba8;
+            min-width: 36px;
+        }
+        .bridge-info { flex: 1; min-width: 0; }
+        .bridge-name {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #2c4a48;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .bridge-meta { font-size: 0.6rem; color: #8a9ba8; margin-top: 1px; }
+        .bridge-status { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .bridge-status.good { background: #5b8c8a; }
+        .bridge-status.fair { background: #e8a87c; }
+        .bridge-status.poor { background: #c47070; }
+
+        .gantt-timeline {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+        }
+        .gantt-timeline-header {
+            display: flex;
+            height: 44px;
+            border-bottom: 1px solid #eef2f6;
+            background: #fafbfc;
+        }
+        .gantt-month {
+            flex: 1;
+            padding: 12px 2px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: #2c4a48;
+            border-right: 1px solid #eef2f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            min-width: 0;
+        }
+        .gantt-month:last-child { border-right: none; }
+        .gantt-grid { position: relative; }
+        .gantt-row {
+            height: 52px;
+            border-bottom: 1px solid #eef2f6;
+            position: relative;
+            display: flex;
+        }
+        .gantt-cell {
+            flex: 1;
+            border-right: 1px dashed #eef2f6;
+            min-width: 0;
+        }
+        .gantt-cell:last-child { border-right: none; }
+
+        .gantt-bar {
+            position: absolute;
+            height: 28px;
+            border-radius: 8px;
+            top: 12px;
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            border: 2px solid transparent;
+            box-sizing: border-box;
+        }
+        .gantt-bar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            z-index: 5;
+        }
+        .gantt-bar.gi {
+            background: linear-gradient(90deg, #eef4f2, #d4e8e4);
+            color: #5b8c8a;
+            border-color: #5b8c8a;
+        }
+        .gantt-bar.pi {
+            background: linear-gradient(90deg, #eef2f8, #c8dae8);
+            color: #2c5f8a;
+            border-color: #2c5f8a;
+        }
+        .gantt-bar.overdue {
+            background: linear-gradient(90deg, #fdf2f2, #f5e0e0);
+            color: #c47070;
+            border-color: #c47070;
+            animation: pulse-bar 2s infinite;
+        }
+        @keyframes pulse-bar {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.75; }
+        }
+
+        /* Upcoming Inspections Panel */
+        .panel {
+            background: white;
+            border-radius: 24px;
+            border: 1px solid #e9edf2;
+            overflow: hidden;
+            margin-top: 28px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+        }
+        .panel-header {
+            padding: 16px 22px;
+            border-bottom: 1px solid #eef2f6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .panel-header h3 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #2c4a48;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .panel-header .badge {
+            background: #eef4f2;
+            color: #5b8c8a;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+        .inspection-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 22px;
+            border-bottom: 1px solid #eef2f6;
+            transition: all 0.15s;
+            cursor: pointer;
+        }
+        .inspection-item:last-child { border-bottom: none; }
+        .inspection-item:hover { background: #fafbfc; }
+        .inspection-status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .inspection-status.assigned { background: #5b8c8a; }
+        .inspection-status.pending { background: #e8a87c; }
+        .inspection-status.overdue { background: #c47070; }
+        .inspection-date {
+            text-align: center;
+            min-width: 48px;
+        }
+        .inspection-date .day {
+            font-size: 1rem;
+            font-weight: 700;
+            line-height: 1;
+            color: #2c4a48;
+        }
+        .inspection-date .month {
+            font-size: 0.6rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #8a9ba8;
+        }
+        .inspection-info { flex: 1; min-width: 0; }
+        .inspection-info .name {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #2c4a48;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .inspection-info .meta { font-size: 0.65rem; color: #8a9ba8; }
+        .inspection-type {
+            font-size: 0.6rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+        .inspection-type.gi { background: #eef4f2; color: #5b8c8a; }
+        .inspection-type.pi { background: #eef2f8; color: #2c5f8a; }
+        .inspection-type.od { background: #fdf2f2; color: #c47070; }
+
+        /* Loading Spinner */
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 60px;
+            color: #8a9ba8;
+        }
+        .loading-spinner i { font-size: 2rem; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Glass Scrollbar */
+        .glass-scrollbar {
+            position: fixed;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 10px;
+            height: 55vh;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+            z-index: 1000;
+            overflow: hidden;
+            cursor: default;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .glass-scrollbar .thumb {
+            width: 100%;
+            background: linear-gradient(180deg, #ff6b6b, #c0392b);
+            border-radius: 20px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.3), 0 0 12px rgba(192, 57, 43, 0.35), 0 0 24px rgba(192, 57, 43, 0.15);
+            cursor: grab;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .glass-scrollbar .thumb:active { cursor: grabbing; }
+        body.night-mode .glass-scrollbar { background: rgba(35, 46, 52, 0.7) !important; border-color: rgba(58, 75, 83, 0.5) !important; }
+        body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #ff6b6b, #c0392b) !important; }
+        @media (max-width: 860px) { .glass-scrollbar { display: none !important; } }
+
+        /* Responsive */
+        @media (max-width: 1100px) { .page-wrapper { max-width: 90%; } .navbar { width: 70%; } }
+        @media (max-width: 860px) { .page-wrapper { max-width: 95%; } .stats-row { grid-template-columns: 1fr; } .year-grid { grid-template-columns: repeat(2, 1fr); } .navbar { width: 90%; } }
+        @media (max-width: 768px) { .navbar { padding: 0 16px; width: 95%; } .navbar .menu { display: none; } .calendar-toolbar { flex-direction: column; gap: 12px; } .year-grid { grid-template-columns: 1fr; } .gantt-sidebar { width: 160px; min-width: 160px; } }
+
+        /* Night Mode */
+        .night-mode { background-color: #1a2428 !important; color: #d4dfe3; }
+        .night-mode .navbar { background: rgba(35, 46, 52, 0.95) !important; border-color: #2f3e45; }
+        .night-mode .navbar .logo { background: linear-gradient(135deg, #8ab4b0 0%, #a0c8c4 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .night-mode .navbar .menu a { color: #9ab0b8; }
+        .night-mode .navbar .menu a.active { background: rgba(138, 180, 176, 0.15); color: #8ab4b0; }
+        .night-mode .night-mode-toggle { color: #9ab0b8; }
+        .night-mode .night-mode-toggle:hover { background: #2f3e45; color: #8ab4b0; }
+        .night-mode .back-pill { background: rgba(35, 46, 52, 0.8); border-color: rgba(138, 180, 176, 0.3); color: #8ab4b0; }
+        .night-mode .back-pill:hover { background: #5b8c8a; color: white; }
+        .night-mode .today-btn { background: rgba(138, 180, 176, 0.2); color: #8ab4b0; }
+        .night-mode .today-btn:hover { background: #5b8c8a; color: white; }
+        .night-mode .stat-card, .night-mode .calendar-section, .night-mode .panel,
+        .night-mode .month-card, .night-mode .gantt-section { background: #232e34; border-color: #2f3e45; }
+        .night-mode .stat-value, .night-mode .day-number, .night-mode .month-header,
+        .night-mode .inspection-info .name, .night-mode .panel-header h3,
+        .night-mode .gantt-toolbar-left h2 { color: #d4dfe3; }
+        .night-mode .gantt-timeline-header { background: #2a3a40; border-color: #2f3e45; }
+        .night-mode .gantt-month { color: #8ab4b0; background: #2a3a40; border-right-color: #3a4b53; }
+        .night-mode .gantt-sidebar, .night-mode .gantt-sidebar-header { background: #2a3a40; border-color: #2f3e45; color: #8aa4ac; }
+        .night-mode .day-cell { background: #2a3a40; }
+        .night-mode .day-cell:hover { background: #32454d; border-color: #3a6b62; }
+        .night-mode .calendar-toolbar { background: #232e34; border-color: #2f3e45; }
+        .night-mode .calendar-nav h2 { color: #d4dfe3; }
+        .night-mode .nav-arrow { background: #2f3e45; border-color: #3a4b53; color: #9ab0b8; }
+        .night-mode .nav-arrow:hover { background: #2f4a48; border-color: #3a6b62; color: #8ab4b0; }
+        .night-mode .view-toggle { background: #2a3a40; }
+        .night-mode .view-btn { color: #9ab0b8; }
+        .night-mode .view-btn.active { background: #2f4a48; color: #8ab4b0; }
+        .night-mode .event-chip.gi { background: #1e3a3e; color: #8ab4b0; }
+        .night-mode .event-chip.pi { background: #1a2a3a; color: #6a9ac0; }
+        .night-mode .calendar-legend { background: #2a3a40; border-color: #2f3e45; }
+        .night-mode .inspection-item:hover { background: #2a3a40; }
+        .night-mode .month-header { background: #2a3a40; border-color: #2f3e45; }
+        .night-mode .month-event { background: #2a3a40; color: #9ab0b8; }
+        .night-mode .month-count { border-color: #2f3e45; color: #8aa4ac; }
+        .night-mode .gantt-bridge-row { border-color: #2f3e45; }
+        .night-mode .gantt-bridge-row:hover { background: #32454d; }
+        .night-mode .bridge-name { color: #d4dfe3; }
+        .night-mode .filter-chip { background: #2a3a40; border-color: #3a4b53; color: #9ab0b8; }
+        .night-mode .filter-chip.active { background: #2f4a48; border-color: #3a6b62; color: #8ab4b0; }
+        .night-mode .gantt-bar.gi { background: linear-gradient(90deg, #1e3a3e, #2a4a4e); border-color: #3a6b62; color: #8ab4b0; }
+        .night-mode .gantt-bar.pi { background: linear-gradient(90deg, #1a2a3a, #2a3a4a); border-color: #3a6a8a; color: #7aa0c0; }
+    </style>
+    <base target="_self">
+</head>
+<body>
+
+    <div class="navbar">
+        <div class="left">
+            <div class="logo">spanSense</div>
+            <div class="menu">
+                <a href="../map/map.html"><i class="fas fa-map"></i>Map</a>
+                <a href="../dashboard/dashboard.html"><i class="fas fa-chart-pie"></i>Dashboard</a>
+                <a href="../database/database.html"><i class="fas fa-database"></i>Database</a>
+                <a href="#" class="active"><i class="fas fa-calendar-alt"></i>Planning</a>
+            </div>
+        </div>
+        <div class="right">
+            <div class="night-mode-toggle" id="nightModeToggle"><i class="fas fa-moon"></i></div>
+            <div class="account-links">
+                <a href="../accounts/accounts.html">Account</a>
+                <a href="../contacts/contacts.html" class="active">Contact Us</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-wrapper">
+        <!-- Back Pill only - Today button moved to calendar toolbar -->
+        <div class="back-pill" id="backBtn" onclick="history.back()"><i class="fas fa-arrow-left"></i> Back</div>
+        
+        <div class="page-header">
+            <h1>Inspection Planning</h1>
+            <p>Schedule and coordinate bridge inspections across your network (2-year GI cycle, 6-year PI cycle)</p>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-header"><span class="stat-label">Planned (<span id="statsYear">2026</span>)</span><div class="stat-icon teal"><i class="fas fa-calendar-alt"></i></div></div>
+                <div class="stat-value" id="plannedCount">--</div>
+                <div class="stat-sub" id="plannedSub">Loading...</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header"><span class="stat-label">Overdue</span><div class="stat-icon red"><i class="fas fa-exclamation-triangle"></i></div></div>
+                <div class="stat-value" id="overdueCount" style="color: #c47070;">--</div>
+                <div class="stat-sub" id="overdueSub">Loading...</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-header"><span class="stat-label">This Quarter</span><div class="stat-icon amber"><i class="fas fa-clock"></i></div></div>
+                <div class="stat-value" id="quarterCount">--</div>
+                <div class="stat-sub" id="quarterSub">Loading...</div>
+            </div>
+        </div>
+
+        <div class="calendar-toolbar">
+            <div class="calendar-nav">
+                <button class="nav-arrow" id="prevYearBtn"><i class="fas fa-chevron-left"></i></button>
+                <h2 id="view-title">2026</h2>
+                <button class="nav-arrow" id="nextYearBtn"><i class="fas fa-chevron-right"></i></button>
+                <button class="today-btn today-calendar-btn" id="todayBtn"><i class="fas fa-calendar-day"></i> Today</button>
+            </div>
+            <div class="view-toggle">
+                <button class="view-btn" data-view="month">Month</button>
+                <button class="view-btn" data-view="year">Year</button>
+                <button class="view-btn" data-view="gantt">Gantt</button>
+            </div>
+        </div>
+
+        <div id="loadingSpinner" class="loading-spinner" style="display: flex;"><i class="fas fa-spinner fa-spin"></i>&nbsp;&nbsp;Loading inspection data...</div>
+
+        <!-- MONTH VIEW -->
+        <div id="view-month" class="view-section calendar-section" style="display: none;">
+            <div class="calendar-grid">
+                <div class="weekdays">
+                    <div class="weekday">Mon</div><div class="weekday">Tue</div><div class="weekday">Wed</div>
+                    <div class="weekday">Thu</div><div class="weekday">Fri</div><div class="weekday">Sat</div><div class="weekday">Sun</div>
+                </div>
+                <div class="days-grid" id="monthDaysGrid"></div>
+            </div>
+            <div class="calendar-legend">
+                <div class="legend-item"><div class="legend-dot" style="background: #eef4f2; border: 2px solid #5b8c8a;"></div>General Inspection (GI) — Every 2 years</div>
+                <div class="legend-item"><div class="legend-dot" style="background: #eef2f8; border: 2px solid #2c5f8a;"></div>Principal Inspection (PI) — Every 6 years</div>
+                <div class="legend-item"><div class="legend-dot" style="background: #fdf2f2; border: 2px solid #c47070;"></div>Overdue</div>
+                <div class="legend-item"><div class="legend-dot" style="background: #eef4f2; border: 2px dashed #5b8c8a;"></div>Today</div>
+            </div>
+        </div>
+
+        <!-- YEAR VIEW -->
+        <div id="view-year" class="view-section calendar-section" style="display: none;"><div class="year-grid" id="yearGrid"></div></div>
+
+        <!-- GANTT VIEW -->
+        <div id="view-gantt" class="view-section gantt-section" style="display: none;">
+            <div class="gantt-toolbar">
+                <div class="gantt-toolbar-left">
+                    <h2><span id="ganttYear">2026</span> Inspection Programme</h2>
+                    <div class="gantt-filters" id="ganttFilters">
+                        <button class="filter-chip active" data-filter="all">All</button>
+                        <button class="filter-chip" data-filter="GI">GI</button>
+                        <button class="filter-chip" data-filter="PI">PI</button>
+                        <button class="filter-chip" data-filter="overdue" style="color: #c47070;">Overdue</button>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-secondary" id="exportGanttBtn" style="padding: 8px 16px; border-radius: 30px; border: 1px solid #e2e8f0; background: white; font-size: 0.7rem; font-weight: 600; cursor: pointer; font-family: inherit;"><i class="fas fa-download"></i> Export PDF</button>
+                </div>
+            </div>
+            <div class="gantt-body" id="ganttBody"></div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-header"><h3><i class="fas fa-calendar-week"></i> Upcoming Inspections</h3><span class="badge" id="upcomingBadge">Next 90 days</span></div>
+            <div class="panel-body" id="upcomingInspections"></div>
+        </div>
+    </div>
+
+    <div class="glass-scrollbar" id="glassScrollbar"><div class="thumb" id="glassThumb"></div></div>
+
+    <script>
+        // Glass Scrollbar
+        (function(){
+            const sb=document.getElementById('glassScrollbar'), th=document.getElementById('glassThumb');
+            if(!sb||!th)return;
+            let drag=false, sy=0, sty=0;
+            function m(){const st=window.scrollY||0,th=document.documentElement.scrollHeight,vh=window.innerHeight,dh=Math.max(1,th-vh),tr=sb.offsetHeight||1,r=vh/Math.max(1,th),h=Math.max(40,r*tr),mx=Math.max(0,tr-h);return{st,p:st/dh,tr,h,mx,dh}}
+            function u(){const x=m();th.style.setProperty('height',x.h+'px','important');th.style.setProperty('top',(x.p*x.mx)+'px','important')}
+            window.addEventListener('scroll',u,{passive:true});window.addEventListener('resize',u);
+            th.addEventListener('mousedown',e=>{drag=true;sy=e.clientY;sty=m().p*m().mx;e.preventDefault()});
+            sb.addEventListener('mousedown',e=>{if(e.target===th||th.contains(e.target))return;const r=sb.getBoundingClientRect(),y=e.clientY-r.top,x=m();window.scrollTo({top:Math.max(0,Math.min(1,y/x.tr))*x.dh,behavior:'smooth'})});
+            window.addEventListener('mousemove',e=>{if(!drag)return;const x=m(),ny=sty+(e.clientY-sy),c=Math.max(0,Math.min(x.mx,ny));window.scrollTo(0,(c/Math.max(1,x.mx))*x.dh)});
+            window.addEventListener('mouseup',()=>drag=false);
+            new MutationObserver(()=>{clearTimeout(window._t);window._t=setTimeout(u,50)}).observe(document.body,{childList:true,subtree:true});
+            u();[50,100,250,500,1000,2000].forEach(d=>setTimeout(u,d));
+            window.updateGlassScrollbar=u;
+        })();
+
+        let bridgesData = [];
+        let inspectionsData = {};
+        let plannedInspectionsForCalendar = [];
+        let currentDisplayYear = new Date().getFullYear();
+        let currentGanttFilter = 'all';
+
+        function safeDate(dateStr) {
+            if (!dateStr) return null;
+            const d = new Date(dateStr);
+            return isNaN(d.getTime()) ? null : d;
+        }
+
+        async function fetchAllData() {
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            loadingSpinner.style.display = 'flex';
+            try {
+                const bridgesResponse = await fetch('http://localhost:3000/api/bridges');
+                if (!bridgesResponse.ok) throw new Error('Failed to fetch bridges');
+                const bridgesResult = await bridgesResponse.json();
+                bridgesData = bridgesResult.bridges || bridgesResult;
+
+                const inspectionPromises = bridgesData.map(async (bridge) => {
+                    try {
+                        const inspResponse = await fetch(`http://localhost:3000/api/inspection-dates/${bridge.id}`);
+                        if (inspResponse.ok) {
+                            const inspections = await inspResponse.json();
+                            if (inspections && inspections.length > 0) {
+                                inspectionsData[bridge.id] = { id: bridge.id, name: bridge.name, latest: inspections[0], history: inspections, hasInspections: true };
+                            } else {
+                                inspectionsData[bridge.id] = { id: bridge.id, name: bridge.name, latest: null, history: [], hasInspections: false };
+                            }
+                        } else {
+                            inspectionsData[bridge.id] = { id: bridge.id, name: bridge.name, latest: null, history: [], hasInspections: false };
+                        }
+                    } catch (err) {
+                        inspectionsData[bridge.id] = { id: bridge.id, name: bridge.name, latest: null, history: [], hasInspections: false };
+                    }
+                });
+                await Promise.all(inspectionPromises);
+                updateStats();
+                generateUpcomingInspections();
+                updateCalendarViews();
+                loadingSpinner.style.display = 'none';
+                document.getElementById('view-year').style.display = 'block';
+                document.getElementById('view-year').classList.add('active');
+                document.getElementById('view-title').textContent = currentDisplayYear;
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                loadingSpinner.innerHTML = '<i class="fas fa-exclamation-triangle"></i>&nbsp; Error loading data. Please refresh.';
+            }
+        }
+
+        function updateStats() {
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            const currentQuarter = Math.floor(today.getMonth() / 3);
+            let plannedCurrentYear = 0, overdue = 0, thisQuarter = 0;
+
+            for (const bridge of bridgesData) {
+                const insp = inspectionsData[bridge.id];
+                if (!insp || !insp.hasInspections || !insp.latest) { overdue++; continue; }
+                const lastDate = safeDate(insp.latest.date);
+                if (!lastDate) { overdue++; continue; }
+                const yearsSince = (today - lastDate) / (1000 * 60 * 60 * 24 * 365);
+                if (yearsSince > 2.5) overdue++;
+                let nextDate = new Date(lastDate);
+                nextDate.setFullYear(nextDate.getFullYear() + 2);
+                if (nextDate.getFullYear() === currentYear) {
+                    plannedCurrentYear++;
+                    if (Math.floor(nextDate.getMonth() / 3) === currentQuarter) thisQuarter++;
+                }
+            }
+
+            document.getElementById('statsYear').textContent = currentYear;
+            document.getElementById('plannedCount').textContent = plannedCurrentYear;
+            document.getElementById('plannedSub').innerHTML = `${plannedCurrentYear} inspections scheduled`;
+            document.getElementById('overdueCount').textContent = overdue;
+            document.getElementById('overdueSub').innerHTML = overdue === 1 ? '1 bridge requires attention' : `${overdue} bridges require attention`;
+            document.getElementById('quarterCount').textContent = thisQuarter;
+            document.getElementById('quarterSub').innerHTML = `Due in Q${currentQuarter + 1} ${currentYear}`;
+        }
+
+        function generateUpcomingInspections() {
+            const today = new Date(), ninetyDaysLater = new Date();
+            ninetyDaysLater.setDate(today.getDate() + 90);
+            const upcoming = [];
+
+            for (const bridge of bridgesData) {
+                const insp = inspectionsData[bridge.id];
+                if (!insp || !insp.hasInspections || !insp.latest) continue;
+                const lastDate = safeDate(insp.latest.date);
+                if (!lastDate) continue;
+                let nextDate = new Date(lastDate);
+                nextDate.setFullYear(nextDate.getFullYear() + 2);
+                const yearsSince = (today - lastDate) / (1000 * 60 * 60 * 24 * 365);
+                const position = yearsSince > 2.5 ? 'Overdue' : (yearsSince > 2 ? 'Due' : 'Upcoming');
+                if (nextDate >= today && nextDate <= ninetyDaysLater) {
+                    upcoming.push({ bridgeName: bridge.name, type: 'GI', dueDate: nextDate, position });
+                }
+                let nextPI = new Date(lastDate);
+                nextPI.setFullYear(nextPI.getFullYear() + 6);
+                while (nextPI < today) nextPI.setFullYear(nextPI.getFullYear() + 6);
+                if (nextPI >= today && nextPI <= ninetyDaysLater) {
+                    upcoming.push({ bridgeName: bridge.name, type: 'PI', dueDate: nextPI, position: 'Upcoming' });
+                }
+            }
+
+            upcoming.sort((a, b) => a.dueDate - b.dueDate);
+            let html = '';
+            upcoming.slice(0, 8).forEach(insp => {
+                const typeClass = insp.type === 'PI' ? 'pi' : 'gi';
+                html += `<div class="inspection-item">
+                    <div class="inspection-status ${insp.position === 'Overdue' ? 'overdue' : 'assigned'}"></div>
+                    <div class="inspection-date"><div class="day">${insp.dueDate.getDate()}</div><div class="month">${insp.dueDate.toLocaleString('default', { month: 'short' })}</div></div>
+                    <div class="inspection-info"><div class="name">${insp.bridgeName}</div><div class="meta">${insp.type} — Due ${insp.dueDate.toLocaleDateString()}</div></div>
+                    <span class="inspection-type ${typeClass}">${insp.type}</span>
+                </div>`;
+            });
+            if (upcoming.length === 0) html = '<div style="padding: 40px; text-align: center; color: #8a9ba8;"><i class="fas fa-calendar-check"></i> No upcoming inspections in the next 90 days</div>';
+            document.getElementById('upcomingInspections').innerHTML = html;
+            document.getElementById('upcomingBadge').textContent = `Next ${upcoming.length} inspections`;
+        }
+
+        function calculatePlannedInspectionsForYear(year) {
+            const yearPlannedInspections = [], today = new Date();
+
+            for (const bridge of bridgesData) {
+                const insp = inspectionsData[bridge.id];
+
+                if (!insp || !insp.hasInspections || !insp.latest) {
+                    if (year === today.getFullYear()) {
+                        yearPlannedInspections.push({ bridgeId: bridge.id, bridgeName: bridge.name, type: 'GI', dueDate: new Date(), position: 'Overdue' });
+                    }
+                    continue;
+                }
+                const lastDate = safeDate(insp.latest.date);
+                if (!lastDate) continue;
+
+                let nextGI = new Date(lastDate);
+                nextGI.setFullYear(nextGI.getFullYear() + 2);
+                while (nextGI.getFullYear() < year) nextGI.setFullYear(nextGI.getFullYear() + 2);
+                if (nextGI.getFullYear() === year) {
+                    const yearsSince = (today - lastDate) / (1000 * 60 * 60 * 24 * 365);
+                    yearPlannedInspections.push({ bridgeId: bridge.id, bridgeName: bridge.name, type: 'GI', dueDate: nextGI, position: yearsSince > 2.5 ? 'Overdue' : (yearsSince > 2 ? 'Due' : 'Upcoming') });
+                }
+
+                let nextPI = new Date(lastDate);
+                nextPI.setFullYear(nextPI.getFullYear() + 6);
+                while (nextPI.getFullYear() < year) nextPI.setFullYear(nextPI.getFullYear() + 6);
+                if (nextPI.getFullYear() === year) {
+                    yearPlannedInspections.push({ bridgeId: bridge.id, bridgeName: bridge.name, type: 'PI', dueDate: nextPI, position: 'Upcoming' });
+                }
+            }
+            return yearPlannedInspections;
+        }
+
+        function updateCalendarViews() {
+            plannedInspectionsForCalendar = calculatePlannedInspectionsForYear(currentDisplayYear);
+            generateYearView(currentDisplayYear);
+            if (document.getElementById('view-month').style.display !== 'none') generateMonthView(currentDisplayYear, new Date().getMonth());
+            if (document.getElementById('view-gantt').style.display !== 'none') generateGanttView();
+            document.getElementById('view-title').textContent = currentDisplayYear;
+            document.getElementById('ganttYear').textContent = currentDisplayYear;
+        }
+
+        function generateMonthView(year, month) {
+            const firstDay = new Date(year, month, 1), startDay = firstDay.getDay() || 7;
+            const daysInMonth = new Date(year, month + 1, 0).getDate(), today = new Date();
+            let gridHtml = '', emptyCells = startDay - 1;
+            for (let i = 0; i < emptyCells; i++) {
+                gridHtml += `<div class="day-cell other-month"><div class="day-number">${new Date(year, month, -emptyCells + i + 1).getDate()}</div></div>`;
+            }
+            for (let d = 1; d <= daysInMonth; d++) {
+                const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === d;
+                const dueInspections = plannedInspectionsForCalendar.filter(insp => insp.dueDate && insp.dueDate.getFullYear() === year && insp.dueDate.getMonth() === month && insp.dueDate.getDate() === d);
+                let eventsHtml = '';
+                dueInspections.slice(0, 2).forEach(insp => {
+                    const chipClass = insp.position === 'Overdue' ? 'overdue' : (insp.type === 'PI' ? 'pi' : 'gi');
+                    eventsHtml += `<div class="event-chip ${chipClass}">${insp.bridgeName.substring(0, 12)} — ${insp.type}</div>`;
+                });
+                if (dueInspections.length > 2) eventsHtml += `<div class="event-more">+${dueInspections.length - 2} more</div>`;
+                gridHtml += `<div class="day-cell ${isToday ? 'today' : ''}"><div class="day-number">${d}</div><div class="day-events">${eventsHtml}</div></div>`;
+            }
+            document.getElementById('monthDaysGrid').innerHTML = gridHtml;
+        }
+
+        function generateYearView(year) {
+            const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            let yearHtml = '';
+            for (let m = 0; m < 12; m++) {
+                const dueThisMonth = plannedInspectionsForCalendar.filter(insp => insp.dueDate && insp.dueDate.getFullYear() === year && insp.dueDate.getMonth() === m);
+                let eventsHtml = '';
+                dueThisMonth.slice(0, 3).forEach(insp => {
+                    const cls = insp.position === 'Overdue' ? 'overdue' : (insp.type === 'PI' ? 'pi' : 'gi');
+                    eventsHtml += `<div class="month-event ${cls}">${insp.bridgeName.substring(0, 20)} — ${insp.type}</div>`;
+                });
+                yearHtml += `<div class="month-card" onclick="switchToMonth(${m})">
+                    <div class="month-header">${months[m]} ${year}</div>
+                    <div class="month-events">${eventsHtml || '<div style="color:#8a9ba8; font-size:0.7rem; text-align:center;">No inspections due</div>'}</div>
+                    <div class="month-count">${dueThisMonth.length} inspection${dueThisMonth.length !== 1 ? 's' : ''} due</div>
+                </div>`;
+            }
+            document.getElementById('yearGrid').innerHTML = yearHtml;
+        }
+
+        function generateGanttView() {
+            const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            let filteredInspections = plannedInspectionsForCalendar;
+            if (currentGanttFilter === 'overdue') {
+                filteredInspections = plannedInspectionsForCalendar.filter(i => i.position === 'Overdue');
+            } else if (currentGanttFilter !== 'all') {
+                filteredInspections = plannedInspectionsForCalendar.filter(i => i.type === currentGanttFilter);
+            }
+
+            const bridgeInspections = {};
+            for (const insp of filteredInspections) {
+                if (!bridgeInspections[insp.bridgeId]) {
+                    bridgeInspections[insp.bridgeId] = { name: insp.bridgeName, id: insp.bridgeId, inspections: [] };
+                }
+                bridgeInspections[insp.bridgeId].inspections.push(insp);
+            }
+            const bridgesList = Object.values(bridgeInspections);
+
+            let sidebarHtml = '<div class="gantt-sidebar-header">Bridge</div>';
+            let timelineHeader = '<div class="gantt-timeline-header">';
+            for (let m = 0; m < 12; m++) timelineHeader += `<div class="gantt-month">${months[m]}</div>`;
+            timelineHeader += '</div>';
+
+            let gridRows = '';
+            if (bridgesList.length === 0) {
+                gridRows = '<div style="padding: 60px; text-align: center; color: #8a9ba8;">No inspections match the selected filter</div>';
+            } else {
+                for (const bridge of bridgesList) {
+                    const hasOverdue = bridge.inspections.some(i => i.position === 'Overdue');
+                    sidebarHtml += `<div class="gantt-bridge-row">
+                        <span class="bridge-id">${bridge.id}</span>
+                        <div class="bridge-info">
+                            <div class="bridge-name">${bridge.name.substring(0, 28)}</div>
+                            <div class="bridge-meta">${bridge.inspections.length} inspection${bridge.inspections.length !== 1 ? 's' : ''} due</div>
+                        </div>
+                        <span class="bridge-status ${hasOverdue ? 'poor' : 'good'}"></span>
+                    </div>`;
+
+                    let rowHtml = '<div class="gantt-row">';
+                    for (let m = 0; m < 12; m++) rowHtml += `<div class="gantt-cell"></div>`;
+                    for (const insp of bridge.inspections) {
+                        if (insp.dueDate && insp.dueDate.getFullYear() === currentDisplayYear) {
+                            const month = insp.dueDate.getMonth();
+                            const barClass = insp.position === 'Overdue' ? 'overdue' : (insp.type === 'PI' ? 'pi' : 'gi');
+                            const leftPct = (month / 12 * 100).toFixed(2);
+                            const widthPct = (1 / 12 * 100 - 1).toFixed(2);
+                            rowHtml += `<div class="gantt-bar ${barClass}" style="left:${leftPct}%; width:${widthPct}%;">
+                                <span><i class="fas ${insp.type === 'PI' ? 'fa-clipboard-list' : 'fa-chart-line'}" style="font-size: 9px; margin-right: 4px;"></i>${insp.type}</span>
+                            </div>`;
+                        }
+                    }
+                    rowHtml += '</div>';
+                    gridRows += rowHtml;
+                }
+            }
+
+            document.getElementById('ganttBody').innerHTML = `
+                <div class="gantt-sidebar">${sidebarHtml}</div>
+                <div class="gantt-timeline">${timelineHeader}<div class="gantt-grid">${gridRows}</div></div>`;
+        }
+
+        // Improved PDF Export with header and better styling
+        async function exportGanttToPDF() {
+            const ganttElement = document.getElementById('ganttBody');
+            if (!ganttElement || ganttElement.innerHTML.trim() === '') { alert('No data to export'); return; }
+            
+            const loadingToast = document.createElement('div');
+            loadingToast.textContent = 'Generating PDF...';
+            loadingToast.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#5b8c8a;color:white;padding:10px 20px;border-radius:8px;z-index:10000;';
+            document.body.appendChild(loadingToast);
+            
+            try {
+                const cloneContainer = document.createElement('div');
+                cloneContainer.style.cssText = 'background: white; padding: 20px; font-family: "Inter", sans-serif;';
+                cloneContainer.innerHTML = `
+                    <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #5b8c8a; padding-bottom: 10px;">
+                        <h1 style="color: #2c5a57; margin: 0;">SpanSense Inspection Programme</h1>
+                        <p style="color: #6a7c8e; margin: 5px 0 0;">Year: ${currentDisplayYear} | Generated: ${new Date().toLocaleDateString()}</p>
+                    </div>
+                `;
+                
+                const ganttClone = ganttElement.cloneNode(true);
+                ganttClone.style.cssText = 'display: flex; width: 100%;';
+                cloneContainer.appendChild(ganttClone);
+                
+                const style = document.createElement('style');
+                style.textContent = `
+                    .gantt-sidebar { width: 240px; background: #f8fafc; border-right: 1px solid #e9edf2; }
+                    .gantt-sidebar-header { background: #eef2f6; padding: 12px 20px; font-weight: 700; color: #5b8c8a; }
+                    .gantt-bridge-row { padding: 10px 20px; border-bottom: 1px solid #e9edf2; display: flex; align-items: center; gap: 12px; }
+                    .gantt-timeline-header { display: flex; background: #eef2f6; border-bottom: 1px solid #e9edf2; }
+                    .gantt-month { flex: 1; padding: 12px 2px; text-align: center; font-weight: 700; font-size: 11px; border-right: 1px solid #e9edf2; }
+                    .gantt-row { display: flex; height: 52px; border-bottom: 1px solid #e9edf2; position: relative; }
+                    .gantt-cell { flex: 1; border-right: 1px dashed #e9edf2; }
+                    .gantt-bar { position: absolute; height: 28px; border-radius: 8px; top: 12px; display: flex; align-items: center; padding: 0 8px; font-size: 10px; font-weight: 700; }
+                    .gantt-bar.gi { background: #eef4f2; color: #5b8c8a; border: 1px solid #5b8c8a; }
+                    .gantt-bar.pi { background: #eef2f8; color: #2c5f8a; border: 1px solid #2c5f8a; }
+                    .gantt-bar.overdue { background: #fdf2f2; color: #c47070; border: 1px solid #c47070; }
+                    .bridge-id { font-size: 11px; font-weight: 700; color: #8a9ba8; min-width: 36px; }
+                    .bridge-name { font-size: 12px; font-weight: 600; }
+                    .bridge-meta { font-size: 10px; color: #8a9ba8; }
+                    .bridge-status { width: 8px; height: 8px; border-radius: 50%; }
+                    .bridge-status.good { background: #5b8c8a; }
+                    .bridge-status.poor { background: #c47070; }
+                `;
+                cloneContainer.appendChild(style);
+                
+                document.body.appendChild(cloneContainer);
+                cloneContainer.style.position = 'absolute';
+                cloneContainer.style.left = '-9999px';
+                cloneContainer.style.top = '0';
+                
+                const canvas = await html2canvas(cloneContainer, { scale: 2, backgroundColor: '#ffffff' });
+                const imgData = canvas.toDataURL('image/png');
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('landscape', 'mm', 'a4');
+                const imgWidth = 280;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+                pdf.save(`Inspection_Programme_${currentDisplayYear}.pdf`);
+                
+                document.body.removeChild(cloneContainer);
+            } catch (error) {
+                console.error('PDF export failed:', error);
+                alert('Failed to generate PDF');
+            } finally {
+                loadingToast.remove();
+            }
+        }
+
+        function goToToday() {
+            const today = new Date();
+            currentDisplayYear = today.getFullYear();
+            const currentMonth = today.getMonth();
+            updateCalendarViews();
+            
+            if (currentView === 'month') {
+                generateMonthView(currentDisplayYear, currentMonth);
+                document.getElementById('view-title').textContent = `${today.toLocaleString('default', { month: 'long' })} ${currentDisplayYear}`;
+            } else {
+                document.getElementById('view-title').textContent = currentDisplayYear;
+            }
+            document.getElementById('ganttYear').textContent = currentDisplayYear;
+            
+            const toast = document.createElement('div');
+            toast.textContent = `Showing ${currentDisplayYear}`;
+            toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#5b8c8a;color:white;padding:8px 16px;border-radius:8px;z-index:10000;font-size:12px;';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+
+        function setupGanttFilters() {
+            document.querySelectorAll('#ganttFilters .filter-chip').forEach(filter => {
+                filter.removeEventListener('click', filter._listener);
+                filter._listener = function() {
+                    document.querySelectorAll('#ganttFilters .filter-chip').forEach(f => f.classList.remove('active'));
+                    this.classList.add('active');
+                    currentGanttFilter = this.getAttribute('data-filter');
+                    generateGanttView();
+                };
+                filter.addEventListener('click', filter._listener);
+            });
+        }
+
+        function changeYear(delta) { currentDisplayYear += delta; updateCalendarViews(); }
+
+        let currentView = 'year', currentMonth = new Date().getMonth();
+
+        function switchView(view) {
+            currentView = view;
+            document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.view-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(`view-${view}`).style.display = 'block';
+            document.querySelector(`.view-btn[data-view="${view}"]`).classList.add('active');
+            if (view === 'month') generateMonthView(currentDisplayYear, currentMonth);
+            else if (view === 'gantt') { generateGanttView(); setupGanttFilters(); }
+        }
+
+        function switchToMonth(month) {
+            currentMonth = month;
+            generateMonthView(currentDisplayYear, currentMonth);
+            document.querySelectorAll('.view-section').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.view-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-month').style.display = 'block';
+            document.querySelector('.view-btn[data-view="month"]').classList.add('active');
+            currentView = 'month';
+        }
+
+        document.getElementById('prevYearBtn').addEventListener('click', () => changeYear(-1));
+        document.getElementById('nextYearBtn').addEventListener('click', () => changeYear(1));
+        document.getElementById('todayBtn').addEventListener('click', goToToday);
+        document.getElementById('exportGanttBtn').addEventListener('click', exportGanttToPDF);
+        document.querySelectorAll('.view-btn').forEach(btn => btn.addEventListener('click', () => switchView(btn.getAttribute('data-view'))));
+
+        (function() {
+            const toggleBtn = document.getElementById('nightModeToggle');
+            if (!toggleBtn) return;
+            toggleBtn.onclick = function(e) {
+                e.preventDefault();
+                document.body.classList.toggle('night-mode');
+                this.innerHTML = document.body.classList.contains('night-mode') ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+                localStorage.setItem('nightMode', document.body.classList.contains('night-mode') ? 'on' : 'off');
+            };
+            if (localStorage.getItem('nightMode') === 'on') { document.body.classList.add('night-mode'); toggleBtn.innerHTML = '<i class="fas fa-sun"></i>'; }
+        })();
+
+        fetchAllData();
+    </script>
+</body>
+</html>

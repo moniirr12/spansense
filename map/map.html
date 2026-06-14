@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homepage</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js for Graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Fuse.js for Fuzzy Search -->
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
+    
+    <!-- External CSS -->
+    <link rel="stylesheet" type="text/css" href="map.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <div class="navbar">
+    <div class="left">
+        <div class="logo">spanSense</div>
+    </div>
+    <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Search structures...">
+        <div id="searchResults" class="search-results"></div>
+    </div>
+    <div class="right">
+        <div class="night-mode-toggle" id="nightModeToggle">
+            <i class="fas fa-moon"></i>
+        </div>
+        <div class="account-links">
+            <a href="../accounts/accounts.html">Account</a>
+            <a href="../contacts/contacts.html" class="active">Contact Us</a>
+        </div>
+    </div>
+</div>
+
+    <!-- Sidebar - Enhanced Floating Design -->
+    <div id="sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <h3>Navigation</h3>
+        </div>
+        <ul>
+            <li>
+                <a href="#" id="viewLink">
+                    <i class="fas fa-eye"></i>
+                    <span>View</span>
+                    <i class="fas fa-chevron-down menu-chevron"></i>
+                </a>
+                <ul id="viewOptions" class="submenu">
+                    <div>
+                        <li>
+                            <a href="#" id="typeLink">
+                                <i class="fas fa-layer-group"></i>
+                                <span>Type</span>
+                                <i class="fas fa-chevron-down menu-chevron"></i>
+                            </a>
+                            <ul id="typeOptions" class="submenu">
+                                <div>
+                                    <li>
+                                        <label>
+                                            <input type="checkbox" name="structureType" value="bridge" checked> Bridges
+                                        </label>
+                                    </li>
+                                    <li>
+                                        <label>
+                                            <input type="checkbox" name="structureType" value="footbridge" checked> Footbridges
+                                        </label>
+                                    </li>
+                                    <li>
+                                        <label>
+                                            <input type="checkbox" name="structureType" value="culvert" checked> Culverts
+                                        </label>
+                                    </li>
+                                    <li>
+                                        <label>
+                                            <input type="checkbox" name="structureType" value="retaining_wall" checked> Retaining Wall
+                                        </label>
+                                    </li>
+                                </div>
+                            </ul>
+                        </li>
+                    </div>
+                </ul>
+            </li>
+            <li>
+                <a href="#" id="dashboardLink">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" id="databaseLink">
+                    <i class="fas fa-database"></i>
+                    <span>Database</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" id="planningLink">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Planning</span>
+                </a>
+            </li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="version">spanSense v1.1</div>
+        </div>
+    </div>
+
+    <!-- Map Container -->
+    <div id="map"></div>
+
+    <!-- Dashboard -->
+    <div id="dashboard">
+        <button class="back-button" id="backButton"><i class="fas fa-arrow-left"></i> Back to Map</button>
+        <h2>Bridge Conditions Dashboard</h2>
+        <div class="charts">
+            <div class="chart-container">
+                <canvas id="bciChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <canvas id="conditionPieChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Dialog Box - Cleaner version -->
+    <div id="bridgeModal" class="modal bridge-modal">
+        <div class="modal-content bridge-modal-content">
+            <!-- New header matching documents modal -->
+            <div class="documents-modal-header">
+                <div class="header-content">
+                    <div class="bridge-avatar" id="modalBridgeAvatar">GM</div>
+                    <div class="bridge-info">
+                        <h2>Structure ID: <span id="assetId"></span></h2>
+                        <div class="bridge-name" id="modalTitle">Gateshead Millennium Bridge</div>
+                    </div>
+                </div>
+                <span class="close">&times;</span>
+            </div>
+
+            <!-- Bridge Photo -->
+            <div class="photo-wrapper">
+                <img id="bridgePhoto" class="bridge-img" src="" alt="Bridge Photo">
+            </div>
+
+            <!-- Bridge Stats Cards -->
+            <div class="bridge-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">BCI average Score</span>
+                        <strong id="bciScore" class="stat-value">45 - Poor</strong>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-label">Last Inspected</span>
+                        <strong id="lastInspected" class="stat-value">Feb 2025</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="bridge-actions">
+                <button id="addInspection" class="action-btn primary-action">
+                    <i class="fas fa-plus-circle"></i> New Inspection
+                </button>
+                <button id="seeDocuments" class="action-btn secondary-action">
+                    <i class="fas fa-folder-open"></i> Previous Inspections
+                </button>
+                <button id="docs" class="action-btn secondary-action">
+                    <i class="fas fa-file-alt"></i> Documents
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Documents Modal -->
+    <!-- Previous Inspections Modal (SpanSense card layout) -->
+<div id="ssPrevModal" class="ss-modal-overlay" style="display:none;">
+  <div class="ss-modal">
+    <div class="ss-modal-hdr">
+      <div class="ss-hdr-main">
+        <div class="ss-avatar" id="ssAvatar">--</div>
+        <div class="ss-hdr-text">
+          <div class="ss-hdr-label">Previous Inspections</div>
+          <div class="ss-hdr-title" id="ssBridgeName">--</div>
+          <div class="ss-hdr-sub">Structure ID: <span id="ssStructureId">--</span></div>
+        </div>
+      </div>
+      <button class="ss-close-btn" id="ssCloseBtn"><i class="fas fa-times"></i></button>
+    </div>
+
+    <div class="ss-stats-bar">
+      <div class="ss-stat-pill">
+        <div class="ss-stat-icon"><i class="fas fa-clipboard-list"></i></div>
+        <div class="ss-stat-content">
+          <div class="ss-stat-lbl">Total</div>
+          <div class="ss-stat-val" id="ssStatTotal">--</div>
+        </div>
+      </div>
+      <div class="ss-stat-pill">
+        <div class="ss-stat-icon"><i class="fas fa-calendar"></i></div>
+        <div class="ss-stat-content">
+          <div class="ss-stat-lbl">Last Inspection</div>
+          <div class="ss-stat-val" id="ssStatLastDate">--</div>
+        </div>
+      </div>
+      <div class="ss-stat-pill">
+        <div class="ss-stat-icon"><i class="fas fa-chart-line"></i></div>
+        <div class="ss-stat-content">
+          <div class="ss-stat-lbl">Current BCI average</div>
+          <div class="ss-stat-val" id="ssStatBci">--</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ss-filters">
+      <button class="ss-chip active" data-filter="all"><i class="fas fa-check"></i> All</button>
+      <button class="ss-chip" data-filter="PI"><i class="fas fa-building"></i> Principal (PI)</button>
+      <button class="ss-chip" data-filter="GI"><i class="fas fa-chart-line"></i> General (GI)</button>
+      <button class="ss-chip" data-filter="SI"><i class="fas fa-eye"></i> Superficial (SI)</button>
+      <div class="ss-filter-spacer"></div>
+      <div class="ss-search-wrap">
+        <i class="fas fa-search"></i>
+        <input type="text" id="ssSearchInput" placeholder="Search inspections...">
+      </div>
+    </div>
+
+    <div class="ss-card-list" id="ssCardList"></div>
+
+    <div class="ss-modal-ftr">
+      <div class="ss-ftr-info"><i class="fas fa-info-circle"></i><span>Click any inspection to view full details</span></div>
+      <div class="ss-ftr-acts">
+        <button class="ss-btn ss-btn-sec" id="ssCloseFooter">Close</button>
+        <button class="ss-btn ss-btn-pri" id="ssNewInspection"><i class="fas fa-plus"></i> New Inspection</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+    <!-- Chat Container -->
+    <div class="chat-container">
+        <div class="chat-toggle">
+            <i class="fas fa-comment-dots"></i>
+        </div>
+        <div class="chat-box">
+            <div class="chat-header">
+                <h3>Chat Assistant</h3>
+                <button class="chat-close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="chat-messages">
+                <div class="message bot">Hello! How can I help you today?</div>
+            </div>
+            <div class="chat-input">
+                <input type="text" placeholder="Type your message...">
+                <button class="chat-send"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- File Explorer Modal -->
+    <div id="fileExplorerModal" class="modal file-explorer-modal" data-persist="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="explorerTitle">Document Explorer</div>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="toolbar">
+                    <button id="newFolderBtn" class="document-explorer">📁 New Folder</button>
+                    <button id="uploadBtn" class="document-explorer">⬆️ Upload File</button>
+                    <button id="deleteBtn" disabled class="document-explorer">🗑️ Delete</button>
+                    <button id="viewToggleBtn" class="document-explorer">Folder View</button>
+                </div>
+                <div class="breadcrumbs" id="breadcrumbs">
+                    <span class="breadcrumb" data-id="">Home</span>
+                </div>
+                <ul class="file-list" id="fileList">
+                </ul>
+                <div id="folderForm" style="display: none; margin-top: 15px;">
+                    <input type="text" id="folderName" placeholder="Folder name">
+                    <button id="createFolderBtn">Create</button>
+                    <button id="cancelFolderBtn">Cancel</button>
+                </div>
+                <input type="file" id="fileInput" style="display: none;">
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden File Input -->
+    <input type="file" id="fileInput" multiple style="display: none;">
+
+    <div id="toast" class="toast"></div>
+
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Documents Modal close functionality
+        function closeDocumentsModal() {
+            document.getElementById('documentsModal').style.display = 'none';
+        }
+
+        // Close on backdrop click
+        document.getElementById('documentsModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDocumentsModal();
+            }
+        });
+    </script>
+    
+    <!-- External JavaScript Files -->
+    <script src="map.js"></script>
+    <script src="upload.js"></script>
+    <script src="bcirep.js"></script>
+
+    
+    <script src="bciProforma.pdfmake.js"></script>
+    <script src="../test.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="../inspection/inspection.js"></script>
+    <script src="../inspection/photo.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    </body>
+</html>

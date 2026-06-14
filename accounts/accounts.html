@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpanSense — Account</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fb;
+            color: #2c3e44;
+            transition: background 0.3s ease, color 0.3s ease;
+            overflow-x: hidden;
+        }
+
+        /* ---------- NAVIGATION BAR (60% width, centered) ---------- */
+        .navbar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            max-width: 1100px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 60px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+            z-index: 1100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 28px;
+            height: 64px;
+        }
+        .navbar .left { display: flex; align-items: center; gap: 24px; }
+        .navbar .logo {
+            font-size: 1.2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #5b8c8a 0%, #7ba8a5 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .navbar .menu { display: flex; gap: 24px; }
+        .navbar .menu a {
+            text-decoration: none;
+            color: #4a5b6e;
+            font-weight: 500;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .navbar .menu a:hover, .navbar .menu a.active { color: #5b8c8a; }
+        .navbar .menu a.active {
+            background: rgba(91, 140, 138, 0.1);
+            padding: 6px 14px;
+            border-radius: 20px;
+        }
+        .navbar .right { display: flex; align-items: center; gap: 20px; }
+        .night-mode-toggle {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            color: #8a9ba8;
+            transition: all 0.2s;
+        }
+        .night-mode-toggle:hover { background: #f0f4f8; color: #5b8c8a; }
+        .navbar .account-links a {
+            text-decoration: none;
+            color: #6a7c8e;
+            margin-left: 16px;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+        .navbar .account-links a:hover { color: #5b8c8a; }
+
+        /* ---------- MAIN WRAPPER ---------- */
+        .page-wrapper {
+            max-width: 75%;
+            margin: 0 auto;
+            padding: 100px 0 60px 0;
+        }
+
+        /* ---------- BACK PILL ---------- */
+        .back-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(138, 180, 176, 0.3);
+            color: #5b8c8a;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 12px rgba(91, 140, 138, 0.1);
+            user-select: none;
+        }
+        .back-pill:hover {
+            background: #5b8c8a;
+            color: white;
+            border-color: #5b8c8a;
+            transform: translateX(-4px);
+            box-shadow: 0 4px 20px rgba(91, 140, 138, 0.25);
+        }
+
+        /* ---------- PAGE HEADER ---------- */
+        .page-header { margin-bottom: 32px; }
+        .page-header h1 {
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: #2c5a57;
+            border-left: 4px solid #8ab4b0;
+            padding-left: 14px;
+            margin-bottom: 8px;
+        }
+        .page-header p {
+            color: #8a9ba8;
+            font-size: 0.9rem;
+            padding-left: 18px;
+        }
+
+        /* ---------- PROFILE HERO CARD ---------- */
+        .profile-hero {
+            background: white;
+            border-radius: 28px;
+            border: 1px solid #e9edf2;
+            padding: 32px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+        .profile-avatar {
+            width: 90px; height: 90px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #5b8c8a, #7ba8a5);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem; color: white; font-weight: 700;
+            flex-shrink: 0;
+            position: relative;
+        }
+        .profile-avatar .edit-avatar {
+            position: absolute;
+            bottom: 2px; right: 2px;
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid #e9edf2;
+            display: flex; align-items: center; justify-content: center;
+            color: #5b8c8a;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .profile-avatar .edit-avatar:hover {
+            background: #5b8c8a;
+            border-color: #5b8c8a;
+            color: white;
+        }
+        .profile-info { flex: 1; }
+        .profile-info .name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #2c4a48;
+            margin-bottom: 4px;
+        }
+        .profile-info .role {
+            font-size: 0.85rem;
+            color: #8a9ba8;
+            margin-bottom: 12px;
+        }
+        .profile-badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .profile-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .profile-badge.admin {
+            background: #eef4f2;
+            color: #2c5a57;
+            border: 1px solid #c5dbd8;
+        }
+        .profile-badge.verified {
+            background: #e8f5f0;
+            color: #2d7a6e;
+            border: 1px solid #b8e0d4;
+        }
+        .profile-badge.plan {
+            background: #f0f9ff;
+            color: #4a90b8;
+            border: 1px solid #c5e0f0;
+        }
+        .profile-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .profile-actions button {
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+        .btn-edit {
+            background: linear-gradient(135deg, #5b8c8a, #7ba8a5);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 14px rgba(91, 140, 138, 0.3);
+        }
+        .btn-edit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(91, 140, 138, 0.4);
+        }
+        .btn-logout {
+            background: white;
+            color: #c47070;
+            border: 1px solid #f0d5d5;
+        }
+        .btn-logout:hover {
+            background: #fdf2f2;
+            border-color: #e8b8b8;
+        }
+
+        /* ---------- ACCOUNT GRID ---------- */
+        .account-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        /* Card base */
+        .account-card {
+            background: white;
+            border-radius: 28px;
+            border: 1px solid #e9edf2;
+            padding: 28px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+        }
+        .account-card h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2c4a48;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .account-card h2 i { color: #8ab4b0; }
+
+        /* Form fields inside cards */
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #4a5b6e;
+            margin-bottom: 6px;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            font-size: 0.85rem;
+            font-family: inherit;
+            color: #2c4a48;
+            background: white;
+            transition: all 0.2s;
+            outline: none;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: #8ab4b0;
+            box-shadow: 0 0 0 3px rgba(138, 180, 176, 0.15);
+        }
+        .form-group input:disabled {
+            background: #f8fafc;
+            color: #8a9ba8;
+            cursor: not-allowed;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .btn-save {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 30px;
+            background: linear-gradient(135deg, #5b8c8a 0%, #7ba8a5 100%);
+            color: white;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: inherit;
+            box-shadow: 0 4px 14px rgba(91, 140, 138, 0.3);
+            margin-top: 4px;
+        }
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(91, 140, 138, 0.4);
+        }
+
+        /* Security card specific */
+        .security-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 0;
+            border-bottom: 1px solid #f0f4f8;
+        }
+        .security-item:last-child { border-bottom: none; }
+        .security-item .sec-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .security-item .sec-left .sec-icon {
+            width: 40px; height: 40px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+        .security-item .sec-left .sec-icon.password { background: #eef4f2; color: #5b8c8a; }
+        .security-item .sec-left .sec-icon.mfa { background: #f0f9ff; color: #4a90b8; }
+        .security-item .sec-left .sec-icon.sessions { background: #fdf2f2; color: #e8a87c; }
+        .security-item .sec-left .sec-details .sec-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #2c4a48;
+        }
+        .security-item .sec-left .sec-details .sec-desc {
+            font-size: 0.8rem;
+            color: #8a9ba8;
+            margin-top: 2px;
+        }
+        .security-item .sec-action {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            color: #6a7c8e;
+            font-size: 0.8rem;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .security-item .sec-action:hover {
+            border-color: #8ab4b0;
+            color: #5b8c8a;
+        }
+        .security-item .sec-status {
+            font-size: 0.75rem;
+            color: #2d7a6e;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .security-item .sec-status i { font-size: 0.65rem; }
+
+        /* Activity / history card (full width) */
+        .activity-card {
+            background: white;
+            border-radius: 28px;
+            border: 1px solid #e9edf2;
+            padding: 28px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+            margin-bottom: 24px;
+        }
+        .activity-card h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2c4a48;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .activity-card h2 i { color: #8ab4b0; }
+        .activity-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .activity-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            border-radius: 14px;
+            background: #fafbfc;
+            transition: all 0.2s;
+        }
+        .activity-row:hover { background: #f0f4f8; }
+        .activity-row .act-icon {
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+        .activity-row .act-icon.login { background: #e8f5f0; color: #2d7a6e; }
+        .activity-row .act-icon.export { background: #eef4f2; color: #5b8c8a; }
+        .activity-row .act-icon.edit { background: #f0f9ff; color: #4a90b8; }
+        .activity-row .act-icon.password { background: #fdf2f2; color: #c47070; }
+        .activity-row .act-details { flex: 1; }
+        .activity-row .act-details .act-title {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #2c4a48;
+        }
+        .activity-row .act-details .act-meta {
+            font-size: 0.75rem;
+            color: #8a9ba8;
+            margin-top: 2px;
+        }
+        .activity-row .act-time {
+            font-size: 0.75rem;
+            color: #8a9ba8;
+            flex-shrink: 0;
+        }
+
+        /* Preferences card */
+        .pref-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 0;
+            border-bottom: 1px solid #f0f4f8;
+        }
+        .pref-item:last-child { border-bottom: none; }
+        .pref-item .pref-left .pref-title {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #2c4a48;
+            margin-bottom: 2px;
+        }
+        .pref-item .pref-left .pref-desc {
+            font-size: 0.8rem;
+            color: #8a9ba8;
+        }
+
+        /* Toggle switch */
+        .toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: #e2e8f0;
+            border-radius: 24px;
+            cursor: pointer;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+        .toggle.on { background: #5b8c8a; }
+        .toggle .knob {
+            position: absolute;
+            top: 2px; left: 2px;
+            width: 20px; height: 20px;
+            border-radius: 50%;
+            background: white;
+            transition: transform 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+        }
+        .toggle.on .knob { transform: translateX(20px); }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .toast {
+            background: white;
+            border-radius: 16px;
+            padding: 16px 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+            border: 1px solid #e9edf2;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 300px;
+            transform: translateX(120%);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .toast.show { transform: translateX(0); }
+        .toast-icon {
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem; flex-shrink: 0;
+        }
+        .toast-icon.success { background: #e8f5f0; color: #2d7a6e; }
+        .toast-content { flex: 1; }
+        .toast-content .toast-title { font-size: 0.9rem; font-weight: 600; color: #2c4a48; margin-bottom: 2px; }
+        .toast-content .toast-msg { font-size: 0.8rem; color: #8a9ba8; }
+
+        /* ---------- RESPONSIVE ---------- */
+        @media (max-width: 1100px) {
+            .page-wrapper { max-width: 90%; }
+            .navbar { width: 70%; }
+        }
+        @media (max-width: 860px) {
+            .page-wrapper { max-width: 95%; }
+            .account-grid { grid-template-columns: 1fr; }
+            .navbar .menu { display: none; }
+            .navbar { width: 90%; padding: 0 18px; }
+            .profile-hero { flex-direction: column; text-align: center; }
+            .profile-actions { flex-direction: row; width: 100%; }
+            .profile-actions button { flex: 1; justify-content: center; }
+            .form-row { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 768px) {
+            .navbar { width: 95%; }
+            .security-item { flex-direction: column; align-items: flex-start; gap: 10px; }
+        }
+
+        /* ---------- NIGHT MODE ---------- */
+        .night-mode {
+            background-color: #1a2428 !important;
+            color: #d4dfe3;
+        }
+        .night-mode .navbar { background: rgba(35, 46, 52, 0.95) !important; border-color: #2f3e45; }
+        .night-mode .navbar .logo { background: linear-gradient(135deg, #8ab4b0 0%, #a0c8c4 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .night-mode .navbar .menu a { color: #9ab0b8; }
+        .night-mode .navbar .menu a.active { background: rgba(138, 180, 176, 0.15); color: #8ab4b0; }
+        .night-mode .navbar .account-links a { color: #9ab0b8; }
+        .night-mode .night-mode-toggle { color: #9ab0b8; }
+        .night-mode .night-mode-toggle:hover { background: #2f3e45; color: #8ab4b0; }
+        .night-mode .back-pill {
+            background: rgba(35, 46, 52, 0.8) !important;
+            border-color: rgba(138, 180, 176, 0.3) !important;
+            color: #8ab4b0 !important;
+        }
+        .night-mode .back-pill:hover {
+            background: #5b8c8a !important;
+            color: white !important;
+            border-color: #5b8c8a !important;
+        }
+        .night-mode .profile-hero,
+        .night-mode .account-card,
+        .night-mode .activity-card,
+        .night-mode .toast {
+            background: #232e34;
+            border-color: #2f3e45;
+        }
+        .night-mode .profile-info .name,
+        .night-mode .account-card h2,
+        .night-mode .activity-card h2,
+        .night-mode .toast-content .toast-title { color: #d4dfe3; }
+        .night-mode .profile-info .role { color: #8aa4ac; }
+        .night-mode .profile-badge.admin { background: #2f4a48; border-color: #3a5a58; color: #8ab4b0; }
+        .night-mode .profile-badge.verified { background: #1e3a3e; border-color: #2a4a48; color: #8ab4b0; }
+        .night-mode .profile-badge.plan { background: #1a3040; border-color: #2a4050; color: #6a9cc8; }
+        .night-mode .btn-edit { box-shadow: 0 4px 14px rgba(91, 140, 138, 0.2); }
+        .night-mode .btn-logout { background: #2a2020; border-color: #4a3030; color: #e8a0a0; }
+        .night-mode .btn-logout:hover { background: #3a2828; }
+        .night-mode .form-group input,
+        .night-mode .form-group select {
+            background: #1e2a2f;
+            border-color: #3a4b53;
+            color: #c5d3d9;
+        }
+        .night-mode .form-group input:focus,
+        .night-mode .form-group select:focus {
+            border-color: #6e9c98;
+            box-shadow: 0 0 0 3px rgba(110, 156, 152, 0.15);
+        }
+        .night-mode .form-group input:disabled { background: #2a3a40; color: #6a8a92; }
+        .night-mode .form-group label { color: #9ab0b8; }
+        .night-mode .security-item { border-color: #2a3a40; }
+        .night-mode .security-item .sec-left .sec-icon.password { background: #2f4a48; color: #8ab4b0; }
+        .night-mode .security-item .sec-left .sec-icon.mfa { background: #1a3040; color: #6a9cc8; }
+        .night-mode .security-item .sec-left .sec-icon.sessions { background: #3a3020; color: #e8a87c; }
+        .night-mode .security-item .sec-left .sec-details .sec-title { color: #d4dfe3; }
+        .night-mode .security-item .sec-left .sec-details .sec-desc { color: #8aa4ac; }
+        .night-mode .security-item .sec-action { background: #1e2a2f; border-color: #3a4b53; color: #9ab0b8; }
+        .night-mode .security-item .sec-action:hover { border-color: #6e9c98; color: #8ab4b0; }
+        .night-mode .security-item .sec-status { color: #8ab4b0; }
+        .night-mode .activity-row { background: #1e2a2f; }
+        .night-mode .activity-row:hover { background: #2a3a40; }
+        .night-mode .activity-row .act-details .act-title { color: #c5d3d9; }
+        .night-mode .activity-row .act-details .act-meta,
+        .night-mode .activity-row .act-time { color: #8aa4ac; }
+        .night-mode .pref-item { border-color: #2a3a40; }
+        .night-mode .pref-item .pref-left .pref-title { color: #d4dfe3; }
+        .night-mode .pref-item .pref-left .pref-desc { color: #8aa4ac; }
+        .night-mode .toggle { background: #3a4b53; }
+        .night-mode .toggle.on { background: #5b8c8a; }
+    </style>
+    <base target="_self">
+<base target="_blank">
+</head>
+<body>
+
+    <!-- FLOATING NAVBAR -->
+    <div class="navbar">
+        <div class="left">
+            <div class="logo">spanSense</div>
+            <div class="menu">
+                <a href="../map/map.html"><i class="fas fa-map"></i>Map</a>
+                <a href="../dashboard/dashboard.html"><i class="fas fa-chart-pie"></i>Dashboard</a>
+                <a href="../database/database.html"><i class="fas fa-database"></i>Database</a>
+                <a href="../planning/planning.html"><i class="fas fa-calendar-alt"></i>Planning</a>
+            </div>
+        </div>
+        <div class="right">
+            <div class="night-mode-toggle" id="nightModeToggle"><i class="fas fa-moon"></i></div>
+            <div class="account-links">
+                <a href="#" class="active">Account</a>
+                <a href="../contacts/contacts.html">Contact Us</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN WRAPPER -->
+    <div class="page-wrapper">
+
+        <!-- BACK PILL -->
+        <div class="back-pill" onclick="history.back()">
+            <i class="fas fa-arrow-left"></i>
+            <span>Back</span>
+        </div>
+
+        <!-- PAGE HEADER -->
+        <div class="page-header">
+            <h1><i class="fas fa-user-circle"></i> Account</h1>
+            <p>Manage your profile, security settings, and preferences</p>
+        </div>
+
+        <!-- PROFILE HERO -->
+        <div class="profile-hero">
+            <div class="profile-avatar">
+                MK
+                <div class="edit-avatar" title="Change photo"><i class="fas fa-camera"></i></div>
+            </div>
+            <div class="profile-info">
+                <div class="name">Monir Khan</div>
+                <div class="role">Bridge Inspector · joined March 2026</div>
+                <div class="profile-badges">
+                    <span class="profile-badge admin"><i class="fas fa-shield-alt"></i> Inspector</span>
+                    <span class="profile-badge verified"><i class="fas fa-check-circle"></i> Verified</span>
+                </div>
+            </div>
+            <div class="profile-actions">
+                <button class="btn-logout" onclick="showToast('Logged Out', 'You have been signed out', 'success')"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
+            </div>
+        </div>
+
+        <!-- ACCOUNT GRID: Profile + Security -->
+        <div class="account-grid">
+            <!-- LEFT: Profile Details -->
+            <div class="account-card">
+                <h2><i class="fas fa-id-card"></i> Profile Details</h2>
+                <form onsubmit="event.preventDefault(); showToast('Saved', 'Your profile has been updated', 'success');">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="firstName">First Name</label>
+                            <input type="text" id="firstName" value="Monir">
+                        </div>
+                        <div class="form-group">
+                            <label for="lastName">Last Name</label>
+                            <input type="text" id="lastName" value="Khan">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" value="m.khan@spansense.io">
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <input type="tel" id="phone" value="+44 7426 868684">
+                    </div>
+                    <div class="form-group">
+                        <label for="org">Organisation</label>
+                        <input type="text" id="org" value="spanSense" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label for="role">Job Title</label>
+                        <input type="text" id="role" value="Bridge Inspector">
+                    </div>
+                    <button type="submit" class="btn-save"><i class="fas fa-check"></i> Save Changes</button>
+                </form>
+            </div>
+
+            <!-- RIGHT: Security -->
+            <div class="account-card">
+                <h2><i class="fas fa-lock"></i> Security</h2>
+
+                <div class="security-item" style="align-items: flex-start; flex-direction: column; gap: 14px;">
+                    <div class="sec-left">
+                        <div class="sec-icon password"><i class="fas fa-key"></i></div>
+                        <div class="sec-details">
+                            <div class="sec-title">Password</div>
+                            <div class="sec-desc">Last changed 3 months ago</div>
+                        </div>
+                    </div>
+                    <div class="password-form" style="width: 100%; padding-left: 52px;">
+                        <div class="form-group" style="margin-bottom: 10px;">
+                            <input type="password" id="currentPassword" placeholder="Current password" style="width: 100%;">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 10px;">
+                            <input type="password" id="newPassword" placeholder="New password" style="width: 100%;">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <input type="password" id="confirmPassword" placeholder="Confirm new password" style="width: 100%;">
+                        </div>
+                        <button class="btn-save" onclick="showToast('Password Updated', 'Your password has been changed successfully', 'success')" style="padding: 10px 20px; font-size: 0.8rem;">
+                            <i class="fas fa-check"></i> Update Password
+                        </button>
+                    </div>
+                </div>
+
+                <div class="security-item">
+                    <div class="sec-left">
+                        <div class="sec-icon mfa"><i class="fas fa-mobile-alt"></i></div>
+                        <div class="sec-details">
+                            <div class="sec-title">Two-Factor Authentication</div>
+                            <div class="sec-desc">Authenticator app</div>
+                        </div>
+                    </div>
+                    <div class="sec-status"><i class="fas fa-circle"></i> Enabled</div>
+                </div>
+
+                <div class="security-item">
+                    <div class="sec-left">
+                        <div class="sec-icon sessions"><i class="fas fa-desktop"></i></div>
+                        <div class="sec-details">
+                            <div class="sec-title">Active Sessions</div>
+                            <div class="sec-desc">3 devices currently signed in</div>
+                        </div>
+                    </div>
+                    <div class="sec-status"><i class="fas fa-circle"></i> 3 active</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PREFERENCES CARD -->
+        <div class="account-card" style="margin-bottom: 24px;">
+            <h2><i class="fas fa-sliders-h"></i> Preferences</h2>
+
+            <div class="pref-item">
+                <div class="pref-left">
+                    <div class="pref-title">Email Notifications</div>
+                    <div class="pref-desc">Get alerts for new inspections and exports</div>
+                </div>
+                <div class="toggle on" onclick="this.classList.toggle('on')"><div class="knob"></div></div>
+            </div>
+
+            <div class="pref-item">
+                <div class="pref-left">
+                    <div class="pref-title">Inspection Reminders</div>
+                    <div class="pref-desc">Weekly digest of upcoming due dates</div>
+                </div>
+                <div class="toggle on" onclick="this.classList.toggle('on')"><div class="knob"></div></div>
+            </div>
+
+            <div class="pref-item">
+                <div class="pref-left">
+                    <div class="pref-title">Report Sharing</div>
+                    <div class="pref-desc">Allow team members to share reports with me</div>
+                </div>
+                <div class="toggle" onclick="this.classList.toggle('on')"><div class="knob"></div></div>
+            </div>
+
+            <div class="pref-item">
+                <div class="pref-left">
+                    <div class="pref-title">Auto-Save Drafts</div>
+                    <div class="pref-desc">Save inspection drafts every 30 seconds</div>
+                </div>
+                <div class="toggle on" onclick="this.classList.toggle('on')"><div class="knob"></div></div>
+            </div>
+        </div>
+
+        <!-- ACTIVITY HISTORY -->
+        <div class="activity-card">
+            <h2><i class="fas fa-history"></i> Recent Activity</h2>
+            <div class="activity-list">
+                <div class="activity-row">
+                    <div class="act-icon login"><i class="fas fa-sign-in-alt"></i></div>
+                    <div class="act-details">
+                        <div class="act-title">Signed in from Chrome on Windows</div>
+                        <div class="act-meta">Reading, United Kingdom · IP 203.0.113.42</div>
+                    </div>
+                    <div class="act-time">2 hours ago</div>
+                </div>
+                <div class="activity-row">
+                    <div class="act-icon export"><i class="fas fa-file-export"></i></div>
+                    <div class="act-details">
+                        <div class="act-title">Exported 24 bridge records as CSV</div>
+                        <div class="act-meta">Database · filtered by "Bridges"</div>
+                    </div>
+                    <div class="act-time">Yesterday</div>
+                </div>
+                <div class="activity-row">
+                    <div class="act-icon edit"><i class="fas fa-edit"></i></div>
+                    <div class="act-details">
+                        <div class="act-title">Updated inspection BCI-2024-0892</div>
+                        <div class="act-meta">M4 Overpass · severity changed to 3</div>
+                    </div>
+                    <div class="act-time">3 days ago</div>
+                </div>
+                <div class="activity-row">
+                    <div class="act-icon password"><i class="fas fa-key"></i></div>
+                    <div class="act-details">
+                        <div class="act-title">Password changed</div>
+                        <div class="act-meta">Security settings</div>
+                    </div>
+                    <div class="act-time">3 months ago</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- TOAST CONTAINER -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+
+        // ============================================
+        // NIGHT MODE
+        // ============================================
+        var toggleBtn = document.getElementById('nightModeToggle');
+        if (toggleBtn) {
+            toggleBtn.onclick = function() {
+                document.body.classList.toggle('night-mode');
+                if (document.body.classList.contains('night-mode')) {
+                    this.innerHTML = '<i class="fas fa-sun"></i>';
+                    localStorage.setItem('nightMode', 'on');
+                } else {
+                    this.innerHTML = '<i class="fas fa-moon"></i>';
+                    localStorage.setItem('nightMode', 'off');
+                }
+            };
+            if (localStorage.getItem('nightMode') === 'on') {
+                document.body.classList.add('night-mode');
+                toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
+            }
+        }
+        function showToast(title, msg, type) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `
+                <div class="toast-icon ${type}"><i class="fas fa-check"></i></div>
+                <div class="toast-content">
+                    <div class="toast-title">${title}</div>
+                    <div class="toast-msg">${msg}</div>
+                </div>
+            `;
+            container.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.add('show'));
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 400);
+            }, 4000);
+        }
+    </script>
+
+</body>
+</html>

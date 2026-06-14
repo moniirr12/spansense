@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpanSense — Bridge Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <base target="_self">
+</head>
+<body>
+
+    <!-- FLOATING NAVBAR -->
+    <div class="navbar">
+        <div class="left">
+            <div class="logo">spanSense</div>
+            <div class="menu">
+                <a href="../map/map.html"><i class="fas fa-map"></i>Map</a>
+                <a href="../dashboard/dashboard.html" class="active"><i class="fas fa-chart-pie"></i>Dashboard</a>
+                <a href="../database/database.html"><i class="fas fa-database"></i>Database</a>
+                <a href="../planning/planning.html"><i class="fas fa-calendar-alt"></i>Planning</a>
+            </div>
+        </div>
+        <div class="right">
+            <div class="night-mode-toggle" id="nightModeToggle"><i class="fas fa-moon"></i></div>
+            <div class="account-links">
+                <a href="../accounts/accounts.html">Account</a>
+                <a href="../contacts/contacts.html" class="active">Contact Us</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <button class="back-button" onclick="history.back()">
+            <i class="fas fa-arrow-left"></i> Back
+        </button>
+
+        <!-- Metrics Cards - 4 cards matching SpanSense style -->
+        <div class="metrics">
+            <div class="metric">
+                <div class="metric-icon metric-icon-green">
+                    <i class="fas fa-bridge"></i>
+                </div>
+                <div class="metric-content">
+                    <h3 id="bridge-count">243</h3>
+                    <p>Total Assets</p>
+                </div>
+            </div>
+            <div class="metric">
+                <div class="metric-icon metric-icon-red">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="metric-content">
+                    <h3>0</h3>  <!-- Will be updated by JS -->
+                    <p>High-Risk Structures</p>
+                </div>
+            </div>
+            <div class="metric">
+                <div class="metric-icon metric-icon-blue">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <div class="metric-content">
+                    <h3>8</h3>
+                    <p>Upcoming Inspections</p>
+                </div>
+            </div>
+            <div class="metric">
+                <div class="metric-icon metric-icon-yellow">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="metric-content">
+                    <h3>4</h3>
+                    <p>Inspections Overdue</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section - 3 Charts -->
+        <div class="charts-section">
+            <div class="section-header">
+                <h2><i class="fas fa-chart-line"></i> Analytics & Insights</h2>
+            </div>
+            <div class="charts">
+                <!-- Chart 1: Asset Inventory -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Asset Inventory</h3>
+                        <span class="chart-badge">By Type</span>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="typeChart" width="400" height="400"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 2: BCI Score Distribution -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>BCI Score Distribution</h3>
+                        <span class="chart-badge">Performance</span>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="bciHistogramChart" width="600" height="400"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 3: Bridge Condition Distribution Over Time -->
+                <div class="chart-card wide-chart">
+                    <div class="chart-header">
+                        <h3>Bridge Condition Over Time</h3>
+                        <span class="chart-badge">Trend Analysis</span>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="conditionDistributionChart" width="800" height="400"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="dashboard-bottom-row">
+
+            <!-- Critical Bridges (left) -->
+            <div class="critical-bridges-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-exclamation-triangle"></i> Critical Structures</h2>
+                    <span class="section-badge">BCI &lt; 55</span>
+                </div>
+                <div class="critical-bridges">
+                    <div class="bridge-table">
+                        <div class="row header">
+                            <div>Bridge</div>
+                            <div>BCI Score</div>
+                            <div>Last Inspection</div>
+                            <div>Report</div>
+                        </div>
+                        <div id="critical-bridges-body">
+                            <div class="row">
+                                <div colspan="4" style="color: var(--text-muted); font-size: 0.85rem;">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity (right) -->
+            <div class="activity-feed">
+                <div class="section-header">
+                    <h2><i class="fas fa-clipboard-list"></i> Recent Activity</h2>
+                    <span class="section-badge">Last 7 Days</span>
+                </div>
+                <div class="activity-list">
+                    <div class="activity-item">
+                        <div class="activity-avatar activity-avatar-green">JS</div>
+                        <div class="activity-content">
+                            <div class="activity-title">BR-142 Westfield Overpass</div>
+                            <div class="activity-meta">J. Smith &nbsp;·&nbsp; 2 hours ago</div>
+                        </div>
+                        <span class="activity-bci bci-good">82</span>
+                        <span class="activity-status status-completed">Done</span>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-avatar activity-avatar-blue">MK</div>
+                        <div class="activity-content">
+                            <div class="activity-title">BR-067 Riverside Walk</div>
+                            <div class="activity-meta">M. Khan &nbsp;·&nbsp; 4 hours ago</div>
+                        </div>
+                        <span class="activity-bci bci-fair">—</span>
+                        <span class="activity-status status-in-progress">In Progress</span>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-avatar activity-avatar-orange">AL</div>
+                        <div class="activity-content">
+                            <div class="activity-title">BR-089 Old Mill Crossing</div>
+                            <div class="activity-meta">A. Lee &nbsp;·&nbsp; Tomorrow 09:00</div>
+                        </div>
+                        <span class="activity-bci bci-critical">38</span>
+                        <span class="activity-status status-scheduled">Scheduled</span>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-avatar activity-avatar-red">RP</div>
+                        <div class="activity-content">
+                            <div class="activity-title">BR-022 North Valley Bridge</div>
+                            <div class="activity-meta">R. Patel &nbsp;·&nbsp; 12 days overdue</div>
+                        </div>
+                        <span class="activity-bci bci-critical">34</span>
+                        <span class="activity-status status-overdue">Overdue</span>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-avatar activity-avatar-green">DW</div>
+                        <div class="activity-content">
+                            <div class="activity-title">BR-205 Harbour Approach</div>
+                            <div class="activity-meta">D. Wilson &nbsp;·&nbsp; Yesterday</div>
+                        </div>
+                        <span class="activity-bci bci-excellent">94</span>
+                        <span class="activity-status status-completed">Done</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- GLASS SCROLLBAR -->
+    <div class="glass-scrollbar" id="glassScrollbar">
+        <div class="thumb" id="glassThumb"></div>
+    </div>
+
+
+    <!-- Leaflet (needed for map capture in test.js) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- html2canvas (needed for map screenshot) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <!-- pdfmake (required for PDF generation) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.min.js"></script>
+
+    <!-- Your custom scripts -->
+    <script src="../map/bciProforma.pdfmake.js"></script>
+    <script src="../test.js"></script>
+    <script src="dashboard.js"></script>
+    
+
+    
+</body>
+</html>

@@ -1,0 +1,1615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpanSense 2.0 — Bridge Inspection Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+:root{
+  --bg-0:#06090f;--bg-1:#0c1119;--bg-2:#111827;--bg-3:#161f2e;--bg-4:#1a2435;
+  --bg-input:#0d1321;--bg-hover:#1e293b;
+  --text-0:#f8fafc;--text-1:#e2e8f0;--text-2:#94a3b8;--text-3:#64748b;--text-4:#475569;
+  --accent:#0ea5e9;--accent-2:#06b6d4;--accent-soft:rgba(14,165,233,0.08);--accent-glow:rgba(14,165,233,0.12);
+  --accent-grad:linear-gradient(135deg,#0ea5e9,#06b6d4);
+  --success:#10b981;--success-soft:rgba(16,185,129,0.08);--warning:#f59e0b;--warning-soft:rgba(245,158,11,0.08);
+  --danger:#ef4444;--danger-soft:rgba(239,68,68,0.08);--info:#8b5cf6;--info-soft:rgba(139,92,246,0.08);
+  --border:#1e293b;--border-light:#273344;--border-hover:#334155;
+  --radius-sm:8px;--radius-md:12px;--radius-lg:16px;--radius-xl:20px;
+  --shadow-sm:0 1px 2px rgba(0,0,0,0.3);--shadow-md:0 4px 16px rgba(0,0,0,0.4);--shadow-lg:0 8px 32px rgba(0,0,0,0.5);
+  --glass-bg:rgba(12,17,25,0.75);--glass-border:rgba(255,255,255,0.04);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:Inter,system-ui,sans-serif;background:var(--bg-0);color:var(--text-1);min-height:100vh;overflow-x:hidden;line-height:1.5;letter-spacing:-0.01em}
+
+.ambient-bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.ambient-bg .orb{position:absolute;border-radius:50%;filter:blur(120px);opacity:0.4;animation:orbFloat 20s ease-in-out infinite}
+.ambient-bg .orb-1{width:600px;height:600px;background:radial-gradient(circle,rgba(14,165,233,0.15),transparent 70%);top:-10%;right:-5%;animation-delay:0s}
+.ambient-bg .orb-2{width:500px;height:500px;background:radial-gradient(circle,rgba(6,182,212,0.1),transparent 70%);bottom:-10%;left:-5%;animation-delay:-7s}
+.ambient-bg .orb-3{width:400px;height:400px;background:radial-gradient(circle,rgba(139,92,246,0.08),transparent 70%);top:40%;left:30%;animation-delay:-14s}
+@keyframes orbFloat{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-20px) scale(1.05)}66%{transform:translate(-20px,30px) scale(0.95)}}
+
+.bg-grid{position:fixed;inset:0;background-image:linear-gradient(rgba(14,165,233,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(14,165,233,0.02) 1px,transparent 1px);background-size:80px 80px;pointer-events:none;z-index:0;mask-image:radial-gradient(ellipse at center,black 30%,transparent 70%)}
+
+.navbar{position:fixed;top:16px;left:50%;transform:translateX(-50%);height:56px;background:var(--glass-bg);backdrop-filter:blur(24px) saturate(1.4);border:1px solid var(--glass-border);border-radius:100px;z-index:1000;display:flex;align-items:center;gap:8px;padding:6px 8px;max-width:fit-content;box-shadow:0 4px 24px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.04);transition:all .3s ease}
+.nav-brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1rem;padding:0 12px 0 6px;border-right:1px solid var(--border-light)}
+.logo-icon{width:32px;height:32px;background:var(--accent-grad);border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;box-shadow:0 2px 12px rgba(14,165,233,0.3)}
+.nav-links{display:flex;gap:4px}
+.nav-link{padding:8px 16px;border-radius:100px;color:var(--text-3);text-decoration:none;font-size:.8125rem;font-weight:500;transition:all .25s cubic-bezier(.4,0,.2,1);cursor:pointer;border:none;background:none;font-family:inherit;position:relative;overflow:hidden}
+.nav-link::before{content:"";position:absolute;inset:0;background:var(--accent-soft);border-radius:100px;opacity:0;transition:opacity .25s}
+.nav-link:hover{color:var(--text-1)}
+.nav-link:hover::before{opacity:1}
+.nav-link.active{color:var(--accent);background:var(--accent-soft)}
+.nav-link.active::before{opacity:0}
+.nav-link span{position:relative;z-index:1}
+.nav-user{display:flex;align-items:center;gap:10px;padding-left:12px;border-left:1px solid var(--border-light)}
+.user-avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#4f46e5);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:.75rem;color:white;box-shadow:0 2px 8px rgba(99,102,241,0.3)}
+.user-name{font-size:.8125rem;font-weight:500;color:var(--text-2);display:none}
+@media(min-width:768px){.user-name{display:block}}
+
+.main-content{padding-top:96px;min-height:100vh;position:relative;z-index:1}
+.container{max-width:1280px;margin:0 auto;padding:0 24px}
+@media(min-width:1024px){.container{padding:0 32px}}
+
+.page{display:none;animation:pageIn .5s cubic-bezier(.16,1,.3,1)}
+.page.active{display:block}
+@keyframes pageIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+h1,h2,h3,h4{font-weight:700;letter-spacing:-0.02em;line-height:1.2;color:var(--text-0)}
+.text-gradient{background:linear-gradient(135deg,var(--text-0),var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.text-gradient-2{background:linear-gradient(135deg,var(--accent),var(--accent-2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+.card{background:var(--bg-1);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;transition:all .3s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden}
+.card::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.06),transparent);opacity:0;transition:opacity .3s}
+.card:hover{border-color:var(--border-hover);transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.card:hover::before{opacity:1}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:16px;flex-wrap:wrap}
+.card-title{font-size:1.0625rem;font-weight:600;display:flex;align-items:center;gap:10px;color:var(--text-0)}
+.card-subtitle{font-size:.8125rem;color:var(--text-3);margin-top:2px}
+
+.stat-card{background:var(--bg-1);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;position:relative;overflow:hidden;transition:all .3s}
+.stat-card::after{content:"";position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--accent-grad);opacity:0;transition:opacity .3s}
+.stat-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg);border-color:var(--border-hover)}
+.stat-card:hover::after{opacity:1}
+.stat-card .stat-icon{width:40px;height:40px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;margin-bottom:16px;background:var(--accent-soft);color:var(--accent)}
+.stat-card .stat-value{font-size:2rem;font-weight:800;color:var(--text-0);letter-spacing:-0.03em}
+.stat-card .stat-change{font-size:.75rem;font-weight:500;margin-top:4px;display:inline-flex;align-items:center;gap:4px}
+.stat-card .stat-change.up{color:var(--success)}
+.stat-card .stat-change.down{color:var(--danger)}
+.stat-card .stat-label{font-size:.8125rem;color:var(--text-3);margin-top:4px}
+
+.chart-container{height:200px;background:linear-gradient(180deg,var(--bg-2),transparent);border-radius:var(--radius-md);position:relative;overflow:hidden;display:flex;align-items:flex-end;padding:16px;gap:8px}
+.chart-bar{flex:1;border-radius:4px 4px 0 0;transition:all .4s cubic-bezier(.4,0,.2,1);position:relative;min-height:20px}
+.chart-bar:hover{filter:brightness(1.2)}
+.chart-bar .bar-tooltip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%) translateY(4px);background:var(--bg-3);border:1px solid var(--border);padding:6px 10px;border-radius:var(--radius-sm);font-size:.6875rem;font-weight:600;color:var(--text-1);white-space:nowrap;opacity:0;pointer-events:none;transition:all .2s;box-shadow:var(--shadow-md)}
+.chart-bar:hover .bar-tooltip{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.btn{padding:10px 20px;border-radius:var(--radius-sm);font-family:inherit;font-size:.8125rem;font-weight:600;cursor:pointer;transition:all .2s cubic-bezier(.4,0,.2,1);border:none;display:inline-flex;align-items:center;gap:8px;position:relative;overflow:hidden;white-space:nowrap}
+.btn::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,0.1),transparent);opacity:0;transition:opacity .2s}
+.btn:hover::after{opacity:1}
+.btn:active{transform:scale(0.97)}
+.btn-primary{background:var(--accent-grad);color:white;box-shadow:0 2px 12px rgba(14,165,233,0.3),inset 0 1px 0 rgba(255,255,255,0.1)}
+.btn-primary:hover{box-shadow:0 4px 20px rgba(14,165,233,0.4),inset 0 1px 0 rgba(255,255,255,0.1);transform:translateY(-1px)}
+.btn-secondary{background:var(--bg-3);color:var(--text-2);border:1px solid var(--border-light)}
+.btn-secondary:hover{color:var(--text-1);background:var(--bg-4);border-color:var(--border-hover)}
+.btn-ghost{background:transparent;color:var(--text-3);border:1px solid transparent}
+.btn-ghost:hover{color:var(--text-1);background:var(--bg-2)}
+.btn-sm{padding:6px 12px;font-size:.75rem}
+.btn-lg{padding:14px 28px;font-size:.9375rem}
+.btn-danger{background:var(--danger);color:white}
+.btn-success{background:var(--success);color:white}
+
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-group label{font-size:.8125rem;font-weight:500;color:var(--text-2);display:flex;align-items:center;gap:6px}
+.form-group input,.form-group select,.form-group textarea{padding:11px 14px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-1);font-family:inherit;font-size:.875rem;transition:all .2s;width:100%;outline:none}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow),inset 0 1px 2px rgba(0,0,0,0.2)}
+.form-group select{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
+.form-group textarea{resize:vertical;min-height:80px}
+
+.table-wrap{overflow-x:auto;border-radius:var(--radius-md);border:1px solid var(--border)}
+.data-table{width:100%;border-collapse:collapse;font-size:.8125rem}
+.data-table th,.data-table td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--border)}
+.data-table th{color:var(--text-3);font-weight:600;background:var(--bg-2);font-size:.75rem;text-transform:uppercase;letter-spacing:0.05em;white-space:nowrap}
+.data-table tbody tr{transition:background .15s}
+.data-table tbody tr:hover{background:var(--bg-2)}
+.data-table tbody tr:last-child td{border-bottom:none}
+
+.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:100px;font-size:.6875rem;font-weight:600;letter-spacing:0.02em}
+.badge-sev-1{background:var(--success-soft);color:var(--success);border:1px solid rgba(16,185,129,0.15)}
+.badge-sev-2{background:var(--warning-soft);color:var(--warning);border:1px solid rgba(245,158,11,0.15)}
+.badge-sev-3{background:var(--danger-soft);color:var(--danger);border:1px solid rgba(239,68,68,0.15)}
+.badge-info{background:var(--info-soft);color:var(--info);border:1px solid rgba(139,92,246,0.15)}
+.badge-accent{background:var(--accent-soft);color:var(--accent);border:1px solid rgba(14,165,233,0.15)}
+.badge-muted{background:var(--bg-3);color:var(--text-3);border:1px solid var(--border-light)}
+
+.steps{display:flex;align-items:center;gap:0;padding:4px;background:var(--bg-1);border:1px solid var(--border);border-radius:100px;width:fit-content;margin:0 auto 40px}
+.step{display:flex;align-items:center;gap:8px;padding:8px 20px;border-radius:100px;font-size:.8125rem;font-weight:500;color:var(--text-3);transition:all .3s;cursor:pointer;position:relative}
+.step:not(:last-child)::after{content:"";position:absolute;right:-4px;top:50%;transform:translateY(-50%);width:1px;height:16px;background:var(--border-light)}
+.step.active{background:var(--accent-soft);color:var(--accent)}
+.step-number{width:22px;height:22px;border-radius:50%;background:var(--bg-3);display:flex;align-items:center;justify-content:center;font-size:.6875rem;font-weight:700;transition:all .3s}
+.step.active .step-number{background:var(--accent);color:white}
+.step.completed{color:var(--success)}
+.step.completed .step-number{background:var(--success);color:white}
+
+.upload-zone{border:2px dashed var(--border-light);border-radius:var(--radius-xl);padding:64px 40px;text-align:center;background:var(--bg-1);transition:all .4s cubic-bezier(.4,0,.2,1);cursor:pointer;position:relative;overflow:hidden}
+.upload-zone::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at center,rgba(14,165,233,0.04),transparent 70%);opacity:0;transition:opacity .4s}
+.upload-zone:hover{border-color:var(--accent);background:var(--accent-soft)}
+.upload-zone:hover::before{opacity:1}
+.upload-zone.dragover{border-color:var(--accent);background:var(--accent-soft);transform:scale(1.01)}
+.upload-icon{width:72px;height:72px;margin:0 auto 24px;background:var(--bg-2);border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;color:var(--accent);border:1px solid var(--border-light);transition:all .3s}
+.upload-zone:hover .upload-icon{background:var(--accent-soft);transform:translateY(-2px);box-shadow:0 8px 24px rgba(14,165,233,0.15)}
+.file-types{display:flex;justify-content:center;gap:8px;margin-top:20px}
+.file-type{padding:5px 12px;background:var(--bg-2);border-radius:var(--radius-sm);font-size:.6875rem;font-weight:500;color:var(--text-3);border:1px solid var(--border-light)}
+
+.extraction-preview{background:var(--bg-1);border-radius:var(--radius-lg);padding:24px;border:1px solid var(--border)}
+.extraction-field{display:flex;align-items:center;padding:14px 0;border-bottom:1px solid var(--border);gap:16px}
+.extraction-field:last-child{border-bottom:none}
+.field-label{width:180px;flex-shrink:0;font-size:.8125rem;color:var(--text-3);font-weight:500}
+.field-value{flex:1;font-family:JetBrains Mono,monospace;font-size:.8125rem;color:var(--accent);background:transparent;border:none;border-bottom:1px dashed var(--border-hover);padding:6px 0;outline:none;transition:border-color .2s}
+.field-value:focus{border-bottom-color:var(--accent)}
+.field-confidence{padding:4px 10px;border-radius:100px;font-size:.6875rem;font-weight:600;margin-left:auto;flex-shrink:0}
+
+.structure-card{background:var(--bg-1);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;transition:all .3s cubic-bezier(.4,0,.2,1);cursor:pointer;position:relative;overflow:hidden}
+.structure-card::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.04),transparent)}
+.structure-card:hover{border-color:var(--accent);transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,0.4),0 0 0 1px rgba(14,165,233,0.1)}
+.structure-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.structure-name{font-size:1.0625rem;font-weight:600;color:var(--text-0)}
+.structure-meta{display:flex;gap:16px;margin-top:6px;color:var(--text-3);font-size:.8125rem;flex-wrap:wrap}
+.structure-meta span{display:flex;align-items:center;gap:5px}
+.structure-footer{display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)}
+
+.defect-card{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-md);padding:20px;margin-bottom:16px;transition:all .2s;position:relative}
+.defect-card:hover{border-color:var(--border-hover)}
+.defect-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.defect-grid{display:grid;grid-template-columns:1fr 1fr 120px 1fr;gap:12px;align-items:end}
+@media(max-width:768px){.defect-grid{grid-template-columns:1fr 1fr}}
+
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:12px;margin-top:16px}
+.photo-item{aspect-ratio:1;background:var(--bg-input);border:2px dashed var(--border);border-radius:var(--radius-sm);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;color:var(--text-4);position:relative;overflow:hidden}
+.photo-item:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.photo-item img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.photo-item .photo-overlay{position:absolute;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s}
+.photo-item:hover .photo-overlay{opacity:1}
+
+.bci-wrap{display:flex;align-items:center;gap:32px;flex-wrap:wrap}
+.bci-circle{width:140px;height:140px;border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.bci-circle svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.bci-circle .bci-track{fill:none;stroke:var(--border);stroke-width:8}
+.bci-circle .bci-fill{fill:none;stroke:var(--accent);stroke-width:8;stroke-linecap:round;transition:stroke-dasharray 1s cubic-bezier(.4,0,.2,1)}
+.bci-value{position:relative;font-size:2.25rem;font-weight:800;color:var(--text-0);letter-spacing:-0.03em}
+.bci-label{position:relative;font-size:.6875rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.1em;margin-top:2px}
+
+.report-preview{background:#fafafa;color:#1a1a1a;border-radius:var(--radius-md);padding:48px;font-family:Georgia,serif;box-shadow:var(--shadow-lg);border:1px solid #e5e5e5}
+.report-preview h1{font-size:1.5rem;text-align:center;margin-bottom:24px;color:#1a1a1a;font-family:Georgia,serif}
+.report-preview h2{font-size:1.125rem;margin-top:24px;margin-bottom:12px;border-bottom:1px solid #ddd;padding-bottom:4px;color:#1a1a1a;font-family:Georgia,serif}
+.report-preview table{width:100%;border-collapse:collapse;margin:16px 0;font-size:.875rem}
+.report-preview th,.report-preview td{border:1px solid #ccc;padding:8px;text-align:left}
+.report-preview th{background:#f0f0f0;font-weight:600}
+
+.toast-container{position:fixed;bottom:24px;right:24px;z-index:1000;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.toast{padding:14px 20px;background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-md);display:flex;align-items:center;gap:12px;box-shadow:var(--shadow-lg);animation:toastIn .4s cubic-bezier(.16,1,.3,1);pointer-events:auto;min-width:320px;backdrop-filter:blur(12px)}
+@keyframes toastIn{from{transform:translateX(100%) scale(0.95);opacity:0}to{transform:translateX(0) scale(1);opacity:1}}
+.toast-success{border-left:3px solid var(--success)}
+.toast-error{border-left:3px solid var(--danger)}
+.toast-info{border-left:3px solid var(--accent)}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(8px);z-index:2000;display:none;align-items:center;justify-content:center;padding:24px;opacity:0;transition:opacity .3s}
+.modal-overlay.active{display:flex;opacity:1}
+.modal{background:var(--bg-1);border:1px solid var(--border);border-radius:var(--radius-xl);max-width:560px;width:100%;max-height:85vh;overflow:hidden;box-shadow:var(--shadow-lg);transform:scale(0.95);opacity:0;transition:all .3s cubic-bezier(.16,1,.3,1)}
+.modal-overlay.active .modal{transform:scale(1);opacity:1}
+.modal-header{padding:24px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-body{padding:24px 28px;overflow-y:auto;max-height:50vh}
+.modal-footer{padding:20px 28px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:12px}
+
+.hero{text-align:center;padding:60px 0 48px;position:relative}
+.hero h1{font-size:clamp(2.5rem,6vw,4rem);font-weight:800;line-height:1.05;margin-bottom:16px;letter-spacing:-0.03em}
+.hero p{font-size:1.125rem;color:var(--text-2);max-width:560px;margin:0 auto 32px;line-height:1.6}
+.hero-actions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
+.hero-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:48px;max-width:640px;margin-left:auto;margin-right:auto}
+@media(max-width:640px){.hero-stats{grid-template-columns:1fr}}
+
+.section-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:24px;gap:16px;flex-wrap:wrap}
+.section-title{font-size:1.25rem;font-weight:700;color:var(--text-0)}
+.section-subtitle{font-size:.8125rem;color:var(--text-3);margin-top:2px}
+
+.qa-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.qa-card{background:var(--bg-1);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;cursor:pointer;transition:all .3s;position:relative;overflow:hidden}
+.qa-card::after{content:"";position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--accent-grad);opacity:0;transition:opacity .3s}
+.qa-card:hover{border-color:var(--border-hover);transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+.qa-card:hover::after{opacity:1}
+.qa-icon{width:44px;height:44px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;margin-bottom:16px;background:var(--accent-soft);color:var(--accent);transition:all .3s}
+.qa-card:hover .qa-icon{transform:scale(1.05);box-shadow:0 4px 16px rgba(14,165,233,0.2)}
+.qa-title{font-size:.9375rem;font-weight:600;color:var(--text-0);margin-bottom:6px}
+.qa-desc{font-size:.8125rem;color:var(--text-3);line-height:1.5}
+
+.activity-item{display:flex;gap:14px;padding:16px 0;border-bottom:1px solid var(--border);transition:background .15s}
+.activity-item:last-child{border-bottom:none}
+.activity-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.8125rem}
+.activity-content{flex:1;min-width:0}
+.activity-text{font-size:.8125rem;color:var(--text-1);line-height:1.5}
+.activity-text strong{color:var(--text-0);font-weight:600}
+.activity-time{font-size:.6875rem;color:var(--text-4);margin-top:4px}
+
+.search-bar{display:flex;align-items:center;gap:10px;background:var(--bg-1);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0 14px;height:40px;transition:all .2s}
+.search-bar:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow)}
+.search-bar input{background:transparent;border:none;outline:none;color:var(--text-1);font-family:inherit;font-size:.8125rem;width:100%}
+.search-bar input::placeholder{color:var(--text-4)}
+
+.tab-bar{display:flex;gap:4px;padding:4px;background:var(--bg-1);border:1px solid var(--border);border-radius:var(--radius-sm);width:fit-content}
+.tab-btn{padding:8px 16px;border-radius:var(--radius-sm);font-size:.8125rem;font-weight:500;color:var(--text-3);background:transparent;border:none;cursor:pointer;transition:all .2s;white-space:nowrap}
+.tab-btn:hover{color:var(--text-1)}
+.tab-btn.active{background:var(--bg-3);color:var(--text-0);box-shadow:var(--shadow-sm)}
+
+.pagination{display:flex;justify-content:center;gap:6px;margin-top:24px}
+.page-btn{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);font-size:.8125rem;font-weight:500;color:var(--text-3);background:var(--bg-1);border:1px solid var(--border);cursor:pointer;transition:all .2s}
+.page-btn:hover{color:var(--text-1);background:var(--bg-2)}
+.page-btn.active{background:var(--accent);color:white;border-color:var(--accent)}
+.page-btn:disabled{opacity:0.4;cursor:not-allowed}
+
+[data-tooltip]{position:relative}
+[data-tooltip]::after{content:attr(data-tooltip);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%) translateY(4px);background:var(--bg-3);border:1px solid var(--border);padding:6px 10px;border-radius:var(--radius-sm);font-size:.6875rem;font-weight:500;color:var(--text-1);white-space:nowrap;opacity:0;pointer-events:none;transition:all .2s;box-shadow:var(--shadow-md);z-index:100}
+[data-tooltip]:hover::after{opacity:1;transform:translateX(-50%) translateY(0)}
+
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:var(--bg-0)}
+::-webkit-scrollbar-thumb{background:var(--border-hover);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--text-4)}
+
+.text-center{text-align:center}
+.mt-2{margin-top:8px}.mt-3{margin-top:12px}.mt-4{margin-top:16px}.mt-6{margin-top:24px}.mt-8{margin-top:32px}
+.mb-2{margin-bottom:8px}.mb-4{margin-bottom:16px}.mb-6{margin-bottom:24px}
+.flex{display:flex}.items-center{align-items:center}.justify-between{justify-content:space-between}.justify-center{justify-content:center}
+.gap-2{gap:8px}.gap-3{gap:12px}.gap-4{gap:16px}
+.w-full{width:100%}.flex-1{flex:1}
+.hidden{display:none}
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+@media(max-width:1024px){.grid-4{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:768px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
+
+.tag{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:100px;font-size:.6875rem;font-weight:600;background:var(--bg-3);color:var(--text-3);border:1px solid var(--border-light)}
+
+.progress-track{height:6px;background:var(--bg-3);border-radius:100px;overflow:hidden}
+.progress-fill{height:100%;border-radius:100px;transition:width 1s cubic-bezier(.4,0,.2,1)}
+
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:24px 0}
+
+.empty-state{text-align:center;padding:64px 24px}
+.empty-state-icon{width:64px;height:64px;border-radius:var(--radius-lg);background:var(--bg-2);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;color:var(--text-4)}
+.empty-state h3{font-size:1.0625rem;font-weight:600;color:var(--text-1);margin-bottom:8px}
+.empty-state p{font-size:.8125rem;color:var(--text-3);max-width:360px;margin:0 auto}
+
+.board{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.board-col{background:var(--bg-1);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px}
+.board-col-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.board-col-title{font-size:.8125rem;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:0.05em}
+.board-col-count{padding:2px 8px;background:var(--bg-3);border-radius:100px;font-size:.6875rem;font-weight:600;color:var(--text-3)}
+.board-item{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:10px;cursor:pointer;transition:all .2s}
+.board-item:hover{border-color:var(--border-hover);transform:translateY(-1px);box-shadow:var(--shadow-sm)}
+.board-item-title{font-size:.8125rem;font-weight:600;color:var(--text-0);margin-bottom:6px}
+.board-item-meta{display:flex;align-items:center;gap:10px;font-size:.6875rem;color:var(--text-4)}
+
+.timeline{position:relative;padding-left:28px}
+.timeline::before{content:"";position:absolute;left:8px;top:4px;bottom:4px;width:2px;background:var(--border);border-radius:2px}
+.timeline-item{position:relative;padding-bottom:24px}
+.timeline-item:last-child{padding-bottom:0}
+.timeline-dot{position:absolute;left:-28px;top:2px;width:18px;height:18px;border-radius:50%;background:var(--bg-1);border:2px solid var(--border);display:flex;align-items:center;justify-content:center}
+.timeline-dot.active{border-color:var(--accent);background:var(--accent-soft)}
+.timeline-dot::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--text-4)}
+.timeline-dot.active::after{background:var(--accent)}
+.timeline-content{font-size:.8125rem}
+.timeline-title{font-weight:600;color:var(--text-0);margin-bottom:2px}
+.timeline-desc{color:var(--text-3);font-size:.75rem}
+.timeline-time{color:var(--text-4);font-size:.6875rem;margin-top:4px}
+
+.team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.team-card{background:var(--bg-1);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;text-align:center;transition:all .3s}
+.team-card:hover{border-color:var(--border-hover);transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.team-avatar{width:64px;height:64px;border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.25rem;color:white}
+.team-name{font-size:1rem;font-weight:600;color:var(--text-0);margin-bottom:4px}
+.team-role{font-size:.8125rem;color:var(--text-3);margin-bottom:16px}
+.team-stats{display:flex;justify-content:center;gap:24px;padding-top:16px;border-top:1px solid var(--border)}
+.team-stat{text-align:center}
+.team-stat-value{font-size:1.125rem;font-weight:700;color:var(--text-0)}
+.team-stat-label{font-size:.6875rem;color:var(--text-4);margin-top:2px}
+
+.analytics-hero{background:var(--bg-1);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px;margin-bottom:24px}
+.analytics-hero h2{font-size:1.5rem;margin-bottom:4px}
+.analytics-hero p{color:var(--text-2);font-size:.875rem}
+</style>
+<base target="_blank">
+</head>
+<body>
+
+<div class="ambient-bg">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+</div>
+<div class="bg-grid"></div>
+
+<nav class="navbar" id="navbar">
+  <div class="nav-brand">
+    <div class="logo-icon"><i data-lucide="bridge"></i></div>
+    <span>SpanSense <span style="color:var(--accent)">2.0</span></span>
+  </div>
+  <div class="nav-links">
+    <button class="nav-link active" onclick="showPage('dashboard',this)"><span><i data-lucide="layout-dashboard" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px"></i>Dashboard</span></button>
+    <button class="nav-link" onclick="showPage('upload',this)"><span><i data-lucide="plus-circle" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px"></i>New</span></button>
+    <button class="nav-link" onclick="showPage('library',this)"><span><i data-lucide="library" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px"></i>Library</span></button>
+    <button class="nav-link" onclick="showPage('reports',this)"><span><i data-lucide="file-text" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px"></i>Reports</span></button>
+    <button class="nav-link" onclick="showPage('analytics',this)"><span><i data-lucide="bar-chart-3" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px"></i>Analytics</span></button>
+    <button class="nav-link" onclick="showPage('team',this)"><span><i data-lucide="users" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px"></i>Team</span></button>
+  </div>
+  <div class="nav-user">
+    <span class="user-name">Dr. Sarah Chen</span>
+    <div class="user-avatar">SC</div>
+  </div>
+</nav>
+
+<main class="main-content">
+
+<!-- ==================== DASHBOARD ==================== -->
+<div id="page-dashboard" class="page active">
+  <div class="container">
+    <div class="hero">
+      <h1>Bridge Inspection,<br><span class="text-gradient-2">Reimagined.</span></h1>
+      <p>Upload last year's report. We pre-fill this year's form. You only enter what changed.</p>
+      <div class="hero-actions">
+        <button class="btn btn-primary btn-lg" onclick="showPage('upload',null)">
+          <i data-lucide="upload-cloud" style="width:18px;height:18px"></i>Start New Inspection
+        </button>
+        <button class="btn btn-secondary btn-lg" onclick="showPage('library',null)">
+          <i data-lucide="library" style="width:18px;height:18px"></i>Browse Library
+        </button>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-card">
+          <div class="stat-icon"><i data-lucide="clipboard-check" style="width:20px;height:20px"></i></div>
+          <div class="stat-value">47</div>
+          <div class="stat-change up"><i data-lucide="trending-up" style="width:12px;height:12px"></i>+12% vs last year</div>
+          <div class="stat-label">Inspections This Year</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:var(--success-soft);color:var(--success)"><i data-lucide="clock" style="width:20px;height:20px"></i></div>
+          <div class="stat-value">12.5h</div>
+          <div class="stat-change up"><i data-lucide="trending-up" style="width:12px;height:12px"></i>+3.2h this month</div>
+          <div class="stat-label">Time Saved</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:var(--info-soft);color:var(--info)"><i data-lucide="brain" style="width:20px;height:20px"></i></div>
+          <div class="stat-value">98.2%</div>
+          <div class="stat-change up"><i data-lucide="trending-up" style="width:12px;height:12px"></i>+0.4% accuracy</div>
+          <div class="stat-label">AI Extraction Accuracy</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2 mt-8">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title"><i data-lucide="history" class="icon" style="color:var(--accent)"></i>Recent Inspections</div>
+            <div class="card-subtitle">Last 5 inspections across your portfolio</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="showPage('reports',null)">View All <i data-lucide="arrow-right" style="width:14px"></i></button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Structure</th><th>Date</th><th>Status</th><th>BCI</th><th></th></tr></thead>
+            <tbody>
+              <tr>
+                <td><div style="font-weight:600;color:var(--text-0)">A470 River Bridge</div><div style="font-size:.6875rem;color:var(--text-4)">SN-2024-0847</div></td>
+                <td style="white-space:nowrap">May 12, 2026</td>
+                <td><span class="badge badge-sev-1"><span style="width:6px;height:6px;border-radius:50%;background:var(--success);display:inline-block"></span>Complete</span></td>
+                <td><span style="color:var(--accent);font-weight:700;font-size:1rem">78.4</span></td>
+                <td><button class="btn btn-ghost btn-sm" data-tooltip="Download"><i data-lucide="download" style="width:14px"></i></button></td>
+              </tr>
+              <tr>
+                <td><div style="font-weight:600;color:var(--text-0)">M4 Junction 24</div><div style="font-size:.6875rem;color:var(--text-4)">SN-2023-0156</div></td>
+                <td style="white-space:nowrap">May 8, 2026</td>
+                <td><span class="badge badge-sev-1"><span style="width:6px;height:6px;border-radius:50%;background:var(--success);display:inline-block"></span>Complete</span></td>
+                <td><span style="color:var(--warning);font-weight:700;font-size:1rem">62.1</span></td>
+                <td><button class="btn btn-ghost btn-sm" data-tooltip="Download"><i data-lucide="download" style="width:14px"></i></button></td>
+              </tr>
+              <tr>
+                <td><div style="font-weight:600;color:var(--text-0)">Bristol Harbour Footbridge</div><div style="font-size:.6875rem;color:var(--text-4)">SN-2024-0032</div></td>
+                <td style="white-space:nowrap">Apr 28, 2026</td>
+                <td><span class="badge badge-sev-2"><span style="width:6px;height:6px;border-radius:50%;background:var(--warning);display:inline-block"></span>In Review</span></td>
+                <td><span style="color:var(--accent);font-weight:700;font-size:1rem">85.2</span></td>
+                <td><button class="btn btn-ghost btn-sm" data-tooltip="Download"><i data-lucide="download" style="width:14px"></i></button></td>
+              </tr>
+              <tr>
+                <td><div style="font-weight:600;color:var(--text-0)">A38 Saltash Viaduct</div><div style="font-size:.6875rem;color:var(--text-4)">SN-2022-0091</div></td>
+                <td style="white-space:nowrap">Apr 15, 2026</td>
+                <td><span class="badge badge-sev-3"><span style="width:6px;height:6px;border-radius:50%;background:var(--danger);display:inline-block"></span>Urgent</span></td>
+                <td><span style="color:var(--danger);font-weight:700;font-size:1rem">41.7</span></td>
+                <td><button class="btn btn-ghost btn-sm" data-tooltip="Download"><i data-lucide="download" style="width:14px"></i></button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title"><i data-lucide="activity" class="icon" style="color:var(--accent)"></i>BCI Trend</div>
+            <div class="card-subtitle">Portfolio condition index over last 12 months</div>
+          </div>
+          <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab(this,'bci-6m')">6M</button>
+            <button class="tab-btn" onclick="switchTab(this,'bci-1y')">1Y</button>
+            <button class="tab-btn" onclick="switchTab(this,'bci-all')">All</button>
+          </div>
+        </div>
+        <div class="chart-container" id="bciChart">
+          <div class="chart-bar" style="height:45%;background:linear-gradient(180deg,var(--accent),rgba(14,165,233,0.3))"><div class="bar-tooltip">Jan: 72.4</div></div>
+          <div class="chart-bar" style="height:52%;background:linear-gradient(180deg,var(--accent),rgba(14,165,233,0.3))"><div class="bar-tooltip">Feb: 74.1</div></div>
+          <div class="chart-bar" style="height:48%;background:linear-gradient(180deg,var(--accent),rgba(14,165,233,0.3))"><div class="bar-tooltip">Mar: 73.2</div></div>
+          <div class="chart-bar" style="height:58%;background:linear-gradient(180deg,var(--accent),rgba(14,165,233,0.3))"><div class="bar-tooltip">Apr: 76.8</div></div>
+          <div class="chart-bar" style="height:62%;background:linear-gradient(180deg,var(--accent),rgba(14,165,233,0.3))"><div class="bar-tooltip">May: 78.4</div></div>
+          <div class="chart-bar" style="height:55%;background:linear-gradient(180deg,var(--accent-2),rgba(6,182,212,0.3))"><div class="bar-tooltip">Jun: 75.1</div></div>
+          <div class="chart-bar" style="height:60%;background:linear-gradient(180deg,var(--accent-2),rgba(6,182,212,0.3))"><div class="bar-tooltip">Jul: 77.3</div></div>
+          <div class="chart-bar" style="height:68%;background:linear-gradient(180deg,var(--accent-2),rgba(6,182,212,0.3))"><div class="bar-tooltip">Aug: 80.2</div></div>
+          <div class="chart-bar" style="height:65%;background:linear-gradient(180deg,var(--accent-2),rgba(6,182,212,0.3))"><div class="bar-tooltip">Sep: 79.1</div></div>
+          <div class="chart-bar" style="height:70%;background:linear-gradient(180deg,var(--success),rgba(16,185,129,0.3))"><div class="bar-tooltip">Oct: 81.5</div></div>
+          <div class="chart-bar" style="height:66%;background:linear-gradient(180deg,var(--success),rgba(16,185,129,0.3))"><div class="bar-tooltip">Nov: 79.8</div></div>
+          <div class="chart-bar" style="height:74%;background:linear-gradient(180deg,var(--success),rgba(16,185,129,0.3))"><div class="bar-tooltip">Dec: 83.2</div></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:12px;font-size:.6875rem;color:var(--text-4)">
+          <span>Jan 2026</span><span>Dec 2026</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2 mt-6">
+      <div>
+        <div class="section-header">
+          <div>
+            <div class="section-title">Quick Actions</div>
+            <div class="section-subtitle">Common tasks and shortcuts</div>
+          </div>
+        </div>
+        <div class="qa-grid">
+          <div class="qa-card" onclick="showPage('upload',null)">
+            <div class="qa-icon"><i data-lucide="file-up" style="width:20px;height:20px"></i></div>
+            <div class="qa-title">Upload Report</div>
+            <div class="qa-desc">Parse PDF or Word docs to extract structure data automatically.</div>
+          </div>
+          <div class="qa-card" onclick="showPage('library',null)">
+            <div class="qa-icon"><i data-lucide="library" style="width:20px;height:20px"></i></div>
+            <div class="qa-title">Structure Library</div>
+            <div class="qa-desc">Browse saved structures and clone previous inspections.</div>
+          </div>
+          <div class="qa-card" onclick="showPage('analytics',null)">
+            <div class="qa-icon" style="background:var(--info-soft);color:var(--info)"><i data-lucide="bar-chart-3" style="width:20px;height:20px"></i></div>
+            <div class="qa-title">Analytics Dashboard</div>
+            <div class="qa-desc">View BCI trends and defect heatmaps across your portfolio.</div>
+          </div>
+          <div class="qa-card" onclick="showPage('team',null)">
+            <div class="qa-icon" style="background:var(--warning-soft);color:var(--warning)"><i data-lucide="users" style="width:20px;height:20px"></i></div>
+            <div class="qa-title">Team Collaboration</div>
+            <div class="qa-desc">Share reports, assign tasks, and manage approval workflows.</div>
+          </div>
+          <div class="qa-card" onclick="showToast('Schedule feature coming in v2.1','info')">
+            <div class="qa-icon" style="background:var(--danger-soft);color:var(--danger)"><i data-lucide="calendar-clock" style="width:20px;height:20px"></i></div>
+            <div class="qa-title">Schedule Inspection</div>
+            <div class="qa-desc">Plan upcoming inspections with calendar integration and reminders.</div>
+          </div>
+          <div class="qa-card" onclick="showToast('Export feature coming in v2.1','info')">
+            <div class="qa-icon" style="background:var(--success-soft);color:var(--success)"><i data-lucide="file-output" style="width:20px;height:20px"></i></div>
+            <div class="qa-title">Batch Export</div>
+            <div class="qa-desc">Export multiple reports in PDF, DOCX, or CSV format at once.</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-header">
+          <div>
+            <div class="section-title">Recent Activity</div>
+            <div class="section-subtitle">Latest actions across your team</div>
+          </div>
+          <button class="btn btn-ghost btn-sm">View All</button>
+        </div>
+        <div class="card" style="padding:0 24px">
+          <div class="activity-item">
+            <div class="activity-icon" style="background:var(--accent-soft);color:var(--accent)"><i data-lucide="file-check" style="width:16px"></i></div>
+            <div class="activity-content">
+              <div class="activity-text"><strong>Dr. Sarah Chen</strong> completed inspection for <strong>A470 River Bridge</strong></div>
+              <div class="activity-time">2 hours ago</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-icon" style="background:var(--warning-soft);color:var(--warning)"><i data-lucide="alert-triangle" style="width:16px"></i></div>
+            <div class="activity-content">
+              <div class="activity-text"><strong>System</strong> flagged <strong>A38 Saltash Viaduct</strong> as urgent — BCI dropped to 41.7</div>
+              <div class="activity-time">5 hours ago</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-icon" style="background:var(--success-soft);color:var(--success)"><i data-lucide="upload" style="width:16px"></i></div>
+            <div class="activity-content">
+              <div class="activity-text"><strong>James Wilson</strong> uploaded 12 photos for <strong>M4 Junction 24</strong></div>
+              <div class="activity-time">Yesterday</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-icon" style="background:var(--info-soft);color:var(--info)"><i data-lucide="message-square" style="width:16px"></i></div>
+            <div class="activity-content">
+              <div class="activity-text"><strong>Emma Davies</strong> commented on <strong>Bristol Harbour Footbridge</strong> report</div>
+              <div class="activity-time">Yesterday</div>
+            </div>
+          </div>
+          <div class="activity-item">
+            <div class="activity-icon" style="background:var(--danger-soft);color:var(--danger)"><i data-lucide="shield-alert" style="width:16px"></i></div>
+            <div class="activity-content">
+              <div class="activity-text"><strong>System</strong> detected new severe defect on <strong>Span 3</strong> of A470 River Bridge</div>
+              <div class="activity-time">2 days ago</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-8">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Defect Board</div>
+          <div class="section-subtitle">Track and manage defects by priority</div>
+        </div>
+        <div class="tab-bar">
+          <button class="tab-btn active" onclick="switchTab(this,'board-all')">All</button>
+          <button class="tab-btn" onclick="switchTab(this,'board-urgent')">Urgent</button>
+          <button class="tab-btn" onclick="switchTab(this,'board-open')">Open</button>
+        </div>
+      </div>
+      <div class="board">
+        <div class="board-col">
+          <div class="board-col-header">
+            <span class="board-col-title" style="color:var(--danger)">Urgent</span>
+            <span class="board-col-count" style="color:var(--danger);background:var(--danger-soft)">3</span>
+          </div>
+          <div class="board-item" onclick="showToast('Opening defect details...','info')">
+            <div class="board-item-title">Spalling — Abutment S3</div>
+            <div style="font-size:.75rem;color:var(--text-3);margin-bottom:8px">A470 River Bridge</div>
+            <div class="board-item-meta">
+              <span class="badge badge-sev-3" style="font-size:.625rem;padding:2px 8px">Sev 3</span>
+              <span><i data-lucide="calendar" style="width:10px"></i> May 12</span>
+              <span><i data-lucide="user" style="width:10px"></i> SC</span>
+            </div>
+          </div>
+          <div class="board-item" onclick="showToast('Opening defect details...','info')">
+            <div class="board-item-title">Scour — Pier 2</div>
+            <div style="font-size:.75rem;color:var(--text-3);margin-bottom:8px">A38 Saltash Viaduct</div>
+            <div class="board-item-meta">
+              <span class="badge badge-sev-3" style="font-size:.625rem;padding:2px 8px">Sev 3</span>
+              <span><i data-lucide="calendar" style="width:10px"></i> Apr 15</span>
+              <span><i data-lucide="user" style="width:10px"></i> ED</span>
+            </div>
+          </div>
+          <div class="board-item" onclick="showToast('Opening defect details...','info')">
+            <div class="board-item-title">Bearing Failure — B1</div>
+            <div style="font-size:.75rem;color:var(--text-3);margin-bottom:8px">Severn Bridge N. Tower</div>
+            <div class="board-item-meta">
+              <span class="badge badge-sev-3" style="font-size:.625rem;padding:2px 8px">Sev 3</span>
+              <span><i data-lucide="calendar" style="width:10px"></i> Apr 2</span>
+              <span><i data-lucide="user" style="width:10px"></i> JW</span>
+            </div>
+          </div>
+        </div>
+        <div class="board-col">
+          <div class="board-col-header">
+            <span class="board-col-title" style="color:var(--warning)">Short Term</span>
+            <span class="board-col-count" style="color:var(--warning);background:var(--warning-soft)">5</span>
+          </div>
+          <div class="board-item" onclick="showToast('Opening defect details...','info')">
+            <div class="board-item-title">Corrosion — Beam S1</div>
+            <div style="font-size:.75rem;color:var(--text-3);margin-bottom:8px">A470 River Bridge</div>
+            <div class="board-item-meta">
+              <span class="badge badge-sev-2" style="font-size:.625rem;padding:2px 8px">Sev 2</span>
+              <span><i data-lucide="calendar" style="width:10px"></i> May 12</span>
+            </div>
+          </div>
+          <div class="board-item" onclick="showToast('Opening defect details...','info')">
+            <div class="board-item-title">Delamination — Deck S2</div>
+            <div style="font-size:.75rem;color:var(--text-3);margin-bottom:8px">M4 Junction 24</div>
+            <div class="board-item-meta">
+              <span class="badge badge-sev-2" style="font-size:.625rem;padding:2px 8px">Sev 2</span>
+              <span><i data-lucide="calendar" style="width:10px"></i> May 8</span>
+            </div>
+          </div>
+        </div>
+        <div class="board-col">
+          <div class="board-col-header">
+            <span class="board-col-title" style="color:var(--success)">Routine</span>
+            <span class="board-col-count" style="color:var(--success);background:var(--success-soft)">8</span>
+          </div>
+          <div class="board-item" onclick="showToast('Opening defect details...','info')">
+            <div class="board-item-title">Cracking — Deck All</div>
+            <div style="font-size:.75rem;color:var(--text-3);margin-bottom:8px">A470 River Bridge</div>
+            <div class="board-item-meta">
+              <span class="badge badge-sev-1" style="font-size:.625rem;padding:2px 8px">Sev 1</span>
+              <span><i data-lucide="calendar" style="width:10px"></i> May 12</span>
+            </div>
+          </div>
+          <div class="board-item" onclick="showToast('Opening defect details...','info')">
+            <div class="board-item-title">Joint Seal — All</div>
+            <div style="font-size:.75rem;color:var(--text-3);margin-bottom:8px">Bristol Harbour</div>
+            <div class="board-item-meta">
+              <span class="badge badge-sev-1" style="font-size:.625rem;padding:2px 8px">Sev 1</span>
+              <span><i data-lucide="calendar" style="width:10px"></i> Apr 28</span>
+            </div>
+          </div>
+        </div>
+        <div class="board-col">
+          <div class="board-col-header">
+            <span class="board-col-title" style="color:var(--text-3)">Resolved</span>
+            <span class="board-col-count">12</span>
+          </div>
+          <div class="board-item" style="opacity:0.6">
+            <div class="board-item-title">Parapet Repair — S1</div>
+            <div style="font-size:.75rem;color:var(--text-3);margin-bottom:8px">Clifton Suspension</div>
+            <div class="board-item-meta">
+              <span class="badge badge-muted" style="font-size:.625rem;padding:2px 8px">Fixed</span>
+              <span><i data-lucide="calendar" style="width:10px"></i> Mar 20</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-8 mb-8">
+      <div class="section-header">
+        <div>
+          <div class="section-title">Portfolio Overview</div>
+          <div class="section-subtitle">Condition distribution across all structures</div>
+        </div>
+      </div>
+      <div class="grid-4">
+        <div class="stat-card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+            <div class="stat-icon" style="background:var(--success-soft);color:var(--success)"><i data-lucide="check-circle-2" style="width:20px"></i></div>
+            <span class="badge badge-sev-1">Good</span>
+          </div>
+          <div class="stat-value" style="font-size:1.75rem">18</div>
+          <div class="stat-label">Structures</div>
+          <div class="progress-track mt-3"><div class="progress-fill" style="width:45%;background:var(--success)"></div></div>
+          <div style="font-size:.6875rem;color:var(--text-4);margin-top:6px">45% of portfolio</div>
+        </div>
+        <div class="stat-card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+            <div class="stat-icon" style="background:var(--warning-soft);color:var(--warning)"><i data-lucide="alert-circle" style="width:20px"></i></div>
+            <span class="badge badge-sev-2">Fair</span>
+          </div>
+          <div class="stat-value" style="font-size:1.75rem">12</div>
+          <div class="stat-label">Structures</div>
+          <div class="progress-track mt-3"><div class="progress-fill" style="width:30%;background:var(--warning)"></div></div>
+          <div style="font-size:.6875rem;color:var(--text-4);margin-top:6px">30% of portfolio</div>
+        </div>
+        <div class="stat-card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+            <div class="stat-icon" style="background:var(--danger-soft);color:var(--danger)"><i data-lucide="alert-triangle" style="width:20px"></i></div>
+            <span class="badge badge-sev-3">Poor</span>
+          </div>
+          <div class="stat-value" style="font-size:1.75rem">6</div>
+          <div class="stat-label">Structures</div>
+          <div class="progress-track mt-3"><div class="progress-fill" style="width:15%;background:var(--danger)"></div></div>
+          <div style="font-size:.6875rem;color:var(--text-4);margin-top:6px">15% of portfolio</div>
+        </div>
+        <div class="stat-card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+            <div class="stat-icon" style="background:var(--accent-soft);color:var(--accent)"><i data-lucide="shield-check" style="width:20px"></i></div>
+            <span class="badge badge-accent">Critical</span>
+          </div>
+          <div class="stat-value" style="font-size:1.75rem">4</div>
+          <div class="stat-label">Structures</div>
+          <div class="progress-track mt-3"><div class="progress-fill" style="width:10%;background:var(--accent)"></div></div>
+          <div style="font-size:.6875rem;color:var(--text-4);margin-top:6px">10% of portfolio</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== UPLOAD / NEW INSPECTION ==================== -->
+<div id="page-upload" class="page">
+  <div class="container">
+    <div class="steps">
+      <div class="step active" id="step-1"><div class="step-number">1</div><span>Upload</span></div>
+      <div class="step" id="step-2"><div class="step-number">2</div><span>Review</span></div>
+      <div class="step" id="step-3"><div class="step-number">3</div><span>Inspect</span></div>
+      <div class="step" id="step-4"><div class="step-number">4</div><span>Report</span></div>
+    </div>
+
+    <!-- Step 1: Upload -->
+    <div id="upload-step-1">
+      <div class="text-center" style="margin-bottom:32px">
+        <h2 style="font-size:2rem;font-weight:700;margin-bottom:8px">Upload Previous Report</h2>
+        <p style="color:var(--text-2)">Drag and drop or click to select a PDF or Word document</p>
+      </div>
+      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+        <div class="upload-icon"><i data-lucide="upload-cloud" style="width:32px;height:32px"></i></div>
+        <h3 style="font-size:1.125rem;font-weight:600;margin-bottom:8px">Drop your report here</h3>
+        <p style="color:var(--text-3);font-size:.875rem">or click to browse your files</p>
+        <div class="file-types"><span class="file-type">PDF</span><span class="file-type">DOCX</span><span class="file-type">DOC</span><span class="file-type">XLSX</span></div>
+        <input type="file" id="fileInput" style="display:none" accept=".pdf,.docx,.doc,.xlsx" onchange="handleFileSelect(event)">
+      </div>
+      <div style="margin-top:32px">
+        <div class="section-header">
+          <div>
+            <div class="section-title">Or select from Structure Library</div>
+            <div class="section-subtitle">Clone a previous inspection as a starting template</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px">
+          <div class="structure-card" onclick="loadMockStructure()">
+            <div class="structure-header">
+              <div>
+                <div class="structure-name">A470 River Bridge</div>
+                <div class="structure-meta">
+                  <span><i data-lucide="map-pin" style="width:14px"></i> Cardiff, Wales</span>
+                  <span><i data-lucide="calendar" style="width:14px"></i> Built 1987</span>
+                </div>
+              </div>
+              <span class="badge badge-accent" style="font-size:.75rem">3 Spans</span>
+            </div>
+            <div class="structure-footer">
+              <span style="font-size:.875rem;color:var(--text-3)">Last inspected: May 2025</span>
+              <button class="btn btn-sm btn-primary">Use Template</button>
+            </div>
+          </div>
+          <div class="structure-card" onclick="showToast('Structure loaded','success')">
+            <div class="structure-header">
+              <div>
+                <div class="structure-name">M4 Junction 24 Overpass</div>
+                <div class="structure-meta">
+                  <span><i data-lucide="map-pin" style="width:14px"></i> Newport, Wales</span>
+                  <span><i data-lucide="calendar" style="width:14px"></i> Built 1995</span>
+                </div>
+              </div>
+              <span class="badge badge-accent" style="font-size:.75rem">2 Spans</span>
+            </div>
+            <div class="structure-footer">
+              <span style="font-size:.875rem;color:var(--text-3)">Last inspected: August 2025</span>
+              <button class="btn btn-sm btn-primary">Use Template</button>
+            </div>
+          </div>
+          <div class="structure-card" onclick="showToast('Structure loaded','success')">
+            <div class="structure-header">
+              <div>
+                <div class="structure-name">Bristol Harbour Footbridge</div>
+                <div class="structure-meta">
+                  <span><i data-lucide="map-pin" style="width:14px"></i> Bristol, England</span>
+                  <span><i data-lucide="calendar" style="width:14px"></i> Built 2008</span>
+                </div>
+              </div>
+              <span class="badge badge-accent" style="font-size:.75rem">1 Span</span>
+            </div>
+            <div class="structure-footer">
+              <span style="font-size:.875rem;color:var(--text-3)">Last inspected: April 2025</span>
+              <button class="btn btn-sm btn-primary">Use Template</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Review -->
+    <div id="upload-step-2" style="display:none">
+      <div class="flex justify-between items-center mb-4">
+        <div>
+          <h2 style="font-size:1.75rem;font-weight:700">Review Extracted Data</h2>
+          <p style="color:var(--text-2);margin-top:4px">Verify and correct the information extracted from your report.</p>
+        </div>
+        <div class="flex gap-2">
+          <button class="btn btn-secondary" onclick="showUploadStep(1)">Back</button>
+          <button class="btn btn-primary" onclick="showUploadStep(3)">Confirm & Continue</button>
+        </div>
+      </div>
+      <div class="extraction-preview">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h3 style="font-weight:600">Structure Details</h3>
+          <span style="font-size:.875rem;color:var(--text-3)">Extracted from A470_River_Bridge_2025.pdf</span>
+        </div>
+        <div class="extraction-field">
+          <span class="field-label">Structure Name</span>
+          <input type="text" class="field-value" value="A470 River Bridge">
+          <span class="field-confidence confidence-high" style="background:var(--success-soft);color:var(--success)">98% confidence</span>
+        </div>
+        <div class="extraction-field">
+          <span class="field-label">Structure Number</span>
+          <input type="text" class="field-value" value="SN-2024-0847">
+          <span class="field-confidence confidence-high" style="background:var(--success-soft);color:var(--success)">95% confidence</span>
+        </div>
+        <div class="extraction-field">
+          <span class="field-label">Date of Construction</span>
+          <input type="text" class="field-value" value="1987">
+          <span class="field-confidence confidence-high" style="background:var(--success-soft);color:var(--success)">99% confidence</span>
+        </div>
+        <div class="extraction-field">
+          <span class="field-label">Crosses</span>
+          <input type="text" class="field-value" value="River Taff">
+          <span class="field-confidence confidence-medium" style="background:var(--warning-soft);color:var(--warning)">82% confidence</span>
+        </div>
+        <div class="extraction-field">
+          <span class="field-label">Carries</span>
+          <input type="text" class="field-value" value="A470 Trunk Road">
+          <span class="field-confidence confidence-high" style="background:var(--success-soft);color:var(--success)">96% confidence</span>
+        </div>
+        <div class="extraction-field">
+          <span class="field-label">Location</span>
+          <input type="text" class="field-value" value="Cardiff, Wales">
+          <span class="field-confidence confidence-high" style="background:var(--success-soft);color:var(--success)">94% confidence</span>
+        </div>
+        <div class="extraction-field">
+          <span class="field-label">Grid Reference</span>
+          <input type="text" class="field-value" value="ST 17971 76543">
+          <span class="field-confidence confidence-medium" style="background:var(--warning-soft);color:var(--warning)">78% confidence</span>
+        </div>
+        <div class="extraction-field">
+          <span class="field-label">Latitude / Longitude</span>
+          <input type="text" class="field-value" value="51.4839 N, 3.1819 W">
+          <span class="field-confidence confidence-high" style="background:var(--success-soft);color:var(--success)">97% confidence</span>
+        </div>
+        <div class="extraction-field">
+          <span class="field-label">Total Spans</span>
+          <input type="text" class="field-value" value="3">
+          <span class="field-confidence confidence-high" style="background:var(--success-soft);color:var(--success)">100% confidence</span>
+        </div>
+      </div>
+      <div style="margin-top:20px;padding:16px;background:rgba(16,185,129,0.05);border-radius:8px;border:1px solid var(--success-soft)">
+        <div style="display:flex;align-items:center;gap:8px;color:var(--success);font-size:.875rem">
+          <i data-lucide="check-circle-2" style="width:16px"></i>
+          <strong>Tip:</strong> Fields with lower confidence are highlighted. Please verify these carefully.
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Inspection -->
+    <div id="upload-step-3" style="display:none">
+      <div class="flex justify-between items-center mb-4">
+        <div>
+          <h2 style="font-size:1.75rem;font-weight:700">New Inspection Data</h2>
+          <p style="color:var(--text-2);margin-top:4px">A470 River Bridge — May 15, 2026</p>
+        </div>
+        <div class="flex gap-2">
+          <button class="btn btn-secondary" onclick="showUploadStep(2)">Back</button>
+          <button class="btn btn-primary" onclick="showUploadStep(4)">Generate Report</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i data-lucide="user" class="icon" style="color:var(--accent)"></i>Inspector Details</div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group"><label>Inspector Name</label><input type="text" value="Dr. Sarah Chen"></div>
+          <div class="form-group"><label>Inspection Date</label><input type="date" value="2026-05-15"></div>
+          <div class="form-group">
+            <label>Inspection Type</label>
+            <select>
+              <option selected>General Inspection</option>
+              <option>Principal Inspection</option>
+              <option>Special Inspection</option>
+              <option>Damage Inspection</option>
+              <option>Underwater Inspection</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Weather Conditions</label><input type="text" value="Overcast, 14C, Dry"></div>
+          <div class="form-group">
+            <label>Traffic Control</label>
+            <select>
+              <option selected>None required</option>
+              <option>Lane closure</option>
+              <option>Full closure</option>
+              <option>Contraflow</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Equipment Used</label><input type="text" value="Drone, GPR, Crack gauge"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i data-lucide="alert-triangle" class="icon" style="color:var(--warning)"></i>Defects & Condition</div>
+          <button class="btn btn-primary btn-sm" onclick="addDefect()"><i data-lucide="plus" style="width:14px"></i>Add Defect</button>
+        </div>
+        <div id="defects-container">
+          <div class="defect-card">
+            <div class="defect-header">
+              <div class="flex gap-2 items-center">
+                <span class="badge badge-accent">Span 1</span>
+                <span class="badge badge-sev-2">Severity 2</span>
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="this.closest('.defect-card').remove()"><i data-lucide="trash-2" style="width:14px"></i></button>
+            </div>
+            <div class="defect-grid">
+              <div class="form-group"><label>Element</label><select><option>Deck</option><option selected>Beam</option><option>Abutment</option><option>Pier</option><option>Bearing</option><option>Parapet</option></select></div>
+              <div class="form-group"><label>Defect Type</label><select><option>Cracking</option><option selected>Corrosion</option><option>Spalling</option><option>Delamination</option><option>Scour</option><option>Deformation</option></select></div>
+              <div class="form-group"><label>Severity</label><select><option>1 - Minor</option><option selected>2 - Moderate</option><option>3 - Severe</option></select></div>
+              <div class="form-group"><label>Extent (%)</label><input type="number" value="15" min="0" max="100"></div>
+            </div>
+            <div class="form-group mt-4"><label>Comments</label><textarea rows="2">Surface corrosion visible on north-facing beam flange. Minor section loss estimated at less than 5%. Coating system failing.</textarea></div>
+            <div class="mt-4">
+              <label style="font-size:.875rem;color:var(--text-2);margin-bottom:8px;display:block">Photos</label>
+              <div class="photo-grid">
+                <div class="photo-item"><i data-lucide="image" style="width:24px;height:24px"></i><span style="font-size:.75rem;margin-top:4px">IMG_001.jpg</span></div>
+                <div class="photo-item"><i data-lucide="image" style="width:24px;height:24px"></i><span style="font-size:.75rem;margin-top:4px">IMG_002.jpg</span></div>
+                <div class="photo-item" onclick="showToast('Photo upload simulated','success')"><i data-lucide="plus" style="width:24px;height:24px"></i><span style="font-size:.75rem;margin-top:4px">Add Photo</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="defect-card">
+            <div class="defect-header">
+              <div class="flex gap-2 items-center">
+                <span class="badge badge-accent">Span 2</span>
+                <span class="badge badge-sev-1">Severity 1</span>
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="this.closest('.defect-card').remove()"><i data-lucide="trash-2" style="width:14px"></i></button>
+            </div>
+            <div class="defect-grid">
+              <div class="form-group"><label>Element</label><select><option selected>Deck</option><option>Beam</option><option>Abutment</option></select></div>
+              <div class="form-group"><label>Defect Type</label><select><option selected>Cracking</option><option>Corrosion</option><option>Spalling</option></select></div>
+              <div class="form-group"><label>Severity</label><select><option selected>1 - Minor</option><option>2 - Moderate</option><option>3 - Severe</option></select></div>
+              <div class="form-group"><label>Extent (%)</label><input type="number" value="5" min="0" max="100"></div>
+            </div>
+            <div class="form-group mt-4"><label>Comments</label><textarea rows="2">Hairline longitudinal cracking in deck surfacing. Non-structural. Monitor annually.</textarea></div>
+          </div>
+          <div class="defect-card">
+            <div class="defect-header">
+              <div class="flex gap-2 items-center">
+                <span class="badge badge-accent">Span 3</span>
+                <span class="badge badge-sev-3">Severity 3</span>
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="this.closest('.defect-card').remove()"><i data-lucide="trash-2" style="width:14px"></i></button>
+            </div>
+            <div class="defect-grid">
+              <div class="form-group"><label>Element</label><select><option>Deck</option><option>Beam</option><option selected>Abutment</option><option>Pier</option></select></div>
+              <div class="form-group"><label>Defect Type</label><select><option>Cracking</option><option>Corrosion</option><option selected>Spalling</option><option>Scour</option></select></div>
+              <div class="form-group"><label>Severity</label><select><option>1 - Minor</option><option>2 - Moderate</option><option selected>3 - Severe</option></select></div>
+              <div class="form-group"><label>Extent (%)</label><input type="number" value="35" min="0" max="100"></div>
+            </div>
+            <div class="form-group mt-4"><label>Comments</label><textarea rows="2">Significant spalling and exposed reinforcement on south abutment. Reinforcement bars showing corrosion. Urgent repair required.</textarea></div>
+            <div class="mt-4">
+              <label style="font-size:.875rem;color:var(--text-2);margin-bottom:8px;display:block">Photos</label>
+              <div class="photo-grid">
+                <div class="photo-item"><i data-lucide="image" style="width:24px;height:24px"></i><span style="font-size:.75rem;margin-top:4px">IMG_003.jpg</span></div>
+                <div class="photo-item"><i data-lucide="image" style="width:24px;height:24px"></i><span style="font-size:.75rem;margin-top:4px">IMG_004.jpg</span></div>
+                <div class="photo-item"><i data-lucide="image" style="width:24px;height:24px"></i><span style="font-size:.75rem;margin-top:4px">IMG_005.jpg</span></div>
+                <div class="photo-item" onclick="showToast('Photo upload simulated','success')"><i data-lucide="plus" style="width:24px;height:24px"></i><span style="font-size:.75rem;margin-top:4px">Add Photo</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i data-lucide="file-text" class="icon" style="color:var(--accent)"></i>Conclusions & Recommendations</div>
+        </div>
+        <div class="form-group"><label>Overall Conclusions</label><textarea rows="6">The A470 River Bridge remains in serviceable condition with a BCI of 78.4. However, the severe spalling identified at the south abutment (Span 3) requires urgent attention to prevent further deterioration of the reinforcement. The moderate corrosion on Span 1 beam flanges should be addressed within the next maintenance cycle. All other defects are minor and can be managed through routine maintenance.</textarea></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i data-lucide="wrench" class="icon" style="color:var(--accent)"></i>Recommended Remedial Works</div>
+          <button class="btn btn-primary btn-sm" onclick="addRemedialWork()"><i data-lucide="plus" style="width:14px"></i>Add Work Item</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table" id="remedial-table">
+            <thead><tr><th>Priority</th><th>Element</th><th>Description</th><th>Est. Cost</th><th>Timeframe</th><th></th></tr></thead>
+            <tbody>
+              <tr>
+                <td><span class="badge badge-sev-3">Urgent</span></td>
+                <td>Abutment (Span 3)</td>
+                <td>Repair spalled concrete, treat corroded reinforcement, apply protective coating</td>
+                <td>GBP 45,000</td>
+                <td>Within 3 months</td>
+                <td><button class="btn btn-ghost btn-sm" onclick="this.closest('tr').remove()"><i data-lucide="trash-2" style="width:14px"></i></button></td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-sev-2">Short</span></td>
+                <td>Beam (Span 1)</td>
+                <td>Clean and prepare steel surfaces, apply corrosion protection system</td>
+                <td>GBP 12,500</td>
+                <td>Within 12 months</td>
+                <td><button class="btn btn-ghost btn-sm" onclick="this.closest('tr').remove()"><i data-lucide="trash-2" style="width:14px"></i></button></td>
+              </tr>
+              <tr>
+                <td><span class="badge badge-sev-1">Routine</span></td>
+                <td>Deck (All Spans)</td>
+                <td>Monitor cracking, reseal deck joints</td>
+                <td>GBP 3,200</td>
+                <td>Next maintenance cycle</td>
+                <td><button class="btn btn-ghost btn-sm" onclick="this.closest('tr').remove()"><i data-lucide="trash-2" style="width:14px"></i></button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><i data-lucide="activity" class="icon" style="color:var(--accent)"></i>Bridge Condition Index (BCI)</div>
+        </div>
+        <div class="bci-wrap">
+          <div class="bci-circle">
+            <svg viewBox="0 0 140 140"><circle class="bci-track" cx="70" cy="70" r="62"/><circle class="bci-fill" cx="70" cy="70" r="62" stroke-dasharray="305 390"/></svg>
+            <div style="text-align:center"><div class="bci-value">78.4</div><div class="bci-label">Current BCI</div></div>
+          </div>
+          <div style="flex:1">
+            <div style="font-size:1.25rem;font-weight:600;margin-bottom:8px">Good Condition</div>
+            <p style="color:var(--text-2);font-size:.875rem;line-height:1.6">The structure is in generally good condition with isolated areas requiring attention. The BCI is calculated based on defect severity, extent, and element criticality weights.</p>
+            <div style="margin-top:16px;display:flex;gap:24px">
+              <div style="text-align:center">
+                <div style="font-size:1.5rem;font-weight:700;color:var(--accent)">82.1</div>
+                <div style="font-size:.75rem;color:var(--text-3)">Previous BCI (2025)</div>
+              </div>
+              <div style="text-align:center">
+                <div style="font-size:1.5rem;font-weight:700;color:var(--danger)">-3.7</div>
+                <div style="font-size:.75rem;color:var(--text-3)">Change</div>
+              </div>
+              <div style="text-align:center">
+                <div style="font-size:1.5rem;font-weight:700;color:var(--warning)">3</div>
+                <div style="font-size:.75rem;color:var(--text-3)">Open Defects</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 4: Generate Report -->
+    <div id="upload-step-4" style="display:none">
+      <div class="flex justify-between items-center mb-4">
+        <div>
+          <h2 style="font-size:1.75rem;font-weight:700">Generate Report</h2>
+          <p style="color:var(--text-2);margin-top:4px">Preview and export your inspection report.</p>
+        </div>
+        <div class="flex gap-2">
+          <button class="btn btn-secondary" onclick="showUploadStep(3)">Back</button>
+          <button class="btn btn-primary" onclick="showToast('Report downloaded as PDF','success')"><i data-lucide="download" style="width:16px"></i>Download PDF</button>
+          <button class="btn btn-success" onclick="showToast('Report shared with team','success')"><i data-lucide="share-2" style="width:16px"></i>Share</button>
+        </div>
+      </div>
+      <div class="report-preview">
+        <h1>BRIDGE INSPECTION REPORT</h1>
+        <div style="text-align:center;margin-bottom:24px;font-size:.875rem;color:#666">A470 River Bridge | Structure No. SN-2024-0847 | May 15, 2026</div>
+        <h2>1. Structure Details</h2>
+        <table><tr><td><strong>Structure Name</strong></td><td>A470 River Bridge</td></tr><tr><td><strong>Structure Number</strong></td><td>SN-2024-0847</td></tr><tr><td><strong>Date of Construction</strong></td><td>1987</td></tr><tr><td><strong>Crosses</strong></td><td>River Taff</td></tr><tr><td><strong>Carries</strong></td><td>A470 Trunk Road</td></tr><tr><td><strong>Location</strong></td><td>Cardiff, Wales</td></tr><tr><td><strong>Total Spans</strong></td><td>3</td></tr></table>
+        <h2>2. Inspection Details</h2>
+        <table><tr><td><strong>Inspector</strong></td><td>Dr. Sarah Chen</td></tr><tr><td><strong>Inspection Date</strong></td><td>May 15, 2026</td></tr><tr><td><strong>Inspection Type</strong></td><td>General Inspection</td></tr><tr><td><strong>Weather</strong></td><td>Overcast, 14C, Dry</td></tr></table>
+        <h2>3. Defects Summary</h2>
+        <table><tr><th>Span</th><th>Element</th><th>Defect</th><th>Severity</th><th>Extent</th></tr><tr><td>Span 1</td><td>Beam</td><td>Corrosion</td><td>2 - Moderate</td><td>15%</td></tr><tr><td>Span 2</td><td>Deck</td><td>Cracking</td><td>1 - Minor</td><td>5%</td></tr><tr><td>Span 3</td><td>Abutment</td><td>Spalling</td><td>3 - Severe</td><td>35%</td></tr></table>
+        <h2>4. Bridge Condition Index</h2>
+        <p style="font-size:1.125rem;font-weight:600">Current BCI: 78.4 (Good Condition)</p>
+        <p>Previous BCI (2025): 82.1 | Change: -3.7</p>
+        <h2>5. Conclusions</h2>
+        <p>The A470 River Bridge remains in serviceable condition with a BCI of 78.4. However, the severe spalling identified at the south abutment (Span 3) requires urgent attention to prevent further deterioration of the reinforcement. The moderate corrosion on Span 1 beam flanges should be addressed within the next maintenance cycle. All other defects are minor and can be managed through routine maintenance.</p>
+        <h2>6. Recommended Remedial Works</h2>
+        <table><tr><th>Priority</th><th>Element</th><th>Description</th><th>Cost</th><th>Timeframe</th></tr><tr><td>Urgent</td><td>Abutment (Span 3)</td><td>Repair spalled concrete, treat corroded reinforcement, apply protective coating</td><td>45,000</td><td>Within 3 months</td></tr><tr><td>Short</td><td>Beam (Span 1)</td><td>Clean and prepare steel surfaces, apply corrosion protection system</td><td>12,500</td><td>Within 12 months</td></tr><tr><td>Routine</td><td>Deck (All Spans)</td><td>Monitor cracking, reseal deck joints</td><td>3,200</td><td>Next maintenance cycle</td></tr></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== LIBRARY ==================== -->
+<div id="page-library" class="page">
+  <div class="container">
+    <div class="flex justify-between items-center mb-6">
+      <div>
+        <h2 style="font-size:1.75rem;font-weight:700">Structure Library</h2>
+        <p style="color:var(--text-2);margin-top:4px">Browse, search, and manage your saved bridge structures.</p>
+      </div>
+      <div class="flex gap-2">
+        <div class="search-bar">
+          <i data-lucide="search" style="width:16px;height:16px;color:var(--text-4)"></i>
+          <input type="text" placeholder="Search structures..." style="width:240px">
+        </div>
+        <button class="btn btn-primary"><i data-lucide="filter" style="width:16px"></i></button>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px">
+      <div class="structure-card" onclick="showToast('Template loaded for new inspection','success')">
+        <div class="structure-header">
+          <div>
+            <div class="structure-name">A470 River Bridge</div>
+            <div class="structure-meta"><span><i data-lucide="map-pin" style="width:14px"></i> Cardiff, Wales</span></div>
+          </div>
+          <span class="badge badge-accent" style="font-size:.75rem">3 Spans</span>
+        </div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;font-size:.875rem;margin-bottom:8px"><span style="color:var(--text-3)">Built: 1987</span><span style="color:var(--text-3)">ID: SN-2024-0847</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:.875rem;color:var(--text-3)">3 inspections on record</span>
+            <div class="flex gap-2">
+              <button class="btn btn-sm btn-primary">New Inspection</button>
+              <button class="btn btn-sm btn-ghost" data-tooltip="History"><i data-lucide="history" style="width:14px"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="structure-card" onclick="showToast('Template loaded for new inspection','success')">
+        <div class="structure-header">
+          <div>
+            <div class="structure-name">M4 Junction 24 Overpass</div>
+            <div class="structure-meta"><span><i data-lucide="map-pin" style="width:14px"></i> Newport, Wales</span></div>
+          </div>
+          <span class="badge badge-accent" style="font-size:.75rem">2 Spans</span>
+        </div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;font-size:.875rem;margin-bottom:8px"><span style="color:var(--text-3)">Built: 1995</span><span style="color:var(--text-3)">ID: SN-2023-0156</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:.875rem;color:var(--text-3)">5 inspections on record</span>
+            <div class="flex gap-2">
+              <button class="btn btn-sm btn-primary">New Inspection</button>
+              <button class="btn btn-sm btn-ghost" data-tooltip="History"><i data-lucide="history" style="width:14px"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="structure-card" onclick="showToast('Template loaded for new inspection','success')">
+        <div class="structure-header">
+          <div>
+            <div class="structure-name">Bristol Harbour Footbridge</div>
+            <div class="structure-meta"><span><i data-lucide="map-pin" style="width:14px"></i> Bristol, England</span></div>
+          </div>
+          <span class="badge badge-accent" style="font-size:.75rem">1 Span</span>
+        </div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;font-size:.875rem;margin-bottom:8px"><span style="color:var(--text-3)">Built: 2008</span><span style="color:var(--text-3)">ID: SN-2024-0032</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:.875rem;color:var(--text-3)">2 inspections on record</span>
+            <div class="flex gap-2">
+              <button class="btn btn-sm btn-primary">New Inspection</button>
+              <button class="btn btn-sm btn-ghost" data-tooltip="History"><i data-lucide="history" style="width:14px"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="structure-card" onclick="showToast('Template loaded for new inspection','success')">
+        <div class="structure-header">
+          <div>
+            <div class="structure-name">A38 Saltash Viaduct</div>
+            <div class="structure-meta"><span><i data-lucide="map-pin" style="width:14px"></i> Saltash, Cornwall</span></div>
+          </div>
+          <span class="badge badge-accent" style="font-size:.75rem">8 Spans</span>
+        </div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;font-size:.875rem;margin-bottom:8px"><span style="color:var(--text-3)">Built: 1962</span><span style="color:var(--text-3)">ID: SN-2022-0091</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:.875rem;color:var(--text-3)">12 inspections on record</span>
+            <div class="flex gap-2">
+              <button class="btn btn-sm btn-primary">New Inspection</button>
+              <button class="btn btn-sm btn-ghost" data-tooltip="History"><i data-lucide="history" style="width:14px"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="structure-card" onclick="showToast('Template loaded for new inspection','success')">
+        <div class="structure-header">
+          <div>
+            <div class="structure-name">Severn Bridge North Tower</div>
+            <div class="structure-meta"><span><i data-lucide="map-pin" style="width:14px"></i> Beachley, Gloucestershire</span></div>
+          </div>
+          <span class="badge badge-accent" style="font-size:.75rem">N/A</span>
+        </div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;font-size:.875rem;margin-bottom:8px"><span style="color:var(--text-3)">Built: 1966</span><span style="color:var(--text-3)">ID: SN-2021-0001</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:.875rem;color:var(--text-3)">8 inspections on record</span>
+            <div class="flex gap-2">
+              <button class="btn btn-sm btn-primary">New Inspection</button>
+              <button class="btn btn-sm btn-ghost" data-tooltip="History"><i data-lucide="history" style="width:14px"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="structure-card" onclick="showToast('Template loaded for new inspection','success')">
+        <div class="structure-header">
+          <div>
+            <div class="structure-name">Clifton Suspension Bridge</div>
+            <div class="structure-meta"><span><i data-lucide="map-pin" style="width:14px"></i> Bristol, England</span></div>
+          </div>
+          <span class="badge badge-accent" style="font-size:.75rem">2 Spans</span>
+        </div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;font-size:.875rem;margin-bottom:8px"><span style="color:var(--text-3)">Built: 1864</span><span style="color:var(--text-3)">ID: SN-2020-0056</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:.875rem;color:var(--text-3)">15 inspections on record</span>
+            <div class="flex gap-2">
+              <button class="btn btn-sm btn-primary">New Inspection</button>
+              <button class="btn btn-sm btn-ghost" data-tooltip="History"><i data-lucide="history" style="width:14px"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== REPORTS ==================== -->
+<div id="page-reports" class="page">
+  <div class="container">
+    <div class="flex justify-between items-center mb-6">
+      <div>
+        <h2 style="font-size:1.75rem;font-weight:700">Reports Archive</h2>
+        <p style="color:var(--text-2);margin-top:4px">View, download, and manage all generated inspection reports.</p>
+      </div>
+      <div class="flex gap-2">
+        <select style="width:160px;padding:8px 12px;background:var(--bg-1);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-1);font-family:inherit;font-size:.8125rem"><option>All Status</option><option>Complete</option><option>In Review</option><option>Draft</option></select>
+        <select style="width:160px;padding:8px 12px;background:var(--bg-1);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-1);font-family:inherit;font-size:.8125rem"><option>All Inspectors</option><option>Dr. Sarah Chen</option><option>James Wilson</option><option>Emma Davies</option></select>
+      </div>
+    </div>
+    <div class="card" style="padding:0">
+      <div class="table-wrap" style="border:none">
+        <table class="data-table">
+          <thead><tr><th>Report ID</th><th>Structure</th><th>Date</th><th>Inspector</th><th>Status</th><th>BCI</th><th>Actions</th></tr></thead>
+          <tbody>
+            <tr><td>RPT-2026-0047</td><td><strong>A470 River Bridge</strong></td><td>May 12, 2026</td><td>Dr. Sarah Chen</td><td><span class="badge badge-sev-1"><span style="width:6px;height:6px;border-radius:50%;background:var(--success);display:inline-block"></span>Complete</span></td><td><span style="color:var(--accent);font-weight:600">78.4</span></td><td><button class="btn btn-sm btn-ghost" data-tooltip="View"><i data-lucide="eye" style="width:14px"></i></button><button class="btn btn-sm btn-ghost" data-tooltip="Download"><i data-lucide="download" style="width:14px"></i></button><button class="btn btn-sm btn-ghost" data-tooltip="Share"><i data-lucide="share-2" style="width:14px"></i></button></td></tr>
+            <tr><td>RPT-2026-0046</td><td><strong>M4 Junction 24 Overpass</strong></td><td>May 8, 2026</td><td>James Wilson</td><td><span class="badge badge-sev-1"><span style="width:6px;height:6px;border-radius:50%;background:var(--success);display:inline-block"></span>Complete</span></td><td><span style="color:var(--warning);font-weight:600">62.1</span></td><td><button class="btn btn-sm btn-ghost" data-tooltip="View"><i data-lucide="eye" style="width:14px"></i></button><button class="btn btn-sm btn-ghost" data-tooltip="Download"><i data-lucide="download" style="width:14px"></i></button><button class="btn btn-sm btn-ghost" data-tooltip="Share"><i data-lucide="share-2" style="width:14px"></i></button></td></tr>
+            <tr><td>RPT-2026-0045</td><td><strong>Bristol Harbour Footbridge</strong></td><td>April 28, 2026</td><td>Dr. Sarah Chen</td><td><span class="badge badge-sev-2"><span style="width:6px;height:6px;border-radius:50%;background:var(--warning);display:inline-block"></span>In Review</span></td><td><span style="color:var(--accent);font-weight:600">85.2</span></td><td><button class="btn btn-sm btn-ghost" data-tooltip="View"><i data-lucide="eye" style="width:14px"></i></button><button class="btn btn-sm btn-ghost" data-tooltip="Download"><i data-lucide="download" style="width:14px"></i></button><button class="btn btn-sm btn-ghost" data-tooltip="Share"><i data-lucide="share-2" style="width:14px"></i></button></td></tr>
+            <tr><td>RPT-2026-0044</td><td><strong>A38 Saltash Viaduct</strong></td><td>April 15, 2026</td><td>Emma Davies</td><td><span class="badge badge-sev-3"><span style="width:6px;height:6px;border-radius:50%;background:var(--danger);display:inline-block"></span>Urgent</span></td><td><span style="color:var(--danger);font-weight:600">41.7</span></td><td><button class="btn btn-sm btn-ghost" data-tooltip="View"><i data-lucide="eye" style="width:14px"></i></button><button class="btn btn-sm btn-ghost" data-tooltip="Download"><i data-lucide="download" style="width:14px"></i></button><button class="btn btn-sm btn-ghost" data-tooltip="Share"><i data-lucide="share-2" style="width:14px"></i></button></td></tr>
+            <tr><td>RPT-2026-0043</td><td><strong>Severn Bridge North Tower</strong></td><td>April 2, 2026</td><td>James Wilson</td><td><span class="badge badge-sev-1"><span style="width:6px;height:6px;border-radius:50%;background:var(--success);display:inline-block"></span>Complete</span></td><td><span style="color:var(--accent);font-weight:600">88.3</span></td><td><button class="btn btn-sm btn-ghost" data-tooltip="View"><i data-lucide="eye" style="width:14px"></i></button><button class="btn btn-sm btn-ghost" data-tooltip="Download"><i data-lucide="download" style="width:14px"></i></button><button class="btn btn-sm btn-ghost" data-tooltip="Share"><i data-lucide="share-2" style="width:14px"></i></button></td></tr>
+            <tr><td>RPT-2026-0042</td><td><strong>Clifton Suspension Bridge</strong></td><td>March 20, 2026</td><td>Dr. Sarah Chen</td><td><span class="badge badge-sev-1"><span style="width:6px;height:6px;border-radius:50%;background:var(--success);display:inline-block"></span>Complete</span></td><td><span style="color:var(--accent);font-weight:600">91.5</span></td><td><button class="btn btn-sm btn-ghost" data-tooltip="View"><i data-lucide="eye" style="width:14px"></i></button><button class="btn btn-sm btn-ghost" data-tooltip="Download"><i data-lucide="download" style="width:14px"></i></button><button class="btn btn-sm btn-ghost" data-tooltip="Share"><i data-lucide="share-2" style="width:14px"></i></button></td></tr>
+            <tr><td>RPT-2026-0041</td><td><strong>A470 River Bridge</strong></td><td>March 15, 2026</td><td>Emma Davies</td><td><span class="badge badge-muted">Draft</span></td><td><span style="color:var(--text-3);font-weight:600">--</span></td><td><button class="btn btn-sm btn-ghost" data-tooltip="View"><i data-lucide="eye" style="width:14px"></i></button><button class="btn btn-sm btn-ghost" data-tooltip="Download"><i data-lucide="download" style="width:14px"></i></button><button class="btn btn-sm btn-ghost" data-tooltip="Share"><i data-lucide="share-2" style="width:14px"></i></button></td></tr>
+            <tr><td>RPT-2026-0040</td><td><strong>M4 Junction 24 Overpass</strong></td><td>March 1, 2026</td><td>James Wilson</td><td><span class="badge badge-sev-1"><span style="width:6px;height:6px;border-radius:50%;background:var(--success);display:inline-block"></span>Complete</span></td><td><span style="color:var(--warning);font-weight:600">64.8</span></td><td><button class="btn btn-sm btn-ghost" data-tooltip="View"><i data-lucide="eye" style="width:14px"></i></button><button class="btn btn-sm btn-ghost" data-tooltip="Download"><i data-lucide="download" style="width:14px"></i></button><button class="btn btn-sm btn-ghost" data-tooltip="Share"><i data-lucide="share-2" style="width:14px"></i></button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="pagination">
+      <button class="page-btn" disabled><i data-lucide="chevron-left" style="width:16px"></i></button>
+      <button class="page-btn active">1</button>
+      <button class="page-btn">2</button>
+      <button class="page-btn">3</button>
+      <button class="page-btn"><i data-lucide="chevron-right" style="width:16px"></i></button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== ANALYTICS ==================== -->
+<div id="page-analytics" class="page">
+  <div class="container">
+    <div class="analytics-hero">
+      <h2>Portfolio Analytics</h2>
+      <p>Deep insights into your bridge inspection data, trends, and predictive maintenance.</p>
+    </div>
+
+    <div class="grid-4">
+      <div class="stat-card">
+        <div class="stat-icon"><i data-lucide="bridge" style="width:20px"></i></div>
+        <div class="stat-value">40</div>
+        <div class="stat-label">Total Structures</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:var(--danger-soft);color:var(--danger)"><i data-lucide="alert-triangle" style="width:20px"></i></div>
+        <div class="stat-value">6</div>
+        <div class="stat-label">Urgent Defects</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:var(--warning-soft);color:var(--warning)"><i data-lucide="clock" style="width:20px"></i></div>
+        <div class="stat-value">14</div>
+        <div class="stat-label">Overdue Inspections</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:var(--success-soft);color:var(--success)"><i data-lucide="trending-up" style="width:20px"></i></div>
+        <div class="stat-value">76.2</div>
+        <div class="stat-label">Avg Portfolio BCI</div>
+      </div>
+    </div>
+
+    <div class="grid-2 mt-6">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title"><i data-lucide="bar-chart-2" class="icon" style="color:var(--accent)"></i>Defects by Element</div>
+            <div class="card-subtitle">Distribution across structural elements</div>
+          </div>
+        </div>
+        <div class="chart-container" style="height:180px">
+          <div class="chart-bar" style="height:65%;background:linear-gradient(180deg,var(--accent),rgba(14,165,233,0.3))"><div class="bar-tooltip">Deck: 24</div></div>
+          <div class="chart-bar" style="height:45%;background:linear-gradient(180deg,var(--accent-2),rgba(6,182,212,0.3))"><div class="bar-tooltip">Beam: 18</div></div>
+          <div class="chart-bar" style="height:35%;background:linear-gradient(180deg,var(--info),rgba(139,92,246,0.3))"><div class="bar-tooltip">Abutment: 12</div></div>
+          <div class="chart-bar" style="height:25%;background:linear-gradient(180deg,var(--warning),rgba(245,158,11,0.3))"><div class="bar-tooltip">Pier: 8</div></div>
+          <div class="chart-bar" style="height:20%;background:linear-gradient(180deg,var(--danger),rgba(239,68,68,0.3))"><div class="bar-tooltip">Bearing: 6</div></div>
+          <div class="chart-bar" style="height:15%;background:linear-gradient(180deg,var(--success),rgba(16,185,129,0.3))"><div class="bar-tooltip">Parapet: 4</div></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:12px;font-size:.6875rem;color:var(--text-4)">
+          <span>Deck</span><span>Beam</span><span>Abutment</span><span>Pier</span><span>Bearing</span><span>Parapet</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title"><i data-lucide="pie-chart" class="icon" style="color:var(--accent)"></i>Inspection Types</div>
+            <div class="card-subtitle">Breakdown by inspection category</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:32px;padding:16px 0">
+          <div style="width:140px;height:140px;border-radius:50%;background:conic-gradient(var(--accent) 0% 45%,var(--accent-2) 45% 70%,var(--info) 70% 85%,var(--warning) 85% 95%,var(--success) 95% 100%);display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0">
+            <div style="width:100px;height:100px;border-radius:50%;background:var(--bg-1);display:flex;align-items:center;justify-content:center">
+              <div style="text-align:center"><div style="font-size:1.25rem;font-weight:700">47</div><div style="font-size:.625rem;color:var(--text-3)">Total</div></div>
+            </div>
+          </div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="width:10px;height:10px;border-radius:2px;background:var(--accent)"></span><span style="font-size:.8125rem">General (45%)</span></div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="width:10px;height:10px;border-radius:2px;background:var(--accent-2)"></span><span style="font-size:.8125rem">Principal (25%)</span></div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="width:10px;height:10px;border-radius:2px;background:var(--info)"></span><span style="font-size:.8125rem">Special (15%)</span></div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="width:10px;height:10px;border-radius:2px;background:var(--warning)"></span><span style="font-size:.8125rem">Damage (10%)</span></div>
+            <div style="display:flex;align-items:center;gap:8px"><span style="width:10px;height:10px;border-radius:2px;background:var(--success)"></span><span style="font-size:.8125rem">Underwater (5%)</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-6">
+      <div class="card-header">
+        <div>
+          <div class="card-title"><i data-lucide="map" class="icon" style="color:var(--accent)"></i>Geographic Distribution</div>
+          <div class="card-subtitle">Structures mapped by region and condition</div>
+        </div>
+        <div class="tab-bar">
+          <button class="tab-btn active">Map</button>
+          <button class="tab-btn">List</button>
+        </div>
+      </div>
+      <div style="height:300px;background:var(--bg-2);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px">
+        <div style="width:64px;height:64px;border-radius:var(--radius-lg);background:var(--bg-3);display:flex;align-items:center;justify-content:center;color:var(--text-4)">
+          <i data-lucide="map-pin" style="width:28px;height:28px"></i>
+        </div>
+        <p style="color:var(--text-3);font-size:.875rem">Interactive map integration coming in v2.1</p>
+        <button class="btn btn-secondary btn-sm">View Region List</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TEAM ==================== -->
+<div id="page-team" class="page">
+  <div class="container">
+    <div class="flex justify-between items-center mb-6">
+      <div>
+        <h2 style="font-size:1.75rem;font-weight:700">Team</h2>
+        <p style="color:var(--text-2);margin-top:4px">Manage inspectors, reviewers, and collaborators.</p>
+      </div>
+      <button class="btn btn-primary" onclick="showToast('Invite feature coming in v2.1','info')"><i data-lucide="user-plus" style="width:16px"></i>Invite Member</button>
+    </div>
+
+    <div class="team-grid">
+      <div class="team-card">
+        <div class="team-avatar" style="background:linear-gradient(135deg,#6366f1,#4f46e5)">SC</div>
+        <div class="team-name">Dr. Sarah Chen</div>
+        <div class="team-role">Lead Inspector</div>
+        <div class="flex gap-2 justify-center mb-4">
+          <span class="badge badge-sev-1">Admin</span>
+          <span class="badge badge-accent">Senior</span>
+        </div>
+        <div class="team-stats">
+          <div class="team-stat"><div class="team-stat-value">18</div><div class="team-stat-label">Inspections</div></div>
+          <div class="team-stat"><div class="team-stat-value">4.9</div><div class="team-stat-label">Rating</div></div>
+          <div class="team-stat"><div class="team-stat-value">2</div><div class="team-stat-label">Urgent</div></div>
+        </div>
+      </div>
+      <div class="team-card">
+        <div class="team-avatar" style="background:linear-gradient(135deg,#10b981,#059669)">JW</div>
+        <div class="team-name">James Wilson</div>
+        <div class="team-role">Senior Inspector</div>
+        <div class="flex gap-2 justify-center mb-4">
+          <span class="badge badge-sev-1">Admin</span>
+        </div>
+        <div class="team-stats">
+          <div class="team-stat"><div class="team-stat-value">15</div><div class="team-stat-label">Inspections</div></div>
+          <div class="team-stat"><div class="team-stat-value">4.7</div><div class="team-stat-label">Rating</div></div>
+          <div class="team-stat"><div class="team-stat-value">1</div><div class="team-stat-label">Urgent</div></div>
+        </div>
+      </div>
+      <div class="team-card">
+        <div class="team-avatar" style="background:linear-gradient(135deg,#f59e0b,#d97706)">ED</div>
+        <div class="team-name">Emma Davies</div>
+        <div class="team-role">Inspector</div>
+        <div class="flex gap-2 justify-center mb-4">
+          <span class="badge badge-sev-2">Reviewer</span>
+        </div>
+        <div class="team-stats">
+          <div class="team-stat"><div class="team-stat-value">9</div><div class="team-stat-label">Inspections</div></div>
+          <div class="team-stat"><div class="team-stat-value">4.5</div><div class="team-stat-label">Rating</div></div>
+          <div class="team-stat"><div class="team-stat-value">3</div><div class="team-stat-label">Urgent</div></div>
+        </div>
+      </div>
+      <div class="team-card">
+        <div class="team-avatar" style="background:linear-gradient(135deg,#ec4899,#db2777)">MR</div>
+        <div class="team-name">Dr. Michael Roberts</div>
+        <div class="team-role">Structural Engineer</div>
+        <div class="flex gap-2 justify-center mb-4">
+          <span class="badge badge-info">Consultant</span>
+        </div>
+        <div class="team-stats">
+          <div class="team-stat"><div class="team-stat-value">5</div><div class="team-stat-label">Reviews</div></div>
+          <div class="team-stat"><div class="team-stat-value">4.8</div><div class="team-stat-label">Rating</div></div>
+          <div class="team-stat"><div class="team-stat-value">0</div><div class="team-stat-label">Urgent</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-6">
+      <div class="card-header">
+        <div>
+          <div class="card-title"><i data-lucide="shield" class="icon" style="color:var(--accent)"></i>Approval Workflow</div>
+          <div class="card-subtitle">Current review and approval pipeline</div>
+        </div>
+      </div>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="timeline-dot active"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Inspection Completed</div>
+            <div class="timeline-desc">A470 River Bridge — Dr. Sarah Chen</div>
+            <div class="timeline-time">May 12, 2026 — 2 hours ago</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot active"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Submitted for Review</div>
+            <div class="timeline-desc">Auto-submitted to James Wilson</div>
+            <div class="timeline-time">May 12, 2026 — 1 hour ago</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Pending Approval</div>
+            <div class="timeline-desc">Awaiting senior inspector sign-off</div>
+            <div class="timeline-time">Expected: May 13, 2026</div>
+          </div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-title">Archive & Distribute</div>
+            <div class="timeline-desc">Final report distribution to stakeholders</div>
+            <div class="timeline-time">Expected: May 14, 2026</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+lucide.createIcons();
+
+function showPage(pageId, btn){
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + pageId).classList.add('active');
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  else {
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(l => {
+      if(l.getAttribute('onclick').includes("'" + pageId + "'")) l.classList.add('active');
+    });
+  }
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function showUploadStep(step){
+  for(let i = 1; i <= 4; i++){
+    document.getElementById('upload-step-' + i).style.display = 'none';
+    const stepEl = document.getElementById('step-' + i);
+    stepEl.classList.remove('active');
+    if(i < step) stepEl.classList.add('completed');
+    else stepEl.classList.remove('completed');
+  }
+  document.getElementById('upload-step-' + step).style.display = 'block';
+  document.getElementById('step-' + step).classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function handleFileSelect(e){
+  const file = e.target.files[0];
+  if(file){
+    showToast('Parsing ' + file.name + '...', 'info');
+    setTimeout(() => {
+      showToast('Extraction complete! 9 fields found.', 'success');
+      showUploadStep(2);
+    }, 1500);
+  }
+}
+
+function loadMockStructure(){
+  showToast('Loading structure template...', 'info');
+  setTimeout(() => {
+    showToast('A470 River Bridge template loaded', 'success');
+    showUploadStep(2);
+  }, 800);
+}
+
+function showToast(message, type){
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = 'toast toast-' + type;
+  let icon = 'info';
+  if(type === 'success') icon = 'check-circle';
+  if(type === 'error') icon = 'x-circle';
+  toast.innerHTML = '<i data-lucide="' + icon + '" style="width:18px;height:18px;flex-shrink:0"></i><span>' + message + '</span>';
+  container.appendChild(toast);
+  lucide.createIcons();
+  setTimeout(() => toast.remove(), 4000);
+}
+
+function addDefect(){
+  const container = document.getElementById('defects-container');
+  const div = document.createElement('div');
+  div.className = 'defect-card';
+  div.innerHTML = '<div class="defect-header"><div class="flex gap-2 items-center"><span class="badge badge-accent">Span 1</span><span class="badge badge-sev-1">Severity 1</span></div><button class="btn btn-ghost btn-sm" onclick="this.closest(\'.defect-card\').remove()"><i data-lucide="trash-2" style="width:14px"></i></button></div><div class="defect-grid"><div class="form-group"><label>Element</label><select><option>Deck</option><option>Beam</option><option>Abutment</option><option>Pier</option><option>Bearing</option><option>Parapet</option></select></div><div class="form-group"><label>Defect Type</label><select><option>Cracking</option><option>Corrosion</option><option>Spalling</option><option>Delamination</option><option>Scour</option><option>Deformation</option></select></div><div class="form-group"><label>Severity</label><select><option>1 - Minor</option><option>2 - Moderate</option><option>3 - Severe</option></select></div><div class="form-group"><label>Extent (%)</label><input type="number" value="0" min="0" max="100"></div></div><div class="form-group mt-4"><label>Comments</label><textarea rows="2" placeholder="Describe the defect..."></textarea></div>';
+  container.appendChild(div);
+  lucide.createIcons();
+  showToast('New defect added', 'success');
+}
+
+function addRemedialWork(){
+  const tbody = document.querySelector('#remedial-table tbody');
+  const tr = document.createElement('tr');
+  tr.innerHTML = '<td><span class="badge badge-sev-2">Short</span></td><td><input type="text" placeholder="Element" style="background:transparent;border:none;border-bottom:1px dashed var(--border-hover);color:var(--text-1);font-family:inherit;font-size:.8125rem;width:100%;outline:none"></td><td><input type="text" placeholder="Description" style="background:transparent;border:none;border-bottom:1px dashed var(--border-hover);color:var(--text-1);font-family:inherit;font-size:.8125rem;width:100%;outline:none"></td><td><input type="text" placeholder="Cost" style="background:transparent;border:none;border-bottom:1px dashed var(--border-hover);color:var(--text-1);font-family:inherit;font-size:.8125rem;width:100%;outline:none"></td><td><input type="text" placeholder="Timeframe" style="background:transparent;border:none;border-bottom:1px dashed var(--border-hover);color:var(--text-1);font-family:inherit;font-size:.8125rem;width:100%;outline:none"></td><td><button class="btn btn-ghost btn-sm" onclick="this.closest(\'tr\').remove()"><i data-lucide="trash-2" style="width:14px"></i></button></td>';
+  tbody.appendChild(tr);
+  lucide.createIcons();
+  showToast('Work item added', 'success');
+}
+
+function switchTab(btn, tabId){
+  const parent = btn.parentElement;
+  parent.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// Drag & drop
+const uploadZone = document.getElementById('uploadZone');
+if(uploadZone){
+  ['dragenter','dragover','dragleave','drop'].forEach(eventName => {
+    uploadZone.addEventListener(eventName, preventDefaults, false);
+  });
+  function preventDefaults(e){ e.preventDefault(); e.stopPropagation(); }
+  ['dragenter','dragover'].forEach(eventName => {
+    uploadZone.addEventListener(eventName, () => uploadZone.classList.add('dragover'), false);
+  });
+  ['dragleave','drop'].forEach(eventName => {
+    uploadZone.addEventListener(eventName, () => uploadZone.classList.remove('dragover'), false);
+  });
+  uploadZone.addEventListener('drop', handleDrop, false);
+  function handleDrop(e){
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    handleFileSelect({target:{files:files}});
+  }
+}
+
+// Navbar scroll effect
+let lastScroll = 0;
+window.addEventListener('scroll', () => {
+  const navbar = document.getElementById('navbar');
+  const currentScroll = window.pageYOffset;
+  if(currentScroll > 50){
+    navbar.style.background = 'rgba(12,17,25,0.9)';
+  } else {
+    navbar.style.background = 'var(--glass-bg)';
+  }
+  lastScroll = currentScroll;
+});
+</script>
+</body>
+</html>

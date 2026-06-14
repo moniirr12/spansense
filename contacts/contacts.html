@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>spanSense — Contact Us</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fb;
+            color: #2c3e44;
+            transition: background 0.3s ease, color 0.3s ease;
+            overflow-x: hidden;
+        }
+
+        /* ---------- NAVIGATION BAR (60% width, centered) ---------- */
+        .navbar {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            max-width: 1100px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 60px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+            z-index: 1100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 28px;
+            height: 64px;
+        }
+        .navbar .left { display: flex; align-items: center; gap: 24px; }
+        .navbar .logo {
+            font-size: 1.2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #5b8c8a 0%, #7ba8a5 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .navbar .menu { display: flex; gap: 24px; }
+        .navbar .menu a {
+            text-decoration: none;
+            color: #4a5b6e;
+            font-weight: 500;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .navbar .menu a:hover, .navbar .menu a.active { color: #5b8c8a; }
+        .navbar .menu a.active {
+            background: rgba(91, 140, 138, 0.1);
+            padding: 6px 14px;
+            border-radius: 20px;
+        }
+        .navbar .right { display: flex; align-items: center; gap: 20px; }
+        .night-mode-toggle {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            color: #8a9ba8;
+            transition: all 0.2s;
+        }
+        .night-mode-toggle:hover { background: #f0f4f8; color: #5b8c8a; }
+        .navbar .account-links a {
+            text-decoration: none;
+            color: #6a7c8e;
+            margin-left: 16px;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+        .navbar .account-links a:hover { color: #5b8c8a; }
+
+        /* ---------- MAIN WRAPPER ---------- */
+        .page-wrapper {
+            max-width: 75%;
+            margin: 0 auto;
+            padding: 100px 0 60px 0;
+        }
+
+        /* ---------- BACK PILL ---------- */
+        .back-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(138, 180, 176, 0.3);
+            color: #5b8c8a;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 12px rgba(91, 140, 138, 0.1);
+            user-select: none;
+        }
+        .back-pill:hover {
+            background: #5b8c8a;
+            color: white;
+            border-color: #5b8c8a;
+            transform: translateX(-4px);
+            box-shadow: 0 4px 20px rgba(91, 140, 138, 0.25);
+        }
+
+        /* ---------- PAGE HEADER ---------- */
+        .page-header { margin-bottom: 32px; }
+        .page-header h1 {
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: #2c5a57;
+            border-left: 4px solid #8ab4b0;
+            padding-left: 14px;
+            margin-bottom: 8px;
+        }
+        .page-header p {
+            color: #8a9ba8;
+            font-size: 0.9rem;
+            padding-left: 18px;
+        }
+
+        /* ---------- CONTACT PAGE LAYOUT ---------- */
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        /* Contact info card */
+        .contact-info-card {
+            background: white;
+            border-radius: 28px;
+            border: 1px solid #e9edf2;
+            padding: 32px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+        }
+        .contact-info-card h2 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #2c4a48;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .contact-info-card h2 i { color: #8ab4b0; }
+
+        .contact-method {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 16px;
+            border-radius: 16px;
+            background: #fafbfc;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        .contact-method:hover {
+            background: #f0f4f8;
+            border-color: #e2e8f0;
+        }
+        .contact-method .icon-wrap {
+            width: 44px; height: 44px;
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        .contact-method.email .icon-wrap { background: #eef4f2; color: #5b8c8a; }
+        .contact-method.phone .icon-wrap { background: #fdf2f2; color: #e8a87c; }
+        .contact-method.location .icon-wrap { background: #f0f9ff; color: #4a90b8; }
+        .contact-method .details { flex: 1; }
+        .contact-method .details .label {
+            font-size: 0.75rem;
+            color: #8a9ba8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+        .contact-method .details .value {
+            font-size: 0.9rem;
+            color: #2c4a48;
+            font-weight: 500;
+        }
+        .contact-method .details .sub {
+            font-size: 0.8rem;
+            color: #8a9ba8;
+            margin-top: 2px;
+        }
+
+        /* Social links */
+        .social-links {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .social-links a {
+            width: 40px; height: 40px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            background: #fafbfc;
+            border: 1px solid #e2e8f0;
+            color: #6a7c8e;
+            text-decoration: none;
+            transition: all 0.2s;
+            font-size: 1rem;
+        }
+        .social-links a:hover {
+            background: #5b8c8a;
+            border-color: #5b8c8a;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Contact form card */
+        .contact-form-card {
+            background: white;
+            border-radius: 28px;
+            border: 1px solid #e9edf2;
+            padding: 32px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+        }
+        .contact-form-card h2 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #2c4a48;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .contact-form-card h2 i { color: #8ab4b0; }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #4a5b6e;
+            margin-bottom: 6px;
+        }
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            font-size: 0.85rem;
+            font-family: inherit;
+            color: #2c4a48;
+            background: white;
+            transition: all 0.2s;
+            outline: none;
+        }
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            border-color: #8ab4b0;
+            box-shadow: 0 0 0 3px rgba(138, 180, 176, 0.15);
+        }
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 30px;
+            background: linear-gradient(135deg, #5b8c8a 0%, #7ba8a5 100%);
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-family: inherit;
+            box-shadow: 0 4px 14px rgba(91, 140, 138, 0.3);
+            margin-top: 8px;
+        }
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(91, 140, 138, 0.4);
+        }
+        .btn-submit:active { transform: translateY(0); }
+
+        /* Map */
+        .map-card {
+            background: white;
+            border-radius: 28px;
+            border: 1px solid #e9edf2;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+            margin-bottom: 24px;
+        }
+        .map-card .map-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #e9edf2;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .map-card .map-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2c4a48;
+        }
+        .map-card .map-header i { color: #8ab4b0; }
+        #map {
+            border-radius: 0 0 28px 28px;
+            z-index: 1;
+        }
+        .leaflet-popup-content-wrapper {
+            border-radius: 14px;
+            font-family: 'Inter', sans-serif;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        }
+        .leaflet-popup-content {
+            margin: 12px 16px;
+            font-size: 0.85rem;
+            color: #2c4a48;
+            line-height: 1.5;
+        }
+        .leaflet-popup-content strong {
+            display: block;
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+            color: #2c5a57;
+        }
+        .leaflet-popup-tip {
+            background: white;
+        }
+
+        /* FAQ section */
+        .faq-card {
+            background: white;
+            border-radius: 28px;
+            border: 1px solid #e9edf2;
+            padding: 28px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+        }
+        .faq-card h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2c4a48;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .faq-card h2 i { color: #8ab4b0; }
+        .faq-item {
+            border-bottom: 1px solid #f0f4f8;
+            padding: 14px 0;
+        }
+        .faq-item:last-child { border-bottom: none; }
+        .faq-question {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #2c4a48;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: color 0.2s;
+        }
+        .faq-question:hover { color: #5b8c8a; }
+        .faq-question i { font-size: 0.75rem; color: #8a9ba8; transition: transform 0.2s; }
+        .faq-item.open .faq-question i { transform: rotate(180deg); }
+        .faq-answer {
+            font-size: 0.85rem;
+            color: #8a9ba8;
+            line-height: 1.6;
+            margin-top: 8px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, margin-top 0.3s ease;
+        }
+        .faq-item.open .faq-answer {
+            max-height: 200px;
+            margin-top: 8px;
+        }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .toast {
+            background: white;
+            border-radius: 16px;
+            padding: 16px 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+            border: 1px solid #e9edf2;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 300px;
+            transform: translateX(120%);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .toast.show { transform: translateX(0); }
+        .toast-icon {
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem; flex-shrink: 0;
+        }
+        .toast-icon.success { background: #e8f5f0; color: #2d7a6e; }
+        .toast-content { flex: 1; }
+        .toast-content .toast-title { font-size: 0.9rem; font-weight: 600; color: #2c4a48; margin-bottom: 2px; }
+        .toast-content .toast-msg { font-size: 0.8rem; color: #8a9ba8; }
+
+        /* ---------- RESPONSIVE ---------- */
+        @media (max-width: 1100px) {
+            .page-wrapper { max-width: 90%; }
+            .navbar { width: 70%; }
+        }
+        @media (max-width: 860px) {
+            .page-wrapper { max-width: 95%; }
+            .contact-grid { grid-template-columns: 1fr; }
+            .navbar .menu { display: none; }
+            .navbar { width: 90%; padding: 0 18px; }
+            .form-row { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 768px) {
+            .navbar { width: 95%; }
+        }
+
+        /* ---------- NIGHT MODE ---------- */
+        .night-mode {
+            background-color: #1a2428 !important;
+            color: #d4dfe3;
+        }
+        .night-mode .navbar { background: rgba(35, 46, 52, 0.95) !important; border-color: #2f3e45; }
+        .night-mode .navbar .logo { background: linear-gradient(135deg, #8ab4b0 0%, #a0c8c4 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .night-mode .navbar .menu a { color: #9ab0b8; }
+        .night-mode .navbar .menu a.active { background: rgba(138, 180, 176, 0.15); color: #8ab4b0; }
+        .night-mode .navbar .account-links a { color: #9ab0b8; }
+        .night-mode .night-mode-toggle { color: #9ab0b8; }
+        .night-mode .night-mode-toggle:hover { background: #2f3e45; color: #8ab4b0; }
+        .night-mode .back-pill {
+            background: rgba(35, 46, 52, 0.8) !important;
+            border-color: rgba(138, 180, 176, 0.3) !important;
+            color: #8ab4b0 !important;
+        }
+        .night-mode .back-pill:hover {
+            background: #5b8c8a !important;
+            color: white !important;
+            border-color: #5b8c8a !important;
+        }
+        .night-mode .contact-info-card,
+        .night-mode .contact-form-card,
+        .night-mode .map-card,
+        .night-mode .faq-card,
+        .night-mode .toast {
+            background: #232e34;
+            border-color: #2f3e45;
+        }
+        .night-mode .contact-info-card h2,
+        .night-mode .contact-form-card h2,
+        .night-mode .hours-card h2,
+        .night-mode .map-card .map-header h2,
+        .night-mode .faq-card h2,
+        .night-mode .toast-content .toast-title {
+            color: #d4dfe3;
+        }
+        .night-mode .contact-method { background: #1e2a2f; }
+        .night-mode .contact-method:hover { background: #2a3a40; border-color: #3a4b53; }
+        .night-mode .contact-method .details .value { color: #c5d3d9; }
+        .night-mode .contact-method .details .sub,
+        .night-mode .contact-method .details .label { color: #8aa4ac; }
+        .night-mode .social-links a { background: #1e2a2f; border-color: #3a4b53; color: #9ab0b8; }
+        .night-mode .social-links a:hover { background: #5b8c8a; border-color: #5b8c8a; color: white; }
+        .night-mode .form-group input,
+        .night-mode .form-group textarea,
+        .night-mode .form-group select {
+            background: #1e2a2f;
+            border-color: #3a4b53;
+            color: #c5d3d9;
+        }
+        .night-mode .form-group input:focus,
+        .night-mode .form-group textarea:focus,
+        .night-mode .form-group select:focus {
+            border-color: #6e9c98;
+            box-shadow: 0 0 0 3px rgba(110, 156, 152, 0.15);
+        }
+        .night-mode .form-group label { color: #9ab0b8; }
+        .night-mode #map { filter: brightness(0.85) contrast(1.1); }
+        .night-mode .leaflet-popup-content-wrapper,
+        .night-mode .leaflet-popup-tip { background: #232e34; }
+        .night-mode .leaflet-popup-content { color: #c5d3d9; }
+        .night-mode .leaflet-popup-content strong { color: #8ab4b0; }
+        .night-mode .faq-item { border-color: #2a3a40; }
+        .night-mode .faq-question { color: #d4dfe3; }
+        .night-mode .faq-question:hover { color: #8ab4b0; }
+        .night-mode .faq-answer { color: #8aa4ac; }
+    </style>
+    <base target="_self">
+</head>
+<body>
+
+    <!-- FLOATING NAVBAR -->
+    <div class="navbar">
+        <div class="left">
+            <div class="logo">spanSense</div>
+            <div class="menu">
+                <a href="../map/map.html"><i class="fas fa-map"></i>Map</a>
+                <a href="../dashboard/dashboard.html"><i class="fas fa-chart-pie"></i>Dashboard</a>
+                <a href="../database/database.html"><i class="fas fa-database"></i>Database</a>
+                <a href="../planning/planning.html"><i class="fas fa-calendar-alt"></i>Planning</a>
+            </div>
+        </div>
+        <div class="right">
+            <div class="night-mode-toggle" id="nightModeToggle"><i class="fas fa-moon"></i></div>
+            <div class="account-links">
+                <a href="../accounts/accounts.html">Account</a>
+                <a href="#" class="active">Contact Us</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN WRAPPER -->
+    <div class="page-wrapper">
+
+        <!-- BACK PILL -->
+        <div class="back-pill" onclick="history.back()">
+            <i class="fas fa-arrow-left"></i>
+            <span>Back</span>
+        </div>
+
+        <!-- PAGE HEADER -->
+        <div class="page-header">
+            <h1><i class="fas fa-envelope"></i> Contact Us</h1>
+            <p>Get in touch with the spanSense team for support, feedback, or partnership enquiries</p>
+        </div>
+
+        <!-- CONTACT GRID: Info + Form -->
+        <div class="contact-grid">
+            <!-- LEFT: Contact Info -->
+            <div class="contact-info-card">
+                <h2><i class="fas fa-address-card"></i> How to Reach Us</h2>
+
+                <div class="contact-method email">
+                    <div class="icon-wrap"><i class="fas fa-envelope"></i></div>
+                    <div class="details">
+                        <div class="label">Email</div>
+                        <div class="value">support@spansense.io</div>
+                        <div class="sub">We typically reply within 24 hours</div>
+                    </div>
+                </div>
+
+                <div class="contact-method phone">
+                    <div class="icon-wrap"><i class="fas fa-phone"></i></div>
+                    <div class="details">
+                        <div class="label">Phone</div>
+                        <div class="value">+44 (0) 20 7946 0958</div>
+                        <div class="sub">Mon–Fri, 9:00–17:30 GMT</div>
+                    </div>
+                </div>
+
+                <div class="contact-method location">
+                    <div class="icon-wrap"><i class="fas fa-map-marker-alt"></i></div>
+                    <div class="details">
+                        <div class="label">Office</div>
+                        <div class="value">One Station Hill, Garrard St</div>
+                        <div class="sub">Reading, RG1 1NR, United Kingdom</div>
+                    </div>
+                </div>
+
+                <div class="social-links">
+                    <a href="#" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="#" title="Twitter"><i class="fab fa-x-twitter"></i></a>
+                    <a href="#" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                </div>
+            </div>
+
+            <!-- RIGHT: Contact Form -->
+            <div class="contact-form-card">
+                <h2><i class="fas fa-paper-plane"></i> Send a Message</h2>
+                <form id="contactForm" onsubmit="handleSubmit(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="firstName">First Name</label>
+                            <input type="text" id="firstName" placeholder="e.g. Sarah" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="lastName">Last Name</label>
+                            <input type="text" id="lastName" placeholder="e.g. Chen" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" placeholder="sarah.chen@company.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="subject">Subject</label>
+                        <select id="subject" required>
+                            <option value="" disabled selected>Select a topic...</option>
+                            <option value="support">Technical Support</option>
+                            <option value="feature">Feature Request</option>
+                            <option value="partnership">Partnership / Enterprise</option>
+                            <option value="billing">Billing & Accounts</option>
+                            <option value="other">Something Else</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="message">Message</label>
+                        <textarea id="message" placeholder="Tell us how we can help..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn-submit">
+                        <i class="fas fa-paper-plane"></i> Send Message
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- OFFICE HOURS -->
+        
+
+        <!-- MAP -->
+        <div class="map-card">
+            <div class="map-header">
+                <i class="fas fa-map"></i>
+                <h2>Find Us</h2>
+            </div>
+            <div id="map" style="height: 320px; width: 100%;"></div>
+        </div>
+
+        <!-- FAQ -->
+        <div class="faq-card">
+            <h2><i class="fas fa-question-circle"></i> Frequently Asked Questions</h2>
+            <div class="faq-item" onclick="toggleFaq(this)">
+                <div class="faq-question">
+                    How do I export inspection data?
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    Head to the Database page, select your bridge records, choose your preferred format (CSV, JSON, or XML), and click "Export Selected". You can also filter by structure type before exporting.
+                </div>
+            </div>
+            <div class="faq-item" onclick="toggleFaq(this)">
+                <div class="faq-question">
+                    Can I integrate spanSense with my existing asset management system?
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    Yes — we offer a REST API and webhook support for enterprise customers. Reach out via the Partnership option above and our integrations team will get you set up.
+                </div>
+            </div>
+            <div class="faq-item" onclick="toggleFaq(this)">
+                <div class="faq-question">
+                    What happens to the data if I cancel my subscription?
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    Your data remains accessible in read-only mode for 90 days after cancellation. You can export everything before that grace period ends. After 90 days, data is permanently deleted per our retention policy.
+                </div>
+            </div>
+            <div class="faq-item" onclick="toggleFaq(this)">
+                <div class="faq-question">
+                    How is the inspection data secured?
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    All data is encrypted at rest with AES-256 and in transit via TLS 1.3. We are ISO 27001 certified and conduct annual penetration testing. Backups are geo-redundant and retained for 7 years per industry standards.
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- TOAST CONTAINER -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+
+        // ============================================
+        // NIGHT MODE
+        // ============================================
+        var toggleBtn = document.getElementById('nightModeToggle');
+        if (toggleBtn) {
+            toggleBtn.onclick = function() {
+                document.body.classList.toggle('night-mode');
+                if (document.body.classList.contains('night-mode')) {
+                    this.innerHTML = '<i class="fas fa-sun"></i>';
+                    localStorage.setItem('nightMode', 'on');
+                } else {
+                    this.innerHTML = '<i class="fas fa-moon"></i>';
+                    localStorage.setItem('nightMode', 'off');
+                }
+            };
+            if (localStorage.getItem('nightMode') === 'on') {
+                document.body.classList.add('night-mode');
+                toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
+            }
+        }
+
+        // FAQ toggle
+        function toggleFaq(item) {
+            item.classList.toggle('open');
+        }
+
+        // Form submit handler
+        function handleSubmit(e) {
+            e.preventDefault();
+            showToast('Message Sent', 'We\'ve received your message and will reply within 24 hours.', 'success');
+            document.getElementById('contactForm').reset();
+        }
+
+        // Toast notification
+        function showToast(title, msg, type) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `
+                <div class="toast-icon ${type}"><i class="fas fa-check"></i></div>
+                <div class="toast-content">
+                    <div class="toast-title">${title}</div>
+                    <div class="toast-msg">${msg}</div>
+                </div>
+            `;
+            container.appendChild(toast);
+            requestAnimationFrame(() => toast.classList.add('show'));
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 400);
+            }, 4000);
+        }
+    </script>
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Initialize map centered on One Station Hill, Reading
+        const map = L.map('map', {
+            scrollWheelZoom: false,
+            attributionControl: false
+        }).setView([51.4585, -0.9730], 16);
+
+        // Teal-toned tiles to match spanSense theme
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        }).addTo(map);
+
+        // Custom teal marker icon
+        const tealIcon = L.divIcon({
+            className: 'custom-marker',
+            html: '<div style="width:36px;height:36px;background:linear-gradient(135deg,#5b8c8a,#7ba8a5);border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(91,140,138,0.4);"><i class="fas fa-building" style="color:white;font-size:0.85rem;transform:rotate(45deg);"></i></div>',
+            iconSize: [36, 36],
+            iconAnchor: [18, 36],
+            popupAnchor: [0, -36]
+        });
+
+        // Add marker with popup
+        const marker = L.marker([51.4585, -0.9730], { icon: tealIcon }).addTo(map);
+        marker.bindPopup('<strong>spanSense</strong>One Station Hill<br>Garrard St, Reading<br>RG1 1NR, UK').openPopup();
+
+        // Re-open popup on click
+        marker.on('click', function() {
+            this.openPopup();
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,222 @@
+[
+    {
+        "id": 1,
+        "name": "Tower Bridge",
+        "location": "London",
+        "latitude": 51.5055,
+        "longitude": -0.0754,
+        "span": 61.0,
+        "length": 244.0,
+        "built_year": 1894,
+        "type": "bridge"
+    },
+    {
+        "id": 2,
+        "name": "Millennium Bridge",
+        "location": "London",
+        "latitude": 51.5096,
+        "longitude": -0.0982,
+        "span": 144.0,
+        "length": 325.0,
+        "built_year": 2000,
+        "type": "footbridge"
+    },
+    {
+        "id": 3,
+        "name": "Forth Bridge",
+        "location": "Edinburgh",
+        "latitude": 56.0004,
+        "longitude": -3.3875,
+        "span": 521.0,
+        "length": 2467.0,
+        "built_year": 1890,
+        "type": "bridge"
+    },
+    {
+        "id": 4,
+        "name": "Clifton Suspension Bridge",
+        "location": "Bristol",
+        "latitude": 51.4549,
+        "longitude": -2.6278,
+        "span": 214.0,
+        "length": 412.0,
+        "built_year": 1864,
+        "type": "bridge"
+    },
+    {
+        "id": 5,
+        "name": "Humber Bridge",
+        "location": "Kingston upon Hull",
+        "latitude": 53.7075,
+        "longitude": -0.4492,
+        "span": 1410.0,
+        "length": 2220.0,
+        "built_year": 1981,
+        "type": "bridge"
+    },
+    {
+        "id": 6,
+        "name": "Albert Bridge",
+        "location": "London",
+        "latitude": 51.4828,
+        "longitude": -0.1667,
+        "span": 120.0,
+        "length": 220.0,
+        "built_year": 1873,
+        "type": "bridge"
+    },
+    {
+        "id": 7,
+        "name": "Menai Suspension Bridge",
+        "location": "Anglesey",
+        "latitude": 53.2207,
+        "longitude": -4.1637,
+        "span": 176.0,
+        "length": 417.0,
+        "built_year": 1826,
+        "type": "bridge"
+    },
+    {
+        "id": 8,
+        "name": "Tyne Bridge",
+        "location": "Newcastle",
+        "latitude": 54.9686,
+        "longitude": -1.6069,
+        "span": 161.0,
+        "length": 389.0,
+        "built_year": 1928,
+        "type": "bridge"
+    },
+    {
+        "id": 9,
+        "name": "Hadrian Wall",
+        "location": "Northern England",
+        "latitude": 55.0242,
+        "longitude": -2.2925,
+        "span": 10.0,
+        "length": 117500.0,
+        "built_year": 122,
+        "type": "retaining_wall"
+    },
+    {
+        "id": 10,
+        "name": "Box Culvert",
+        "location": "Wiltshire",
+        "latitude": 51.4145,
+        "longitude": -2.2539,
+        "span": 4.0,
+        "length": 100.0,
+        "built_year": 1841,
+        "type": "culvert"
+    },
+    {
+        "id": 11,
+        "name": "Thames Footbridge",
+        "location": "London",
+        "latitude": 51.4871,
+        "longitude": -0.1244,
+        "span": 5.0,
+        "length": 150.0,
+        "built_year": 1850,
+        "type": "footbridge"
+    },
+    {
+        "id": 12,
+        "name": "Severn Bridge",
+        "location": "Gloucestershire",
+        "latitude": 51.6111,
+        "longitude": -2.6389,
+        "span": 988.0,
+        "length": 1600.0,
+        "built_year": 1966,
+        "type": "bridge"
+    },
+    {
+        "id": 13,
+        "name": "Gateshead Millennium Bridge",
+        "location": "Newcastle",
+        "latitude": 54.9695,
+        "longitude": -1.6011,
+        "span": 105.0,
+        "length": 126.0,
+        "built_year": 2001,
+        "type": "footbridge"
+    },
+    {
+        "id": 14,
+        "name": "Iron Bridge",
+        "location": "Shropshire",
+        "latitude": 52.6273,
+        "longitude": -2.4856,
+        "span": 30.0,
+        "length": 60.0,
+        "built_year": 1779,
+        "type": "bridge"
+    },
+    {
+        "id": 15,
+        "name": "Culvert at River Avon",
+        "location": "Bath",
+        "latitude": 51.3807,
+        "longitude": -2.3590,
+        "span": 3.0,
+        "length": 50.0,
+        "built_year": 1820,
+        "type": "culvert"
+    },
+    {
+        "id": 16,
+        "name": "Retaining Wall at Edinburgh Castle",
+        "location": "Edinburgh",
+        "latitude": 55.9486,
+        "longitude": -3.2008,
+        "span": 15.0,
+        "length": 200.0,
+        "built_year": 1350,
+        "type": "retaining_wall"
+    },
+    {
+        "id": 17,
+        "name": "Retaining Wall at York Minster",
+        "location": "York",
+        "latitude": 53.9624,
+        "longitude": -1.0819,
+        "span": 12.0,
+        "length": 150.0,
+        "built_year": 1400,
+        "type": "retaining_wall"
+    },
+    {
+        "id": 18,
+        "name": "Culvert at River Thames",
+        "location": "Oxford",
+        "latitude": 51.7520,
+        "longitude": -1.2577,
+        "span": 5.0,
+        "length": 80.0,
+        "built_year": 1800,
+        "type": "culvert"
+    },
+    {
+        "id": 19,
+        "name": "Footbridge at Hyde Park",
+        "location": "London",
+        "latitude": 51.5073,
+        "longitude": -0.1657,
+        "span": 10.0,
+        "length": 50.0,
+        "built_year": 1900,
+        "type": "footbridge"
+    },
+    {
+        "id": 20,
+        "name": "Retaining Wall at Stonehenge",
+        "location": "Wiltshire",
+        "latitude": 51.1789,
+        "longitude": -1.8262,
+        "span": 8.0,
+        "length": 100.0,
+        "built_year": 2500,
+        "type": "retaining_wall"
+    }
+]

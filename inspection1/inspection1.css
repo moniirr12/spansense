@@ -1,0 +1,1431 @@
+/* ============================================
+   MODERN REFRESH - Floating Island + 75% Layout
+   For inspection1.html with info-cards and span-tabs
+   ============================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: #eef2f8;
+    color: #1e2e3a;
+    transition: background 0.3s ease, color 0.2s ease;
+    padding-top: 90px;
+}
+
+/* ========== FLOATING ISLAND NAVBAR ========== */
+.navbar {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    max-width: 1100px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 60px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    height: 64px;
+}
+
+.navbar .left {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.navbar .logo {
+    font-size: 1.35rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #5b8c8a 0%, #7ba8a5 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.2px;
+}
+
+.navbar .right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.navbar .account-links a {
+    text-decoration: none;
+    color: #6a7c8e;
+    margin-left: 16px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.navbar .account-links a:hover {
+    color: #5b8c8a;
+}
+
+.night-mode-toggle {
+    background: rgba(240, 242, 245, 0.75);
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: #5b8c8a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+}
+
+.night-mode-toggle:hover {
+    background: rgba(224, 232, 240, 0.9);
+    transform: scale(1.03);
+}
+
+/* ========== MAIN CONTAINER - 75% WIDTH ========== */
+.inspection-wrapper {
+    max-width: 75%;
+    margin: 0 auto;
+    padding: 20px 0 40px;
+}
+
+.inspection-layout {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+}
+
+.inspection-main {
+    flex: 2;
+    min-width: 0;
+}
+
+/* ========== RIGHT SIDEBAR ========== */
+.bridge-sidebar {
+    width: 280px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 110px;
+}
+
+.sidebar-card {
+    background: white;
+    border-radius: 28px;
+    border: 1px solid #e9edf2;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.03);
+    transition: all 0.2s;
+}
+
+.sidebar-card:hover {
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+}
+
+.bridge-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #2c4a48;
+    margin-bottom: 4px;
+}
+
+.bridge-id {
+    font-size: 0.7rem;
+    color: #8a9ba8;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 16px;
+}
+
+.mock-image {
+    width: 100%;
+    height: 140px;
+    background: linear-gradient(135deg, #c5dbd8 0%, #a8c4c0 100%);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    overflow: hidden;
+    position: relative;
+}
+
+.mock-image i {
+    font-size: 3.2rem;
+    color: white;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.mock-image span {
+    position: absolute;
+    bottom: 12px;
+    right: 16px;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    padding: 4px 10px;
+    border-radius: 40px;
+    font-size: 0.6rem;
+    color: white;
+    font-weight: 500;
+}
+
+.sidebar-divider {
+    height: 1px;
+    background: #eef2f6;
+    margin: 14px 0;
+}
+
+.sidebar-stat {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 0.85rem;
+}
+
+.sidebar-stat-label {
+    color: #8a9ba8;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.sidebar-stat-value {
+    font-weight: 600;
+    color: #2c4a48;
+}
+
+.sidebar-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #e8f5f0;
+    color: #2d7a6e;
+    padding: 4px 12px;
+    border-radius: 40px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.sidebar-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.sidebar-btn {
+    padding: 10px;
+    border-radius: 44px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    font-weight: 500;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #5b8c8a;
+}
+
+.sidebar-btn.primary {
+    background: #5b8c8a;
+    border-color: #5b8c8a;
+    color: white;
+}
+
+.sidebar-btn.primary:hover {
+    background: #4a7876;
+}
+
+/* ========== BRIDGE HEADER ========== */
+#bridgeHeader {
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+    font-weight: 600;
+    color: #2c5a57;
+    border-left: 4px solid #8ab4b0;
+    padding-left: 14px;
+    text-align: left;
+}
+
+/* ========== INFO CARDS ========== */
+.info-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+    margin-bottom: 24px;
+}
+
+.info-card {
+    background: white;
+    border-radius: 22px;
+    padding: 18px 12px;
+    text-align: center;
+    border: 1px solid #e9edf2;
+    transition: 0.2s;
+    display: flex;
+    flex-direction: column;
+}
+
+.info-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+    border-color: #c5dbd8;
+}
+
+.info-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: #8a9ba8;
+    margin-bottom: 12px;
+}
+
+/* ✅ Make all interactive elements the same height */
+.date-value,
+.inspection-type,
+.info-card input, #inspectorName {
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ========== INSPECTOR NAME FIXES ========== */
+
+/* Override browser autofill background in night mode */
+.night-mode #inspectorName:-webkit-autofill,
+.night-mode #inspectorName:-webkit-autofill:hover,
+.night-mode #inspectorName:-webkit-autofill:focus,
+.night-mode #inspectorName:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px #1e2a2f inset !important;
+    -webkit-text-fill-color: #c5d3d9 !important;
+    caret-color: #c5d3d9 !important;
+}
+
+.date-value {
+    cursor: pointer;
+    font-weight: 600;
+    padding: 0 12px;
+    border-radius: 40px;
+    background: #fafbfc;
+    border: 1px solid #e2e8f0;
+    width: auto;
+    min-width: 130px;
+    margin: 0 auto;
+}
+
+.date-value:hover {
+    border-color: #8ab4b0;
+    background: white;
+}
+
+.inspection-type {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+}
+
+.inspection-type-btn {
+    padding: 0 18px;
+    border-radius: 40px;
+    border: 1px solid #e2e8f0;
+    background: #fafbfc;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.inspection-type-btn.selected {
+    background: #eef4f2;
+    border-color: #8ab4b0;
+    color: #2c5a57;
+}
+
+.info-card input, #inspectorName {
+    width: 90%;
+    padding: 0 12px;
+    border-radius: 40px;
+    border: 1px solid #e2e8f0;
+    background: #fafbfc;
+    text-align: center;
+    margin: 0 auto;
+    height: 38px;
+    box-sizing: border-box;
+    font-weight: 600;  /* Added: bold text */
+}
+
+.info-card input:focus {
+    outline: none;
+    border-color: #8ab4b0;
+    background: white;
+}
+
+.info-card input::placeholder {
+    color: #b0c0c8;
+    font-weight: 400;
+    font-size: 0.8rem;
+}
+
+/* ========== SEPARATOR ========== */
+.separator {
+    border-bottom: 1px solid #e9edf2;
+    margin: 20px 0;
+}
+
+/* ========== PROGRESS BAR ========== */
+.progress-container {
+    background: white;
+    border-radius: 50px;
+    padding: 4px;
+    margin-bottom: 24px;
+    border: 1px solid #e9edf2;
+}
+
+.progress-bar {
+    background: #e9ecef;
+    border-radius: 50px;
+    height: 6px;
+    overflow: hidden;
+}
+
+.progress {
+    background: linear-gradient(90deg, #8ab4b0, #5b8c8a);
+    width: 0%;
+    height: 100%;
+    transition: width 0.3s;
+}
+
+/* ========== SPAN TABS ========== */
+.span-tabs {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+}
+
+.span-tab {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 44px;
+    padding: 8px 20px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    font-size: 0.85rem;
+}
+
+.span-tab.active {
+    background: #eef4f2;
+    border-color: #8ab4b0;
+    color: #2c5a57;
+}
+
+.span-tab.completed {
+    border-color: #8ab4b0;
+    color: #5b8c8a;
+}
+
+/* ========== FORM CONTENT ========== */
+#form-content {
+    background: white;
+    border-radius: 28px;
+    padding: 28px;
+    border: 1px solid #e9edf2;
+    margin-bottom: 24px;
+}
+
+.step {
+    display: none;
+}
+
+.step.active {
+    display: block;
+    animation: fadeIn 0.2s;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.step h2 {
+    color: #5b8c8a;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eef2f6;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* ========== QUESTIONS ========== */
+.question {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 0;
+    border-bottom: 1px solid #f0f4f8;
+}
+
+.question p {
+    font-weight: 500;
+    color: #2c3e44;
+    flex: 1;
+    font-size: 0.9rem;
+}
+
+.options {
+    display: flex;
+    gap: 10px;
+}
+
+.options button {
+    padding: 8px 22px;
+    border: 1px solid #e2e8f0;
+    border-radius: 30px;
+    background: #fafbfc;
+    color: #6a7c8e;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+}
+
+.options button:hover {
+    background: white;
+    border-color: #8ab4b0;
+    color: #5b8c8a;
+}
+
+.options button.selected {
+    background: #eef4f2;
+    border-color: #8ab4b0;
+    color: #2c5a57;
+}
+
+textarea {
+    width: 100%;
+    padding: 14px 16px;
+    margin-top: 16px;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    font-family: inherit;
+    font-size: 0.85rem;
+    resize: vertical;
+    min-height: 90px;
+    background: #fafbfc;
+}
+
+textarea:focus {
+    outline: none;
+    border-color: #8ab4b0;
+    background: white;
+}
+
+/* ========== MARK COMPLETE BUTTON ========== */
+.mark-complete {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+.mark-complete button {
+    padding: 10px 28px;
+    border: none;
+    border-radius: 30px;
+    background: #8ab4b0;
+    color: white;
+    font-weight: 500;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.mark-complete button:hover {
+    background: #5b8c8a;
+    transform: translateY(-1px);
+}
+
+/* ========== NAVIGATION BUTTONS ========== */
+.navigation {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 8px;
+}
+
+#toIndex, #toBCI {
+    padding: 10px 28px;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+#toIndex {
+    background: #f1f3f5;
+    color: #6a7c8e;
+    border: 1px solid #e9edf2;
+}
+
+#toIndex:hover {
+    background: #e9ecef;
+    color: #4a5b6e;
+}
+
+#toBCI {
+    background: #8ab4b0;
+    color: white;
+}
+
+#toBCI:hover {
+    background: #5b8c8a;
+    transform: translateX(2px);
+}
+
+/* ========== NIGHT MODE - Clean, only for elements that exist ========== */
+.night-mode {
+    background-color: #1a2428 !important;
+    color: #d4dfe3;
+}
+
+/* Navbar */
+.night-mode .navbar {
+    background: rgba(35, 46, 52, 0.95) !important;
+    border-color: #2f3e45;
+}
+
+.night-mode .navbar .logo {
+    background: linear-gradient(135deg, #8ab4b0 0%, #a0c8c4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.night-mode .navbar .menu a,
+.night-mode .navbar .account-links a {
+    color: #9ab0b8;
+}
+
+/* Sidebar */
+.night-mode .sidebar-card {
+    background: #232e34;
+    border-color: #2f3e45;
+}
+
+.night-mode .bridge-name,
+.night-mode .sidebar-stat-value {
+    color: #d4dfe3;
+}
+
+.night-mode .sidebar-stat-label {
+    color: #8aa4ac;
+}
+
+.night-mode .sidebar-status {
+    background: #1e2a2f;
+    color: #8ab4b0;
+}
+
+.night-mode .sidebar-btn {
+    background: #1e2a2f;
+    border-color: #3a4b53;
+    color: #9ab0b8;
+}
+
+.night-mode .sidebar-btn.primary {
+    background: #3a6b62;
+    border-color: #7aaea4;
+    color: white;
+}
+
+.night-mode .mock-image {
+    background: linear-gradient(135deg, #2f4a48, #1e3a38);
+}
+
+.night-mode .mock-image i {
+    color: #8ab4b0;
+}
+
+/* Info Cards */
+.night-mode .info-card {
+    background: #232e34;
+    border-color: #2f3e45;
+}
+
+.night-mode .info-label {
+    color: #8aa4ac;
+}
+
+.night-mode .date-value,
+.night-mode .info-card input,
+.night-mode #inspectorName {
+    color: #c5d3d9;
+    background: #1e2a2f;
+    border-color: #3a4b53;
+}
+
+
+.night-mode .inspection-type-btn {
+    background: #1e2a2f;
+    border-color: #3a4b53;
+    color: #9ab0b8;
+}
+
+.night-mode .inspection-type-btn.selected {
+    background: #2f4a48;
+    border-color: #6e9c98;
+    color: white;
+}
+
+/* Progress Bar */
+.night-mode .progress-container {
+    background: #232e34;
+    border-color: #2f3e45;
+}
+
+.night-mode .progress-bar {
+    background: #1e2a2f;
+}
+
+/* Span Tabs */
+.night-mode .span-tab {
+    background: #232e34;
+    border-color: #2f3e45;
+    color: #9ab0b8;
+}
+
+.night-mode .span-tab.active {
+    background: #2f4a48;
+    border-color: #6e9c98;
+    color: white;
+}
+
+/* Form Content */
+.night-mode #form-content {
+    background: #232e34;
+    border-color: #2f3e45;
+}
+
+.night-mode .step h2 {
+    color: #8ab4b0;
+    border-bottom-color: #2f3e45;
+}
+
+.night-mode .question {
+    border-bottom-color: #2f3e45;
+}
+
+.night-mode .question p {
+    color: #c5d3d9;
+}
+
+.night-mode .options button {
+    background: #1e2a2f;
+    border-color: #3a4b53;
+    color: #9ab0b8;
+}
+
+.night-mode .options button.selected {
+    background: #2f4a48;
+    border-color: #6e9c98;
+    color: white;
+}
+
+.night-mode textarea {
+    background: #1e2a2f;
+    border-color: #3a4b53;
+    color: #c5d3d9;
+}
+
+/* Navigation Buttons */
+.night-mode #toIndex {
+    background: #2f3e45;
+    color: #9ab0b8;
+    border-color: #3a4b53;
+}
+
+.night-mode #toBCI {
+    background: #2f4a48;
+    color: white;
+}
+
+/* Separator */
+.night-mode .separator {
+    border-bottom-color: #2f3e45;
+}
+
+/* Night mode toggle button */
+.night-mode .night-mode-toggle {
+    background: #2f3e45;
+    color: #b8d4d0;
+}
+
+.night-mode .night-mode-toggle:hover {
+    background: #3a4b53;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 1100px) {
+    .inspection-wrapper {
+        max-width: 90%;
+    }
+}
+
+@media (max-width: 860px) {
+    .inspection-wrapper {
+        max-width: 95%;
+    }
+    
+    .inspection-layout {
+        flex-direction: column;
+    }
+    
+    .bridge-sidebar {
+        width: 100%;
+        position: static;
+        margin-top: 24px;
+    }
+    
+    .navbar .search-bar {
+        display: none;
+    }
+    
+    body {
+        padding-top: 85px;
+    }
+    
+    .info-cards {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .span-tabs {
+        justify-content: center;
+    }
+    
+    .question {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+    }
+    
+    .options {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .navigation {
+        flex-direction: column;
+    }
+    
+    #form-content {
+        padding: 20px;
+    }
+}
+
+/* ========== HIDE NATIVE SCROLLBAR ========== */
+html { scrollbar-width: none; -ms-overflow-style: none; }
+html::-webkit-scrollbar { display: none; }
+
+/* ========== GLASS SCROLLBAR ========== */
+.glass-scrollbar {
+    position: fixed;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 10px;
+    height: 55vh;
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    z-index: 1000;
+    overflow: hidden;
+    cursor: default;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.glass-scrollbar .thumb {
+    width: 100%;
+    background: linear-gradient(180deg, #a0c8c4, #5b8c8a);
+    border-radius: 20px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.3), 0 0 12px rgba(91, 140, 138, 0.35), 0 0 24px rgba(91, 140, 138, 0.15);
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.glass-scrollbar .thumb:active {
+    cursor: grabbing;
+}
+
+/* ========== NIGHT MODE (both body and html variants) ========== */
+body.night-mode .glass-scrollbar,
+html.night-mode .glass-scrollbar {
+    background: rgba(35, 46, 52, 0.7) !important;
+    border-color: rgba(58, 75, 83, 0.5) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255,255,255,0.03) !important;
+}
+
+body.night-mode .glass-scrollbar .thumb,
+html.night-mode .glass-scrollbar .thumb {
+    background: linear-gradient(180deg, #ff6b6b, #c0392b) !important;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.1), 0 0 14px rgba(138, 180, 176, 0.45), 0 0 28px rgba(138, 180, 176, 0.2) !important;
+}
+
+@media (max-width: 860px) {
+    .glass-scrollbar { display: none !important; }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ========== MODAL — SpanSense Green & White ========== */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(30, 46, 52, 0.25);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal-card {
+    background: #ffffff;
+    border-radius: 32px;
+    padding: 44px 40px 36px;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    border: 1px solid #e4ebe9;
+    box-shadow:
+        0 2px 4px rgba(91, 140, 138, 0.03),
+        0 8px 24px rgba(91, 140, 138, 0.06),
+        0 24px 48px rgba(0, 0, 0, 0.04);
+    transform: scale(0.96) translateY(16px);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-overlay.active .modal-card {
+    transform: scale(1) translateY(0);
+}
+
+/* Default icon — teal/green (your theme) */
+.modal-icon {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+    font-size: 1.6rem;
+    background: linear-gradient(135deg, #e8f5f2 0%, #d4ede8 100%);
+    color: #5b8c8a;
+    box-shadow: 0 4px 16px rgba(91, 140, 138, 0.12);
+}
+
+/* Warning — warm amber (not aggressive red) */
+.modal-icon.warning {
+    background: linear-gradient(135deg, #fef9e8 0%, #fdf2d0 100%);
+    color: #c9a227;
+    box-shadow: 0 4px 16px rgba(201, 162, 39, 0.12);
+}
+
+/* Success — deeper teal */
+.modal-icon.success {
+    background: linear-gradient(135deg, #d4ede8 0%, #b8ddd6 100%);
+    color: #3a6b62;
+    box-shadow: 0 4px 16px rgba(91, 140, 138, 0.15);
+}
+
+/* Error — soft rose (gentle, not alarm-red) */
+.modal-icon.error {
+    background: linear-gradient(135deg, #fdf2f2 0%, #f5dcdc 100%);
+    color: #c07070;
+    box-shadow: 0 4px 16px rgba(192, 112, 112, 0.1);
+}
+
+.modal-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #2c4a48;
+    margin-bottom: 14px;
+    letter-spacing: -0.3px;
+}
+
+.modal-message {
+    font-size: 0.9rem;
+    color: #8a9ba8;
+    line-height: 1.7;
+    margin-bottom: 32px;
+    white-space: pre-line;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.modal-btn {
+    padding: 13px 28px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    letter-spacing: 0.2px;
+    min-width: 120px;
+}
+
+/* Primary — your teal gradient */
+.modal-btn.primary {
+    background: linear-gradient(135deg, #5b8c8a 0%, #7ba8a5 100%);
+    border: none;
+    color: white;
+    box-shadow: 0 4px 16px rgba(91, 140, 138, 0.25);
+}
+
+.modal-btn.primary:hover {
+    background: linear-gradient(135deg, #4a7876 0%, #6a9a97 100%);
+    box-shadow: 0 6px 20px rgba(91, 140, 138, 0.35);
+    transform: translateY(-2px);
+}
+
+/* Secondary / cancel — ghost */
+.modal-btn.secondary {
+    background: transparent;
+    border: 1px solid #e2e8f0;
+    color: #6a7c8e;
+}
+
+.modal-btn.secondary:hover {
+    background: #f1f5f4;
+    border-color: #c5dbd8;
+    color: #5b8c8a;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(91, 140, 138, 0.08);
+}
+
+/* Danger — only if you really need it, kept subtle */
+.modal-btn.danger {
+    background: linear-gradient(135deg, #c07070 0%, #a85a5a 100%);
+    border: none;
+    color: white;
+    box-shadow: 0 4px 16px rgba(192, 112, 112, 0.2);
+}
+
+.modal-btn.danger:hover {
+    background: linear-gradient(135deg, #a85a5a 0%, #944848 100%);
+    box-shadow: 0 6px 20px rgba(192, 112, 112, 0.3);
+    transform: translateY(-2px);
+}
+
+/* ========== NIGHT MODE ========== */
+.night-mode .modal-overlay {
+    background: rgba(15, 24, 28, 0.5);
+}
+
+.night-mode .modal-card {
+    background: #232e34;
+    border-color: #2f3e45;
+    box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.2),
+        0 24px 48px rgba(0, 0, 0, 0.15);
+}
+
+.night-mode .modal-title {
+    color: #d4dfe3;
+}
+
+.night-mode .modal-message {
+    color: #8aa4ac;
+}
+
+.night-mode .modal-icon {
+    background: linear-gradient(135deg, #1e3a36 0%, #162e2a 100%);
+    color: #8ab4b0;
+    box-shadow: 0 4px 16px rgba(138, 180, 176, 0.1);
+}
+
+.night-mode .modal-icon.warning {
+    background: linear-gradient(135deg, #3a2f1a 0%, #2a2515 100%);
+    color: #d4b86a;
+}
+
+.night-mode .modal-icon.success {
+    background: linear-gradient(135deg, #1e3a36 0%, #162e2a 100%);
+    color: #8ab4b0;
+}
+
+.night-mode .modal-icon.error {
+    background: linear-gradient(135deg, #3a2020 0%, #2a1818 100%);
+    color: #c07070;
+}
+
+.night-mode .modal-btn.primary {
+    background: linear-gradient(135deg, #3a6b62 0%, #4a8a80 100%);
+    box-shadow: 0 4px 16px rgba(58, 107, 98, 0.25);
+}
+
+.night-mode .modal-btn.primary:hover {
+    background: linear-gradient(135deg, #2d5a52 0%, #3a7a70 100%);
+    box-shadow: 0 6px 20px rgba(58, 107, 98, 0.35);
+}
+
+.night-mode .modal-btn.secondary {
+    background: transparent;
+    border-color: #3a4b53;
+    color: #9ab0b8;
+}
+
+.night-mode .modal-btn.secondary:hover {
+    background: #2a3a42;
+    border-color: #4a5d66;
+    color: #b8d4d0;
+}
+
+.night-mode .modal-btn.danger {
+    background: linear-gradient(135deg, #8a4a4a 0%, #703838 100%);
+    box-shadow: 0 4px 16px rgba(138, 74, 74, 0.2);
+}
+
+.night-mode .modal-btn.danger:hover {
+    background: linear-gradient(135deg, #703838 0%, #5c2c2c 100%);
+    box-shadow: 0 6px 20px rgba(138, 74, 74, 0.3);
+}
+
+
+
+
+
+/* ============================================
+   FLATPICKR CALENDAR - COMPLETE FIX
+   ============================================ */
+
+/* Make sure flatpickr CSS loads before this */
+@import url('https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css');
+
+/* ========== LIGHT MODE STYLES ========== */
+
+/* Remove default borders/circles from day cells */
+.flatpickr-calendar .flatpickr-day {
+    border: none !important;
+    border-radius: 8px !important;
+    background: transparent !important;
+}
+
+/* Selected date */
+.flatpickr-calendar .flatpickr-day.selected,
+.flatpickr-calendar .flatpickr-day.startRange,
+.flatpickr-calendar .flatpickr-day.endRange {
+    background: #5b8c8a !important;
+    color: white !important;
+    border-radius: 8px !important;
+}
+
+/* Today indicator - small dot instead of circle */
+.flatpickr-calendar .flatpickr-day.today {
+    font-weight: 700 !important;
+    color: #5b8c8a !important;
+    position: relative;
+}
+
+.flatpickr-calendar .flatpickr-day.today::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    background: #5b8c8a;
+    border-radius: 50%;
+}
+
+.flatpickr-calendar .flatpickr-day.today.selected::after {
+    background: white;
+}
+
+/* Future dates - dimmed and crossed out */
+.flatpickr-calendar .flatpickr-day.flatpickr-disabled,
+.flatpickr-calendar .flatpickr-day.flatpickr-disabled:hover,
+.flatpickr-calendar .flatpickr-day.notAllowed,
+.flatpickr-calendar .flatpickr-day.notAllowed:hover {
+    color: #b8c4cc !important;
+    background: transparent !important;
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    text-decoration: line-through !important;
+}
+
+/* Hover effect for selectable dates */
+.flatpickr-calendar .flatpickr-day:hover:not(.flatpickr-disabled):not(.notAllowed):not(.selected) {
+    background: #eef4f2 !important;
+    border-radius: 8px !important;
+    color: #2c5a57 !important;
+}
+
+/* Previous/Next month days */
+.flatpickr-calendar .flatpickr-day.prevMonthDay,
+.flatpickr-calendar .flatpickr-day.nextMonthDay {
+    color: #b0c0c8 !important;
+    opacity: 0.6 !important;
+}
+
+/* ========== DARK MODE STYLES ========== */
+.night-mode .flatpickr-calendar {
+    background: #232e34 !important;
+    border-color: #2f3e45 !important;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* FIX: Month/Year header area (where "June 2026" is) */
+.night-mode .flatpickr-calendar .flatpickr-months {
+    background: #1e2a2f !important;
+    border-bottom: 1px solid #2f3e45 !important;
+    border-radius: 8px 8px 0 0 !important;
+}
+
+/* Month navigation buttons (prev/next arrows) */
+.night-mode .flatpickr-calendar .flatpickr-prev-month,
+.night-mode .flatpickr-calendar .flatpickr-next-month {
+    fill: #8ab4b0 !important;
+}
+
+.night-mode .flatpickr-calendar .flatpickr-prev-month:hover,
+.night-mode .flatpickr-calendar .flatpickr-next-month:hover {
+    fill: #a0c8c4 !important;
+    background: rgba(138, 180, 176, 0.1) !important;
+    border-radius: 50% !important;
+}
+
+/* The main month title container */
+.night-mode .flatpickr-calendar .flatpickr-month {
+    background: #1e2a2f !important;
+    color: #d4dfe3 !important;
+}
+
+/* The current month/year text */
+.night-mode .flatpickr-calendar .flatpickr-current-month {
+    background: #1e2a2f !important;
+    color: #d4dfe3 !important;
+}
+
+/* Month dropdown selector */
+.night-mode .flatpickr-calendar .flatpickr-current-month .flatpickr-monthDropdown-months {
+    background: #1e2a2f !important;
+    color: #d4dfe3 !important;
+}
+
+/* Year input */
+.night-mode .flatpickr-calendar .flatpickr-current-month input.cur-year {
+    background: #1e2a2f !important;
+    color: #d4dfe3 !important;
+}
+
+/* Dropdown options */
+.night-mode .flatpickr-monthDropdown-months .flatpickr-monthDropdown-month {
+    background: #232e34 !important;
+    color: #c5d3d9 !important;
+}
+
+.night-mode .flatpickr-monthDropdown-months .flatpickr-monthDropdown-month:hover {
+    background: #2f4a48 !important;
+    color: white !important;
+}
+
+/* Weekday header */
+.night-mode .flatpickr-calendar .flatpickr-weekdays {
+    background: #232e34 !important;
+}
+
+.night-mode .flatpickr-calendar .flatpickr-weekday {
+    color: #8aa4ac !important;
+    background: #232e34 !important;
+}
+
+/* Day cells - clean, no circles */
+.night-mode .flatpickr-calendar .flatpickr-day {
+    color: #c5d3d9 !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+}
+
+/* Selected date */
+.night-mode .flatpickr-calendar .flatpickr-day.selected,
+.night-mode .flatpickr-calendar .flatpickr-day.startRange,
+.night-mode .flatpickr-calendar .flatpickr-day.endRange {
+    background: #5b8c8a !important;
+    color: white !important;
+}
+
+/* Today indicator */
+.night-mode .flatpickr-calendar .flatpickr-day.today {
+    color: #8ab4b0 !important;
+    font-weight: 700 !important;
+    position: relative;
+}
+
+.night-mode .flatpickr-calendar .flatpickr-day.today::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    background: #8ab4b0;
+    border-radius: 50%;
+}
+
+.night-mode .flatpickr-calendar .flatpickr-day.today.selected::after {
+    background: white;
+}
+
+/* Future dates - dimmed and crossed out */
+.night-mode .flatpickr-calendar .flatpickr-day.flatpickr-disabled,
+.night-mode .flatpickr-calendar .flatpickr-day.flatpickr-disabled:hover,
+.night-mode .flatpickr-calendar .flatpickr-day.notAllowed,
+.night-mode .flatpickr-calendar .flatpickr-day.notAllowed:hover {
+    color: #5a6a78 !important;
+    background: transparent !important;
+    opacity: 0.35 !important;
+    cursor: not-allowed !important;
+    text-decoration: line-through !important;
+}
+
+/* Hover for selectable dates */
+.night-mode .flatpickr-calendar .flatpickr-day:hover:not(.flatpickr-disabled):not(.notAllowed):not(.selected) {
+    background: #2f4a48 !important;
+    color: white !important;
+}
+
+/* Previous/Next month days */
+.night-mode .flatpickr-calendar .flatpickr-day.prevMonthDay,
+.night-mode .flatpickr-calendar .flatpickr-day.nextMonthDay {
+    color: #6a8090 !important;
+    opacity: 0.5 !important;
+}
+
+/* Time picker (if used) */
+.night-mode .flatpickr-calendar .flatpickr-time {
+    border-top-color: #2f3e45 !important;
+    background: #1e2a2f !important;
+}
+
+.night-mode .flatpickr-calendar .flatpickr-time input,
+.night-mode .flatpickr-calendar .flatpickr-time .flatpickr-am-pm {
+    color: #c5d3d9 !important;
+    background: #1e2a2f !important;
+}
+
+/* Input field */
+.night-mode .flatpickr-input,
+.night-mode input.flatpickr-input {
+    background: #1e2a2f !important;
+    border-color: #3a4b53 !important;
+    color: #c5d3d9 !important;
+}
+
+.night-mode .flatpickr-input:focus,
+.night-mode input.flatpickr-input:focus {
+    background: #2a3a40 !important;
+    border-color: #8ab4b0 !important;
+    color: #d4dfe3 !important;
+}
+
+/* ============================================
+   LIGHT MODE - Month/Year Header
+   ============================================ */
+
+/* Light mode month/year header */
+.flatpickr-calendar .flatpickr-months {
+    background: #f8fafc !important;
+    border-bottom: 1px solid #e9edf2 !important;
+}
+
+.flatpickr-calendar .flatpickr-month {
+    background: #f8fafc !important;
+    color: #2c4a48 !important;
+}
+
+.flatpickr-calendar .flatpickr-current-month {
+    background: #f8fafc !important;
+    color: #2c4a48 !important;
+}
+
+.flatpickr-calendar .flatpickr-prev-month,
+.flatpickr-calendar .flatpickr-next-month {
+    fill: #8a9ba8 !important;
+}
+
+.flatpickr-calendar .flatpickr-prev-month:hover,
+.flatpickr-calendar .flatpickr-next-month:hover {
+    fill: #5b8c8a !important;
+    background: rgba(91, 140, 138, 0.1) !important;
+    border-radius: 50% !important;
+}

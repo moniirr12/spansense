@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BCI Visualization</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .result p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Bridge Condition Indicator (BCI) Visualization</h1>
+    <div class="result">
+        <p>BCI Average (BCIav): <span id="bciAvResult"></span></p>
+        <p>BCI Critical (BCIcrit): <span id="bciCritResult"></span></p>
+    </div>
+
+    <script>
+        // Function to fetch data from the inspection page
+        async function fetchInspectionData() {
+            try {
+                const response = await fetch('http://127.0.0.1:5500/inspection.html');
+                const text = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(text, 'text/html');
+
+                // Extract the necessary data from the inspection page
+                const elements = [];
+                const rows = doc.querySelectorAll('#bciTable tbody tr');
+                rows.forEach(row => {
+                    const description = row.cells[0].textContent.trim();
+                    const score = parseFloat(row.cells[1].querySelector('input').value);
+                    const extent = row.cells[2].querySelector('input').value;
+                    const importance = row.cells[5].textContent.trim();
+                    elements.push({ description, score, extent, importance });
+                });
+
+                return elements;
+            } catch (error) {
+                console.error('Error fetching inspection data:', error);
+                return [];
+            }
+        }
+
+        // Function to calculate BCI scores
+        function calculateBCI(elements) {
+            let bcsValues = [];
+            elements.forEach(element => {
+                const sPlusEx = `${element.score}${element.extent}`;
+                const ecs = calculateECS(sPlusEx);
+                const ecf = calculateECF(element.importance, ecs);
+                const eci = calculateECI(ecs, ecf);
+                const eif = calculateEIF(element.importance);
+                const bcs = eci * eif;
+                bcsValues.push(bcs);
+            });
+
+            const bciAv = calculateBCIAv(bcsValues);
+            const bciCrit = calculateBCICrit(bcsValues);
+
+            return { bciAv, bciCrit };
+        }
+
+        // Helper functions for BCI calculations
+        function calculateECS(sPlusEx) {
+            // Implement logic to calculate ECS based on S+Ex
+            // This is a placeholder, replace with actual logic
+            return parseFloat(sPlusEx);
+        }
+
+        function calculateECF(importance, ecs) {
+            if (importance === "Very High") return 0;
+            if (importance === "High") return 0.3 - ((ecs - 1) * (0.3 / 4));
+            if (importance === "Medium") return 0.6 - ((ecs - 1) * (0.6 / 4));
+            if (importance === "Low") return 1.2 - ((ecs - 1) * (1.2 / 4));
+            return 0;
+        }
+
+        function calculateECI(ecs, ecf) {
+            return ecs - ecf >= 1 ? ecs - ecf : 1;
+        }
+
+        function calculateEIF(importance) {
+            if (importance === "Very High") return 2;
+            if (importance === "High") return 1.5;
+            if (importance === "Medium") return 1.2;
+            if (importance === "Low") return 1;
+            return 1;
+        }
+
+        function calculateBCIAv(bcsValues) {
+            const bcsSum = bcsValues.reduce((sum, bcs) => sum + bcs, 0);
+            const bcsAvg = bcsSum / bcsValues.length;
+            return 100 - 2 * ((bcsAvg ** 2) + (6.5 * bcsAvg) - 7.5);
+        }
+
+        function calculateBCICrit(bcsValues) {
+            const bcsMax = Math.max(...bcsValues);
+            return 100 - 2 * ((bcsMax ** 2) + (6.5 * bcsMax) - 7.5);
+        }
+
+        // Main function to fetch data, calculate BCI, and display results
+        async function main() {
+            const elements = await fetchInspectionData();
+            if (elements.length > 0) {
+                const { bciAv, bciCrit } = calculateBCI(elements);
+                document.getElementById('bciAvResult').textContent = bciAv.toFixed(2);
+                document.getElementById('bciCritResult').textContent = bciCrit.toFixed(2);
+            } else {
+                document.getElementById('bciAvResult').textContent = 'Error: No data found';
+                document.getElementById('bciCritResult').textContent = 'Error: No data found';
+            }
+        }
+
+        // Run the main function when the page loads
+        main();
+    </script>
+</body>
+</html>

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>SpanSense — Inspection Details | Modern Layout</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="inspection1.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+</head>
+<body>
+
+    <!-- FLOATING ISLAND NAVBAR -->
+    <div class="navbar">
+        <div class="left">
+            <div class="logo">spanSense</div>
+        </div>
+        <div class="right">
+            <div class="night-mode-toggle" id="nightModeToggle"><i class="fas fa-moon"></i></div>
+            <div class="account-links">
+                <a href="#">Account</a>
+                <a href="#">Contact Us</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN 75% WIDTH LAYOUT WITH SIDEBAR -->
+    <div class="inspection-wrapper">
+        <div class="inspection-layout">
+            <!-- LEFT: MAIN CONTENT -->
+            <div class="inspection-main">
+                <h2 id="bridgeHeader">Loading...</h2>
+
+                <div class="info-cards">
+                    <!-- Date Card -->
+                    <div class="info-card">
+                        <div class="info-label">INSPECTION DATE</div>
+                        <div class="date-value" id="inspectionDate" onclick="date()">Select date</div>
+                    </div>
+                    
+                    <!-- Inspection Type Card -->
+                    <div class="info-card">
+                        <div class="info-label">INSPECTION TYPE</div>
+                        <div class="inspection-type">
+                            <button class="inspection-type-btn" data-type="PI">PI</button>
+                            <button class="inspection-type-btn" data-type="GI">GI</button>
+                            <button class="inspection-type-btn" data-type="SI">SI</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Inspector Card - NO extra div wrapper -->
+                    <div class="info-card">
+                        <div class="info-label">INSPECTOR NAME</div>
+                        <input type="text" id="inspectorName" placeholder="Click to edit name">
+                    </div>
+                </div>
+
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress" id="progress"></div>
+                    </div>
+                </div>
+
+                <div class="span-tabs" id="span-tabs"></div>
+                <div id="form-content"></div>
+            </div>
+
+            <!-- RIGHT SIDEBAR: Bridge Details + Mock Image -->
+            <aside class="bridge-sidebar">
+                <div class="sidebar-card">
+                    <div class="bridge-name" id="sidebarBridgeName">Golden Gate Overpass</div>
+                    <div class="bridge-id" id="sidebarBridgeId">Bridge ID: A-104</div>
+                    
+                    <!-- Mock Image -->
+                    <div class="mock-image">
+                        <i class="fas fa-bridge"></i>
+                        <span>spanSense ©</span>
+                    </div>
+                    
+                    <div class="sidebar-divider"></div>
+                    <div class="sidebar-stat">
+                        <span class="sidebar-stat-label"><i class="fas fa-road"></i> Spans</span>
+                        <span class="sidebar-stat-value" id="sidebarSpanCount">4</span>
+                    </div>
+                    <div class="sidebar-stat">
+                        <span class="sidebar-stat-label"><i class="fas fa-ruler-horizontal"></i> Length</span>
+                        <span class="sidebar-stat-value" id="sidebarLength">128 m</span>
+                    </div>
+                    <div class="sidebar-stat">
+                        <span class="sidebar-stat-label"><i class="fas fa-clipboard-check"></i> Built Year</span>
+                        <span class="sidebar-built" id="sidebarBuiltYear">--</span>
+                    </div>
+                    <div class="sidebar-stat">
+                        <span class="sidebar-stat-label"><i class="fas fa-calendar-check"></i> Last Inspection</span>
+                        <span class="sidebar-stat-value" id="sidebarLastInsp">14 Mar 2026</span>
+                    </div>
+                    <div class="sidebar-divider"></div>
+                    <div class="sidebar-actions">
+                        <button class="sidebar-btn primary" id="saveDraftBtn"><i class="fas fa-save"></i> Save Draft</button>
+                    </div>
+                    
+                    <div class="navigation">
+                        <button id="toIndex">Back</button>
+                        <button id="toBCI">Next</button>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- GLASS SCROLLBAR -->
+    <div class="glass-scrollbar" id="glassScrollbar">
+        <div class="thumb" id="glassThumb"></div>
+    </div>
+
+
+
+
+    <!-- MODAL OVERLAY -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-card">
+            <div class="modal-icon" id="modalIcon">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <h3 class="modal-title" id="modalTitle">Cannot Proceed</h3>
+            <p class="modal-message" id="modalMessage">Message goes here</p>
+            <div class="modal-actions" id="modalActions">
+                <button class="modal-btn primary" id="modalConfirmBtn">OK</button>
+            </div>
+        </div>
+    </div>
+
+
+            
+
+    <script src="inspection1.js"></script>
+    <script>   
+        // ============================================
+        // MODAL SYSTEM — MUST be defined BEFORE navigateToNextPage
+        // ============================================
+        (function() {
+            'use strict';
+            
+            const overlay = document.getElementById('modalOverlay');
+            const iconBox = document.getElementById('modalIcon');
+            const titleBox = document.getElementById('modalTitle');
+            const msgBox = document.getElementById('modalMessage');
+            const actionsBox = document.getElementById('modalActions');
+            
+            let _modalPromiseResolve = null;
+            
+            window.showModal = function showModal(opts) {
+                var title = opts.title || '';
+                var message = opts.message || '';
+                var type = opts.type || 'error';
+                var confirmText = opts.confirmText || 'OK';
+                var cancelText = opts.cancelText || 'Cancel';
+                var showCancel = opts.showCancel || false;
+                
+                return new Promise(function(resolve) {
+                    _modalPromiseResolve = resolve;
+                    
+                    iconBox.className = 'modal-icon';
+                    if (type === 'warning') iconBox.classList.add('warning');
+                    if (type === 'success') iconBox.classList.add('success');
+                    
+                    var iconMap = {
+                        error: 'fa-exclamation-circle',
+                        warning: 'fa-exclamation-triangle',
+                        success: 'fa-check-circle'
+                    };
+                    iconBox.innerHTML = '<i class="fas ' + (iconMap[type] || iconMap.error) + '"></i>';
+                    
+                    titleBox.textContent = title;
+                    msgBox.textContent = message;
+                    
+                    var buttonsHTML = '';
+                    if (showCancel) {
+                    buttonsHTML += '<button class="modal-btn secondary" id="modalCancelBtn">' + cancelText + '</button>';
+                }
+                    var btnClass = (type === 'error') ? 'danger' : 'primary';
+                    buttonsHTML += '<button class="modal-btn ' + btnClass + '" id="modalConfirmBtn">' + confirmText + '</button>';
+                    actionsBox.innerHTML = buttonsHTML;
+                    
+                    var confirmBtn = document.getElementById('modalConfirmBtn');
+                    var cancelBtn = document.getElementById('modalCancelBtn');
+                    
+                    confirmBtn.onclick = function() {
+                        _doClose(true);
+                    };
+                    
+                    if (cancelBtn) {
+                        cancelBtn.onclick = function() {
+                            _doClose(false);
+                        };
+                    }
+                    
+                    overlay.classList.add('active');
+                });
+            };
+            
+            function _doClose(result) {
+                overlay.classList.remove('active');
+                if (_modalPromiseResolve) {
+                    _modalPromiseResolve(result);
+                    _modalPromiseResolve = null;
+                }
+            }
+            
+            window.closeModal = _doClose;
+            
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) _doClose(false);
+            });
+            
+            document.addEventListener('keydown', function(e) {
+                if (!overlay.classList.contains('active')) return;
+                if (e.key === 'Escape') _doClose(false);
+                if (e.key === 'Enter') {
+                    var btn = document.getElementById('modalConfirmBtn');
+                    if (btn) btn.click();
+                }
+            });
+        })();
+
+        // ============================================
+        // NAVIGATION
+        // ============================================
+        async function navigateToNextPage() {
+    // Wait for modal to be ready
+    if (typeof showModal !== 'function') {
+        console.warn('Modal not ready, waiting...');
+        await new Promise(resolve => setTimeout(resolve, 100));
+        if (typeof showModal !== 'function') {
+            alert('Please wait for page to fully load');
+            return;
+        }
+    }
+    
+    const missingCriticalFields = [];
+    if (!inspectionData.inspectionType) missingCriticalFields.push("Inspection Type");
+    if (!inspectionData.inspectorName) missingCriticalFields.push("Inspector Name");
+    if (!inspectionData.inspectionDate) missingCriticalFields.push("Inspection Date");
+
+    if (missingCriticalFields.length > 0) {
+        await showModal({
+            title: "Cannot Proceed",
+            message: "The following required fields are missing:\n\n" + missingCriticalFields.join("\n"),
+            type: "error",
+            confirmText: "Got it"
+        });
+        return;
+    }
+
+    const incompleteSpans = inspectionData.spans.filter(function(span, index) {
+        return !completed[index] || span.elementsInspected === null || span.photographsTaken === null;
+    }).length;
+
+    if (incompleteSpans > 0) {
+        var proceed = await showModal({
+            title: "Incomplete Spans",
+            message: incompleteSpans + " span(s) are incomplete.\n\nProceed anyway?",
+            type: "warning",
+            confirmText: "Proceed",
+            cancelText: "Go Back",
+            showCancel: true
+        });
+        if (!proceed) return;
+    }
+
+    sessionStorage.setItem('inspectionData', JSON.stringify(inspectionData));
+    window.location.href = "../inspection/inspection.html";
+}
+    
+    </script>
+</body>
+</html>

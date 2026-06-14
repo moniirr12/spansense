@@ -1,0 +1,1299 @@
+document.addEventListener('DOMContentLoaded', function() {
+  console.log("DOM fully loaded - starting initialization");
+  
+  // Load data or handle error
+  let inspectionData;
+  try {
+      const data = sessionStorage.getItem('inspectionData');
+      if (!data) throw new Error("No inspection data found");
+      inspectionData = JSON.parse(data);
+      console.log("Successfully loaded inspection data:", inspectionData);
+      
+      // Ensure each span has a defects array
+      if (inspectionData.spans && Array.isArray(inspectionData.spans)) {
+        inspectionData.spans.forEach(span => {
+          span.defects = span.defects || [];
+        });
+      } else {
+        console.warn("No spans found in inspection data");
+        inspectionData.spans = [];
+      }
+      
+      // Store globally if needed elsewhere
+      window.inspectionData = inspectionData;
+      
+      // Initialize span buttons
+      initializeSpanButtons(inspectionData);
+      
+  } catch (error) {
+      console.error("Initialization error:", error);
+      showError("Missing inspection data. Please start over.");
+  }
+});
+
+
+
+
+
+
+// Helper function to get defect description from your mapping
+function getDefectDescription(defectId, defectType, defectNumber) {
+    // If we have a formatted defectId like "1.1"
+    if (defectId && defectId.includes('.')) {
+        const [type, number] = defectId.split('.');
+        const defectTypeNum = parseInt(type);
+        const defectNum = parseInt(number);
+        
+        if (defectNumberText[defectTypeNum] && defectNumberText[defectTypeNum][defectNum]) {
+            return defectNumberText[defectTypeNum][defectNum];
+        }
+    }
+    
+    // Try using the provided defectType and defectNumber
+    if (defectType && defectNumber) {
+        const defectTypeNum = parseInt(defectType);
+        const defectNum = parseInt(defectNumber);
+        
+        if (defectNumberText[defectTypeNum] && defectNumberText[defectTypeNum][defectNum]) {
+            return defectNumberText[defectTypeNum][defectNum];
+        }
+    }
+    
+    // Fallback to the original defectId or code
+    return defectId || `Defect ${defectType}.${defectNumber}`;
+}
+
+// Updated renderDefectsSummary function
+function renderDefectsSummary() {
+    const container = document.getElementById('splitDefectsList');
+    if (!container) return;
+    
+    const defects = getAllDefects();
+    const countSpan = document.getElementById('splitDefectCount');
+    if (countSpan) countSpan.innerText = defects.length;
+    
+    if (!defects || defects.length === 0) {
+        container.innerHTML = '<div class="empty-defects-message">No defects recorded yet.</div>';
+        return;
+    }
+    
+    let html = '';
+    defects.forEach((def, index) => {
+        const severityLabel = getSeverityLabel(def.severity);
+        
+        // ✅ Get FULL defect description (Type + specific defect)
+        const fullDefectDescription = getFullDefectDescription(
+            def.defectType, 
+            def.defectNumber, 
+            def.defectId
+        );
+        
+        // ✅ Get element description
+        const elementNumber = def.elementNumber || def.element_no;
+        const elementDescription = getElementDescriptionSafe(elementNumber);
+        
+        html += `
+            <div class="defect-card-item" onclick="scrollToDefect(${def.span}, '${escapeHtml(elementDescription)}')">
+                <div class="defect-location">
+                    <span class="defect-badge">${def.defectId || `${def.defectType}.${def.defectNumber}`}</span>
+                    Span ${def.span} · ${escapeHtml(elementDescription)}
+                </div>
+                <div class="defect-description"><strong>${escapeHtml(fullDefectDescription)}</strong></div>
+                <div class="defect-meta">
+                    <span><i class="fas fa-chart-simple"></i> ${severityLabel}</span>
+                    <span><i class="fas fa-arrows-spread"></i> ${def.extent || 'N/A'}</span>
+                    ${def.works && def.works !== 'N' ? `<span><i class="fas fa-tools"></i> Works Required</span>` : ''}
+                </div>
+                ${def.comment ? `<div class="defect-comment-preview"><i class="fas fa-comment"></i> ${escapeHtml(def.comment.substring(0, 60))}${def.comment.length > 60 ? '...' : ''}</div>` : ''}
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+// Function to include defectType and defectNumber
+function getAllDefects() {
+    const all = [];
+    
+    const inspectionData = JSON.parse(sessionStorage.getItem('inspectionData') || '{}');
+    
+    if (inspectionData.defects && Array.isArray(inspectionData.defects)) {
+        inspectionData.defects.forEach(defect => {
+            let defectType = defect.defectType;
+            let defectNumber = defect.defectNumber;
+            
+            // Parse defectId like "4.1" if type/number missing
+            if ((!defectType || !defectNumber) && defect.defectId && defect.defectId.includes('.')) {
+                const parts = defect.defectId.split('.');
+                defectType = parts[0];
+                defectNumber = parts[1];
+            }
+            
+            all.push({
+                span: defect.spanNumber,
+                elementNumber: defect.elementNumber,
+                element: defect.elementDescription || `Element ${defect.elementNumber}`,
+                defectId: defect.defectId,
+                defectType: defectType,
+                defectNumber: defectNumber,
+                severity: defect.severity,
+                extent: defect.extent,
+                works: defect.worksRequired,
+                priority: defect.priority,
+                cost: defect.cost,
+                comment: defect.comments,
+                remedialWorks: defect.remedialWorks
+            });
+        });
+    }
+    
+    return all;
+}
+
+
+// Updated renderDefectsSummary function - NOW using getFullDefectDescription
+function renderDefectsSummary() {
+    const container = document.getElementById('splitDefectsList');
+    if (!container) return;
+    
+    const defects = getAllDefects();
+    const countSpan = document.getElementById('splitDefectCount');
+    if (countSpan) countSpan.innerText = defects.length;
+    
+    if (!defects || defects.length === 0) {
+        container.innerHTML = '<div class="empty-defects-message">No defects recorded yet.</div>';
+        return;
+    }
+    
+    let html = '';
+    defects.forEach((def, index) => {
+        const severityLabel = getSeverityLabel(def.severity);
+        
+        // ✅ USE getFullDefectDescription (includes type + specific defect)
+        const fullDefectDescription = getFullDefectDescription(
+            def.defectType, 
+            def.defectNumber, 
+            def.defectId
+        );
+        const combinedDefect = `${def.defectType}.${def.defectNumber ? def.defectNumber : ''}`;
+        
+        // ✅ Get element description
+        const elementNumber = def.elementNumber || def.element_no;
+        const elementDescription = getElementDescriptionSafe(elementNumber);
+        
+        html += `
+            <div class="defect-card-item" onclick="scrollToDefect(${def.span}, '${escapeHtml(elementDescription)}')">
+                <div class="defect-location">
+                    Span ${def.span} · ${escapeHtml(elementDescription)}
+                </div>
+                <div class="defect-description" style="font-size: 0.75rem;">${def.severity || 'N/A'}${def.extent || 'N/A'}. (${escapeHtml(combinedDefect)}) ${escapeHtml(fullDefectDescription)}</div>
+                <div class="defect-meta" style="font-size: 0.80rem;">
+                    ${def.works && def.works !== 'N' ? `<span> Works required</span>` : ''}
+                </div>
+                ${def.comment ? `<div class="defect-comment-preview" style="font-style: italic;">${escapeHtml(def.comment.substring(0, 60))}${def.comment.length > 60 ? '...' : ''}</div>` : ''}
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+// Helper function to get severity label
+function getSeverityLabel(severity) {
+    const severityMap = {
+        1: 'Minor',
+        2: 'Moderate',
+        3: 'Severe',
+        4: 'Critical',
+        5: 'Emergency'
+    };
+    return severityMap[severity] || `Level ${severity}`;
+}
+
+// Helper function to escape HTML
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
+}
+
+// Optional: Function to refresh defects summary when defects are added/edited
+function refreshDefectsSummary() {
+    if (document.getElementById('splitModal').classList.contains('active')) {
+        renderDefectsSummary();
+    }
+}
+
+// Call this after adding/editing/deleting defects
+// For example, after addDefect(), editDefect(), deleteDefect()
+function updateDefectsAndRefresh() {
+    refreshDefectsSummary();
+}
+
+// Modal functions
+function openSplitModal() {
+    const conclusionsTextarea = document.getElementById('conclusionsText');
+    if (conclusionsTextarea) {
+        // Try to get conclusions from inspectionData first, then from sessionStorage
+        const inspectionData = JSON.parse(sessionStorage.getItem('inspectionData') || '{}');
+        const savedConclusions = inspectionData.conclusions || '';
+        conclusionsTextarea.value = savedConclusions;
+        conclusionsSaved = savedConclusions;
+    }
+    renderDefectsSummary();
+    document.getElementById('splitModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeSplitModal() {
+    document.getElementById('splitModal').classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+function saveConclusions() {
+    const conclusionsTextarea = document.getElementById('conclusionsText');
+    if (conclusionsTextarea) {
+        conclusionsSaved = conclusionsTextarea.value;
+        const inspectionData = JSON.parse(sessionStorage.getItem('inspectionData') || '{}');
+        if (inspectionData) {
+            inspectionData.conclusions = conclusionsSaved;
+            sessionStorage.setItem('inspectionData', JSON.stringify(inspectionData));
+            console.log('✅ Conclusions saved to inspectionData:', conclusionsSaved);
+        }
+        
+        const bar = document.getElementById('conclusionsBar');
+        const barStatus = document.getElementById('barStatus');
+        if (bar && barStatus) {
+            if (conclusionsSaved && conclusionsSaved.trim().length > 0) {
+                bar.classList.add('done');
+                barStatus.innerText = 'Done';
+            } else {
+                bar.classList.remove('done');
+                barStatus.innerText = 'Required';
+            }
+        }
+        
+        closeSplitModal();
+    }
+}
+
+function showToast(message) {
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#3d6b69;color:white;padding:12px 24px;border-radius:12px;font-size:0.85rem;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,0.3);z-index:10000;border:1px solid #5b8c8a;opacity:0;transition:opacity 0.3s;';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => { toast.style.opacity = '1'; });
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 2500);
+}
+
+// Make functions global
+window.openSplitModal = openSplitModal;
+window.closeSplitModal = closeSplitModal;
+window.saveConclusions = saveConclusions;
+window.renderDefectsSummary = renderDefectsSummary;
+
+
+
+// Get the structureId from wherever it's stored
+const structureId = sessionStorage.getItem('structureId');
+const structureName = sessionStorage.getItem('structureName'); // if stored separately
+
+if (structureId) {
+    // Get existing inspectionData or create new
+    let inspectionData = JSON.parse(sessionStorage.getItem('inspectionData')) || {};
+    
+    // Update it with the structure info
+    inspectionData.structureId = structureId;
+    inspectionData.structureName = structureName || '';
+    
+    // Save back to sessionStorage
+    sessionStorage.setItem('inspectionData', JSON.stringify(inspectionData));
+}
+
+
+document.addEventListener('DOMContentLoaded', function() {
+        // Call functions from inspection1.js
+        if (typeof fetchAndUpdateBridgeData === 'function') {
+            const structureId = sessionStorage.getItem('structureId');
+            if (structureId) {
+                fetchAndUpdateBridgeData(structureId);
+            }
+        }
+        
+        if (typeof loadBridgePhoto === 'function') {
+            const structureId = sessionStorage.getItem('structureId');
+            if (structureId) {
+                loadBridgePhoto(structureId);
+            }
+        }
+    });
+
+function initializeSpanButtons(inspectionData) {
+  const spanTogglesContainer = document.querySelector('.span-toggles');
+  if (!spanTogglesContainer) {
+    console.error("Span toggles container not found");
+    return;
+  }
+  
+  // Clear existing buttons
+  spanTogglesContainer.innerHTML = '';
+  
+  // Create buttons for each span
+  if (inspectionData.spans && inspectionData.spans.length > 0) {
+    inspectionData.spans.forEach(span => {
+        const button = createSpanButton(span);
+        spanTogglesContainer.appendChild(button);
+    });
+    
+    // Activate default/first span
+    activateDefaultSpan(inspectionData);
+  } else {
+    console.warn("No spans to create buttons for");
+  }
+}
+
+function createSpanButton(span) {
+  const btn = document.createElement('button');
+  btn.className = 'span-toggle';
+  btn.textContent = `Span ${span.spanNumber}`;
+  btn.dataset.spanNumber = span.spanNumber;
+  
+  btn.addEventListener('click', handleSpanButtonClick);
+  return btn;
+}
+
+function handleSpanButtonClick(event) {
+  const clickedButton = event.currentTarget;
+  const spanNumber = clickedButton.dataset.spanNumber;
+  
+  console.log("Span button clicked:", spanNumber);
+  
+  // 1. Update UI state
+  updateActiveButtonState(clickedButton);
+  
+  // 2. Store selection
+  sessionStorage.setItem('selectedSpan', spanNumber);
+  
+  // 3. Update title
+  updateSpanTitle(spanNumber);
+  
+  // 4. Clear and reload everything
+  if (typeof loadInspectionElements === 'function') {
+    loadInspectionElements(); // This will rebuild the entire table
+  } else {
+    console.error("loadInspectionElements function not found");
+  }
+
+  // 5. Trigger date change if needed
+  const inspectionDates = document.getElementById('inspectionDates');
+  if (inspectionDates && inspectionDates.value) {
+    inspectionDates.dispatchEvent(new Event('change'));
+  }
+  
+  // 6. Refresh BCI scores for the new span
+  if (typeof refreshBCIScores === 'function') {
+    setTimeout(() => {
+      refreshBCIScores();
+    }, 100);
+  }
+}
+
+// Helper functions
+function updateActiveButtonState(activeButton) {
+  document.querySelectorAll('.span-toggle').forEach(btn => {
+      btn.classList.remove('active');
+  });
+  activeButton.classList.add('active');
+}
+
+function updateSpanTitle(spanNumber) {
+  const titleElement = document.getElementById('current-span-title');
+  if (titleElement) {
+      titleElement.textContent = `Span ${spanNumber} Elements`;
+  }
+}
+
+function activateDefaultSpan(inspectionData) {
+  const selectedSpan = sessionStorage.getItem('selectedSpan') || 
+                      (inspectionData.spans[0] ? inspectionData.spans[0].spanNumber : null);
+  
+  if (selectedSpan) {
+      const defaultButton = document.querySelector(
+          `.span-toggle[data-span-number="${selectedSpan}"]`
+      );
+      
+      if (defaultButton) {
+          defaultButton.click();
+      } else if (inspectionData.spans[0]) {
+        // Fallback: click the first button if selected span not found
+        const firstButton = document.querySelector('.span-toggle');
+        if (firstButton) firstButton.click();
+      }
+  }
+}
+
+function showError(message) {
+    alert(message);
+}
+
+// Preview Inspection
+const previewButton = document.getElementById('previewInspection');
+if (previewButton) {
+  previewButton.addEventListener('click', function() {
+    // Get data from sessionStorage
+    const inspectionData = JSON.parse(sessionStorage.getItem('inspectionData')) || {};
+    const defects = JSON.parse(sessionStorage.getItem('defects')) || [];
+    const photoData = JSON.parse(sessionStorage.getItem('photoData')) || {};
+    
+    // Group defects by span
+    const defectsBySpan = {};
+    defects.forEach(defect => {
+      const span = defect.spanNumber || 'Unknown';
+      if (!defectsBySpan[span]) {
+        defectsBySpan[span] = [];
+      }
+      defectsBySpan[span].push(defect);
+    });
+
+    // Calculate BCI scores per span
+    const spanBCIs = {};
+    Object.keys(defectsBySpan).forEach(span => {
+      const spanDefects = defectsBySpan[span];
+      const severityValues = spanDefects.map(d => parseInt(d.severity, 10));
+      const extentValues = spanDefects.map(d => d.extent);
+      const itemNumbers = spanDefects.map(d => parseInt(d.elementNumber, 10));
+      
+      if (typeof calculateBCI === 'function') {
+        spanBCIs[span] = calculateBCI(severityValues, extentValues, itemNumbers);
+      } else {
+        spanBCIs[span] = { bciAv: 0, bciCrit: 0 };
+      }
+    });
+
+    // Generate span summary HTML
+    const spanSummaryHTML = Object.keys(spanBCIs).map(span => `
+      <div class="span-summary">
+        <h3>Span ${span}</h3>
+        <div class="bci-scores">
+          <div class="bci-score">
+            <span>BCI Average: </span>
+            <span>${spanBCIs[span].bciAv?.toFixed(2) || '100.00'}</span>
+          </div>
+          <div class="bci-score">
+            <span>BCI Critical: </span>
+            <span>${spanBCIs[span].bciCrit?.toFixed(2) || '100.00'}</span>
+          </div>
+        </div>
+        <p>Defects: ${defectsBySpan[span].length}</p>
+      </div>
+    `).join('');
+
+    // Create formatted preview content
+    let previewContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Inspection Preview</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          h1 { color: #333; }
+          h2 { margin-top: 30px; color: #444; }
+          .span-summary {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007bff;
+          }
+          .bci-scores {
+            display: flex;
+            gap: 20px;
+            margin: 10px 0;
+          }
+          .bci-score {
+            font-weight: bold;
+          }
+          pre { 
+            background: #f5f5f5; 
+            padding: 15px; 
+            border-radius: 5px; 
+            overflow-x: auto;
+          }
+          .container { max-width: 900px; margin: 0 auto; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <h1>${inspectionData.structureName || 'Structure'} Inspection</h1>
+          <p><strong>Date:</strong> ${inspectionData.inspectionDate || 'N/A'}</p>
+          
+          <h2>Span Summary</h2>
+          ${spanSummaryHTML || '<p>No spans with defects found</p>'}
+          
+          <h2>Inspection Details</h2>
+          <pre>${JSON.stringify(inspectionData, null, 2)}</pre>
+          
+          <h2>All Defects (${defects.length})</h2>
+          <pre>${JSON.stringify(defects, null, 2)}</pre>
+          
+          <h2>All Photos (${Object.keys(photoData).length})</h2>
+          <pre>${JSON.stringify(photoData, null, 2)}</pre>
+        </div>
+      </body>
+      </html>
+    `;
+    
+    const previewWindow = window.open('', '_blank');
+    if (previewWindow) {
+      previewWindow.document.write(previewContent);
+      previewWindow.document.close();
+    } else {
+      alert("Popup blocked. Please allow popups for this site.");
+    }
+  });
+}
+
+//to inspection1.html
+document.getElementById("toInspection1").addEventListener("click", function() {
+    window.location.href = "../inspection1/inspection1.html"; // Redirects to a new page
+});
+
+
+
+
+
+
+
+
+
+
+let saveAnimationActive = false;
+
+function createSaveOverlay() {
+    const existing = document.getElementById('handSaveOverlay');
+    if (existing) return existing;
+    
+    const overlay = document.createElement('div');
+    overlay.id = 'handSaveOverlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(8px);
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        visibility: hidden;
+        opacity: 0;
+        transition: all 0.3s ease;
+    `;
+    
+    overlay.innerHTML = `
+        <div class="save-status-container" style="text-align: center; max-width: 400px; padding: 0 24px;">
+            <div class="save-status" style="font-size: 1.1rem; font-weight: 500; color: white; margin-bottom: 8px; text-shadow: 0 1px 2px rgba(0,0,0,0.1);" id="saveStatusText">Saving inspection</div>
+            <div class="save-detail" style="font-size: 0.75rem; color: rgba(255,255,255,0.7); margin-bottom: 32px;" id="saveDetailText">Preparing data</div>
+            <div class="hand-line-container" style="width: 280px; margin: 0 auto; position: relative;">
+                <div class="line-track" style="width: 100%; height: 2px; background: rgba(255,255,255,0.2); border-radius: 2px;"></div>
+                <div class="hand-line" style="width: 0%; height: 2px; background: #e8a87c; border-radius: 2px; position: relative; box-shadow: 0 0 4px rgba(232,168,124,0.5);"></div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+function showSaveAnimation() {
+    const overlay = createSaveOverlay();
+    overlay.style.visibility = 'visible';
+    overlay.style.opacity = '1';
+    
+    // Reset and start hand-drawn line animation
+    const handLine = overlay.querySelector('.hand-line');
+    if (handLine) {
+        handLine.style.animation = 'none';
+        handLine.offsetHeight; // force reflow
+        handLine.style.animation = 'handDraw 2.5s cubic-bezier(0.4, 0, 0.2, 1) forwards';
+        handLine.style.width = '0%';
+    }
+    
+    return overlay;
+}
+
+function updateSaveMessage(status, detail) {
+    const overlay = document.getElementById('handSaveOverlay');
+    if (!overlay) return;
+    const statusEl = overlay.querySelector('#saveStatusText');
+    const detailEl = overlay.querySelector('#saveDetailText');
+    if (statusEl) statusEl.textContent = status;
+    if (detailEl) detailEl.textContent = detail;
+}
+
+function showSaveSuccess(overlay, hideOverlay = true) {
+    if (!overlay) return;
+    const container = overlay.querySelector('.save-status-container');
+    const handLineContainer = overlay.querySelector('.hand-line-container');
+    if (handLineContainer) handLineContainer.style.opacity = '0';
+    
+    container.innerHTML = `
+        <div class="success-icon" style="font-size: 2rem; color: rgba(255,255,255,0.9); margin-bottom: 16px; animation: gentlePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="success-status" style="font-size: 1.1rem; font-weight: 500; color: white; margin-bottom: 8px;">Saved successfully</div>
+        <div class="success-detail" style="font-size: 0.75rem; color: rgba(255,255,255,0.7);">Your inspection has been saved</div>
+    `;
+    
+    if (hideOverlay) {
+        setTimeout(() => {
+            overlay.style.opacity = '0';
+            overlay.style.visibility = 'hidden';
+            setTimeout(() => {
+                container.innerHTML = `
+                    <div class="save-status" id="saveStatusText" style="font-size: 1.1rem; font-weight: 500; color: white; margin-bottom: 8px; text-shadow: 0 1px 2px rgba(0,0,0,0.1);">Saving inspection</div>
+                    <div class="save-detail" id="saveDetailText" style="font-size: 0.75rem; color: rgba(255,255,255,0.7); margin-bottom: 32px;">Preparing data</div>
+                    <div class="hand-line-container" style="width: 280px; margin: 0 auto; position: relative;">
+                        <div class="line-track" style="width: 100%; height: 2px; background: rgba(255,255,255,0.2); border-radius: 2px;"></div>
+                        <div class="hand-line" style="width: 0%; height: 2px; background: #e8a87c; border-radius: 2px; position: relative; box-shadow: 0 0 4px rgba(232,168,124,0.5);"></div>
+                    </div>
+                `;
+                const newLine = overlay.querySelector('.hand-line');
+                if (newLine) newLine.style.animation = 'none';
+            }, 300);
+        }, 1500);
+    }
+}
+
+// Add CSS animations if not already present
+if (!document.querySelector('#saveAnimationStyles')) {
+    const style = document.createElement('style');
+    style.id = 'saveAnimationStyles';
+    style.textContent = `
+        @keyframes handDraw {
+            0% { width: 0%; opacity: 0; }
+            10% { width: 5%; opacity: 1; }
+            30% { width: 28%; }
+            50% { width: 52%; }
+            70% { width: 76%; }
+            90% { width: 94%; }
+            100% { width: 100%; opacity: 1; }
+        }
+        @keyframes gentlePop {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+// SAVE INTO DATABASE
+// ============================================
+// SAVE BUTTON HANDLER WITH ANIMATION - SINGLE VERSION
+// ============================================
+
+const originalSaveButton = document.getElementById('saveInspection');
+if (originalSaveButton) {
+    // Remove existing listeners by cloning
+    const newSaveButton = originalSaveButton.cloneNode(true);
+    originalSaveButton.parentNode.replaceChild(newSaveButton, originalSaveButton);
+    
+    newSaveButton.addEventListener('click', async function(e) {
+        e.preventDefault();
+        
+        if (saveAnimationActive) return;
+        saveAnimationActive = true;
+        
+        // Show the hand-drawn animation
+        const overlay = showSaveAnimation();
+        
+        // Start animation updates (visual only)
+        const updateSteps = async () => {
+            const steps = [
+                { status: 'Validating data', detail: 'Checking required fields' },
+                { status: 'Uploading defects', detail: 'Sending to server' },
+                { status: 'Processing photos', detail: 'Uploading images' },
+                { status: 'Updating BCI', detail: 'Calculating condition scores' },
+                { status: 'Finalizing', detail: 'Completing save' }
+            ];
+            
+            for (let i = 0; i < steps.length; i++) {
+                await new Promise(r => setTimeout(r, 350));
+                if (!overlay || overlay.style.visibility === 'hidden') break;
+                updateSaveMessage(steps[i].status, steps[i].detail);
+            }
+        };
+        
+        // Start animation (don't await - let it run in background)
+        updateSteps();
+        
+        // Now perform the actual save
+        try {
+            const inspectionData = JSON.parse(sessionStorage.getItem('inspectionData')) || {};
+            const defects = JSON.parse(sessionStorage.getItem('defects')) || [];
+            const isEditMode = sessionStorage.getItem('inspectionMode') === 'edit';
+            let photoData = JSON.parse(sessionStorage.getItem('photoData')) || {};
+
+            if (!inspectionData.structureId) {
+                throw new Error("Missing structure information. Please start over.");
+            }
+            
+            if (defects.length === 0) {
+                const confirmSave = confirm("No defects have been added. Do you want to save the inspection anyway?");
+                if (!confirmSave) {
+                    if (overlay) {
+                        overlay.style.opacity = '0';
+                        overlay.style.visibility = 'hidden';
+                    }
+                    saveAnimationActive = false;
+                    return;
+                }
+            }
+            
+            const payload = {
+                inspection: {
+                    structure_id: inspectionData.structureId,
+                    structure_name: inspectionData.structureName,
+                    inspection_date: inspectionData.inspectionDate,
+                    inspection_type: inspectionData.inspectionType,
+                    inspector_name: inspectionData.inspectorName,
+                    total_spans: inspectionData.totalSpans,
+                    conclusions: inspectionData.conclusions || '',
+                    spans: (inspectionData.spans || []).map(span => ({
+                        spanNumber: Number(span.spanNumber),
+                        elementsInspected: Boolean(span.elementsInspected),
+                        photographsTaken: Boolean(span.photographsTaken),
+                        bciAv: span.bciAv || '100.00',
+                        bciCrit: span.bciCrit || '100.00',
+                        comments: span.comments || ''
+                    }))
+                },
+                defects: defects.map(defect => ({
+                    spanNumber: Number(defect.spanNumber),
+                    elementNumber: Number(defect.elementNumber),
+                    defectType: defect.defectType,
+                    defectNumber: defect.defectNumber,
+                    severity: defect.severity,
+                    extent: defect.extent,
+                    worksRequired: defect.works || '',
+                    priority: defect.priority || 'M',
+                    cost: defect.cost || 0,
+                    comments: defect.comment || '',
+                    remedial_works: defect.remedialWorks || '',
+                    timestamp: defect.timestamp || new Date().toISOString()
+                })),
+                photoData: photoData
+            };
+
+            let inspectionId;
+            
+            if (isEditMode) {
+                try {
+                    const findResponse = await fetch('http://localhost:3000/find-inspection-id', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            structure_id: inspectionData.structureId,
+                            inspection_date: inspectionData.inspectionDate
+                        })
+                    });
+
+                    const findResult = await findResponse.json();
+
+                    if (!findResponse.ok) {
+                        throw new Error(findResult.message || "Failed to find inspection");
+                    }
+
+                    inspectionId = findResult.inspectionId;
+                    payload.inspectionId = inspectionId;
+                } catch (error) {
+                    console.error("Error finding inspection ID:", error);
+                    throw new Error("Could not identify which inspection to update. Please try again.");
+                }
+            }
+
+            const endpoint = isEditMode ? 'http://localhost:3000/update-inspection' : 'http://localhost:3000/save-inspection';
+            const method = isEditMode ? 'PUT' : 'POST';
+
+            const response = await fetch(endpoint, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.message || `Failed to ${isEditMode ? 'update' : 'save'} inspection`);
+            }
+
+            // Success - show success animation
+            updateSaveMessage('Finalizing', 'Complete!');
+            setTimeout(() => {
+                if (overlay) {
+                    showSaveSuccess(overlay, true);
+                }
+            }, 200);
+            
+            console.log(`Inspection ${isEditMode ? 'updated' : 'saved'} successfully!`);
+            
+            if (!isEditMode) {
+                sessionStorage.removeItem('inspectionData');
+                sessionStorage.removeItem('defects');
+                sessionStorage.removeItem('photoData');
+                sessionStorage.removeItem('selectedSpan');
+                sessionStorage.removeItem('inspectionMode');
+            }
+            
+            // Redirect after animation
+            setTimeout(() => {
+                if (isEditMode) {
+                    window.location.href = `inspection-details.html?id=${inspectionId}`;
+                } else {
+                    window.location.href = 'inspections-list.html';
+                }
+            }, 1800);
+            
+        } catch (error) {
+            console.error("Save error:", error);
+            
+            // Show error state in animation
+            if (overlay) {
+                const container = overlay.querySelector('.save-status-container');
+                const handLineContainer = overlay.querySelector('.hand-line-container');
+                if (handLineContainer) handLineContainer.style.opacity = '0';
+                container.innerHTML = `
+                    <div class="error-icon" style="font-size: 2rem; color: #e8a87c; margin-bottom: 16px;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="error-status" style="font-size: 1.1rem; font-weight: 500; color: white; margin-bottom: 8px;">Save Failed</div>
+                    <div class="error-detail" style="font-size: 0.75rem; color: rgba(255,255,255,0.7);">${error.message}</div>
+                `;
+                setTimeout(() => {
+                    overlay.style.opacity = '0';
+                    overlay.style.visibility = 'hidden';
+                }, 2000);
+            }
+            
+            alert(`Save failed: ${error.message}`);
+        } finally {
+            saveAnimationActive = false;
+        }
+    });
+}
+
+// Function to calculate and update BCI scores in real-time
+
+// Make functions globally available
+window.initializeSpanButtons = initializeSpanButtons;
+window.handleSpanButtonClick = handleSpanButtonClick;
+window.getElementDescriptionSafe = getElementDescriptionSafe;
+
+
+
+// ============================================
+// ELEMENTS DATABASE - Static JavaScript Lookup
+// ============================================
+
+// Complete elements list from your screenshot
+const ELEMENTS_DB = {
+    1: { category: "Deck Elements", description: "Primary deck element" },
+    2: { category: "Deck Elements", description: "Secondary deck elements - Transverse beams" },
+    3: { category: "Deck Elements", description: "Secondary deck elements - Others" },
+    4: { category: "Deck Elements", description: "Half joints" },
+    5: { category: "Deck Elements", description: "Tie beam/rod" },
+    6: { category: "Deck Elements", description: "Parapet beam or cantilever" },
+    7: { category: "Deck Elements", description: "Deck bracing" },
+    8: { category: "Load-bearing Substructure", description: "Foundations" },
+    9: { category: "Load-bearing Substructure", description: "Abutments (incl. arch springing)" },
+    10: { category: "Load-bearing Substructure", description: "Spandrel wall/head wall" },
+    11: { category: "Load-bearing Substructure", description: "Pier/column" },
+    12: { category: "Load-bearing Substructure", description: "Cross-head/capping beam" },
+    13: { category: "Load-bearing Substructure", description: "Bearings" },
+    14: { category: "Load-bearing Substructure", description: "Bearing plinth/shelf" },
+    15: { category: "Durability Elements", description: "Superstructure drainage" },
+    16: { category: "Durability Elements", description: "Substructure drainage" },
+    17: { category: "Durability Elements", description: "Waterproofing" },
+    18: { category: "Durability Elements", description: "Movement/expansion joints" },
+    19: { category: "Durability Elements", description: "Finishes: deck elements" },
+    20: { category: "Durability Elements", description: "Finishes: substructure elements" },
+    21: { category: "Durability Elements", description: "Finishes: parapets/safety fences" },
+    22: { category: "Safety Elements", description: "Access/walkways/gantries" },
+    23: { category: "Safety Elements", description: "Handrail/parapets/safety fences" },
+    24: { category: "Safety Elements", description: "Carriageway surfacing" },
+    25: { category: "Safety Elements", description: "Footway/verge/footbridge surfacing" },
+    26: { category: "Other Bridge Elements", description: "Invert/river bed" },
+    27: { category: "Other Bridge Elements", description: "Aprons" },
+    28: { category: "Other Bridge Elements", description: "Fenders/cutwaters/collision prot." },
+    29: { category: "Other Bridge Elements", description: "River training works" },
+    30: { category: "Other Bridge Elements", description: "Revetment/batter paving" },
+    31: { category: "Other Bridge Elements", description: "Wing walls" },
+    32: { category: "Other Bridge Elements", description: "Retaining walls" },
+    33: { category: "Other Bridge Elements", description: "Embankments" },
+    34: { category: "Other Bridge Elements", description: "Machinery" },
+    35: { category: "Ancillary Elements", description: "Approach rails/barriers/walls" },
+    36: { category: "Ancillary Elements", description: "Signs" },
+    37: { category: "Ancillary Elements", description: "Lighting" },
+    38: { category: "Ancillary Elements", description: "Services" }
+};
+
+// Get description by element number with fallback
+function getElementDescriptionSafe(elementNumber) {
+    const element = ELEMENTS_DB[elementNumber];
+    if (!element) {
+        console.warn(`Element ${elementNumber} not found in database`);
+        return `Element ${elementNumber}`;
+    }
+    return element.description;
+}
+
+// Defect type categories mapping
+const DEFECT_TYPE_MAP = {
+    1: "Metalwork",
+    2: "RC & prestressed concrete",
+    3: "Masonry, brickwork & MC",
+    4: "Paintwork & coatings",
+    5: "Vegetation",
+    6: "Foundation",
+    7: "Invert, apron & riverbed",
+    8: "Drainage",
+    9: "Surfacing",
+    10: "Expansion joints",
+    11: "Embankments",
+    12: "Bearings",
+    13: "Impact damage",
+    14: "Waterproofing",
+    15: "Stone slab bridges",
+    16: "Timber"
+};
+
+// Get defect type category name
+function getDefectTypeName(defectType) {
+    return DEFECT_TYPE_MAP[defectType] || `Type ${defectType}`;
+}
+
+// Get full defect description with type + specific defect
+function getFullDefectDescription(defectType, defectNumber, defectId) {
+    // Try from defectId first (e.g., "4.1")
+    if (defectId && defectId.includes('.')) {
+        const [type, number] = defectId.split('.');
+        const typeName = getDefectTypeName(parseInt(type));
+        const defectText = getDefectText(parseInt(type), parseInt(number));
+        
+        if (defectText) {
+            return `${typeName} - ${defectText}`;
+        }
+        return `${typeName} - Defect ${number}`;
+    }
+    
+    // Use individual defectType and defectNumber
+    if (defectType && defectNumber) {
+        const typeName = getDefectTypeName(parseInt(defectType));
+        const defectText = getDefectText(parseInt(defectType), parseInt(defectNumber));
+        
+        if (defectText) {
+            return `${typeName}, ${defectText}`;
+        }
+        return `${typeName}, Defect ${defectNumber}`;
+    }
+    
+    return `Defect ${defectId || 'Unknown'}`;
+}
+
+// Helper to get defect text from your existing mapping
+function getDefectText(defectType, defectNumber) {
+    if (defectNumberText[defectType] && defectNumberText[defectType][defectNumber]) {
+        return defectNumberText[defectType][defectNumber];
+    }
+    return null;
+}
+
+
+function injectRetrievedRibbon(row) {
+    const grid = row.querySelector('.aligned-grid');
+    if (!grid) return;
+    
+    // Avoid duplicates
+    const existing = grid.querySelector('.retrieved-ribbon');
+    if (existing) existing.remove();
+    
+    const ribbon = document.createElement('div');
+    ribbon.className = 'retrieved-ribbon';
+    ribbon.innerHTML = '<i class="fas fa-lock"></i> Retrieved';
+    grid.insertBefore(ribbon, grid.firstChild);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+(function() {
+  const sidebar = document.getElementById('bciStickySidebar');
+  const originalCards = document.querySelector('.stats-three-cards');
+  if (!sidebar || !originalCards) return;
+
+  let ticking = false;
+  const NAVBAR_HEIGHT = 70; // match your navbar height
+
+  function syncValues() {
+    const pairs = [
+      ['bciAvResult',   'bciAvSidebar'],
+      ['bciCritResult', 'bciCritSidebar']
+    ];
+    pairs.forEach(([srcId, dstId]) => {
+      const src = document.getElementById(srcId);
+      const dst = document.getElementById(dstId);
+      if (src && dst && src.textContent !== dst.textContent) {
+        dst.textContent = src.textContent;
+      }
+    });
+  }
+
+  ['bciAvResult', 'bciCritResult'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      new MutationObserver(syncValues).observe(el, {
+        childList: true, characterData: true, subtree: true
+      });
+    }
+  });
+
+  function positionSidebar() {
+      const table = document.querySelector('#inspectionElementsTable')
+                || document.querySelector('.inspection-table-wrapper')
+                || document.querySelector('table');
+
+      if (table) {
+        const tableRect = table.getBoundingClientRect();
+        const sidebarWidth = sidebar.offsetWidth;
+        const gapWidth = tableRect.left;
+        const leftPos = (gapWidth / 2) - (sidebarWidth / 2);
+        sidebar.style.left = `${Math.max(8, leftPos)}px`;
+      }
+
+      // Final resting position — half navbar height below navbar
+      sidebar.style.top = `${NAVBAR_HEIGHT + (NAVBAR_HEIGHT / 2)}px`;
+  }
+
+  function handleScroll() {
+      const rect = originalCards.getBoundingClientRect();
+
+      const triggerPoint = NAVBAR_HEIGHT + 20;
+      const EXTRA_OFFSET = NAVBAR_HEIGHT / 2;
+      const SPEED = 1.5; // adjust this to taste
+
+      const scrolledPast = triggerPoint - rect.top;
+
+      if (scrolledPast <= 0) {
+          sidebar.style.opacity = '0';
+          sidebar.style.transform = `translateY(${-200 - EXTRA_OFFSET}px)`;
+          sidebar.classList.remove('visible');
+          return;
+      }
+
+      const maxTravel = 200 + EXTRA_OFFSET;
+      const travel = Math.min(scrolledPast * SPEED, maxTravel);
+
+      const sidebarY = (-200 - EXTRA_OFFSET) + travel;
+      const opacity  = Math.min(1, scrolledPast / 40);
+
+      sidebar.style.transform = `translateY(${sidebarY}px)`;
+      sidebar.style.opacity = opacity;
+      sidebar.classList.add('visible');
+
+      syncValues();
+  }
+
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      requestAnimationFrame(() => {
+        positionSidebar();
+        handleScroll();
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }, { passive: true });
+
+  window.addEventListener('resize', positionSidebar);
+
+  // On page load: force progress = 0, fully hidden, no animation
+  const EXTRA_OFFSET = NAVBAR_HEIGHT / 2;
+  sidebar.style.opacity = '0';
+  sidebar.style.transform = `translateY(${-200 - EXTRA_OFFSET}px)`;
+  sidebar.style.pointerEvents = 'none';
+
+  positionSidebar();
+  syncValues();
+  // Note: handleScroll() deliberately NOT called on init
+  // so sidebar stays hidden until user actually scrolls
+})();
+
+
+
+
+
+
+
+
+
+
+
+
+// ============================================
+// HAND-DRAWN SAVE ANIMATION (Add to your inspection.js)
+// ============================================
+
+let saveAnimationActive = false;
+
+function createSaveOverlay() {
+    const existing = document.getElementById('handSaveOverlay');
+    if (existing) return existing;
+    
+    const overlay = document.createElement('div');
+    overlay.id = 'handSaveOverlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(8px);
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        visibility: hidden;
+        opacity: 0;
+        transition: all 0.3s ease;
+    `;
+    
+    overlay.innerHTML = `
+        <div class="save-status-container" style="text-align: center; max-width: 400px; padding: 0 24px;">
+            <div class="save-status" style="font-size: 1.1rem; font-weight: 500; color: white; margin-bottom: 8px; text-shadow: 0 1px 2px rgba(0,0,0,0.1);" id="saveStatusText">Saving inspection</div>
+            <div class="save-detail" style="font-size: 0.75rem; color: rgba(255,255,255,0.7); margin-bottom: 32px;" id="saveDetailText">Preparing data</div>
+            <div class="hand-line-container" style="width: 280px; margin: 0 auto; position: relative;">
+                <div class="line-track" style="width: 100%; height: 2px; background: rgba(255,255,255,0.2); border-radius: 2px;"></div>
+                <div class="hand-line" style="width: 0%; height: 2px; background: #e8a87c; border-radius: 2px; position: relative; box-shadow: 0 0 4px rgba(232,168,124,0.5);"></div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+function showSaveAnimation() {
+    const overlay = createSaveOverlay();
+    overlay.style.visibility = 'visible';
+    overlay.style.opacity = '1';
+    
+    const handLine = overlay.querySelector('.hand-line');
+    if (handLine) {
+        handLine.style.animation = 'none';
+        handLine.offsetHeight;
+        handLine.style.animation = 'handDraw 2.5s cubic-bezier(0.4, 0, 0.2, 1) forwards';
+        handLine.style.width = '0%';
+    }
+    
+    return overlay;
+}
+
+function updateSaveMessage(status, detail) {
+    const overlay = document.getElementById('handSaveOverlay');
+    if (!overlay) return;
+    const statusEl = overlay.querySelector('#saveStatusText');
+    const detailEl = overlay.querySelector('#saveDetailText');
+    if (statusEl) statusEl.textContent = status;
+    if (detailEl) detailEl.textContent = detail;
+}
+
+function showSaveSuccess(overlay, hideOverlay = true) {
+    if (!overlay) return;
+    const container = overlay.querySelector('.save-status-container');
+    const handLineContainer = overlay.querySelector('.hand-line-container');
+    if (handLineContainer) handLineContainer.style.opacity = '0';
+    
+    container.innerHTML = `
+        <div class="success-icon" style="font-size: 2rem; color: rgba(255,255,255,0.9); margin-bottom: 16px; animation: gentlePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="success-status" style="font-size: 1.1rem; font-weight: 500; color: white; margin-bottom: 8px;">Saved successfully</div>
+        <div class="success-detail" style="font-size: 0.75rem; color: rgba(255,255,255,0.7);">Your inspection has been saved</div>
+    `;
+    
+    if (hideOverlay) {
+        setTimeout(() => {
+            overlay.style.opacity = '0';
+            overlay.style.visibility = 'hidden';
+            setTimeout(() => {
+                container.innerHTML = `
+                    <div class="save-status" id="saveStatusText" style="font-size: 1.1rem; font-weight: 500; color: white; margin-bottom: 8px; text-shadow: 0 1px 2px rgba(0,0,0,0.1);">Saving inspection</div>
+                    <div class="save-detail" id="saveDetailText" style="font-size: 0.75rem; color: rgba(255,255,255,0.7); margin-bottom: 32px;">Preparing data</div>
+                    <div class="hand-line-container" style="width: 280px; margin: 0 auto; position: relative;">
+                        <div class="line-track" style="width: 100%; height: 2px; background: rgba(255,255,255,0.2); border-radius: 2px;"></div>
+                        <div class="hand-line" style="width: 0%; height: 2px; background: #e8a87c; border-radius: 2px; position: relative; box-shadow: 0 0 4px rgba(232,168,124,0.5);"></div>
+                    </div>
+                `;
+                const newLine = overlay.querySelector('.hand-line');
+                if (newLine) newLine.style.animation = 'none';
+            }, 300);
+        }, 1500);
+    }
+}
+
+// Add CSS animations if not already present
+if (!document.querySelector('#saveAnimationStyles')) {
+    const style = document.createElement('style');
+    style.id = 'saveAnimationStyles';
+    style.textContent = `
+        @keyframes handDraw {
+            0% { width: 0%; opacity: 0; }
+            10% { width: 5%; opacity: 1; }
+            30% { width: 28%; }
+            50% { width: 52%; }
+            70% { width: 76%; }
+            90% { width: 94%; }
+            100% { width: 100%; opacity: 1; }
+        }
+        @keyframes gentlePop {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    `;
+    document.head.appendChild(style);
+}
