@@ -296,7 +296,7 @@
                 let inspectionId;
                 
                 if (isEditMode) {
-                    const findResponse = await fetch('http://localhost:3000/find-inspection-id', {
+                    const findResponse = await fetch('/find-inspection-id', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -310,7 +310,7 @@
                     payload.inspectionId = inspectionId;
                 }
 
-                const endpoint = isEditMode ? 'http://localhost:3000/update-inspection' : 'http://localhost:3000/save-inspection';
+                const endpoint = isEditMode ? '/update-inspection' : '/save-inspection';
                 const response = await fetch(endpoint, {
                     method: isEditMode ? 'PUT' : 'POST',
                     headers: { 'Content-Type': 'application/json' },
