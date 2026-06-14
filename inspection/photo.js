@@ -249,7 +249,7 @@ async function savePhotos() {
     });
 
     try {
-        const response = await fetch(`http://localhost:3000/api/bridges/${bridgeId}/inspection-photos`, {
+        const response = await fetch(`/api/bridges/${bridgeId}/inspection-photos`, {
             method: 'POST',
             body: formData
         });
@@ -300,7 +300,7 @@ async function getAllPhotosForCurrentInspection() {
     }
 
     try {
-        const apiUrl = new URL(`http://localhost:3000/api/bridges/${bridgeId}/inspection-photos`);
+        const apiUrl = new URL(`/api/bridges/${bridgeId}/inspection-photos`);
         apiUrl.searchParams.append('inspectionDate', inspectionDate);
 
         const response = await fetch(apiUrl.toString());
