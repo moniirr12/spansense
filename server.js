@@ -15,14 +15,6 @@ const db = new sqlite3.Database("./bridges.db");
 const session = require('express-session'); // for authentication sessions
 
 
-// Start the server
-const PORT = 3000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    db.exec("PRAGMA foreign_keys = ON");  // Optional safety measure
-});
-
-
 // Enable CORS for specific origins
 app.use(cors({
     origin: [
@@ -43,6 +35,13 @@ app.use(express.static(path.join(__dirname)));
 // ROOT ROUTE
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Start the server
+const PORT = 3000;
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    db.exec("PRAGMA foreign_keys = ON");  // Optional safety measure
 });
 
 
