@@ -123,9 +123,9 @@ async function generateSimplePDFReport(doc, mode = 'download') {
 
         // FIRST: Fetch all data
         const [bridgeData, fullInspectionData, photosResponse, bciFormData] = await Promise.all([
-            fetch(`http://localhost:3000/api/bridges/${structureId}`).then(res => res.json()).catch(() => ({})),
-            fetch(`http://localhost:3000/api/inspection/full?structure_id=${structureId}&date=${inspectionDate}`).then(res => res.ok ? res.json() : null).catch(() => null),
-            fetch(`http://localhost:3000/api/bridges/${structureId}/inspection-photos?inspectionDate=${encodeURIComponent(inspectionDate)}`).then(res => res.ok ? res.json() : { success: false, photos: [] }).catch(() => ({ success: false, photos: [] })),
+            fetch(`/api/bridges/${structureId}`).then(res => res.json()).catch(() => ({})),
+            fetch(`/api/inspection/full?structure_id=${structureId}&date=${inspectionDate}`).then(res => res.ok ? res.json() : null).catch(() => null),
+            fetch(`/api/bridges/${structureId}/inspection-photos?inspectionDate=${encodeURIComponent(inspectionDate)}`).then(res => res.ok ? res.json() : { success: false, photos: [] }).catch(() => ({ success: false, photos: [] })),
             generateBCIFormForPDF(doc)
         ]);
 
@@ -238,7 +238,7 @@ async function generateSimplePDFReport(doc, mode = 'download') {
 
         // Get bridge photo
         let bridgePhotoDataURL = null;
-        const photoResponse = await fetch(`http://localhost:3000/getBridgePhoto?bridgeId=${structureId}`).catch(() => ({}));
+        const photoResponse = await fetch(`/getBridgePhoto?bridgeId=${structureId}`).catch(() => ({}));
         if (photoResponse.ok) {
             const photoData = await photoResponse.json();
             if (photoData.photo_url) {
@@ -1148,16 +1148,16 @@ async function generateBCIFormForPDF(doc) {
         
         if (!structureId || !structureName) throw new Error('Missing structure information');
 
-        const bridgeResponse = await fetch(`http://localhost:3000/api/bridges/${structureId}`);
+        const bridgeResponse = await fetch(`/api/bridges/${structureId}`);
         if (!bridgeResponse.ok) throw new Error('Failed to fetch bridge data');
         const bridge = await bridgeResponse.json();
         const totalSpans = bridge.span_number || 1;
 
-        const defectsResponse = await fetch(`http://localhost:3000/api/defectsbci?structureId=${structureId}&date=${inspectionDate}`);
+        const defectsResponse = await fetch(`/api/defectsbci?structureId=${structureId}&date=${inspectionDate}`);
         if (!defectsResponse.ok) throw new Error('Failed to fetch defects');
         const allSpansWithDefects = await defectsResponse.json();
 
-        const worksResponse = await fetch(`http://localhost:3000/api/worksrequired?structureId=${structureId}&date=${inspectionDate}`);
+        const worksResponse = await fetch(`/api/worksrequired?structureId=${structureId}&date=${inspectionDate}`);
         if (!worksResponse.ok) throw new Error('Failed to fetch works required');
         const worksRequired = await worksResponse.json();
 
