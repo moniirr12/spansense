@@ -14,7 +14,6 @@ const db = new sqlite3.Database("./bridges.db");
 
 const session = require('express-session'); // for authentication sessions
 
-
 // Enable CORS for specific origins
 app.use(cors({
     origin: [
@@ -29,7 +28,6 @@ app.use(cors({
 
 // Handle preflight
 app.options('*', cors());
-
 
 // GET type distribution counts
 app.get('/api/bridges/type-distribution', (req, res) => {
@@ -71,7 +69,6 @@ app.get('/getBridgePhoto', (req, res) => {
         res.json({ photo_url: row.photo_url });
     });
 });
-
 
 // Get unique inspection dates (and type) for a bridge
 app.get('/api/inspection-dates/:structureId', (req, res) => {
@@ -163,7 +160,6 @@ app.get("/api/defects-by-date", (req, res) => {
     });
 });
 
-
 app.get('/get-spans', (req, res) => {
     const bridgeId = parseInt(req.query.bridgeId, 10);
 
@@ -186,8 +182,6 @@ app.get('/get-spans', (req, res) => {
         res.json({ span_number: row.span_number });
     });
 });
-
-
 
 // Endpoint to fetch previous inspections for a specific structure
 app.get('/api/previousInspections', (req, res) => {
@@ -282,8 +276,6 @@ app.get('/api/elements', (req, res) => {
       res.json(rows); // Return the fetched data
     });
 });
-
-
 
 // In your API route handler
 app.get('/api/defectsbci', async (req, res) => {
@@ -406,8 +398,6 @@ app.get('/api/defectsbci', async (req, res) => {
     }
 });
 
-
-
 // Get complete bridge data (SQLite version)
 app.get('/api/bridges/:id', async (req, res) => {
   try {
@@ -427,7 +417,6 @@ app.get('/api/bridges/:id', async (req, res) => {
     res.status(500).json({ error: 'Database error' });
   }
 });
-
 
 // Configure multer storage for bridge-specific uploads
 const photoStorage = multer.diskStorage({
@@ -608,7 +597,6 @@ app.get('/api/bridges/:structureId/files', async (req, res) => {
     }
 });
 
-
 // Upload file to a bridge
 app.post('/api/bridges/:structureId/files', upload.single('file'), async (req, res) => {
     try {
@@ -670,7 +658,6 @@ app.post('/api/bridges/:structureId/files', upload.single('file'), async (req, r
     }
 });
 
-
 // Delete file endpoint - corrected version
 app.delete('/api/bridges/:structureId/files/:fileId', async (req, res) => {
     try {
@@ -722,7 +709,6 @@ app.delete('/api/bridges/:structureId/files/:fileId', async (req, res) => {
     }
 });
 
-
 // Delete folder endpoint - improved version
 app.delete('/api/bridges/:structureId/folders/:folderId', async (req, res) => {
     try {
@@ -770,12 +756,19 @@ app.delete('/api/bridges/:structureId/folders/:folderId', async (req, res) => {
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Serve frontend static files (must be before error handler and listen)
+app.use(express.static(path.join(__dirname)));
+
+// Fallback to index.html for SPA routes
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 // Error handler
 app.use((err, req, res, next) => {
     console.error(err);
     res.status(500).json({ error: err.message });
 });
-
 
 // Backend route for getting folder path
 app.get('/api/bridges/:structureId/folders/:folderId/path', async (req, res) => {
@@ -824,9 +817,6 @@ db.get("SELECT COUNT(*) as count FROM bridges", (err, row) => {
     });
 });
 });
-
-
-
 
 
 // SAVE INSPECTION DATA TO DATABASE
@@ -1326,8 +1316,6 @@ app.post('/find-inspection-id', (req, res) => {
   );
 });
 
-
-
 //EDIT BUTTON INSPECTION RETRIEVAL
 // Endpoint to fetch full inspection data WITH defects and their photos
 app.get('/api/inspection/full', async (req, res) => {
@@ -1543,11 +1531,6 @@ app.get('/api/worksrequired', async (req, res) => {
 });
 
 
-
-
-
-
-
 //Testing.
 
 // Configure photo storage
@@ -1625,8 +1608,6 @@ app.post('/api/bridges/:structureId/inspection-photos',
     }
   }
 );
-
-
 
 // Photo retrieval endpoint
 app.get('/api/bridges/:structureId/inspection-photos', (req, res) => {
@@ -1808,9 +1789,6 @@ app.get('/api/check-session', (req, res) => {
     }
 });
 
-
-
-
 // 2. BCI Distribution - Simplified
 app.get('/api/bci-distribution', (req, res) => {
     const query = `
@@ -1859,7 +1837,6 @@ app.get('/api/bci-distribution', (req, res) => {
         res.json({ success: true, data: result });
     });
 });
-
 
 // 3. Condition Distribution Over Time - YEARLY (latest inspection per year)
 app.get('/api/condition-distribution', (req, res) => {
@@ -1912,9 +1889,6 @@ app.get('/api/condition-distribution', (req, res) => {
 });
 
 
-
-
-
 // GET ALL BRIDGES (with last inspection date)
 app.get('/api/bridges', async (req, res) => {
   try {
@@ -1938,7 +1912,6 @@ app.get('/api/bridges', async (req, res) => {
   }
 });
 
-
 // GET ALL INSPECTIONS (list for export page)
 app.get('/api/inspections', async (req, res) => {
   try {
@@ -1958,8 +1931,6 @@ app.get('/api/inspections', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-
 
 // Critical bridges: lowest BCI per structure
 app.get('/api/dashboard/critical-bridges', (req, res) => {
@@ -1992,18 +1963,9 @@ app.get('/api/dashboard/critical-bridges', (req, res) => {
     });
 });
 
-
 // Start the server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     db.exec("PRAGMA foreign_keys = ON");  // Optional safety measure
-});
-
-// Serve frontend static files
-app.use(express.static(path.join(__dirname)));
-
-// Fallback to index.html for SPA routes
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
 });
