@@ -37,12 +37,6 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Start the server
-const PORT = 3000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    db.exec("PRAGMA foreign_keys = ON");  // Optional safety measure
-});
 
 
 // GET type distribution counts
@@ -2055,4 +2049,18 @@ app.get('/api/dashboard/critical-bridges', (req, res) => {
         }
         res.json({ success: true, data: rows });
     });
+});
+
+
+
+
+
+
+
+
+// Start the server
+const PORT = 3000;
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    db.exec("PRAGMA foreign_keys = ON");  // Optional safety measure
 });
