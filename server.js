@@ -25,7 +25,11 @@ app.listen(PORT, () => {
 
 // Enable CORS for specific origins
 app.use(cors({
-    origin: ['http://localhost:5500', 'http://127.0.0.1:5500'], // Allow both origins
+    origin: [
+        'http://localhost:5500', 
+        'http://127.0.0.1:5500',
+        'https://spansense.onrender.com'  // ← ADD THIS
+    ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allow these HTTP methods
     allowedHeaders: ['Content-Type', 'Authorization'], // Allow these headers
     credentials: true // IMPORTANT: Allow cookies for authentication
