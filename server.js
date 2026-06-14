@@ -11,6 +11,11 @@ const fs = require('fs');
 
 const app = express();
 
+
+app.get('/api/test', (req, res) => {
+    res.json({ message: 'API is working', timestamp: new Date() });
+});
+
 // PostgreSQL connection
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
