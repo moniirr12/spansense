@@ -224,9 +224,40 @@ async function initDatabase() {
         `);
 
         console.log('All tables initialized');
+
+        // Auto-resync all SERIAL sequences to prevent duplicate key errors
+        await resyncSequences();
+
     } catch (err) {
         console.error('Database initialization error:', err);
     }
+}
+
+// Auto-resync all SERIAL sequences to MAX(id) + 1
+async function resyncSequences() {
+    const sequences = [
+        { table: 'inspections', seq: 'inspections_id_seq' },
+        { table: 'inspection_spans', seq: 'inspection_spans_id_seq' },
+        { table: 'defects', seq: 'defects_id_seq' },
+        { table: 'defect_photos', seq: 'defect_photos_id_seq' },
+        { table: 'elements', seq: 'elements_id_seq' },
+        { table: 'folders', seq: 'folders_id_seq' },
+        { table: 'files', seq: 'files_id_seq' },
+        { table: 'users', seq: 'users_id_seq' },
+        { table: 'bridges', seq: 'bridges_id_seq' }
+    ];
+
+    for (const { table, seq } of sequences) {
+        try {
+            await pool.query(`
+                SELECT setval($1, COALESCE((SELECT MAX(id) FROM ${table}), 0) + 1, false)
+            `, [seq]);
+        } catch (err) {
+            // Sequence might not exist yet if table is empty, that's fine
+            console.log(`[SEQ] ${seq}: ${err.message}`);
+        }
+    }
+    console.log('[SEQ] All sequences resynced');
 }
 
 initDatabase();
