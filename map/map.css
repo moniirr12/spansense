@@ -682,8 +682,7 @@ body.modal-open {
     padding-right: 0 !important;
 }
 
-/* Ensure modal doesn't cause horizontal scroll */
-/* REPLACE your .modal rule with: */
+/* Base modal - add back a smaller top offset */
 .modal {
     position: fixed;
     z-index: 1000;
@@ -695,11 +694,12 @@ body.modal-open {
     background-color: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(3px);
     display: none;
-    /* REMOVED: padding-top: 84px; */
+    padding-top: 60px;          /* ADDED BACK: smaller offset for floating navbar */
     box-sizing: border-box;
-    align-items: center;        /* ADD: center vertically */
-    justify-content: center;  /* ADD: center horizontally */
+    align-items: flex-start;    /* CHANGE: align to top, not center */
+    justify-content: center;
 }
+
 
 /* ADD this — when modal is active, flex kicks in */
 .modal.active,
@@ -756,18 +756,19 @@ body.modal-open {
    MODAL STYLES - SPANSENSE GLASSY DESIGN
    ============================================ */
 
-/* Modal Container */
+/* Bridge modal - shrink by 10% and lower it */
 .bridge-modal .modal-content {
     background: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(20px);
     border-radius: 28px;
     padding: 0;
     overflow: hidden;
-    max-width: 500px;
+    max-width: 450px;           /* CHANGED: 500px → 450px (10% smaller) */
     width: 90%;
-    max-height: 85vh;           /* ADD: cap height */
-    display: flex;              /* ADD: flex column */
-    flex-direction: column;     /* ADD */
+    max-height: 75vh;           /* CHANGED: 85vh → 75vh (shorter) */
+    margin-top: 20px;           /* ADDED: push down below navbar */
+    display: flex;
+    flex-direction: column;
     animation: modalSlideIn 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1);
 }
 
