@@ -37,7 +37,8 @@ body {
     box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
     z-index: 1200;
     display: flex;
-    align-items: center;
+    align-items: flex-start !important;
+    padding-top: 100px !important;  /* Push below navbar (20px + 64px + buffer) */
     justify-content: space-between;
     padding: 0 28px;
     height: 64px;
@@ -763,10 +764,11 @@ body.modal-open {
     border-radius: 28px;
     padding: 0;
     overflow: hidden;
+   max-height: calc(100vh - 120px) !important;  /* Fit in remaining space */
+    margin-top: 0 !important;  /* Remove extra margin, use padding on .modal instead */
     max-width: 450px;           /* CHANGED: 500px → 450px (10% smaller) */
     width: 90%;
     max-height: 75vh;           /* CHANGED: 85vh → 75vh (shorter) */
-    margin-top: 20px;           /* ADDED: push down below navbar */
     display: flex;
     flex-direction: column;
     animation: modalSlideIn 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1);
