@@ -695,8 +695,10 @@ body.modal-open {
     background-color: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(3px);
     display: none;
-    padding-top: 84px;
+    /* REMOVED: padding-top: 84px; */
     box-sizing: border-box;
+    align-items: center;        /* ADD: center vertically */
+    justify-content: center;  /* ADD: center horizontally */
 }
 
 /* ADD this — when modal is active, flex kicks in */
@@ -763,6 +765,9 @@ body.modal-open {
     overflow: hidden;
     max-width: 500px;
     width: 90%;
+    max-height: 85vh;           /* ADD: cap height */
+    display: flex;              /* ADD: flex column */
+    flex-direction: column;     /* ADD */
     animation: modalSlideIn 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1);
 }
 
@@ -798,6 +803,7 @@ body.modal-open {
     align-items: center;
     gap: 16px;
     padding: 24px 24px 0 24px;
+    flex-shrink: 0;             /* ADD: don't shrink */
 }
 
 .bridge-icon {
@@ -845,16 +851,20 @@ body.modal-open {
 /* Photo Wrapper */
 .photo-wrapper {
     position: relative;
-    margin: 20px 24px;
+    margin: 16px 24px;
     border-radius: 20px;
     overflow: hidden;
     background: #f8fafc;
     border: 1px solid #e9edf2;
+    flex-shrink: 1;             /* ADD: can shrink */
+    min-height: 120px;          /* ADD: minimum size */
+    max-height: 30vh;           /* ADD: cap at 30% viewport */
 }
 
 .bridge-img {
     width: 100%;
-    height: 200px;
+    height: 100%;               /* CHANGE: fill wrapper */
+    max-height: 30vh;           /* ADD */
     object-fit: cover;
     display: block;
     transition: transform 0.3s ease;
@@ -889,17 +899,20 @@ body.modal-open {
 /* Bridge Stats Cards */
 .bridge-stats {
     display: flex;
-    gap: 16px;
+    gap: 12px;
     padding: 0 24px;
-    margin-bottom: 24px;
+    margin-bottom: 16px;
+    flex-shrink: 0;             /* ADD: don't shrink */
+    flex-wrap: wrap;            /* ADD: wrap on tiny screens */
 }
 
 .stat-card {
     flex: 1;
+    min-width: 130px;           /* ADD: don't get too narrow */
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 14px 16px;
+    gap: 10px;
+    padding: 10px 14px;
     background: #f8fafc;
     border-radius: 16px;
     border: 1px solid #e9edf2;
@@ -950,15 +963,17 @@ body.modal-open {
 
 /* Action Buttons */
 .bridge-actions {
-    padding: 0 24px 24px 24px;
+    padding: 0 24px 20px 24px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
+    flex-shrink: 0;             /* ADD: don't shrink */
+    margin-top: auto;           /* ADD: push to bottom */
 }
 
 .action-btn {
     width: 100%;
-    padding: 12px 20px;
+    padding: 10px 18px;         /* REDUCED from 12px 20px */
     border-radius: 40px;
     font-weight: 600;
     font-size: 0.85rem;
@@ -967,7 +982,7 @@ body.modal-open {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 8px;
     font-family: inherit;
     border: none;
 }
