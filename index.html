@@ -1323,6 +1323,77 @@ html::-webkit-scrollbar { display: none; }
 @media (max-width: 860px) {
     .glass-scrollbar { display: none !important; }
 }
+
+/* ============================================
+   DEMO VIDEO MODAL
+   ============================================ */
+.demo-modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 20, 25, 0.65);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 3000;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+}
+
+.demo-modal-overlay.active {
+    display: flex;
+}
+
+.demo-modal {
+    position: relative;
+    width: 100%;
+    max-width: 920px;
+    background: var(--bg-glass-solid);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 28px;
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-xl);
+    padding: 16px;
+    animation: fadeInUp 0.4s ease-out;
+}
+
+.demo-modal video {
+    width: 100%;
+    display: block;
+    border-radius: 18px;
+    background: #000;
+}
+
+.demo-modal-close {
+    position: absolute;
+    top: -16px;
+    right: -16px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-md);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.demo-modal-close:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+    transform: scale(1.08);
+}
+
+@media (max-width: 768px) {
+    .demo-modal-overlay { padding: 16px; }
+    .demo-modal-close { top: -14px; right: 4px; }
+}
 </style>
 <base target="_self">
 </head>
@@ -1432,7 +1503,7 @@ html::-webkit-scrollbar { display: none; }
         </div>
         <div class="hero-buttons">
             <button class="btn btn-primary" onclick="scrollToAuth()">Access System →</button>
-            <button class="btn btn-secondary" onclick="alert('Demo video coming soon!')">View Demo</button>
+            <button class="btn btn-secondary" onclick="openDemoModal()">View Demo</button>
         </div>
     </div>
 
@@ -1525,6 +1596,16 @@ html::-webkit-scrollbar { display: none; }
     <div class="thumb" id="glassThumb"></div>
 </div>
 
+<!-- DEMO VIDEO MODAL -->
+<div class="demo-modal-overlay" id="demoModalOverlay" onclick="if(event.target===this) closeDemoModal()">
+    <div class="demo-modal">
+        <button class="demo-modal-close" onclick="closeDemoModal()"><i class="fas fa-times"></i></button>
+        <video id="demoVideo" controls playsinline>
+            <source src="assets/demo-tour.mp4" type="video/mp4">
+        </video>
+    </div>
+</div>
+
 <script>
 // Theme management
 function setTheme(theme) {
@@ -1584,6 +1665,28 @@ function scrollToAuth() {
 function handleRegister() {
     alert('Registration portal coming soon.\nContact your agency administrator for access.');
 }
+
+// Demo video modal
+function openDemoModal() {
+    const overlay = document.getElementById('demoModalOverlay');
+    const video = document.getElementById('demoVideo');
+    if (!overlay || !video) return;
+    overlay.classList.add('active');
+    video.currentTime = 0;
+    video.play().catch(() => {});
+}
+
+function closeDemoModal() {
+    const overlay = document.getElementById('demoModalOverlay');
+    const video = document.getElementById('demoVideo');
+    if (!overlay || !video) return;
+    overlay.classList.remove('active');
+    video.pause();
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeDemoModal();
+});
 
 // Login handler
 document.addEventListener('DOMContentLoaded', function() {

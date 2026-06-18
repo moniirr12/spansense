@@ -3,6 +3,8 @@
    Matching SpanSense theme - FLOATING NAVBAR ONLY
    ============================================ */
 
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
 /* Hide native scrollbar */
 html { scrollbar-width: none; -ms-overflow-style: none; }
 html::-webkit-scrollbar { display: none; }
@@ -12,7 +14,6 @@ body {
     background-color: #f5f7fb;
     color: #2c3e44;
     transition: background 0.3s ease, color 0.3s ease;
-    padding-top: 84px;
     overflow-x: hidden;
 }
 
@@ -103,9 +104,10 @@ body {
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
     box-shadow: 0 2px 12px rgba(91, 140, 138, 0.1);
     font-family: inherit;
+    user-select: none;
 }
 
 .back-button:hover {
@@ -123,7 +125,7 @@ body {
 .container {
     max-width: 75%;
     margin: 0 auto;
-    padding: 20px 0 60px 0;
+    padding: 100px 0 60px 0;
 }
 
 /* ============================================
@@ -162,19 +164,18 @@ body {
 
 .metric {
     background: white;
-    border-radius: 20px;
+    border-radius: 24px;
     border: 1px solid #e9edf2;
     padding: 20px;
     display: flex;
     align-items: center;
     gap: 16px;
-    transition: all 0.2s;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    transition: all 0.3s ease;
 }
 
 .metric:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
     border-color: #c5dbd8;
 }
 
@@ -199,13 +200,13 @@ body {
 }
 
 .metric-icon-blue {
-    background: #eef2f8;
-    color: #5b7c8a;
+    background: #f0f9ff;
+    color: #4a90b8;
 }
 
 .metric-icon-yellow {
-    background: #fef5ed;
-    color: #e8a87c;
+    background: #fff7ed;
+    color: #c28b5a;
 }
 
 .metric-content h3 {
@@ -270,15 +271,10 @@ body {
 
 .chart-card {
     background: white;
-    border-radius: 20px;
+    border-radius: 28px;
     border: 1px solid #e9edf2;
     overflow: hidden;
-    transition: all 0.2s;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-}
-
-.chart-card:hover {
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
 }
 
 .chart-header {
@@ -332,16 +328,11 @@ body {
 
 .critical-bridges-section {
     background: white;
-    border-radius: 20px;
+    border-radius: 28px;
     border: 1px solid #e9edf2;
     overflow: hidden;
     margin-top: 0;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-    transition: all 0.2s;
-}
-
-.critical-bridges-section:hover {
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
 }
 
 .critical-bridges-section .section-header {
@@ -462,17 +453,12 @@ body {
 /* Activity Feed Panel */
 .activity-feed {
     background: white;
-    border-radius: 20px;
+    border-radius: 28px;
     border: 1px solid #e9edf2;
     overflow: hidden;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-    transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
     display: flex;
     flex-direction: column;
-}
-
-.activity-feed:hover {
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
 }
 
 .activity-feed .section-header {
@@ -518,8 +504,8 @@ body {
 }
 
 .activity-avatar-green  { background: #eef4f2; color: #5b8c8a; }
-.activity-avatar-blue   { background: #eef2f8; color: #5b7c8a; }
-.activity-avatar-orange { background: #fef5ed; color: #e8a87c; }
+.activity-avatar-blue   { background: #f0f9ff; color: #4a90b8; }
+.activity-avatar-orange { background: #fff7ed; color: #c28b5a; }
 .activity-avatar-red    { background: #fdf2f2; color: #c47070; }
 
 .activity-content {
@@ -552,9 +538,9 @@ body {
 }
 
 .status-completed   { background: #eef4f2; color: #5b8c8a; }
-.status-in-progress { background: #eef2f8; color: #5b7c8a; }
+.status-in-progress { background: #f0f9ff; color: #4a90b8; }
 .status-overdue     { background: #fdf2f2; color: #c47070; }
-.status-scheduled   { background: #fef5ed; color: #e8a87c; }
+.status-scheduled   { background: #fff7ed; color: #c28b5a; }
 
 .activity-bci {
     font-family: 'SF Mono', monospace;
@@ -569,7 +555,7 @@ body {
 
 .bci-excellent { background: #eef4f2; color: #5b8c8a; }
 .bci-good      { background: #eef4f2; color: #2d7a6e; }
-.bci-fair      { background: #fef5ed; color: #e8a87c; }
+.bci-fair      { background: #fff7ed; color: #c28b5a; }
 .bci-critical  { background: #fdf2f2; color: #c47070; }
 
 /* ============================================
@@ -798,10 +784,10 @@ html.night-mode .glass-scrollbar .thumb {
 @media (max-width: 1000px) {
     .container {
         max-width: 90%;
-        padding: 16px;
+        padding: 100px 16px 16px 16px;
         overflow-x: auto;
     }
-    
+
     .dashboard-bottom-row {
         grid-template-columns: 1fr;
     }
@@ -810,22 +796,19 @@ html.night-mode .glass-scrollbar .thumb {
 @media (max-width: 860px) {
     .navbar {
         width: 90%;
+        padding: 0 18px;
     }
-    
+
     .container {
         max-width: 95%;
     }
-    
+
     .glass-scrollbar {
         display: none !important;
     }
 }
 
 @media (max-width: 768px) {
-    body {
-        padding-top: 74px !important;
-    }
-    
     .navbar {
         width: 95%;
         padding: 0 16px;
@@ -872,10 +855,6 @@ html.night-mode .glass-scrollbar .thumb {
 }
 
 @media (max-width: 480px) {
-    body {
-        padding-top: 68px !important;
-    }
-    
     .navbar {
         width: 95%;
         padding: 0 12px;
