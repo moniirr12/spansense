@@ -167,8 +167,17 @@
             var filteredData = bridgesData;
             if (currentFilter !== 'all') {
                 var filterType = currentFilter.replace(/_/g, ' ');
-                filteredData = bridgesData.filter(function(bridge) {
+                filteredData = filteredData.filter(function(bridge) {
                     return bridge.type && bridge.type.toLowerCase() === filterType.toLowerCase();
+                });
+            }
+            if (yearRange.from != null || yearRange.to != null) {
+                filteredData = filteredData.filter(function(bridge) {
+                    var y = parseInt(bridge.built_year);
+                    if (isNaN(y)) return false;
+                    if (yearRange.from != null && y < yearRange.from) return false;
+                    if (yearRange.to != null && y > yearRange.to) return false;
+                    return true;
                 });
             }
 
@@ -209,7 +218,8 @@
         }
 
         tbody.innerHTML = rowsHtml;
-        var total = currentFilter !== 'all' ? filteredData.length : bridgesData.length;
+        var hasActiveFilter = currentFilter !== 'all' || yearRange.from != null || yearRange.to != null;
+        var total = (bridgesData.length > 0 && hasActiveFilter) ? filteredData.length : bridgesData.length;
         document.querySelector('.selection-info').innerHTML =
             '<strong>0</strong> of <strong>' + total + '</strong> records selected';
         bindCheckboxEvents();
@@ -219,6 +229,44 @@
     // SORT STATE
     // ============================================
     var sortState = { column: null, direction: 'asc' };
+
+    // ============================================
+    // RANGE FILTERS (Bridges: built year, Reports: generated date)
+    // ============================================
+    var yearRange = { from: null, to: null };
+    var reportDateRange = { from: null, to: null };
+
+    window.applyYearRange = function() {
+        var f = document.getElementById('yearFrom').value;
+        var t = document.getElementById('yearTo').value;
+        yearRange.from = f !== '' ? parseInt(f) : null;
+        yearRange.to = t !== '' ? parseInt(t) : null;
+        rebuildBridgesTable();
+    };
+
+    window.clearYearRange = function() {
+        document.getElementById('yearFrom').value = '';
+        document.getElementById('yearTo').value = '';
+        yearRange = { from: null, to: null };
+        rebuildBridgesTable();
+    };
+
+    window.applyReportDateRange = function() {
+        var f = document.getElementById('reportDateFrom').value;
+        var t = document.getElementById('reportDateTo').value;
+        reportDateRange.from = f || null;
+        reportDateRange.to = t || null;
+        currentPage = 1;
+        rebuildReportsTable();
+    };
+
+    window.clearReportDateRange = function() {
+        document.getElementById('reportDateFrom').value = '';
+        document.getElementById('reportDateTo').value = '';
+        reportDateRange = { from: null, to: null };
+        currentPage = 1;
+        rebuildReportsTable();
+    };
 
     window.resetSort = function() {
         sortState.column = null;
@@ -481,8 +529,14 @@
         
         // Filter data
         filteredReportsData = reportsData.filter(function(row) {
-            if (currentFilter === 'all') return true;
-            return row.type === currentFilter;
+            if (currentFilter !== 'all' && row.type !== currentFilter) return false;
+            if (reportDateRange.from || reportDateRange.to) {
+                var d = new Date(row.generated);
+                if (isNaN(d.getTime())) return false;
+                if (reportDateRange.from && d < new Date(reportDateRange.from)) return false;
+                if (reportDateRange.to && d > new Date(reportDateRange.to + 'T23:59:59')) return false;
+            }
+            return true;
         });
 
         // Sort data
@@ -971,9 +1025,46 @@
         var titles = { bridges: 'Bridge Records', inspections: 'Inspection Records', reports: 'Report Files' };
         document.getElementById('panelTitle').innerHTML = '<i class="fas fa-list-check"></i> ' + titles[cat];
 
-        // Switch active column definitions
+        // Switch active column definitions (still drives which fields get
+        // exported even on categories where the picker itself is hidden)
         activeColumns = deepCloneCols(COLUMN_DEFS[cat] || COLUMN_DEFS.bridges);
-        renderColPicker();
+
+        // Right panel: column picker only earns its space on Inspections
+        // (9 fields, one optional). Bridges/Reports get a more useful range
+        // filter instead of a picker with nothing worth hiding.
+        var rightTitle = document.getElementById('rightPanelTitle');
+        var colGrid = document.getElementById('colPickerGrid');
+        var colFooter = document.getElementById('colPickerFooter');
+        var yearFilter = document.getElementById('yearRangeFilter');
+        var reportFilter = document.getElementById('reportDateRangeFilter');
+
+        yearRange = { from: null, to: null };
+        reportDateRange = { from: null, to: null };
+        document.getElementById('yearFrom').value = '';
+        document.getElementById('yearTo').value = '';
+        document.getElementById('reportDateFrom').value = '';
+        document.getElementById('reportDateTo').value = '';
+
+        if (cat === 'inspections') {
+            rightTitle.innerHTML = '<i class="fas fa-columns"></i> Column Visibility';
+            colGrid.style.display = '';
+            colFooter.style.display = '';
+            yearFilter.style.display = 'none';
+            reportFilter.style.display = 'none';
+            renderColPicker();
+        } else if (cat === 'bridges') {
+            rightTitle.innerHTML = '<i class="fas fa-calendar-alt"></i> Built Year Range';
+            colGrid.style.display = 'none';
+            colFooter.style.display = 'none';
+            yearFilter.style.display = 'flex';
+            reportFilter.style.display = 'none';
+        } else if (cat === 'reports') {
+            rightTitle.innerHTML = '<i class="fas fa-calendar-alt"></i> Date Range';
+            colGrid.style.display = 'none';
+            colFooter.style.display = 'none';
+            yearFilter.style.display = 'none';
+            reportFilter.style.display = 'flex';
+        }
 
         // Rebuild filters bar
         var filtersBar = document.getElementById('filtersBar');
@@ -1491,7 +1582,11 @@
     // ============================================
     bindCheckboxEvents();
     activeColumns = deepCloneCols(COLUMN_DEFS.bridges);
-    renderColPicker();
+    // Default category is Bridges, which uses the year-range filter, not the column picker
+    document.getElementById('rightPanelTitle').innerHTML = '<i class="fas fa-calendar-alt"></i> Built Year Range';
+    document.getElementById('colPickerGrid').style.display = 'none';
+    document.getElementById('colPickerFooter').style.display = 'none';
+    document.getElementById('yearRangeFilter').style.display = 'flex';
     fetchBridges();
     // Pre-fetch inspections in background so counts appear quickly
     fetchInspections();

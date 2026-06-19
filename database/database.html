@@ -139,16 +139,35 @@
                     </div>
                 </div>
 
-                <!-- RIGHT: Column visibility picker (replaces date range) -->
+                <!-- RIGHT: context-aware panel - column visibility for Inspections,
+                     range filters for Bridges/Reports where a column picker adds
+                     little value (few, all-relevant columns) -->
                 <div class="option-group">
-                    <h3><i class="fas fa-columns"></i> Column Visibility</h3>
+                    <h3 id="rightPanelTitle"><i class="fas fa-columns"></i> Column Visibility</h3>
+
                     <div class="col-picker-grid" id="colPickerGrid"></div>
-                    <div class="col-picker-footer">
+                    <div class="col-picker-footer" id="colPickerFooter">
                         <span class="col-picker-hint" id="colPickerHint"></span>
                         <div class="col-picker-actions">
                             <button onclick="setAllColumns(true)">Select all</button>
                             <button onclick="setAllColumns(false)">Clear all</button>
                         </div>
+                    </div>
+
+                    <div class="date-range" id="yearRangeFilter" style="display:none;">
+                        <input type="number" id="yearFrom" placeholder="From year" onkeydown="if(event.key==='Enter') applyYearRange()">
+                        <span>to</span>
+                        <input type="number" id="yearTo" placeholder="To year" onkeydown="if(event.key==='Enter') applyYearRange()">
+                        <button class="btn-icon" title="Apply" onclick="applyYearRange()"><i class="fas fa-check"></i></button>
+                        <button class="btn-icon" title="Clear" onclick="clearYearRange()"><i class="fas fa-times"></i></button>
+                    </div>
+
+                    <div class="date-range" id="reportDateRangeFilter" style="display:none;">
+                        <input type="date" id="reportDateFrom" onkeydown="if(event.key==='Enter') applyReportDateRange()">
+                        <span>to</span>
+                        <input type="date" id="reportDateTo" onkeydown="if(event.key==='Enter') applyReportDateRange()">
+                        <button class="btn-icon" title="Apply" onclick="applyReportDateRange()"><i class="fas fa-check"></i></button>
+                        <button class="btn-icon" title="Clear" onclick="clearReportDateRange()"><i class="fas fa-times"></i></button>
                     </div>
                 </div>
 
