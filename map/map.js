@@ -401,6 +401,15 @@ if (planningLink) {
     });
 }
 
+// Twin page navigation
+const twinLink = document.getElementById('twinLink');
+if (twinLink) {
+    twinLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        window.location.href = "../twin/twin.html";
+    });
+}
+
 // Search functionality
 const searchInput = document.getElementById('searchInput');
 const searchResults = document.getElementById('searchResults');
