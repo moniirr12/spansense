@@ -1,0 +1,1566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpanSense · twinView</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+/* ============================================
+   SPANSENSE - TWINVIEW PAGE
+   ============================================ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f7fb;
+    color: #2c3e44;
+    transition: background 0.3s ease, color 0.3s ease;
+    overflow-x: hidden;
+}
+
+/* ---------- NAVIGATION BAR (60% width, centered) ---------- */
+.navbar {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    max-width: 1100px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 60px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    height: 64px;
+}
+.navbar .left { display: flex; align-items: center; gap: 24px; }
+.navbar .logo {
+    font-size: 1.2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #5b8c8a 0%, #7ba8a5 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.navbar .menu { display: flex; gap: 24px; }
+.navbar .menu a {
+    text-decoration: none;
+    color: #4a5b6e;
+    font-weight: 500;
+    font-size: 0.85rem;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.navbar .menu a:hover, .navbar .menu a.active { color: #5b8c8a; }
+.navbar .menu a.active {
+    background: rgba(91, 140, 138, 0.1);
+    padding: 6px 14px;
+    border-radius: 20px;
+}
+.navbar .right { display: flex; align-items: center; gap: 20px; }
+.night-mode-toggle {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    color: #8a9ba8;
+    transition: all 0.2s;
+}
+.night-mode-toggle:hover { background: #f0f4f8; color: #5b8c8a; }
+.navbar .account-links a {
+    text-decoration: none;
+    color: #6a7c8e;
+    margin-left: 16px;
+    font-size: 0.85rem;
+    transition: color 0.2s;
+}
+.navbar .account-links a:hover { color: #5b8c8a; }
+
+/* ---------- MAIN WRAPPER ---------- */
+.page-wrapper {
+    max-width: 75%;
+    margin: 0 auto;
+    padding: 100px 0 60px 0;
+}
+
+/* ---------- BACK PILL ---------- */
+.back-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    border-radius: 30px;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(138, 180, 176, 0.3);
+    color: #5b8c8a;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 12px rgba(91, 140, 138, 0.1);
+    user-select: none;
+}
+.back-pill:hover {
+    background: #5b8c8a;
+    color: white;
+    border-color: #5b8c8a;
+    transform: translateX(-4px);
+    box-shadow: 0 4px 20px rgba(91, 140, 138, 0.25);
+}
+.back-pill:active { transform: translateX(-2px) scale(0.98); }
+.back-pill i { font-size: 0.8rem; transition: transform 0.3s ease; }
+.back-pill:hover i { transform: translateX(-3px); }
+
+/* ---------- PAGE HEADER ---------- */
+.page-header { margin-bottom: 28px; }
+.page-header h1 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: #2c5a57;
+    border-left: 4px solid #8ab4b0;
+    padding-left: 14px;
+    margin-bottom: 8px;
+}
+.page-header p {
+    color: #8a9ba8;
+    font-size: 0.85rem;
+    padding-left: 18px;
+}
+
+/* ---------- TWIN LAYOUT ---------- */
+.twin-layout {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 20px;
+    align-items: stretch;
+}
+
+/* LEFT COLUMN */
+.info-col {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* RIGHT COLUMN */
+.right-col {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Info cards */
+.info-card {
+    background: white;
+    border-radius: 24px;
+    border: 1px solid #e9edf2;
+    padding: 22px 22px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+    flex-shrink: 0;
+}
+.info-card .ic-eyebrow {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8a9ba8;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.info-card .ic-eyebrow .pulse-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #5b8c8a;
+    box-shadow: 0 0 0 0 rgba(91,140,138,0.5);
+    animation: pulseDot 2.2s infinite;
+}
+@keyframes pulseDot {
+    0% { box-shadow: 0 0 0 0 rgba(91,140,138,0.45); }
+    70% { box-shadow: 0 0 0 6px rgba(91,140,138,0); }
+    100% { box-shadow: 0 0 0 0 rgba(91,140,138,0); }
+}
+.info-card .ic-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #2c4a48;
+    margin-bottom: 2px;
+}
+.info-card .ic-sub {
+    font-size: 0.78rem;
+    color: #8a9ba8;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+}
+
+/* ---------- SELECTOR INSIDE LIVE TWIN CARD ---------- */
+.live-twin-selector {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: #fafbfc;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 4px;
+    font-family: inherit;
+    width: 100%;
+}
+.live-twin-selector:hover {
+    border-color: #8ab4b0;
+    background: #f5f9f8;
+}
+.live-twin-selector .lts-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #eef4f2, #e0ecea);
+    display: flex; align-items: center; justify-content: center;
+    color: #5b8c8a;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+.live-twin-selector .lts-text {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+}
+.live-twin-selector .lts-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #2c4a48;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.live-twin-selector .lts-id {
+    font-size: 0.7rem;
+    color: #8a9ba8;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+}
+.live-twin-selector .lts-chevron {
+    color: #8a9ba8;
+    font-size: 0.8rem;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    flex-shrink: 0;
+}
+.live-twin-selector.active .lts-chevron {
+    transform: rotate(180deg);
+}
+
+/* ---------- DROPDOWN MENU (for the selector) ---------- */
+.selector-dropdown {
+    position: relative;
+    width: 100%;
+}
+.dropdown-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: white;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.1);
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px) scale(0.98);
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    overflow: hidden;
+}
+.dropdown-menu.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
+.dd-search {
+    padding: 10px 12px;
+    border-bottom: 1px solid #eef2f6;
+    position: relative;
+}
+.dd-search input {
+    width: 100%;
+    padding: 8px 12px 8px 34px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    font-family: inherit;
+    font-size: 0.82rem;
+    color: #2c4a48;
+    outline: none;
+    transition: all 0.2s;
+}
+.dd-search input:focus {
+    border-color: #8ab4b0;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(138,180,176,0.12);
+}
+.dd-search input::placeholder { color: #b8c4cc; }
+.dd-search i {
+    position: absolute;
+    left: 22px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #b8c4cc;
+    font-size: 0.75rem;
+    pointer-events: none;
+}
+.dd-list {
+    max-height: 280px;
+    overflow-y: auto;
+    padding: 6px;
+}
+.dd-list::-webkit-scrollbar { width: 4px; }
+.dd-list::-webkit-scrollbar-track { background: transparent; }
+.dd-list::-webkit-scrollbar-thumb { background: #d3dde0; border-radius: 10px; }
+
+.dd-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.dd-item:hover {
+    background: #f5f9f8;
+}
+.dd-item.selected {
+    background: #eef4f2;
+}
+.dd-item .dd-icon {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #eef4f2, #e0ecea);
+    display: flex; align-items: center; justify-content: center;
+    color: #5b8c8a;
+    font-size: 0.7rem;
+    flex-shrink: 0;
+}
+.dd-item .dd-text {
+    flex: 1;
+    min-width: 0;
+}
+.dd-item .dd-name {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: #2c4a48;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.dd-item .dd-id {
+    font-size: 0.65rem;
+    color: #8a9ba8;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+}
+.dd-item .dd-bci {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 16px;
+    flex-shrink: 0;
+}
+.dd-bci.good { background: #e8f5f0; color: #2d7a6e; }
+.dd-bci.fair { background: #fff7ed; color: #c28b5a; }
+.dd-bci.critical { background: #fdf2f2; color: #c0392b; }
+.dd-item .dd-check {
+    color: #5b8c8a;
+    opacity: 0;
+    font-size: 0.8rem;
+}
+.dd-item.selected .dd-check {
+    opacity: 1;
+}
+.dd-empty {
+    padding: 24px 16px;
+    text-align: center;
+    color: #b8c4cc;
+    font-size: 0.8rem;
+}
+.dd-empty i { font-size: 1.2rem; margin-bottom: 6px; display: block; color: #d3dde0; }
+
+/* BCI metric tiles */
+.bci-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+.bci-tile {
+    border-radius: 16px;
+    padding: 16px 14px;
+    text-align: center;
+    border: 1px solid #e9edf2;
+}
+.bci-tile .bci-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+.bci-tile .bci-value {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+}
+.bci-tile .bci-sub {
+    font-size: 0.7rem;
+    margin-top: 6px;
+}
+.bci-tile.good { background: #eef4f2; }
+.bci-tile.good .bci-label, .bci-tile.good .bci-sub { color: #2d7a6e; }
+.bci-tile.good .bci-value { color: #2d7a6e; }
+.bci-tile.fair { background: #fff7ed; }
+.bci-tile.fair .bci-label, .bci-tile.fair .bci-sub { color: #c28b5a; }
+.bci-tile.fair .bci-value { color: #c28b5a; }
+.bci-tile.critical { background: #fdf2f2; }
+.bci-tile.critical .bci-label, .bci-tile.critical .bci-sub { color: #c0392b; }
+.bci-tile.critical .bci-value { color: #c0392b; }
+
+/* facts list */
+.fact-list { display: flex; flex-direction: column; gap: 12px; }
+.fact-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.84rem;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eef2f6;
+}
+.fact-row:last-child { border-bottom: none; padding-bottom: 0; }
+.fact-row .fk { color: #8a9ba8; display: flex; align-items: center; gap: 8px; }
+.fact-row .fk i { color: #8ab4b0; width: 14px; text-align: center; }
+.fact-row .fv { color: #2c4a48; font-weight: 600; }
+
+/* inspection status badges */
+.status-stack { display: flex; flex-direction: column; gap: 10px; }
+.status-line { display: flex; align-items: center; justify-content: space-between; }
+.status-line .sl-label { font-size: 0.8rem; color: #8a9ba8; }
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.status-badge.completed { background: #e8f5f0; color: #2d7a6e; }
+.status-badge.pending { background: #fff7ed; color: #c28b5a; }
+.status-badge.error { background: rgba(220, 38, 38, 0.15); color: #dc2626; }
+
+/* ---------- MODEL VIEWER ---------- */
+.viewer-card {
+    background: white;
+    border-radius: 24px;
+    border: 1px solid #e9edf2;
+    padding: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    flex: 1;
+}
+.viewer-card .vc-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 8px 0 10px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.viewer-card .vc-head h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #2c4a48;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.viewer-card .vc-head h2 i { color: #8ab4b0; }
+.vc-layer-toggles { display: flex; gap: 8px; flex-wrap: wrap; }
+.vc-pill {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: #6a7c8e;
+    padding: 6px 13px;
+    border-radius: 30px;
+    border: 1px solid #e2e8f0;
+    background: #fafbfc;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: inherit;
+}
+.vc-pill .sw { width: 6px; height: 6px; border-radius: 50%; background: #b8c4cc; }
+.vc-pill:hover { border-color: #8ab4b0; color: #5b8c8a; }
+.vc-pill.on { background: #eef4f2; border-color: #8ab4b0; color: #2c5a57; }
+.vc-pill.on .sw { background: #5b8c8a; box-shadow: 0 0 6px rgba(91,140,138,0.5); }
+.vc-pill[data-layer="stress"].on .sw { background: #c28b5a; box-shadow: 0 0 6px rgba(194,139,90,0.5); }
+.vc-pill[data-layer="defects"].on .sw { background: #c0392b; box-shadow: 0 0 6px rgba(192,57,43,0.5); }
+.vc-pill[data-layer="sensors"].on .sw { background: #4a90b8; box-shadow: 0 0 6px rgba(74,144,184,0.5); }
+
+.model-stage {
+    position: relative;
+    border-radius: 18px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(36px) saturate(160%);
+    -webkit-backdrop-filter: blur(36px) saturate(160%);
+    border: 1px solid rgba(91, 140, 138, 0.18);
+    flex: 1;
+    min-height: 400px;
+}
+.stage-tint {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 600px 360px at 30% 8%, rgba(91,140,138,0.16), transparent 60%),
+      radial-gradient(ellipse 600px 360px at 80% 100%, rgba(74,144,184,0.10), transparent 60%);
+    pointer-events: none;
+}
+#twin-canvas { position:absolute; inset:0; width:100%; height:100%; display:block; cursor:grab; }
+#twin-canvas:active { cursor:grabbing; }
+
+.stage-hud { position:absolute; inset:0; pointer-events:none; }
+.stage-bracket {
+    position:absolute; width:26px; height:26px;
+    border:1.5px solid rgba(44,74,72,0.22);
+}
+.stage-bracket.tl{top:16px;left:16px;border-right:none;border-bottom:none;border-radius:6px 0 0 0;}
+.stage-bracket.tr{top:16px;right:16px;border-left:none;border-bottom:none;border-radius:0 6px 0 0;}
+.stage-bracket.bl{bottom:16px;left:16px;border-right:none;border-top:none;border-radius:0 0 0 6px;}
+.stage-bracket.br{bottom:16px;right:16px;border-left:none;border-top:none;border-radius:0 0 6px 0;}
+
+.stage-readout {
+    position:absolute; bottom:16px; left:48px;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-size:11px;
+    color:rgba(44,74,72,0.55);
+    display:flex; gap:16px;
+    pointer-events:none;
+}
+.stage-readout b { color: #2c5a57; font-weight:500; }
+.stage-hint {
+    position:absolute; bottom:16px; right:48px;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-size:10.5px;
+    color:rgba(44,74,72,0.4);
+    text-align:right;
+    pointer-events:none;
+}
+.stage-bci-chip {
+    position:absolute; top:16px; left:48px;
+    background:rgba(10,16,16,0.55);
+    border:1px solid rgba(255,255,255,0.12);
+    border-radius:12px;
+    padding:8px 14px;
+    backdrop-filter: blur(6px);
+    pointer-events:none;
+}
+.stage-bci-chip .lbl { font-size:9.5px; color:rgba(255,255,255,0.45); letter-spacing:.08em; font-family:'SFMono-Regular',Consolas,monospace;}
+.stage-bci-chip .val { font-size:20px; font-weight:600; color:#e8a87c; margin-top:2px; font-family: Inter, sans-serif;}
+
+/* ---------- TIMELINE PANEL ---------- */
+.timeline-panel {
+    background: white;
+    border-radius: 24px;
+    border: 1px solid #e9edf2;
+    padding: 26px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+    flex-shrink: 0;
+}
+.timeline-panel .panel-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; padding-bottom:14px; border-bottom:1px solid #eef2f6; }
+.timeline-panel .panel-header h2 { font-size:1.02rem; font-weight:600; color:#2c4a48; display:flex; align-items:center; gap:10px; }
+.timeline-panel .panel-header h2 i { color:#8ab4b0; }
+.timeline-panel .panel-header .sub { font-size:0.72rem; color:#8a9ba8; font-weight:500; }
+
+.timeline-track {
+    position: relative;
+    height: 54px;
+    border-top: 1px solid #eef2f6;
+    border-bottom: 1px solid #eef2f6;
+    margin-top: 20px;
+    margin-bottom: 28px;
+}
+.tl-node {
+    position: absolute; top: 50%; width: 11px; height: 11px;
+    border-radius: 50%; transform: translate(-50%,-50%);
+    border: 2px solid white;
+    box-shadow: 0 0 0 1px #e2e8f0;
+}
+.tl-node[data-type="GI"] { background:#5b8c8a; }
+.tl-node[data-type="PI"] { background:#4a90b8; }
+.tl-node[data-type="SI"] { background:#c28b5a; }
+.tl-node[data-type="overdue"] { background:#c0392b; box-shadow:0 0 10px rgba(192,57,43,0.4); }
+.tl-label {
+    position:absolute; top:calc(50% + 14px); transform:translateX(-50%);
+    font-size:0.68rem; color:#8a9ba8; white-space:nowrap;
+    font-family:'SFMono-Regular',Consolas,monospace;
+}
+.legend { display:flex; gap:20px; flex-wrap:wrap; }
+.legend .item { display:flex; align-items:center; gap:7px; font-size:0.74rem; color:#6a7c8e; }
+.legend .item .sw { width:8px; height:8px; border-radius:50%; }
+
+/* ---------- TOAST ---------- */
+.toast-container { position: fixed; bottom: 30px; right: 30px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; }
+.toast { background: white; border-radius: 16px; padding: 16px 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12); border: 1px solid #e9edf2; display: flex; align-items: center; gap: 12px; min-width: 300px; transform: translateX(120%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.toast.show { transform: translateX(0); }
+.toast-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+.toast-icon.success { background: #e8f5f0; color: #2d7a6e; }
+.toast-content { flex: 1; }
+.toast-content .toast-title { font-size: 0.9rem; font-weight: 600; color: #2c4a48; margin-bottom: 2px; }
+.toast-content .toast-msg { font-size: 0.8rem; color: #8a9ba8; }
+
+/* ---------- GLASS SCROLLBAR ---------- */
+html { scrollbar-width: none; -ms-overflow-style: none; }
+html::-webkit-scrollbar { display: none; }
+.glass-scrollbar {
+    position: fixed; right: 10px; top: 50%; transform: translateY(-50%);
+    width: 10px; height: 55vh;
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    z-index: 1000; overflow: hidden;
+}
+.glass-scrollbar .thumb {
+    width: 100%; background: linear-gradient(180deg, #a0c8c4, #5b8c8a);
+    border-radius: 20px; position: absolute; top: 0; left: 0;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.3), 0 0 12px rgba(91, 140, 138, 0.35);
+}
+@media (max-width: 860px) { .glass-scrollbar { display: none !important; } }
+
+/* ---------- RESPONSIVE ---------- */
+@media (max-width: 1100px) { .page-wrapper { max-width: 90%; } .navbar { width: 70%; } }
+@media (max-width: 980px) {
+    .twin-layout { grid-template-columns: 1fr; }
+    .model-stage { min-height: 380px; }
+}
+@media (max-width: 860px) {
+    .page-wrapper { max-width: 95%; }
+    .navbar .menu { display: none; }
+    .navbar { width: 90%; padding: 0 18px; }
+}
+@media (max-width: 600px) {
+    .bci-grid { grid-template-columns: 1fr 1fr; }
+    .stage-readout, .stage-hint { display:none; }
+}
+
+/* ---------- NIGHT MODE ---------- */
+.night-mode { background-color: #1a2428 !important; color: #d4dfe3; }
+.night-mode .navbar { background: rgba(35, 46, 52, 0.95) !important; border-color: #2f3e45; }
+.night-mode .navbar .logo { background: linear-gradient(135deg, #8ab4b0 0%, #a0c8c4 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.night-mode .navbar .menu a { color: #9ab0b8; }
+.night-mode .navbar .menu a.active { background: rgba(138, 180, 176, 0.15); color: #8ab4b0; }
+.night-mode .navbar .account-links a { color: #9ab0b8; }
+.night-mode .night-mode-toggle { color: #9ab0b8; }
+.night-mode .night-mode-toggle:hover { background: #2f3e45; color: #8ab4b0; }
+.night-mode .back-pill { background: rgba(35,46,52,0.8) !important; border-color: rgba(138,180,176,0.3) !important; color:#8ab4b0 !important; }
+.night-mode .page-header h1 { color: #8ab4b0; }
+.night-mode .page-header p { color: #8aa4ac; }
+
+.night-mode .model-stage {
+    background: rgba(20, 28, 30, 0.6) !important;
+    border-color: rgba(138, 180, 176, 0.15) !important;
+}
+.night-mode .stage-tint {
+    background:
+      radial-gradient(ellipse 600px 360px at 30% 8%, rgba(91,140,138,0.12), transparent 60%),
+      radial-gradient(ellipse 600px 360px at 80% 100%, rgba(74,144,184,0.08), transparent 60%) !important;
+}
+.night-mode .stage-bracket { border-color: rgba(255,255,255,0.12) !important; }
+.night-mode .stage-readout { color: rgba(255,255,255,0.4) !important; }
+.night-mode .stage-readout b { color: rgba(255,255,255,0.8) !important; }
+.night-mode .stage-hint { color: rgba(255,255,255,0.3) !important; }
+
+.night-mode .info-card, .night-mode .viewer-card, .night-mode .timeline-panel, .night-mode .toast {
+    background: #232e34; border-color: #2f3e45;
+}
+.night-mode .info-card h3, .night-mode .panel-header h2, .night-mode .fact-row .fv, .night-mode .toast-content .toast-title {
+    color: #d4dfe3;
+}
+.night-mode .struct-id, .night-mode .fact-row .fk, .night-mode .panel-header .sub, .night-mode .toast-content .toast-msg {
+    color: #8aa4ac;
+}
+.night-mode .fact-row, .night-mode .panel-header { border-color: #2a3a40; }
+.night-mode .vc-pill { background:#1e2a2f; border-color:#3a4b53; color:#9ab0b8; }
+.night-mode .vc-pill.on { background:#2f4a48; border-color:#6e9c98; color:#d4dfe3; }
+.night-mode .timeline-track { border-color: #2a3a40; }
+.night-mode .tl-label, .night-mode .legend .item { color:#8aa4ac; }
+.night-mode .status-badge.completed { background: #1e3a3e; color: #8ab4b0; }
+.night-mode .status-badge.pending { background: #3a3020; color: #e8a87c; }
+.night-mode .status-badge.error { background: rgba(220,38,38,0.2); color: #ef5b5b; }
+
+.night-mode .live-twin-selector {
+    background: #1e2a2f;
+    border-color: #3a4b53;
+}
+.night-mode .live-twin-selector:hover {
+    background: #2a3a40;
+    border-color: #4a5d66;
+}
+.night-mode .live-twin-selector .lts-name { color: #d4dfe3; }
+.night-mode .live-twin-selector .lts-icon {
+    background: linear-gradient(135deg, #2f4a48, #1e3a38);
+}
+.night-mode .dropdown-menu {
+    background: #232e34;
+    border-color: #3a4b53;
+}
+.night-mode .dd-search {
+    border-color: #2a3a40;
+}
+.night-mode .dd-search input {
+    background: #1a2428;
+    border-color: #3a4b53;
+    color: #d4dfe3;
+}
+.night-mode .dd-search input:focus {
+    border-color: #6e9c98;
+    box-shadow: 0 0 0 3px rgba(110,156,152,0.15);
+}
+.night-mode .dd-item:hover {
+    background: #2a3a40;
+}
+.night-mode .dd-item.selected {
+    background: #2f4a48;
+}
+.night-mode .dd-item .dd-name { color: #d4dfe3; }
+.night-mode .dd-empty { color: #5a7a80; }
+.night-mode .dd-empty i { color: #3a5a58; }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="left">
+        <div class="logo">spanSense</div>
+        <div class="menu">
+            <a href="../index/index.html"><i class="fas fa-map"></i>Map</a>
+            <a href="../dashboard/dashboard.html"><i class="fas fa-chart-pie"></i>Dashboard</a>
+            <a href="../database/database.html"><i class="fas fa-database"></i>Database</a>
+            <a href="../planning/planning.html"><i class="fas fa-calendar-alt"></i>Planning</a>
+        </div>
+    </div>
+    <div class="right">
+        <div class="night-mode-toggle" id="nightToggle"><i class="fas fa-moon"></i></div>
+        <div class="account-links">
+            <a href="../accounts/accounts.html">Account</a>
+            <a href="../contacts/contacts.html">Contact Us</a>
+        </div>
+    </div>
+</nav>
+
+<div class="glass-scrollbar"><div class="thumb" style="height:38%;"></div></div>
+
+<div class="page-wrapper">
+
+    <div class="back-pill" onclick="history.back()"><i class="fa-solid fa-arrow-left"></i> Back</div>
+
+    <div class="page-header">
+        <h1>twinView</h1>
+        <p>Explore your structures in 3D — select an asset to view and inspect its digital twin.</p>
+    </div>
+
+    <div class="twin-layout" id="twinLayout">
+
+        <!-- LEFT: bridge info -->
+        <div class="info-col" id="infoCol">
+            
+            <!-- LIVE TWIN CARD WITH SELECTOR -->
+            <div class="info-card">
+                <div class="ic-eyebrow"><span class="pulse-dot"></span>LIVE TWIN</div>
+                
+                <!-- Selector inside the card -->
+                <div class="selector-dropdown">
+                    <div class="live-twin-selector" id="liveTwinSelector">
+                        <div class="lts-icon"><i class="fa-solid fa-bridge"></i></div>
+                        <div class="lts-text">
+                            <div class="lts-name" id="ltsName">Manchester Ship Canal Bridge</div>
+                            <div class="lts-id" id="ltsId">A3-MNC-009</div>
+                        </div>
+                        <i class="fa-solid fa-chevron-down lts-chevron" id="ltsChevron"></i>
+                    </div>
+                    
+                    <div class="dropdown-menu" id="dropdownMenu">
+                        <div class="dd-search">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" id="ddSearch" placeholder="Search by name or ID..." autocomplete="off">
+                        </div>
+                        <div class="dd-list" id="ddList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <div class="ic-eyebrow">Condition</div>
+                <div class="bci-grid">
+                    <div class="bci-tile fair" id="bciAvgTile">
+                        <div class="bci-label">BCI avg</div>
+                        <div class="bci-value" id="bciAvg">—</div>
+                        <div class="bci-sub" id="bciAvgSub">—</div>
+                    </div>
+                    <div class="bci-tile critical" id="bciCritTile">
+                        <div class="bci-label">BCI crit</div>
+                        <div class="bci-value" id="bciCrit">—</div>
+                        <div class="bci-sub" id="bciCritSub">—</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <div class="ic-eyebrow">Structure facts</div>
+                <div class="fact-list">
+                    <div class="fact-row"><div class="fk"><i class="fa-solid fa-ruler-horizontal"></i>Span length</div><div class="fv" id="factSpan">—</div></div>
+                    <div class="fact-row"><div class="fk"><i class="fa-solid fa-layer-group"></i>Spans</div><div class="fv" id="factSpans">—</div></div>
+                    <div class="fact-row"><div class="fk"><i class="fa-solid fa-trowel"></i>Material</div><div class="fv" id="factMaterial">—</div></div>
+                    <div class="fact-row"><div class="fk"><i class="fa-solid fa-calendar"></i>Year built</div><div class="fv" id="factYear">—</div></div>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <div class="ic-eyebrow">Inspection status</div>
+                <div class="status-stack">
+                    <div class="status-line">
+                        <span class="sl-label">Last inspection</span>
+                        <span class="status-badge completed" id="lastInsp">—</span>
+                    </div>
+                    <div class="status-line">
+                        <span class="sl-label">Next due</span>
+                        <span class="status-badge pending" id="nextInsp">—</span>
+                    </div>
+                    <div class="status-line">
+                        <span class="sl-label">Open defects</span>
+                        <span class="status-badge error" id="openDefects">—</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: 3D model + Timeline -->
+        <div class="right-col">
+            <div class="viewer-card">
+                <div class="vc-head">
+                    <h2><i class="fa-solid fa-cube"></i>Structural model</h2>
+                    <div class="vc-layer-toggles">
+                        <div class="vc-pill on" data-layer="structure"><span class="sw"></span>Structure</div>
+                        <div class="vc-pill on" data-layer="sensors"><span class="sw"></span>Sensors</div>
+                        <div class="vc-pill" data-layer="defects"><span class="sw"></span>Defects</div>
+                        <div class="vc-pill" data-layer="stress"><span class="sw"></span>Stress</div>
+                    </div>
+                </div>
+
+                <div class="model-stage">
+                    <div class="stage-tint"></div>
+                    <canvas id="twin-canvas"></canvas>
+                    <div class="stage-hud">
+                        <div class="stage-bracket tl"></div>
+                        <div class="stage-bracket tr"></div>
+                        <div class="stage-bracket bl"></div>
+                        <div class="stage-bracket br"></div>
+                    </div>
+                    <div class="stage-readout">
+                        <span>YAW <b id="yaw-readout">000.0°</b></span>
+                        <span>TILT <b id="tilt-readout">000.0°</b></span>
+                        <span>ZOOM <b id="zoom-readout">1.00x</b></span>
+                    </div>
+                    <div class="stage-hint">drag to orbit · scroll to zoom</div>
+                </div>
+            </div>
+
+            <!-- Timeline Panel -->
+            <div class="timeline-panel">
+                <div class="panel-header">
+                    <h2><i class="fa-solid fa-timeline"></i>Inspection history</h2>
+                    <div class="sub" id="timelineRange">—</div>
+                </div>
+                <div class="timeline-track" id="timelineTrack">
+                    <!-- Populated by JavaScript -->
+                </div>
+                <div class="legend">
+                    <div class="item"><span class="sw" style="background:#5b8c8a"></span>General Inspection</div>
+                    <div class="item"><span class="sw" style="background:#4a90b8"></span>Principal Inspection</div>
+                    <div class="item"><span class="sw" style="background:#c28b5a"></span>Special Inspection</div>
+                    <div class="item"><span class="sw" style="background:#c0392b"></span>Overdue</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ============================================================
+   MOCK BRIDGE DATA (5 structures)
+   ============================================================ */
+const MOCK_BRIDGES = [
+    {
+        id: "A1-RDG-014",
+        name: "Caversham Road Bridge",
+        location: "Caversham Road, Reading RG4 5DG",
+        type: "Steel through-truss",
+        spans: 3,
+        spanLength: 28,
+        deckWidth: 9,
+        trussHeight: 6.5,
+        panelsPerSpan: 7,
+        material: "Steel / RC deck",
+        yearBuilt: 1968,
+        bciAvg: 58,
+        bciCrit: 44,
+        bciCritLocation: "span 3 · pier 2",
+        spanBCI: [72, 58, 44],
+        sensors: [
+            {x: 42, y: -0.6, z: 4.5},
+            {x: 42, y: -0.6, z: -4.5},
+            {x: 28, y: -3, z: 1.8},
+            {x: 56, y: -3, z: -1.8}
+        ],
+        defects: [
+            {x: 56, y: -3.2, z: 1.8, severity: "critical"},
+            {x: 53.76, y: 1.2, z: 4.5, severity: "major"}
+        ],
+        inspections: [
+            {type: "GI", date: "Mar '21", left: 6},
+            {type: "PI", date: "Sep '21", left: 24},
+            {type: "GI", date: "Apr '23", left: 42},
+            {type: "SI", date: "Nov '24", left: 55},
+            {type: "GI", date: "Jun '26", left: 70},
+            {type: "overdue", date: "", left: 70, offsetY: -16},
+            {type: "PI", date: "Mar '27", left: 92}
+        ],
+        timelineRange: "2021 — 2027",
+        lastInspection: "GI · 11 Jun 2026",
+        nextInspection: "PI · Mar 2027",
+        openDefects: "2 flagged"
+    },
+    {
+        id: "A2-LDN-023",
+        name: "Tower Bridge Approach",
+        location: "Tower Bridge Road, London SE1 2UP",
+        type: "Steel / Concrete",
+        spans: 2,
+        spanLength: 30.5,
+        deckWidth: 10,
+        trussHeight: 5.5,
+        panelsPerSpan: 6,
+        material: "Steel / Concrete",
+        yearBuilt: 1894,
+        bciAvg: 82,
+        bciCrit: 71,
+        bciCritLocation: "span 1 · east approach",
+        spanBCI: [82, 71],
+        sensors: [
+            {x: 15.25, y: -0.8, z: 5},
+            {x: 15.25, y: -0.8, z: -5},
+            {x: 45.75, y: -2, z: 0}
+        ],
+        defects: [
+            {x: 30.5, y: 1.5, z: 3, severity: "minor"}
+        ],
+        inspections: [
+            {type: "GI", date: "Jan '21", left: 8},
+            {type: "PI", date: "Aug '21", left: 28},
+            {type: "GI", date: "May '23", left: 45},
+            {type: "SI", date: "Oct '24", left: 58},
+            {type: "PI", date: "Mar '26", left: 72},
+            {type: "GI", date: "Jun '27", left: 94}
+        ],
+        timelineRange: "2021 — 2027",
+        lastInspection: "PI · 15 Mar 2026",
+        nextInspection: "GI · Jun 2027",
+        openDefects: "1 flagged"
+    },
+    {
+        id: "A3-MNC-009",
+        name: "Manchester Ship Canal Bridge",
+        location: "Trafford Park, Manchester M17 1PL",
+        type: "Steel truss",
+        spans: 4,
+        spanLength: 35.5,
+        deckWidth: 11,
+        trussHeight: 7,
+        panelsPerSpan: 8,
+        material: "Steel truss",
+        yearBuilt: 1935,
+        bciAvg: 45,
+        bciCrit: 38,
+        bciCritLocation: "span 2 · centre pier",
+        spanBCI: [52, 38, 45, 41],
+        sensors: [
+            {x: 17.75, y: -0.8, z: 5.5},
+            {x: 53.25, y: -0.8, z: -5.5},
+            {x: 88.75, y: -2.5, z: 0},
+            {x: 124.25, y: -0.8, z: 5.5}
+        ],
+        defects: [
+            {x: 53.25, y: -3.5, z: 0, severity: "critical"},
+            {x: 71, y: 2, z: 3.5, severity: "major"}
+        ],
+        inspections: [
+            {type: "GI", date: "Mar '21", left: 5},
+            {type: "PI", date: "Sep '21", left: 22},
+            {type: "GI", date: "Apr '23", left: 38},
+            {type: "SI", date: "Nov '24", left: 50},
+            {type: "GI", date: "Dec '25", left: 65},
+            {type: "overdue", date: "", left: 65, offsetY: -16},
+            {type: "PI", date: "Jan '27", left: 90}
+        ],
+        timelineRange: "2021 — 2027",
+        lastInspection: "GI · 03 Dec 2025",
+        nextInspection: "PI · Jan 2027",
+        openDefects: "5 flagged"
+    },
+    {
+        id: "A4-BHM-007",
+        name: "Birmingham Canal Footbridge",
+        location: "Gas Street, Birmingham B1 2JT",
+        type: "Steel / Timber",
+        spans: 1,
+        spanLength: 28,
+        deckWidth: 6,
+        trussHeight: 3.5,
+        panelsPerSpan: 4,
+        material: "Steel / Timber",
+        yearBuilt: 2010,
+        bciAvg: 91,
+        bciCrit: 88,
+        bciCritLocation: "—",
+        spanBCI: [91],
+        sensors: [
+            {x: 14, y: -0.5, z: 3},
+            {x: 14, y: -0.5, z: -3}
+        ],
+        defects: [],
+        inspections: [
+            {type: "GI", date: "Jun '21", left: 15},
+            {type: "GI", date: "Aug '23", left: 42},
+            {type: "SI", date: "Jan '25", left: 58},
+            {type: "GI", date: "Aug '26", left: 78}
+        ],
+        timelineRange: "2021 — 2026",
+        lastInspection: "GI · 22 Aug 2026",
+        nextInspection: "GI · Aug 2028",
+        openDefects: "None"
+    },
+    {
+        id: "A5-SHF-003",
+        name: "Sheffield Retaining Wall",
+        location: "Castle Hill, Sheffield S1 2PF",
+        type: "Reinforced Concrete",
+        spans: 1,
+        spanLength: 56,
+        deckWidth: 4,
+        trussHeight: 0,
+        panelsPerSpan: 1,
+        material: "Reinforced Concrete",
+        yearBuilt: 1985,
+        bciAvg: 49,
+        bciCrit: 42,
+        bciCritLocation: "section 4 · central",
+        spanBCI: [49],
+        sensors: [
+            {x: 14, y: -2, z: 0},
+            {x: 28, y: -2, z: 0},
+            {x: 42, y: -2, z: 0}
+        ],
+        defects: [
+            {x: 28, y: -1.5, z: 0, severity: "critical"}
+        ],
+        inspections: [
+            {type: "GI", date: "Jan '21", left: 8},
+            {type: "PI", date: "Jul '21", left: 25},
+            {type: "GI", date: "Feb '23", left: 40},
+            {type: "SI", date: "Oct '24", left: 52},
+            {type: "GI", date: "Apr '26", left: 70},
+            {type: "overdue", date: "", left: 70, offsetY: -16},
+            {type: "PI", date: "Apr '28", left: 95}
+        ],
+        timelineRange: "2021 — 2028",
+        lastInspection: "GI · 09 Apr 2026",
+        nextInspection: "PI · Apr 2028",
+        openDefects: "3 flagged"
+    }
+];
+
+/* ============================================================
+   SELECTOR LOGIC (embedded in LIVE TWIN card)
+   ============================================================ */
+const liveTwinSelector = document.getElementById('liveTwinSelector');
+const dropdownMenu = document.getElementById('dropdownMenu');
+const ddSearch = document.getElementById('ddSearch');
+const ddList = document.getElementById('ddList');
+const ltsName = document.getElementById('ltsName');
+const ltsId = document.getElementById('ltsId');
+const ltsChevron = document.getElementById('ltsChevron');
+
+let selectedBridge = null;
+let isOpen = false;
+
+function getBciClass(bci) {
+    if (bci < 50) return 'critical';
+    if (bci < 65) return 'fair';
+    return 'good';
+}
+
+function renderDropdownList(filter) {
+    filter = filter || '';
+    var term = filter.toLowerCase().trim();
+    var filtered = MOCK_BRIDGES.filter(function(b) {
+        return b.name.toLowerCase().includes(term) || b.id.toLowerCase().includes(term);
+    });
+
+    if (filtered.length === 0) {
+        ddList.innerHTML = '<div class="dd-empty"><i class="fa-solid fa-magnifying-glass"></i>No bridges found</div>';
+        return;
+    }
+
+    ddList.innerHTML = filtered.map(function(b) {
+        var bciClass = getBciClass(b.bciAvg);
+        var isSelected = selectedBridge && selectedBridge.id === b.id;
+        return '<div class="dd-item ' + (isSelected ? 'selected' : '') + '" data-id="' + b.id + '">' +
+            '<div class="dd-icon"><i class="fa-solid fa-bridge"></i></div>' +
+            '<div class="dd-text">' +
+                '<div class="dd-name">' + b.name + '</div>' +
+                '<div class="dd-id">' + b.id + '</div>' +
+            '</div>' +
+            '<span class="dd-bci ' + bciClass + '">' + b.bciAvg + '</span>' +
+            '<i class="fa-solid fa-check dd-check"></i>' +
+        '</div>';
+    }).join('');
+
+    ddList.querySelectorAll('.dd-item').forEach(function(item) {
+        item.addEventListener('click', function() {
+            selectBridge(item.dataset.id);
+            closeDropdown();
+        });
+    });
+}
+
+function openDropdown() {
+    isOpen = true;
+    liveTwinSelector.classList.add('active');
+    dropdownMenu.classList.add('open');
+    ddSearch.value = '';
+    renderDropdownList();
+    setTimeout(function() { ddSearch.focus(); }, 50);
+}
+
+function closeDropdown() {
+    isOpen = false;
+    liveTwinSelector.classList.remove('active');
+    dropdownMenu.classList.remove('open');
+}
+
+liveTwinSelector.addEventListener('click', function(e) {
+    e.stopPropagation();
+    if (isOpen) closeDropdown();
+    else openDropdown();
+});
+
+ddSearch.addEventListener('input', function(e) {
+    renderDropdownList(e.target.value);
+});
+
+ddSearch.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeDropdown();
+});
+
+document.addEventListener('click', function(e) {
+    if (!document.querySelector('.selector-dropdown').contains(e.target)) {
+        closeDropdown();
+    }
+});
+
+/* ============================================================
+   BRIDGE SELECTION & UI UPDATE
+   ============================================================ */
+function selectBridge(bridgeId) {
+    var bridge = MOCK_BRIDGES.find(function(b) { return b.id === bridgeId; });
+    if (!bridge) return;
+    selectedBridge = bridge;
+
+    ltsName.textContent = bridge.name;
+    ltsId.textContent = bridge.id;
+
+    var infoCol = document.getElementById('infoCol');
+    infoCol.style.opacity = '0.5';
+
+    setTimeout(function() {
+        var avgClass = getBciClass(bridge.bciAvg);
+        var critClass = getBciClass(bridge.bciCrit);
+
+        document.getElementById('bciAvgTile').className = 'bci-tile ' + avgClass;
+        document.getElementById('bciCritTile').className = 'bci-tile ' + critClass;
+
+        document.getElementById('bciAvg').textContent = bridge.bciAvg;
+        document.getElementById('bciAvgSub').textContent = 'across ' + bridge.spans + ' span' + (bridge.spans > 1 ? 's' : '');
+        document.getElementById('bciCrit').textContent = bridge.bciCrit;
+        document.getElementById('bciCritSub').textContent = bridge.bciCritLocation;
+
+        document.getElementById('factSpan').textContent = (bridge.spanLength * bridge.spans).toFixed(1) + ' m';
+        document.getElementById('factSpans').textContent = bridge.spans;
+        document.getElementById('factMaterial').textContent = bridge.material;
+        document.getElementById('factYear').textContent = bridge.yearBuilt;
+
+        document.getElementById('lastInsp').textContent = bridge.lastInspection;
+        document.getElementById('nextInsp').textContent = bridge.nextInspection;
+        var defectsEl = document.getElementById('openDefects');
+        defectsEl.textContent = bridge.openDefects;
+        defectsEl.className = 'status-badge ' + (bridge.openDefects.indexOf('None') !== -1 ? 'completed' : 'error');
+
+        document.getElementById('timelineRange').textContent = bridge.timelineRange;
+        renderTimeline(bridge.inspections);
+
+        infoCol.style.opacity = '1';
+    }, 150);
+
+    rebuildModel(bridge);
+    renderDropdownList();
+    showToast('Bridge loaded', bridge.name + ' · ' + bridge.id, 'success');
+}
+
+function renderTimeline(inspections) {
+    var track = document.getElementById('timelineTrack');
+    track.innerHTML = inspections.map(function(insp) {
+        var style = 'left:' + insp.left + '%' + (insp.offsetY ? ';top:calc(50% + ' + insp.offsetY + 'px)' : '');
+        var label = insp.date ? '<div class="tl-label" style="left:' + insp.left + '%">' + insp.date + '</div>' : '';
+        return '<div class="tl-node" data-type="' + insp.type + '" style="' + style + '"></div>' + label;
+    }).join('');
+}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+function showToast(title, msg, type) {
+    var container = document.getElementById('toastContainer');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
+    var toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = '<div class="toast-icon ' + type + '"><i class="fa-solid fa-check"></i></div>' +
+        '<div class="toast-content"><div class="toast-title">' + title + '</div><div class="toast-msg">' + msg + '</div></div>';
+    container.appendChild(toast);
+    requestAnimationFrame(function() {
+        toast.classList.add('show');
+    });
+    setTimeout(function() {
+        toast.classList.remove('show');
+        setTimeout(function() { toast.remove(); }, 400);
+    }, 3000);
+}
+
+/* ============================================================
+   THREE.JS DIGITAL TWIN
+   ============================================================ */
+const canvas = document.getElementById('twin-canvas');
+const renderer = new THREE.WebGLRenderer({canvas: canvas, antialias: true, alpha: true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x7a9490, 0.009);
+
+const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 1000);
+let camDistance = 58, camHeight = 13;
+camera.position.set(0, camHeight, camDistance);
+camera.lookAt(0, 1.5, 0);
+
+scene.add(new THREE.AmbientLight(0x8fa8a4, 0.7));
+const key = new THREE.DirectionalLight(0xffffff, 1.1);
+key.position.set(20, 30, 15);
+scene.add(key);
+const rim = new THREE.DirectionalLight(0x4a90b8, 0.45);
+rim.position.set(-25, 10, -20);
+scene.add(rim);
+const teal = new THREE.PointLight(0x5b8c8a, 0.7, 80);
+teal.position.set(-28, 8, 10);
+scene.add(teal);
+
+const matSteel = new THREE.MeshStandardMaterial({color: 0x5a6b6a, metalness: 0.6, roughness: 0.4});
+const matDeck  = new THREE.MeshStandardMaterial({color: 0x394645, metalness: 0.25, roughness: 0.6});
+const matPier  = new THREE.MeshStandardMaterial({color: 0x435150, metalness: 0.15, roughness: 0.7});
+const matSensor = new THREE.MeshStandardMaterial({color: 0x6db3d8, emissive: 0x4a90b8, emissiveIntensity: 1.3});
+const matDefect = new THREE.MeshStandardMaterial({color: 0xe06a5a, emissive: 0xc0392b, emissiveIntensity: 1.1});
+
+function spanColor(bci) {
+    if (bci < 50) return 0xc0392b;
+    if (bci < 65) return 0xc28b5a;
+    return 0x5b8c8a;
+}
+
+const rig = new THREE.Group();
+scene.add(rig);
+const structureGroup = new THREE.Group();
+const sensorGroup = new THREE.Group();
+const stressGroup = new THREE.Group();
+const defectGroup = new THREE.Group();
+rig.add(structureGroup, sensorGroup, stressGroup, defectGroup);
+
+let gridHelper, glowMesh;
+
+function rebuildModel(bridge) {
+    // Clear existing
+    while(structureGroup.children.length > 0) structureGroup.remove(structureGroup.children[0]);
+    while(sensorGroup.children.length > 0) sensorGroup.remove(sensorGroup.children[0]);
+    while(stressGroup.children.length > 0) stressGroup.remove(stressGroup.children[0]);
+    while(defectGroup.children.length > 0) defectGroup.remove(defectGroup.children[0]);
+    if (gridHelper) rig.remove(gridHelper);
+    if (glowMesh) rig.remove(glowMesh);
+
+    var SPAN_LEN = bridge.spanLength;
+    var NUM_SPANS = bridge.spans;
+    var DECK_W = bridge.deckWidth;
+    var TRUSS_H = bridge.trussHeight || 0;
+    var PANELS_PER_SPAN = bridge.panelsPerSpan || 4;
+    var TOTAL_LEN = SPAN_LEN * NUM_SPANS;
+    var X0 = -TOTAL_LEN / 2;
+    var deckY = 0;
+
+    // Grid
+    var gridSize = Math.max(140, TOTAL_LEN + 40);
+    gridHelper = new THREE.GridHelper(gridSize, Math.floor(gridSize / 2.5), 0x2a3a38, 0x1a2625);
+    gridHelper.position.y = -8.4;
+    gridHelper.material.transparent = true;
+    gridHelper.material.opacity = 0.4;
+    rig.add(gridHelper);
+
+    // Glow
+    var glowRadius = Math.max(34, TOTAL_LEN / 2 + 6);
+    glowMesh = new THREE.Mesh(
+        new THREE.CircleGeometry(glowRadius, 48),
+        new THREE.MeshBasicMaterial({color: 0x5b8c8a, transparent: true, opacity: 0.07})
+    );
+    glowMesh.rotation.x = -Math.PI / 2;
+    glowMesh.position.y = -8.3;
+    rig.add(glowMesh);
+
+    // Deck
+    var deckGeo = new THREE.BoxGeometry(TOTAL_LEN, 0.6, DECK_W);
+    var deck = new THREE.Mesh(deckGeo, matDeck);
+    deck.position.set(0, deckY, 0);
+    structureGroup.add(deck);
+
+    var edges = new THREE.LineSegments(new THREE.EdgesGeometry(deckGeo), new THREE.LineBasicMaterial({color: 0x223230}));
+    edges.position.copy(deck.position);
+    structureGroup.add(edges);
+
+    // Beams
+    function addBeam(x1, y1, z1, x2, y2, z2, thickness, material) {
+        var dx = x2 - x1, dy = y2 - y1, dz = z2 - z1;
+        var len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        var geo = new THREE.BoxGeometry(len, thickness, thickness);
+        var mesh = new THREE.Mesh(geo, material);
+        mesh.position.set((x1 + x2) / 2, (y1 + y2) / 2, (z1 + z2) / 2);
+        mesh.lookAt(x2, y2, z2);
+        mesh.rotateY(Math.PI / 2);
+        structureGroup.add(mesh);
+    }
+
+    // Truss sides
+    if (TRUSS_H > 0) {
+        [DECK_W / 2, -DECK_W / 2].forEach(function(z) {
+            var totalPanels = PANELS_PER_SPAN * NUM_SPANS;
+            var pw = TOTAL_LEN / totalPanels;
+            addBeam(X0, deckY + 0.3, z, X0 + TOTAL_LEN, deckY + 0.3, z, 0.5, matSteel);
+            addBeam(X0, deckY + TRUSS_H, z, X0 + TOTAL_LEN, deckY + TRUSS_H, z, 0.5, matSteel);
+            for (var i = 0; i <= totalPanels; i++) {
+                var x = X0 + i * pw;
+                addBeam(x, deckY + 0.3, z, x, deckY + TRUSS_H, z, 0.35, matSteel);
+                if (i < totalPanels) {
+                    var xNext = x + pw;
+                    if (i % 2 === 0) addBeam(x, deckY + 0.3, z, xNext, deckY + TRUSS_H, z, 0.32, matSteel);
+                    else addBeam(x, deckY + TRUSS_H, z, xNext, deckY + 0.3, z, 0.32, matSteel);
+                }
+            }
+        });
+
+        // Cross bracing
+        var totalPanels = PANELS_PER_SPAN * NUM_SPANS;
+        var pw = TOTAL_LEN / totalPanels;
+        for (var i = 0; i <= totalPanels; i += 2) {
+            var x = X0 + i * pw;
+            addBeam(x, deckY + TRUSS_H, -DECK_W / 2, x, deckY + TRUSS_H, DECK_W / 2, 0.3, matSteel);
+        }
+    }
+
+    // Piers
+    var pierPositions = [];
+    for (var i = 0; i <= NUM_SPANS; i++) {
+        pierPositions.push(X0 + SPAN_LEN * i);
+    }
+    pierPositions.forEach(function(x, i) {
+        var isAbutment = (i === 0 || i === pierPositions.length - 1);
+        var w = isAbutment ? 6 : 2.6;
+        var h = 8.4;
+        var geo = new THREE.BoxGeometry(w, h, isAbutment ? DECK_W + 1 : 3.2);
+        var pier = new THREE.Mesh(geo, matPier);
+        pier.position.set(x, deckY - 0.3 - h / 2, 0);
+        structureGroup.add(pier);
+    });
+
+    // Sensors
+    (bridge.sensors || []).forEach(function(p) {
+        var s = new THREE.Mesh(new THREE.SphereGeometry(0.42, 16, 16), matSensor);
+        s.position.set(p.x, p.y, p.z);
+        sensorGroup.add(s);
+        var ring = new THREE.Mesh(
+            new THREE.RingGeometry(0.6, 0.7, 24),
+            new THREE.MeshBasicMaterial({color: 0x4a90b8, transparent: true, opacity: 0.5, side: THREE.DoubleSide})
+        );
+        ring.position.copy(s.position);
+        sensorGroup.add(ring);
+    });
+
+    // Stress overlay (per span BCI)
+    var spanBCI = bridge.spanBCI || [bridge.bciAvg];
+    for (var i = 0; i < NUM_SPANS; i++) {
+        var x = X0 + SPAN_LEN * i + SPAN_LEN / 2;
+        var bci = spanBCI[i] !== undefined ? spanBCI[i] : bridge.bciAvg;
+        var geo = new THREE.BoxGeometry(SPAN_LEN - 1, 0.08, DECK_W + 0.4);
+        var mat = new THREE.MeshBasicMaterial({color: spanColor(bci), transparent: true, opacity: 0.55});
+        var slab = new THREE.Mesh(geo, mat);
+        slab.position.set(x, deckY + 0.42, 0);
+        stressGroup.add(slab);
+    }
+
+    // Defects
+    (bridge.defects || []).forEach(function(p) {
+        var m = new THREE.Mesh(new THREE.OctahedronGeometry(0.5, 0), matDefect);
+        m.position.set(p.x, p.y, p.z);
+        defectGroup.add(m);
+    });
+
+    // Camera adjustment
+    camDistance = Math.max(40, TOTAL_LEN * 0.9);
+    camHeight = Math.max(10, TRUSS_H + 6);
+    camHeight = Math.min(camHeight, 20);
+
+    // Reset rotation
+    rotY = 0.4;
+    rotX = 0.18;
+
+    // Reset layer toggles - stress and defects off by default
+    stressGroup.visible = false;
+    defectGroup.visible = false;
+    document.querySelectorAll('.vc-pill[data-layer="stress"]').forEach(function(el) { el.classList.remove('on'); });
+    document.querySelectorAll('.vc-pill[data-layer="defects"]').forEach(function(el) { el.classList.remove('on'); });
+    document.querySelectorAll('.vc-pill[data-layer="structure"]').forEach(function(el) { el.classList.add('on'); });
+    document.querySelectorAll('.vc-pill[data-layer="sensors"]').forEach(function(el) { el.classList.add('on'); });
+}
+
+/* ============================================================
+   INTERACTION
+   ============================================================ */
+let rotY = 0.4, rotX = 0.18, autoRotate = true, idleTimer = null;
+let dragging = false, lastX = 0, lastY = 0;
+
+function onResize() {
+    var w = canvas.clientWidth, h = canvas.clientHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', onResize);
+new ResizeObserver(onResize).observe(canvas);
+
+canvas.addEventListener('pointerdown', function(e) {
+    dragging = true; autoRotate = false;
+    lastX = e.clientX; lastY = e.clientY;
+    clearTimeout(idleTimer);
+});
+window.addEventListener('pointerup', function() {
+    dragging = false;
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(function() { autoRotate = true; }, 3000);
+});
+window.addEventListener('pointermove', function(e) {
+    if (!dragging) return;
+    var dx = e.clientX - lastX, dy = e.clientY - lastY;
+    rotY += dx * 0.006;
+    rotX += dy * 0.006;
+    lastX = e.clientX; lastY = e.clientY;
+});
+canvas.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    camDistance = Math.min(120, Math.max(20, camDistance + e.deltaY * 0.04));
+}, {passive: false});
+
+function bindLayerPills(selector) {
+    document.querySelectorAll(selector).forEach(function(pill) {
+        pill.addEventListener('click', function() {
+            pill.classList.toggle('on');
+            var layer = pill.dataset.layer;
+            var on = pill.classList.contains('on');
+            if (layer === 'structure') structureGroup.visible = on;
+            if (layer === 'sensors') sensorGroup.visible = on;
+            if (layer === 'stress') stressGroup.visible = on;
+            if (layer === 'defects') defectGroup.visible = on;
+        });
+    });
+}
+bindLayerPills('.vc-pill');
+
+const yawReadout = document.getElementById('yaw-readout');
+const tiltReadout = document.getElementById('tilt-readout');
+const zoomReadout = document.getElementById('zoom-readout');
+
+function animate() {
+    requestAnimationFrame(animate);
+    if (autoRotate && !dragging) rotY += 0.0022;
+    rig.rotation.set(rotX, rotY, 0);
+    camera.position.set(0, camHeight, camDistance);
+    camera.lookAt(0, 1.5, 0);
+    var yawDeg = ((rotY * 180 / Math.PI) % 360 + 360) % 360;
+    var tiltDeg = ((rotX * 180 / Math.PI) % 360 + 360) % 360;
+    yawReadout.textContent = yawDeg.toFixed(1).padStart(5, '0') + '°';
+    tiltReadout.textContent = tiltDeg.toFixed(1).padStart(5, '0') + '°';
+    zoomReadout.textContent = (58 / camDistance).toFixed(2) + 'x';
+    renderer.render(scene, camera);
+}
+
+/* ============================================================
+   THEME TOGGLE
+   ============================================================ */
+document.getElementById('nightToggle').addEventListener('click', function() {
+    document.body.classList.toggle('night-mode');
+});
+
+/* ============================================================
+   INIT
+   ============================================================ */
+onResize();
+animate();
+
+// Load first bridge by default
+selectBridge('A3-MNC-009');
+</script>
+</body>
+</html>

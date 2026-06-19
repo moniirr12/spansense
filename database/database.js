@@ -223,6 +223,9 @@
         document.querySelector('.selection-info').innerHTML =
             '<strong>0</strong> of <strong>' + total + '</strong> records selected';
         bindCheckboxEvents();
+        // Bridges never paginate, but clear any leftover pagination strip
+        // from a previous Inspections/Reports visit.
+        addPaginationControls(1, total, 'bridges');
     }
 
     // ============================================

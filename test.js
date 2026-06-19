@@ -1,4 +1,11 @@
 
+// Matches database.js's resolution: bare relative fetches below resolve
+// against whatever origin happens to be serving this file (e.g. Live
+// Server on 127.0.0.1:5500), which has no /api/* routes of its own.
+const API_BASE = (window.location.hostname === 'localhost')
+    ? 'http://localhost:3000'
+    : 'https://spansense.onrender.com';
+
 // Helper function to convert image URL to dataURL
 async function imageUrlToDataURL(url) {
     return new Promise((resolve) => {
@@ -123,9 +130,9 @@ async function generateSimplePDFReport(doc, mode = 'download') {
 
         // FIRST: Fetch all data
         const [bridgeData, fullInspectionData, photosResponse, bciFormData] = await Promise.all([
-            fetch(`/api/bridges/${structureId}`).then(res => res.json()).catch(() => ({})),
-            fetch(`/api/inspection/full?structure_id=${structureId}&date=${inspectionDate}`).then(res => res.ok ? res.json() : null).catch(() => null),
-            fetch(`/api/bridges/${structureId}/inspection-photos?inspectionDate=${encodeURIComponent(inspectionDate)}`).then(res => res.ok ? res.json() : { success: false, photos: [] }).catch(() => ({ success: false, photos: [] })),
+            fetch(`${API_BASE}/api/bridges/${structureId}`).then(res => res.json()).catch(() => ({})),
+            fetch(`${API_BASE}/api/inspection/full?structure_id=${structureId}&date=${inspectionDate}`).then(res => res.ok ? res.json() : null).catch(() => null),
+            fetch(`${API_BASE}/api/bridges/${structureId}/inspection-photos?inspectionDate=${encodeURIComponent(inspectionDate)}`).then(res => res.ok ? res.json() : { success: false, photos: [] }).catch(() => ({ success: false, photos: [] })),
             generateBCIFormForPDF(doc)
         ]);
 
@@ -238,7 +245,7 @@ async function generateSimplePDFReport(doc, mode = 'download') {
 
         // Get bridge photo
         let bridgePhotoDataURL = null;
-        const photoResponse = await fetch(`/getBridgePhoto?bridgeId=${structureId}`).catch(() => ({}));
+        const photoResponse = await fetch(`${API_BASE}/getBridgePhoto?bridgeId=${structureId}`).catch(() => ({}));
         if (photoResponse.ok) {
             const photoData = await photoResponse.json();
             if (photoData.photo_url) {
@@ -1152,16 +1159,16 @@ async function generateBCIFormForPDF(doc) {
         
         if (!structureId || !structureName) throw new Error('Missing structure information');
 
-        const bridgeResponse = await fetch(`/api/bridges/${structureId}`);
+        const bridgeResponse = await fetch(`${API_BASE}/api/bridges/${structureId}`);
         if (!bridgeResponse.ok) throw new Error('Failed to fetch bridge data');
         const bridge = await bridgeResponse.json();
         const totalSpans = bridge.span_number || 1;
 
-        const defectsResponse = await fetch(`/api/defectsbci?structureId=${structureId}&date=${inspectionDate}`);
+        const defectsResponse = await fetch(`${API_BASE}/api/defectsbci?structureId=${structureId}&date=${inspectionDate}`);
         if (!defectsResponse.ok) throw new Error('Failed to fetch defects');
         const allSpansWithDefects = await defectsResponse.json();
 
-        const worksResponse = await fetch(`/api/worksrequired?structureId=${structureId}&date=${inspectionDate}`);
+        const worksResponse = await fetch(`${API_BASE}/api/worksrequired?structureId=${structureId}&date=${inspectionDate}`);
         if (!worksResponse.ok) throw new Error('Failed to fetch works required');
         const worksRequired = await worksResponse.json();
 
