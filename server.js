@@ -660,6 +660,10 @@ app.get('/api/twin/:structureId', async (req, res) => {
         }
 
         const spanBCI = spans.map(s => s.bci_av !== null ? parseFloat(s.bci_av) : null);
+        const validSpanBCI = spanBCI.filter(v => v !== null);
+        const avgSpanBCI = validSpanBCI.length
+            ? validSpanBCI.reduce((a, b) => a + b, 0) / validSpanBCI.length
+            : null;
         const critSpan = spans.reduce((worst, s) => {
             if (s.bci_crit === null) return worst;
             return (!worst || parseFloat(s.bci_crit) < parseFloat(worst.bci_crit)) ? s : worst;
@@ -667,7 +671,7 @@ app.get('/api/twin/:structureId', async (req, res) => {
 
         const bciAvg = latestInspection?.overall_bciave != null
             ? parseFloat(latestInspection.overall_bciave)
-            : (bridge.bci_av != null ? parseFloat(bridge.bci_av) : null);
+            : (avgSpanBCI != null ? avgSpanBCI : (bridge.bci_av != null ? parseFloat(bridge.bci_av) : null));
         const bciCrit = latestInspection?.overall_bcicrit != null
             ? parseFloat(latestInspection.overall_bcicrit)
             : (critSpan ? parseFloat(critSpan.bci_crit) : null);
