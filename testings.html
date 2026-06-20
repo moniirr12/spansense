@@ -1,986 +1,601 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SpanSense · Digital Twin</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<style>
-/* ============================================
-   SPANSENSE - DATABASE EXPORT PAGE STYLES
-   (Navbar width reduced to 60%)
-   ============================================ */
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>spanSense — asset management</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --teal: #5b8c8a; --teal-dark: #3d6462; --teal-light: #8ab4b0;
+      --teal-pale: #c5dbd8; --teal-faint: #eaf4f3;
+      --ink: #1e2d2c; --text: #2c4a48; --muted: #6b8685;
+      --border: #d6e8e6; --bg: #f5f9f8; --white: #ffffff;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--text); font-size: 15px; line-height: 1.6; }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+    .pdf-download-btn {
+      position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+      z-index: 1001; background: var(--teal); color: white; border: none;
+      padding: 14px 32px; border-radius: 60px; font-weight: 700; font-size: 0.9rem;
+      cursor: pointer; display: flex; align-items: center; gap: 10px;
+      box-shadow: 0 4px 20px rgba(91,140,138,0.4); transition: all 0.3s ease;
+    }
+    .pdf-download-btn:hover { transform: translateX(-50%) translateY(-2px); box-shadow: 0 8px 32px rgba(91,140,138,0.5); background: var(--teal-dark); }
+    .pdf-download-btn:active { transform: translateX(-50%) scale(0.96); }
 
-body {
-    font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f5f7fb;
-    color: #2c3e44;
-    transition: background 0.3s ease, color 0.3s ease;
-    overflow-x: hidden;
-}
+    .img-slot { position: relative; cursor: pointer; display: block; border-radius: 11px; overflow: hidden; background: #1e2d2c22; }
+    .img-slot img { width: 100%; display: block; border-radius: 11px; }
+    .img-slot .slot-placeholder {
+      width: 100%; aspect-ratio: 16/9;
+      background: linear-gradient(135deg, rgba(91,140,138,0.15), rgba(61,100,98,0.25));
+      border: 2px dashed rgba(91,140,138,0.4); border-radius: 11px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 8px; color: var(--teal-light); transition: all 0.2s;
+    }
+    .img-slot .slot-placeholder:hover { background: rgba(91,140,138,0.2); border-color: var(--teal-light); }
+    .img-slot .slot-placeholder .slot-icon { font-size: 28px; opacity: 0.7; }
+    .img-slot .slot-placeholder .slot-label { font-size: 12px; font-weight: 600; opacity: 0.8; }
+    .img-slot .slot-placeholder .slot-hint { font-size: 11px; opacity: 0.5; }
+    .img-slot input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .img-slot.loaded .slot-placeholder { display: none; }
+    .img-slot:not(.loaded) img { display: none; }
 
-/* ---------- NAVIGATION BAR (60% width, centered) ---------- */
-.navbar {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 60%;
-    max-width: 1100px;
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-radius: 60px;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
-    z-index: 1100;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 28px;
-    height: 64px;
-}
-.navbar .left { display: flex; align-items: center; gap: 24px; }
-.navbar .logo {
-    font-size: 1.2rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, #5b8c8a 0%, #7ba8a5 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-.navbar .menu { display: flex; gap: 24px; }
-.navbar .menu a {
-    text-decoration: none;
-    color: #4a5b6e;
-    font-weight: 500;
-    font-size: 0.85rem;
-    transition: color 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.navbar .menu a:hover, .navbar .menu a.active { color: #5b8c8a; }
-.navbar .menu a.active {
-    background: rgba(91, 140, 138, 0.1);
-    padding: 6px 14px;
-    border-radius: 20px;
-}
-.navbar .right { display: flex; align-items: center; gap: 20px; }
-.night-mode-toggle {
-    width: 36px; height: 36px;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
-    color: #8a9ba8;
-    transition: all 0.2s;
-}
-.night-mode-toggle:hover { background: #f0f4f8; color: #5b8c8a; }
-.navbar .account-links a {
-    text-decoration: none;
-    color: #6a7c8e;
-    margin-left: 16px;
-    font-size: 0.85rem;
-    transition: color 0.2s;
-}
-.navbar .account-links a:hover { color: #5b8c8a; }
+    .dark-slot .slot-placeholder { background: linear-gradient(135deg, rgba(30,45,44,0.8), rgba(44,74,72,0.8)); border-color: rgba(138,180,176,0.3); }
 
-/* ---------- MAIN WRAPPER ---------- */
-.page-wrapper {
-    max-width: 75%;
-    margin: 0 auto;
-    padding: 100px 0 60px 0;
-}
+    .hero {
+      background: linear-gradient(135deg, #1e3432 0%, #2c4a48 50%, #3d6462 100%);
+      color: white; padding: 60px 64px 0; overflow: hidden;
+      display: grid; grid-template-columns: 1fr 1.2fr; gap: 48px; align-items: end;
+    }
+    .hero-text { padding-bottom: 56px; }
+    .hero-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--teal-light); margin-bottom: 16px; }
+    .hero h1 { font-size: 48px; font-weight: 800; line-height: 1.1; letter-spacing: -0.025em; margin-bottom: 18px; }
+    .hero h1 em { color: var(--teal-pale); font-style: normal; }
+    .hero-desc { font-size: 16px; color: rgba(255,255,255,0.65); line-height: 1.65; max-width: 400px; margin-bottom: 36px; }
+    .hero-tags { display: flex; gap: 10px; flex-wrap: wrap; }
+    .hero-tag { background: rgba(197,219,216,0.15); border: 1px solid rgba(197,219,216,0.3); color: var(--teal-pale); font-size: 12px; font-weight: 600; padding: 5px 14px; border-radius: 30px; }
+    .hero-screen { align-self: flex-end; }
+    .hero-screen .img-slot { border-radius: 16px 16px 0 0; box-shadow: 0 -8px 48px rgba(0,0,0,0.35); }
+    .hero-screen .img-slot img { border-radius: 16px 16px 0 0; }
+    .hero-screen .img-slot .slot-placeholder { border-radius: 16px 16px 0 0; aspect-ratio: 16/10; }
 
-/* ---------- BACK PILL ---------- */
-.back-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 18px;
-    border-radius: 30px;
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(138, 180, 176, 0.3);
-    color: #5b8c8a;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 12px rgba(91, 140, 138, 0.1);
-    user-select: none;
-}
-.back-pill:hover {
-    background: #5b8c8a;
-    color: white;
-    border-color: #5b8c8a;
-    transform: translateX(-4px);
-    box-shadow: 0 4px 20px rgba(91, 140, 138, 0.25);
-}
-.back-pill:active { transform: translateX(-2px) scale(0.98); }
-.back-pill i { font-size: 0.8rem; transition: transform 0.3s ease; }
-.back-pill:hover i { transform: translateX(-3px); }
+    .section { padding: 72px 64px; }
+    .section-alt { background: var(--bg); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .section-dark { background: #1a2b2a; color: white; }
 
-/* ---------- PAGE HEADER ---------- */
-.page-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    margin-bottom: 32px;
-    gap: 24px;
-    flex-wrap: wrap;
-}
-.page-header .heading h1 {
-    font-size: 1.6rem;
-    font-weight: 600;
-    color: #2c5a57;
-    border-left: 4px solid #8ab4b0;
-    padding-left: 14px;
-    margin-bottom: 8px;
-}
-.page-header .heading .loc-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #8a9ba8;
-    font-size: 0.85rem;
-    padding-left: 18px;
-}
-.page-header .heading .loc-row i { color: #8ab4b0; font-size: 0.8rem; }
-.page-header .heading .loc-row .sep { color: #d3dde0; }
-.page-header .header-actions { display: flex; gap: 10px; align-items: center; }
-.btn-sync {
-    padding: 10px 20px;
-    border-radius: 30px;
-    border: none;
-    background: linear-gradient(135deg, #5b8c8a 0%, #7ba8a5 100%);
-    color: white;
-    font-weight: 600;
-    font-size: 0.82rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-family: inherit;
-    box-shadow: 0 4px 14px rgba(91, 140, 138, 0.3);
-    transition: all 0.3s;
-}
-.btn-sync:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(91, 140, 138, 0.4); }
+    .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--teal); margin-bottom: 8px; }
+    .section-dark .eyebrow { color: var(--teal-light); }
+    .section-title { font-size: 34px; font-weight: 800; color: var(--ink); letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 10px; }
+    .section-dark .section-title { color: white; }
+    .section-sub { font-size: 15px; color: var(--muted); max-width: 520px; line-height: 1.65; }
+    .section-dark .section-sub { color: rgba(255,255,255,0.55); }
 
-/* ---------- TWIN LAYOUT: info left, model right ---------- */
-.twin-layout {
-    display: grid;
-    grid-template-columns: 340px 1fr;
-    gap: 20px;
-    margin-bottom: 20px;
-    align-items: start;
-}
+    .split { display: grid; grid-template-columns: 1fr 1.6fr; gap: 56px; align-items: center; }
+    .split.flip { grid-template-columns: 1.6fr 1fr; }
+    .split.flip .split-text { order: 2; }
+    .split.flip .split-visual { order: 1; }
+    .split-text h2 { font-size: 28px; font-weight: 800; color: var(--ink); letter-spacing: -0.02em; line-height: 1.25; margin-bottom: 12px; }
+    .section-dark .split-text h2 { color: white; }
+    .split-text p { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 20px; }
+    .section-dark .split-text p { color: rgba(255,255,255,0.55); }
 
-.info-col { display: flex; flex-direction: column; gap: 16px; }
+    .bullets { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+    .bullets li { font-size: 13.5px; color: var(--text); display: flex; align-items: flex-start; gap: 9px; line-height: 1.5; }
+    .section-dark .bullets li { color: rgba(255,255,255,0.7); }
+    .bullets li::before { content: '✓'; color: var(--teal); font-weight: 800; flex-shrink: 0; margin-top: 1px; }
+    .section-dark .bullets li::before { color: var(--teal-light); }
 
-.info-card {
-    background: white;
-    border-radius: 24px;
-    border: 1px solid #e9edf2;
-    padding: 22px 22px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
-}
-.info-card .ic-eyebrow {
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #8ab4b0;
-    margin-bottom: 10px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.info-card .ic-eyebrow .pulse-dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: #5b8c8a;
-    box-shadow: 0 0 0 0 rgba(91,140,138,0.5);
-    animation: pulseDot 2.2s infinite;
-}
-@keyframes pulseDot {
-    0% { box-shadow: 0 0 0 0 rgba(91,140,138,0.45); }
-    70% { box-shadow: 0 0 0 6px rgba(91,140,138,0); }
-    100% { box-shadow: 0 0 0 0 rgba(91,140,138,0); }
-}
-.info-card h3 {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #2c4a48;
-    margin-bottom: 4px;
-}
-.info-card .struct-id {
-    font-size: 0.78rem;
-    color: #8a9ba8;
-    font-family: 'SFMono-Regular', Consolas, monospace;
-}
+    .screen-frame { background: #1a2827; border-radius: 18px; padding: 10px; box-shadow: 0 8px 48px rgba(0,0,0,0.2); }
+    .screen-frame-light { background: #dde8e6; }
 
-/* BCI metric tiles */
-.bci-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-}
-.bci-tile {
-    border-radius: 16px;
-    padding: 16px 14px;
-    text-align: center;
-    border: 1px solid #e9edf2;
-}
-.bci-tile .bci-label {
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    margin-bottom: 6px;
-}
-.bci-tile .bci-value {
-    font-size: 2rem;
-    font-weight: 700;
-    line-height: 1;
-}
-.bci-tile .bci-sub {
-    font-size: 0.7rem;
-    margin-top: 6px;
-}
-.bci-tile.good { background: #eef4f2; }
-.bci-tile.good .bci-label, .bci-tile.good .bci-sub { color: #2d7a6e; }
-.bci-tile.good .bci-value { color: #2d7a6e; }
-.bci-tile.fair { background: #fff7ed; }
-.bci-tile.fair .bci-label, .bci-tile.fair .bci-sub { color: #c28b5a; }
-.bci-tile.fair .bci-value { color: #c28b5a; }
-.bci-tile.critical { background: #fdf2f2; }
-.bci-tile.critical .bci-label, .bci-tile.critical .bci-sub { color: #c0392b; }
-.bci-tile.critical .bci-value { color: #c0392b; }
+    .two-up { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+    .three-up { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: start; }
 
-/* facts list */
-.fact-list { display: flex; flex-direction: column; gap: 12px; }
-.fact-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 0.84rem;
-    padding-bottom: 12px;
-    border-bottom: 1px solid #eef2f6;
-}
-.fact-row:last-child { border-bottom: none; padding-bottom: 0; }
-.fact-row .fk { color: #8a9ba8; display: flex; align-items: center; gap: 8px; }
-.fact-row .fk i { color: #8ab4b0; width: 14px; text-align: center; }
-.fact-row .fv { color: #2c4a48; font-weight: 600; }
+    .caption { font-size: 12px; color: var(--muted); margin-top: 10px; text-align: center; font-style: italic; }
+    .section-dark .caption { color: rgba(255,255,255,0.35); }
 
-/* inspection status badges reused */
-.status-stack { display: flex; flex-direction: column; gap: 10px; }
-.status-line { display: flex; align-items: center; justify-content: space-between; }
-.status-line .sl-label { font-size: 0.8rem; color: #8a9ba8; }
-.status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.72rem;
-    font-weight: 600;
-    white-space: nowrap;
-}
-.status-badge.completed { background: #e8f5f0; color: #2d7a6e; }
-.status-badge.pending { background: #fff7ed; color: #c28b5a; }
-.status-badge.error { background: rgba(220, 38, 38, 0.15); color: #dc2626; }
-.night-mode .status-badge.completed { background: #1e3a3e; color: #8ab4b0; }
-.night-mode .status-badge.pending { background: #3a3020; color: #e8a87c; }
-.night-mode .status-badge.error { background: rgba(220,38,38,0.2); color: #ef5b5b; }
+    .divider-strip { background: var(--teal-faint); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 22px 64px; font-size: 14px; color: var(--teal-dark); font-weight: 500; }
+    .divider-strip strong { font-weight: 700; color: var(--ink); }
 
-/* ---------- MODEL STAGE (right column) ---------- */
-.viewer-card {
-    background: white;
-    border-radius: 24px;
-    border: 1px solid #e9edf2;
-    padding: 16px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-}
-.viewer-card .vc-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 4px 8px 0 10px;
-}
-.viewer-card .vc-head h2 {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #2c4a48;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-.viewer-card .vc-head h2 i { color: #8ab4b0; }
-.vc-layer-toggles { display: flex; gap: 8px; flex-wrap: wrap; }
-.vc-pill {
-    font-size: 0.72rem;
-    font-weight: 500;
-    color: #6a7c8e;
-    padding: 6px 13px;
-    border-radius: 30px;
-    border: 1px solid #e2e8f0;
-    background: #fafbfc;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-family: inherit;
-}
-.vc-pill .sw { width: 6px; height: 6px; border-radius: 50%; background: #b8c4cc; }
-.vc-pill:hover { border-color: #8ab4b0; color: #5b8c8a; }
-.vc-pill.on { background: #eef4f2; border-color: #8ab4b0; color: #2c5a57; }
-.vc-pill.on .sw { background: #5b8c8a; box-shadow: 0 0 6px rgba(91,140,138,0.5); }
-.vc-pill[data-layer="stress"].on .sw { background: #c28b5a; box-shadow: 0 0 6px rgba(194,139,90,0.5); }
-.vc-pill[data-layer="defects"].on .sw { background: #c0392b; box-shadow: 0 0 6px rgba(192,57,43,0.5); }
-.vc-pill[data-layer="sensors"].on .sw { background: #4a90b8; box-shadow: 0 0 6px rgba(74,144,184,0.5); }
+    .feature-strip { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; box-shadow: 0 2px 16px rgba(44,74,72,0.06); margin-top: 40px; }
+    .feature-item { padding: 24px 20px; border-right: 1px solid var(--border); background: var(--white); }
+    .feature-item:last-child { border-right: none; }
+    .feature-item-icon { font-size: 22px; margin-bottom: 10px; }
+    .feature-item h4 { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 5px; }
+    .feature-item p { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
 
-.model-stage {
-    position: relative;
-    border-radius: 18px;
-    overflow: hidden;
-    background: rgba(255, 255, 255, 0.4);
-    backdrop-filter: blur(36px) saturate(160%);
-    -webkit-backdrop-filter: blur(36px) saturate(160%);
-    border: 1px solid rgba(91, 140, 138, 0.18);
-    height: 560px;
-}
-.stage-tint {
-    position: absolute; inset: 0;
-    background:
-      radial-gradient(ellipse 600px 360px at 30% 8%, rgba(91,140,138,0.16), transparent 60%),
-      radial-gradient(ellipse 600px 360px at 80% 100%, rgba(74,144,184,0.10), transparent 60%);
-    pointer-events: none;
-}
-#twin-canvas { position:absolute; inset:0; width:100%; height:100%; display:block; cursor:grab; }
-#twin-canvas:active { cursor:grabbing; }
+    .bci-bands { display: flex; gap: 14px; margin-top: 24px; flex-wrap: wrap; }
+    .bci-band { flex: 1; min-width: 90px; border-radius: 12px; padding: 14px; }
+    .bci-band-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.65; margin-bottom: 5px; }
+    .bci-band-score { font-size: 20px; font-weight: 800; }
+    .bci-band-name { font-size: 11px; font-weight: 600; margin-top: 2px; }
+    .band-critical { background: rgba(255,107,107,0.15); color: #ff6b6b; }
+    .band-poor { background: rgba(255,209,102,0.15); color: #c89a1a; }
+    .band-fair { background: rgba(91,140,138,0.2); color: var(--teal-light); }
+    .band-good { background: rgba(107,203,119,0.15); color: #4caf64; }
 
-.stage-hud { position:absolute; inset:0; pointer-events:none; }
-.stage-bracket {
-    position:absolute; width:26px; height:26px;
-    border:1.5px solid rgba(44,74,72,0.22);
-}
-.stage-bracket.tl{top:16px;left:16px;border-right:none;border-bottom:none;border-radius:6px 0 0 0;}
-.stage-bracket.tr{top:16px;right:16px;border-left:none;border-bottom:none;border-radius:0 6px 0 0;}
-.stage-bracket.bl{bottom:16px;left:16px;border-right:none;border-top:none;border-radius:0 0 0 6px;}
-.stage-bracket.br{bottom:16px;right:16px;border-left:none;border-top:none;border-radius:0 0 6px 0;}
+    .footer { background: #1a2b2a; color: white; padding: 52px 64px; display: grid; grid-template-columns: 1fr auto; gap: 48px; align-items: center; }
+    .footer h2 { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 8px; }
+    .footer h2 span { color: var(--teal-pale); }
+    .footer p { font-size: 14px; color: rgba(255,255,255,0.5); line-height: 1.6; max-width: 420px; }
+    .footer-contact { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
+    .footer-contact-item { font-size: 13px; color: rgba(255,255,255,0.5); }
+    .footer-contact-item strong { color: var(--teal-pale); }
 
-.stage-readout {
-    position:absolute; bottom:16px; left:48px;
-    font-family: 'SFMono-Regular', Consolas, monospace;
-    font-size:11px;
-    color:rgba(44,74,72,0.55);
-    display:flex; gap:16px;
-    pointer-events:none;
-}
-.stage-readout b { color: #2c5a57; font-weight:500; }
-.stage-hint {
-    position:absolute; bottom:16px; right:48px;
-    font-family: 'SFMono-Regular', Consolas, monospace;
-    font-size:10.5px;
-    color:rgba(44,74,72,0.4);
-    text-align:right;
-    pointer-events:none;
-}
-.night-mode .model-stage {
-    background: rgba(20, 28, 30, 0.45);
-    border-color: rgba(138, 180, 176, 0.16);
-}
-.night-mode .stage-tint {
-    background:
-      radial-gradient(ellipse 600px 360px at 30% 8%, rgba(91,140,138,0.22), transparent 60%),
-      radial-gradient(ellipse 600px 360px at 80% 100%, rgba(74,144,184,0.14), transparent 60%);
-}
-.night-mode .stage-bracket { border-color: rgba(255,255,255,0.18); }
-.night-mode .stage-readout { color: rgba(255,255,255,0.5); }
-.night-mode .stage-readout b { color: rgba(255,255,255,0.85); }
-.night-mode .stage-hint { color: rgba(255,255,255,0.35); }
-.stage-bci-chip {
-    position:absolute; top:16px; left:48px;
-    background:rgba(10,16,16,0.55);
-    border:1px solid rgba(255,255,255,0.12);
-    border-radius:12px;
-    padding:8px 14px;
-    backdrop-filter: blur(6px);
-    pointer-events:none;
-}
-.stage-bci-chip .lbl { font-size:9.5px; color:rgba(255,255,255,0.45); letter-spacing:.08em; font-family:'SFMono-Regular',Consolas,monospace;}
-.stage-bci-chip .val { font-size:20px; font-weight:600; color:#e8a87c; margin-top:2px; font-family: Inter, sans-serif;}
+    /* hide scrollbar */
+    html { scrollbar-width: none; -ms-overflow-style: none; }
+    html::-webkit-scrollbar { display: none; }
 
-/* ---------- LOWER PANELS (layers + sensor feed) ---------- */
-.lower-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-bottom: 20px;
-}
-.panel-card {
-    background: white;
-    border-radius: 24px;
-    border: 1px solid #e9edf2;
-    padding: 26px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
-}
-.panel-card .panel-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; padding-bottom:14px; border-bottom:1px solid #eef2f6; }
-.panel-card .panel-header h2 { font-size:1.02rem; font-weight:600; color:#2c4a48; display:flex; align-items:center; gap:10px; }
-.panel-card .panel-header h2 i { color:#8ab4b0; }
-.panel-card .panel-header .sub { font-size:0.72rem; color:#8a9ba8; font-weight:500; }
+    .glass-scrollbar {
+      position: fixed; right: 10px; top: 50%; transform: translateY(-50%);
+      width: 10px; height: 55vh;
+      background: rgba(255,255,255,0.6); backdrop-filter: blur(8px);
+      border-radius: 20px; border: 1px solid rgba(255,255,255,0.3);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06); z-index: 1000;
+      overflow: hidden; cursor: default; user-select: none;
+    }
+    .glass-scrollbar .thumb {
+      width: 100%; background: linear-gradient(180deg, #a0c8c4, #5b8c8a);
+      border-radius: 20px; position: absolute; top: 0; left: 0;
+      box-shadow: inset 0 1px 2px rgba(255,255,255,0.3), 0 0 12px rgba(91,140,138,0.35);
+      cursor: grab; user-select: none;
+    }
+    .glass-scrollbar .thumb:active { cursor: grabbing; }
+    @media (max-width: 860px) { .glass-scrollbar { display: none !important; } }
 
-.layer-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 13px 0;
-    border-bottom: 1px solid #eef2f6;
-}
-.layer-row:last-child { border-bottom: none; }
-.layer-row .lr-name { display:flex; align-items:center; gap:11px; font-size:0.85rem; font-weight:500; color:#2c4a48; }
-.layer-row .lr-name .dot { width:9px; height:9px; border-radius:3px; flex-shrink:0; }
-.layer-row .lr-meta { font-size:0.74rem; color:#8a9ba8; }
-
-.switch {
-    position: relative;
-    width: 36px; height: 20px;
-    border-radius: 999px;
-    background: #eef2f6;
-    border: 1px solid #e2e8f0;
-    cursor: pointer;
-    flex-shrink: 0;
-}
-.switch::after {
-    content: '';
-    position: absolute; top: 2px; left: 2px;
-    width: 14px; height: 14px; border-radius: 50%;
-    background: #b8c4cc;
-    transition: all .18s ease;
-}
-.switch.on { background: rgba(91,140,138,0.18); border-color: rgba(91,140,138,0.4); }
-.switch.on::after { left: 18px; background: #5b8c8a; }
-
-.sensor-feed-row {
-    display: grid;
-    grid-template-columns: 1fr auto 80px;
-    align-items: center;
-    gap: 14px;
-    padding: 12px 0;
-    border-bottom: 1px solid #eef2f6;
-}
-.sensor-feed-row:last-child { border-bottom: none; }
-.sensor-feed-row .sf-name { font-size:0.84rem; font-weight:500; color:#2c4a48; }
-.sensor-feed-row .sf-loc { display:block; font-size:0.72rem; color:#8a9ba8; font-weight:400; margin-top:2px; }
-.sensor-feed-row .sf-val { font-family:'SFMono-Regular',Consolas,monospace; font-size:0.82rem; color:#2c4a48; text-align:right; white-space:nowrap; }
-.sf-spark { height:20px; display:flex; align-items:flex-end; gap:2px; }
-.sf-spark i { flex:1; background:#8ab4b0; opacity:.7; border-radius:1px; min-height:2px; }
-
-/* ---------- TIMELINE PANEL ---------- */
-.timeline-track {
-    position: relative;
-    height: 54px;
-    border-top: 1px solid #eef2f6;
-    border-bottom: 1px solid #eef2f6;
-    margin-top: 20px;
-    margin-bottom: 28px;
-}
-.tl-node {
-    position: absolute; top: 50%; width: 11px; height: 11px;
-    border-radius: 50%; transform: translate(-50%,-50%);
-    border: 2px solid white;
-    box-shadow: 0 0 0 1px #e2e8f0;
-}
-.tl-node[data-type="GI"] { background:#5b8c8a; }
-.tl-node[data-type="PI"] { background:#4a90b8; }
-.tl-node[data-type="SI"] { background:#c28b5a; }
-.tl-node[data-type="overdue"] { background:#c0392b; box-shadow:0 0 10px rgba(192,57,43,0.4); }
-.tl-label {
-    position:absolute; top:calc(50% + 14px); transform:translateX(-50%);
-    font-size:0.68rem; color:#8a9ba8; white-space:nowrap;
-    font-family:'SFMono-Regular',Consolas,monospace;
-}
-.legend { display:flex; gap:20px; flex-wrap:wrap; }
-.legend .item { display:flex; align-items:center; gap:7px; font-size:0.74rem; color:#6a7c8e; }
-.legend .item .sw { width:8px; height:8px; border-radius:50%; }
-
-/* ---------- TOAST (reuse) ---------- */
-.toast-container { position: fixed; bottom: 30px; right: 30px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; }
-.toast { background: white; border-radius: 16px; padding: 16px 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12); border: 1px solid #e9edf2; display: flex; align-items: center; gap: 12px; min-width: 300px; transform: translateX(120%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-.toast.show { transform: translateX(0); }
-.toast-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
-.toast-icon.success { background: #e8f5f0; color: #2d7a6e; }
-.toast-content { flex: 1; }
-.toast-content .toast-title { font-size: 0.9rem; font-weight: 600; color: #2c4a48; margin-bottom: 2px; }
-.toast-content .toast-msg { font-size: 0.8rem; color: #8a9ba8; }
-
-/* ---------- GLASS SCROLLBAR ---------- */
-html { scrollbar-width: none; -ms-overflow-style: none; }
-html::-webkit-scrollbar { display: none; }
-.glass-scrollbar {
-    position: fixed; right: 10px; top: 50%; transform: translateY(-50%);
-    width: 10px; height: 55vh;
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-    border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-    z-index: 1000; overflow: hidden;
-}
-.glass-scrollbar .thumb {
-    width: 100%; background: linear-gradient(180deg, #a0c8c4, #5b8c8a);
-    border-radius: 20px; position: absolute; top: 0; left: 0;
-    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.3), 0 0 12px rgba(91, 140, 138, 0.35);
-}
-@media (max-width: 860px) { .glass-scrollbar { display: none !important; } }
-
-/* ---------- RESPONSIVE ---------- */
-@media (max-width: 1100px) { .page-wrapper { max-width: 90%; } .navbar { width: 70%; } }
-@media (max-width: 980px) {
-    .twin-layout { grid-template-columns: 1fr; }
-    .lower-grid { grid-template-columns: 1fr; }
-    .model-stage { height: 440px; }
-}
-@media (max-width: 860px) {
-    .page-wrapper { max-width: 95%; }
-    .navbar .menu { display: none; }
-    .navbar { width: 90%; padding: 0 18px; }
-}
-@media (max-width: 600px) {
-    .bci-grid { grid-template-columns: 1fr 1fr; }
-    .stage-readout, .stage-hint { display:none; }
-}
-
-/* ---------- NIGHT MODE ---------- */
-.night-mode { background-color: #1a2428 !important; color: #d4dfe3; }
-.night-mode .navbar { background: rgba(35, 46, 52, 0.95) !important; border-color: #2f3e45; }
-.night-mode .navbar .logo { background: linear-gradient(135deg, #8ab4b0 0%, #a0c8c4 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.night-mode .navbar .menu a { color: #9ab0b8; }
-.night-mode .navbar .menu a.active { background: rgba(138, 180, 176, 0.15); color: #8ab4b0; }
-.night-mode .navbar .account-links a { color: #9ab0b8; }
-.night-mode .night-mode-toggle { color: #9ab0b8; }
-.night-mode .night-mode-toggle:hover { background: #2f3e45; color: #8ab4b0; }
-.night-mode .back-pill { background: rgba(35,46,52,0.8) !important; border-color: rgba(138,180,176,0.3) !important; color:#8ab4b0 !important; }
-.night-mode .page-header .heading h1 { color: #8ab4b0; }
-.night-mode .page-header .heading .loc-row { color: #8aa4ac; }
-.night-mode .info-card, .night-mode .viewer-card, .night-mode .panel-card, .night-mode .toast {
-    background: #232e34; border-color: #2f3e45;
-}
-.night-mode .info-card h3, .night-mode .panel-card .panel-header h2, .night-mode .fact-row .fv, .night-mode .layer-row .lr-name, .night-mode .sensor-feed-row .sf-name, .night-mode .sensor-feed-row .sf-val, .night-mode .toast-content .toast-title {
-    color: #d4dfe3;
-}
-.night-mode .struct-id, .night-mode .fact-row .fk, .night-mode .layer-row .lr-meta, .night-mode .sensor-feed-row .sf-loc, .night-mode .panel-card .panel-header .sub, .night-mode .toast-content .toast-msg {
-    color: #8aa4ac;
-}
-.night-mode .fact-row, .night-mode .layer-row, .night-mode .sensor-feed-row, .night-mode .panel-card .panel-header { border-color: #2a3a40; }
-.night-mode .vc-pill { background:#1e2a2f; border-color:#3a4b53; color:#9ab0b8; }
-.night-mode .vc-pill.on { background:#2f4a48; border-color:#6e9c98; color:#d4dfe3; }
-.night-mode .switch { background:#1e2a2f; border-color:#3a4b53; }
-.night-mode .tl-node { border-color: #232e34; }
-.night-mode .timeline-track { border-color: #2a3a40; }
-.night-mode .tl-label, .night-mode .legend .item { color:#8aa4ac; }
-</style>
+    @media print {
+      .img-slot .slot-placeholder { display: none !important; }
+      .img-slot:not(.loaded) { display: none; }
+      .hero, .section-dark, .footer { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .section { padding: 48px; }
+      .glass-scrollbar, .pdf-download-btn { display: none !important; }
+    }
+    .pdf-export .pdf-download-btn { display: none !important; }
+    .pdf-export .glass-scrollbar { display: none !important; }
+    .pdf-export .img-slot .slot-placeholder { display: none !important; }
+    .pdf-export .img-slot:not(.loaded) { display: none; }
+  </style>
 </head>
 <body>
 
-<nav class="navbar">
-    <div class="left">
-        <div class="logo">SpanSense</div>
-        <div class="menu">
-            <a href="#"><i class="fa-solid fa-gauge"></i>Dashboard</a>
-            <a href="#"><i class="fa-solid fa-database"></i>Database</a>
-            <a href="#"><i class="fa-solid fa-clipboard-check"></i>Inspections</a>
-            <a href="#"><i class="fa-solid fa-calendar-days"></i>Planning</a>
-            <a href="#" class="active"><i class="fa-solid fa-cube"></i>Digital Twin</a>
-        </div>
+<button class="pdf-download-btn" id="pdfDownloadBtn">📄 Download PDF</button>
+
+<!-- ===== HERO ===== -->
+<section class="hero">
+  <div class="hero-text">
+    <div class="hero-eyebrow">spanSense</div>
+    <h1>Bridge asset<br>management,<br><em>reimagined.</em></h1>
+    <p class="hero-desc">A modern web platform for managing structure stock — from the map to the report, inspection to export.</p>
+    <div class="hero-tags">
+      <span class="hero-tag">📊 Dashboard</span>
+      <span class="hero-tag">🗺️ Interactive Map</span>
+      <span class="hero-tag">🔍 Inspections</span>
+      <span class="hero-tag">🧊 Digital Twin</span>
+      <span class="hero-tag">📅 Planning</span>
+      <span class="hero-tag">📄 Reports</span>
+      <span class="hero-tag">💾 Export</span>
     </div>
-    <div class="right">
-        <div class="night-mode-toggle" id="nightToggle"><i class="fa-solid fa-moon"></i></div>
-        <div class="account-links"><a href="#">Account</a></div>
-    </div>
-</nav>
+  </div>
+  <div class="hero-screen">
+    <label class="img-slot dark-slot loaded" id="slot-hero">
+      <div class="slot-placeholder"><div class="slot-icon">🗺️</div><div class="slot-label">Map screenshot</div><div class="slot-hint">Click to load</div></div>
+      <img alt="Map (dark mode)" src="guide-assets/map-dark.png">
+      <input type="file" accept="image/*" onchange="loadImg(this,'slot-hero')">
+    </label>
+  </div>
+</section>
 
-<div class="glass-scrollbar"><div class="thumb" style="height:38%;"></div></div>
-
-<div class="page-wrapper">
-
-    <div class="back-pill"><i class="fa-solid fa-arrow-left"></i> Back</div>
-
-    <div class="page-header">
-        <div class="heading">
-            <h1>Digital Twin</h1>
-            <div class="loc-row">
-                <i class="fa-solid fa-location-dot"></i> Caversham Road, Reading RG4 5DG
-                <span class="sep">·</span>
-                <span>ID A1-RDG-014</span>
-            </div>
-        </div>
-    </div>
-
-    <div class="twin-layout">
-
-        <!-- LEFT: bridge info -->
-        <div class="info-col">
-
-            <div class="info-card">
-                <div class="ic-eyebrow"><span class="pulse-dot"></span>LIVE TWIN</div>
-                <h3>Caversham Road Bridge</h3>
-                <div class="struct-id">Steel through-truss · 3 spans</div>
-            </div>
-
-            <div class="info-card">
-                <div class="ic-eyebrow">Condition</div>
-                <div class="bci-grid">
-                    <div class="bci-tile fair">
-                        <div class="bci-label">BCI avg</div>
-                        <div class="bci-value">58</div>
-                        <div class="bci-sub">across 3 spans</div>
-                    </div>
-                    <div class="bci-tile critical">
-                        <div class="bci-label">BCI crit</div>
-                        <div class="bci-value">44</div>
-                        <div class="bci-sub">span 3 · pier 2</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="info-card">
-                <div class="ic-eyebrow">Structure facts</div>
-                <div class="fact-list">
-                    <div class="fact-row"><div class="fk"><i class="fa-solid fa-ruler-horizontal"></i>Span length</div><div class="fv">84.0 m</div></div>
-                    <div class="fact-row"><div class="fk"><i class="fa-solid fa-layer-group"></i>Spans</div><div class="fv">3</div></div>
-                    <div class="fact-row"><div class="fk"><i class="fa-solid fa-trowel"></i>Material</div><div class="fv">Steel / RC deck</div></div>
-                    <div class="fact-row"><div class="fk"><i class="fa-solid fa-calendar"></i>Year built</div><div class="fv">1968</div></div>
-                </div>
-            </div>
-
-            <div class="info-card">
-                <div class="ic-eyebrow">Inspection status</div>
-                <div class="status-stack">
-                    <div class="status-line">
-                        <span class="sl-label">Last inspection</span>
-                        <span class="status-badge completed">GI · 11 Jun 2026</span>
-                    </div>
-                    <div class="status-line">
-                        <span class="sl-label">Next due</span>
-                        <span class="status-badge pending">PI · Mar 2027</span>
-                    </div>
-                    <div class="status-line">
-                        <span class="sl-label">Open defects</span>
-                        <span class="status-badge error">2 flagged</span>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- RIGHT: 3D model -->
-        <div class="viewer-card">
-            <div class="vc-head">
-                <h2><i class="fa-solid fa-cube"></i>Structural model</h2>
-                <div class="vc-layer-toggles">
-                    <div class="vc-pill on" data-layer="structure"><span class="sw"></span>Structure</div>
-                    <div class="vc-pill on" data-layer="sensors"><span class="sw"></span>Sensors</div>
-                    <div class="vc-pill" data-layer="defects"><span class="sw"></span>Defects</div>
-                </div>
-            </div>
-
-            <div class="model-stage">
-                <div class="stage-tint"></div>
-                <canvas id="twin-canvas"></canvas>
-                <div class="stage-hud">
-                    <div class="stage-bracket tl"></div>
-                    <div class="stage-bracket tr"></div>
-                    <div class="stage-bracket bl"></div>
-                    <div class="stage-bracket br"></div>
-                </div>
-                <div class="stage-readout">
-                    <span>YAW <b id="yaw-readout">000.0°</b></span>
-                    <span>TILT <b id="tilt-readout">000.0°</b></span>
-                    <span>ZOOM <b id="zoom-readout">1.00x</b></span>
-                </div>
-                <div class="stage-hint">drag to orbit · scroll to zoom</div>
-            </div>
-        </div>
-
-    </div>
-
-    <div class="panel-card">
-        <div class="panel-header">
-            <h2><i class="fa-solid fa-timeline"></i>Inspection history</h2>
-            <div class="sub">2021 — 2027</div>
-        </div>
-        <div class="timeline-track">
-            <div class="tl-node" data-type="GI" style="left:6%"></div><div class="tl-label" style="left:6%">Mar '21</div>
-            <div class="tl-node" data-type="PI" style="left:24%"></div><div class="tl-label" style="left:24%">Sep '21</div>
-            <div class="tl-node" data-type="GI" style="left:42%"></div><div class="tl-label" style="left:42%">Apr '23</div>
-            <div class="tl-node" data-type="SI" style="left:55%"></div><div class="tl-label" style="left:55%">Nov '24</div>
-            <div class="tl-node" data-type="GI" style="left:70%"></div><div class="tl-label" style="left:70%">Jun '26</div>
-            <div class="tl-node" data-type="overdue" style="left:70%; top:calc(50% - 16px);"></div>
-            <div class="tl-node" data-type="PI" style="left:92%"></div><div class="tl-label" style="left:92%">Mar '27</div>
-        </div>
-        <div class="legend">
-            <div class="item"><span class="sw" style="background:#5b8c8a"></span>General Inspection</div>
-            <div class="item"><span class="sw" style="background:#4a90b8"></span>Principal Inspection</div>
-            <div class="item"><span class="sw" style="background:#c28b5a"></span>Special Inspection</div>
-            <div class="item"><span class="sw" style="background:#c0392b"></span>Overdue</div>
-        </div>
-    </div>
-
+<!-- ===== DIVIDER ===== -->
+<div class="divider-strip">
+  <strong>No install. No servers.</strong> &nbsp;spanSense runs entirely in your browser — open it and everything is immediately available across all seven modules.
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- ===== DASHBOARD ===== -->
+<section class="section">
+  <div class="split">
+    <div class="split-text">
+      <div class="eyebrow">Dashboard</div>
+      <h2>Everything at a glance</h2>
+      <p>The home screen surfaces live KPIs, condition charts, and critical structure alerts the moment you log in.</p>
+      <ul class="bullets">
+        <li>Total assets, high-risk count, upcoming & overdue inspections</li>
+        <li>Asset inventory by type — pie chart</li>
+        <li>BCI score distribution across the portfolio</li>
+        <li>Bridge condition trend over time</li>
+      </ul>
+    </div>
+    <div class="split-visual">
+      <div class="screen-frame">
+        <label class="img-slot dark-slot loaded" id="slot-dashboard">
+          <div class="slot-placeholder"><div class="slot-icon">📊</div><div class="slot-label">Dashboard</div><div class="slot-hint">Click to load</div></div>
+          <img alt="Dashboard" src="guide-assets/dashboard.png">
+          <input type="file" accept="image/*" onchange="loadImg(this,'slot-dashboard')">
+        </label>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== MAP ===== -->
+<section class="section section-dark">
+  <div style="margin-bottom:36px;">
+    <div class="eyebrow">Interactive Map</div>
+    <h2 class="section-title">Your structure stock on the map</h2>
+    <p class="section-sub">Every structure plotted with colour-coded markers by type. Click any marker to open its full record, view BCI scores, and start a new inspection.</p>
+  </div>
+  <label class="img-slot dark-slot loaded" id="slot-map" style="border-radius:16px;overflow:hidden;">
+    <div class="slot-placeholder" style="border-radius:16px;aspect-ratio:16/7;"><div class="slot-icon">🗺️</div><div class="slot-label">Full map view</div><div class="slot-hint">Click to load</div></div>
+    <img alt="Map" style="border-radius:16px;" src="guide-assets/map-full.png">
+    <input type="file" accept="image/*" onchange="loadImg(this,'slot-map')">
+  </label>
+</section>
+
+<!-- ===== INSPECTION ===== -->
+<section class="section">
+  <div style="margin-bottom:36px;">
+    <div class="eyebrow">Inspection</div>
+    <h2 class="section-title">Element-by-element defect recording</h2>
+    <p class="section-sub">Log inspections span by span. Record severity, extent, and works required per element — BCI scores calculate in real time.</p>
+  </div>
+  <div class="screen-frame screen-frame-light" style="margin-bottom:24px;">
+    <label class="img-slot loaded" id="slot-insp-light">
+      <div class="slot-placeholder"><div class="slot-icon">🔍</div><div class="slot-label">Inspection form (light mode)</div><div class="slot-hint">Click to load</div></div>
+      <img alt="Inspection light" src="guide-assets/inspection-light.png">
+      <input type="file" accept="image/*" onchange="loadImg(this,'slot-insp-light')">
+    </label>
+  </div>
+  <div class="three-up" style="margin-top:24px;">
+    <div>
+      <div class="screen-frame">
+        <label class="img-slot dark-slot loaded" id="slot-insp-dark">
+          <div class="slot-placeholder"><div class="slot-icon">🌙</div><div class="slot-label">Inspection (dark)</div><div class="slot-hint">Click to load</div></div>
+          <img alt="Inspection dark" src="guide-assets/inspection-dark.png">
+          <input type="file" accept="image/*" onchange="loadImg(this,'slot-insp-dark')">
+        </label>
+      </div>
+      <p class="caption" style="color:var(--muted);">Dark mode — element table with BCI scores</p>
+    </div>
+    <div>
+      <div class="screen-frame">
+        <label class="img-slot dark-slot loaded" id="slot-defect">
+          <div class="slot-placeholder"><div class="slot-icon">⚠️</div><div class="slot-label">Edit defect modal</div><div class="slot-hint">Click to load</div></div>
+          <img alt="Edit defect" src="guide-assets/defect-modal.png">
+          <input type="file" accept="image/*" onchange="loadImg(this,'slot-defect')">
+        </label>
+      </div>
+      <p class="caption" style="color:var(--muted);">Per-element defect — severity, extent & works</p>
+    </div>
+    <div>
+      <div class="screen-frame screen-frame-light">
+        <label class="img-slot loaded" id="slot-complete">
+          <div class="slot-placeholder"><div class="slot-icon">✅</div><div class="slot-label">Inspection complete</div><div class="slot-hint">Click to load</div></div>
+          <img alt="Inspection complete" src="guide-assets/previous-inspections.png">
+          <input type="file" accept="image/*" onchange="loadImg(this,'slot-complete')">
+        </label>
+      </div>
+      <p class="caption" style="color:var(--muted);">Inspection saved — summary & next actions</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== PREVIOUS INSPECTIONS ===== -->
+<section class="section section-alt">
+  <div class="split flip">
+    <div class="split-visual">
+      <div class="screen-frame">
+        <label class="img-slot dark-slot loaded" id="slot-prev">
+          <div class="slot-placeholder"><div class="slot-icon">📋</div><div class="slot-label">Previous inspections</div><div class="slot-hint">Click to load</div></div>
+          <img alt="Previous inspections" src="guide-assets/previous-inspections.png">
+          <input type="file" accept="image/*" onchange="loadImg(this,'slot-prev')">
+        </label>
+      </div>
+    </div>
+    <div class="split-text">
+      <div class="eyebrow">Inspection History</div>
+      <h2>Full history per structure</h2>
+      <p>Every inspection is stored and filterable by type. BCI trends are tracked automatically over time.</p>
+      <ul class="bullets">
+        <li>Filter by Principal (PI), General (GI), or Superficial (SI)</li>
+        <li>CRIT and AV scores shown per row</li>
+        <li>Total inspection count and last inspection date</li>
+        <li>Open, edit, or generate a report from any past record</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ===== BCI ===== -->
+<section class="section section-dark">
+  <div class="split">
+    <div class="split-text">
+      <div class="eyebrow">BCI Scoring</div>
+      <h2>UK-standard BCI scores, calculated automatically</h2>
+      <p>BCIav and BCIcrit are computed from element-level defect inputs — no manual formula, no spreadsheet.</p>
+      <div class="bci-bands">
+        <div class="bci-band band-critical"><div class="bci-band-label">Critical</div><div class="bci-band-score">0–40</div><div class="bci-band-name">Immediate action</div></div>
+        <div class="bci-band band-poor"><div class="bci-band-label">Poor</div><div class="bci-band-score">40–60</div><div class="bci-band-name">Investigate</div></div>
+        <div class="bci-band band-fair"><div class="bci-band-label">Fair</div><div class="bci-band-score">60–80</div><div class="bci-band-name">Monitor</div></div>
+        <div class="bci-band band-good"><div class="bci-band-label">Good</div><div class="bci-band-score">80–100</div><div class="bci-band-name">Maintain</div></div>
+      </div>
+    </div>
+    <div class="split-visual">
+      <div class="screen-frame">
+        <label class="img-slot dark-slot loaded" id="slot-bci">
+          <div class="slot-placeholder"><div class="slot-icon">📈</div><div class="slot-label">BCI scores / element table</div><div class="slot-hint">Click to load</div></div>
+          <img alt="BCI scores" src="guide-assets/inspection-light.png">
+          <input type="file" accept="image/*" onchange="loadImg(this,'slot-bci')">
+        </label>
+      </div>
+      <p class="caption">BCIav and BCIcrit auto-calculated at the top of every inspection</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== TWINVIEW ===== -->
+<section class="section section-dark">
+  <div style="margin-bottom:36px;">
+    <div class="eyebrow">Digital Twin</div>
+    <h2 class="section-title">Your structure, modelled in 3D</h2>
+    <p class="section-sub">twinView builds an interactive 3D model from each structure's real span count, length, and condition data. Orbit, zoom, and toggle layers to inspect it the way you would on site.</p>
+  </div>
+  <label class="img-slot dark-slot loaded" id="slot-twin" style="border-radius:16px;overflow:hidden;">
+    <div class="slot-placeholder" style="border-radius:16px;aspect-ratio:16/7;"><div class="slot-icon">🧊</div><div class="slot-label">twinView 3D model</div><div class="slot-hint">Click to load</div></div>
+    <img alt="twinView" style="border-radius:16px;" src="guide-assets/twinview.png">
+    <input type="file" accept="image/*" onchange="loadImg(this,'slot-twin')">
+  </label>
+  <div class="feature-strip">
+    <div class="feature-item"><div class="feature-item-icon">🧱</div><h4>Structure layer</h4><p>Real span count, length, and geometry per structure</p></div>
+    <div class="feature-item"><div class="feature-item-icon">📡</div><h4>Sensors</h4><p>Monitoring points placed across the structure</p></div>
+    <div class="feature-item"><div class="feature-item-icon">🌡️</div><h4>Stress overlay</h4><p>Per-span condition colour-coded from live BCI scores</p></div>
+    <div class="feature-item"><div class="feature-item-icon">⚠️</div><h4>Defects</h4><p>Real defect records plotted on the model</p></div>
+  </div>
+</section>
+
+<!-- ===== PLANNING ===== -->
+<section class="section">
+  <div style="margin-bottom:36px;">
+    <div class="eyebrow">Inspection Planning</div>
+    <h2 class="section-title">Plan your programme, never miss an inspection</h2>
+    <p class="section-sub">A multi-year planning calendar aligned to 2-year GI and 6-year PI cycles. Switch between Month, Year, and Gantt views.</p>
+  </div>
+  <div class="two-up">
+    <div>
+      <div class="screen-frame screen-frame-light">
+        <label class="img-slot loaded" id="slot-planning-cal">
+          <div class="slot-placeholder"><div class="slot-icon">📅</div><div class="slot-label">Calendar (light)</div><div class="slot-hint">Click to load</div></div>
+          <img alt="Planning calendar" src="guide-assets/planning-calendar-light.png">
+          <input type="file" accept="image/*" onchange="loadImg(this,'slot-planning-cal')">
+        </label>
+      </div>
+      <p class="caption">Month calendar — light mode</p>
+    </div>
+    <div>
+      <div class="screen-frame">
+        <label class="img-slot dark-slot loaded" id="slot-planning-gantt">
+          <div class="slot-placeholder"><div class="slot-icon">📊</div><div class="slot-label">Gantt (dark)</div><div class="slot-hint">Click to load</div></div>
+          <img alt="Planning Gantt chart" src="guide-assets/planning-gantt-dark.png">
+          <input type="file" accept="image/*" onchange="loadImg(this,'slot-planning-gantt')">
+        </label>
+      </div>
+      <p class="caption">Gantt programme view — dark mode</p>
+    </div>
+  </div>
+  <div class="feature-strip">
+    <div class="feature-item"><div class="feature-item-icon">📅</div><h4>Month view</h4><p>All inspections due per calendar month</p></div>
+    <div class="feature-item"><div class="feature-item-icon">📊</div><h4>Gantt view</h4><p>Multi-year scrollable timeline per structure</p></div>
+    <div class="feature-item"><div class="feature-item-icon">⚠️</div><h4>Overdue alerts</h4><p>Structures requiring attention flagged automatically</p></div>
+    <div class="feature-item"><div class="feature-item-icon">📄</div><h4>Export to PDF</h4><p>Share the full programme for sign-off</p></div>
+  </div>
+</section>
+
+<!-- ===== EXPORT ===== -->
+<section class="section section-dark">
+  <div class="split flip">
+    <div class="split-visual">
+      <div class="screen-frame">
+        <label class="img-slot dark-slot loaded" id="slot-export">
+          <div class="slot-placeholder"><div class="slot-icon">💾</div><div class="slot-label">Database Export</div><div class="slot-hint">Click to load</div></div>
+          <img alt="Export" src="guide-assets/export.png">
+          <input type="file" accept="image/*" onchange="loadImg(this,'slot-export')">
+        </label>
+      </div>
+    </div>
+    <div class="split-text">
+      <div class="eyebrow">Data Export</div>
+      <h2>Your data,<br>your format</h2>
+      <p>Export bridges, inspections, or reports in the format that fits your workflow.</p>
+      <ul class="bullets">
+        <li>Bridge records — CSV, JSON, XML</li>
+        <li>Inspection records — CSV, PDF, XLSX</li>
+        <li>Reports — PDF, DOCX</li>
+        <li>Filter by structure type before exporting</li>
+        <li>Column picker — only the fields you need</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ===== DARK / LIGHT MODE ===== -->
+<section class="section">
+  <div style="margin-bottom: 36px; text-align: center;">
+    <div class="eyebrow" style="display:flex;justify-content:center;">UI</div>
+    <h2 class="section-title" style="text-align:center;">Modern, clean, and dark-mode ready</h2>
+    <p class="section-sub" style="margin: 0 auto; text-align:center;">Every screen designed for clarity — field tablet or desktop.</p>
+  </div>
+  <div class="two-up">
+    <div>
+      <div class="screen-frame">
+        <label class="img-slot dark-slot loaded" id="slot-dark2">
+          <div class="slot-placeholder"><div class="slot-icon">🌙</div><div class="slot-label">Any dark mode screen</div><div class="slot-hint">Click to load</div></div>
+          <img alt="Dark mode" src="guide-assets/inspection-dark.png">
+          <input type="file" accept="image/*" onchange="loadImg(this,'slot-dark2')">
+        </label>
+      </div>
+      <p class="caption">Dark mode</p>
+    </div>
+    <div>
+      <div class="screen-frame screen-frame-light">
+        <label class="img-slot loaded" id="slot-light2">
+          <div class="slot-placeholder"><div class="slot-icon">☀️</div><div class="slot-label">Light mode screen</div><div class="slot-hint">Click to load</div></div>
+          <img alt="Light mode" src="guide-assets/inspection-light.png">
+          <input type="file" accept="image/*" onchange="loadImg(this,'slot-light2')">
+        </label>
+      </div>
+      <p class="caption">Light mode</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<div class="footer">
+  <div>
+    <h2><span>span</span>Sense</h2>
+    <p>Bridge asset management, reimagined. Built for the field, designed for the office.</p>
+  </div>
+  <div class="footer-contact">
+    <div class="footer-contact-item"><strong>📬</strong> hello@spansense.dev</div>
+    <div class="footer-contact-item"><strong>🌐</strong> spansense.dev</div>
+    <div class="footer-contact-item"><strong>📍</strong> London · Bristol · remote</div>
+  </div>
+</div>
+
+<!-- ===== GLASS SCROLLBAR ===== -->
+<div class="glass-scrollbar" id="glassScrollbar">
+  <div class="thumb" id="scrollThumb"></div>
+</div>
+
 <script>
-/* ===================== THEME TOGGLE ===================== */
-document.getElementById('nightToggle').addEventListener('click', ()=>{
-    document.body.classList.toggle('night-mode');
-});
+  // ===== IMAGE LOADER =====
+  function loadImg(input, slotId) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const slot = document.getElementById(slotId);
+      const img = slot.querySelector('img');
+      if (img) img.src = e.target.result;
+      slot.classList.add('loaded');
+    };
+    reader.readAsDataURL(file);
+  }
 
-/* ===================== THREE.JS DIGITAL TWIN ===================== */
-const canvas = document.getElementById('twin-canvas');
-const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
-renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  // ===== GLASS SCROLLBAR =====
+  (function initScrollbar() {
+    const thumb = document.getElementById('scrollThumb');
+    const bar = document.getElementById('glassScrollbar');
+    if (!thumb || !bar) return;
 
-const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x7a9490, 0.009);
+    const updateThumb = () => {
+      const sh = document.documentElement.scrollHeight - window.innerHeight;
+      const st = window.scrollY;
+      const ratio = sh > 0 ? st / sh : 0;
+      const thumbH = Math.max(30, (window.innerHeight / document.documentElement.scrollHeight) * bar.clientHeight);
+      thumb.style.height = thumbH + 'px';
+      thumb.style.top = (ratio * (bar.clientHeight - thumbH)) + 'px';
+    };
 
-const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 1000);
-let camDistance = 58, camHeight = 13;
-camera.position.set(0, camHeight, camDistance);
-camera.lookAt(0,1.5,0);
+    window.addEventListener('scroll', updateThumb);
+    window.addEventListener('resize', updateThumb);
+    updateThumb();
 
-scene.add(new THREE.AmbientLight(0x8fa8a4, 0.7));
-const key = new THREE.DirectionalLight(0xffffff, 1.1);
-key.position.set(20,30,15);
-scene.add(key);
-const rim = new THREE.DirectionalLight(0x4a90b8, 0.45);
-rim.position.set(-25,10,-20);
-scene.add(rim);
-const teal = new THREE.PointLight(0x5b8c8a, 0.7, 80);
-teal.position.set(-28,8,10);
-scene.add(teal);
+    let isDragging = false;
+    thumb.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      document.body.style.userSelect = 'none';
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      const rect = bar.getBoundingClientRect();
+      const y = (e.clientY - rect.top) / rect.height;
+      const sh = document.documentElement.scrollHeight - window.innerHeight;
+      window.scrollTo(0, y * sh);
+    });
+    window.addEventListener('mouseup', () => {
+      isDragging = false;
+      document.body.style.userSelect = '';
+    });
+  })();
 
+  // ===== PDF EXPORT — fixed multi-page clipping =====
+  document.getElementById('pdfDownloadBtn').addEventListener('click', function() {
+    const btn = this;
+    btn.textContent = '⏳ Generating...';
+    btn.disabled = true;
 
-const matSteel = new THREE.MeshStandardMaterial({color:0x5a6b6a, metalness:0.6, roughness:0.4});
-const matDeck  = new THREE.MeshStandardMaterial({color:0x394645, metalness:0.25, roughness:0.6});
-const matPier  = new THREE.MeshStandardMaterial({color:0x435150, metalness:0.15, roughness:0.7});
-const matSensor= new THREE.MeshStandardMaterial({color:0x6db3d8, emissive:0x4a90b8, emissiveIntensity:1.3});
-const matDefect= new THREE.MeshStandardMaterial({color:0xe06a5a, emissive:0xc0392b, emissiveIntensity:1.1});
+    // Ensure all slots are loaded
+    document.querySelectorAll('.img-slot').forEach(slot => slot.classList.add('loaded'));
 
-function spanColor(bci){
-    if(bci<50) return 0xc0392b;
-    if(bci<65) return 0xc28b5a;
-    return 0x5b8c8a;
-}
+    // Use a high scale for crispness, but we'll handle tiling manually
+    const scale = 2;
+    html2canvas(document.body, {
+      scale: scale,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      onclone: (doc) => {
+        doc.querySelectorAll('.img-slot .slot-placeholder').forEach(el => el.style.display = 'none');
+      }
+    }).then(canvas => {
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
 
-const rig = new THREE.Group();
-scene.add(rig);
-const structureGroup = new THREE.Group();
-const sensorGroup = new THREE.Group();
-const stressGroup = new THREE.Group();
-const defectGroup = new THREE.Group();
-rig.add(structureGroup, sensorGroup, stressGroup, defectGroup);
+      // Total image dimensions in mm (at 72 DPI, but we scale)
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = pageWidth / imgWidth;
+      const totalHeightMm = imgHeight * ratio;
 
-const grid = new THREE.GridHelper(140, 56, 0x2a3a38, 0x1a2625);
-grid.position.y = -8.4;
-grid.material.transparent = true;
-grid.material.opacity = 0.4;
-rig.add(grid);
+      let remainingHeight = totalHeightMm;
+      let sourceY = 0; // in mm (relative to image)
 
-const glow = new THREE.Mesh(new THREE.CircleGeometry(34,48), new THREE.MeshBasicMaterial({color:0x5b8c8a, transparent:true, opacity:0.07}));
-glow.rotation.x = -Math.PI/2;
-glow.position.y = -8.3;
-rig.add(glow);
+      // A4 page height in mm
+      const pageHeightMm = pageHeight;
 
-const SPAN_LEN = 28, NUM_SPANS = 3, DECK_W = 9, TRUSS_H = 6.5, PANELS_PER_SPAN = 7;
-const TOTAL_LEN = SPAN_LEN*NUM_SPANS;
-const X0 = -TOTAL_LEN/2;
-const deckY = 0;
+      // We'll slice the canvas vertically
+      const canvasPageHeight = pageHeightMm / ratio; // height of one page in canvas pixels
 
-const deckGeo = new THREE.BoxGeometry(TOTAL_LEN, 0.6, DECK_W);
-const deck = new THREE.Mesh(deckGeo, matDeck);
-deck.position.set(0, deckY, 0);
-structureGroup.add(deck);
+      let pageNum = 0;
+      while (remainingHeight > 0) {
+        const sliceHeightPx = Math.min(canvasPageHeight, remainingHeight / ratio);
+        // Create a temporary canvas for this page slice
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = imgWidth;
+        tempCanvas.height = sliceHeightPx;
+        const ctx = tempCanvas.getContext('2d');
+        ctx.drawImage(canvas, 0, sourceY, imgWidth, sliceHeightPx, 0, 0, imgWidth, sliceHeightPx);
 
-const edges = new THREE.LineSegments(new THREE.EdgesGeometry(deckGeo), new THREE.LineBasicMaterial({color:0x223230}));
-edges.position.copy(deck.position);
-structureGroup.add(edges);
+        const imgData = tempCanvas.toDataURL('image/png');
 
-function addBeam(x1,y1,z1,x2,y2,z2,thickness,material){
-    const dx=x2-x1, dy=y2-y1, dz=z2-z1;
-    const len = Math.sqrt(dx*dx+dy*dy+dz*dz);
-    const geo = new THREE.BoxGeometry(len, thickness, thickness);
-    const mesh = new THREE.Mesh(geo, material);
-    mesh.position.set((x1+x2)/2,(y1+y2)/2,(z1+z2)/2);
-    mesh.lookAt(x2,y2,z2);
-    mesh.rotateY(Math.PI/2);
-    structureGroup.add(mesh);
-}
-
-[DECK_W/2, -DECK_W/2].forEach((z)=>{
-    const totalPanels = PANELS_PER_SPAN*NUM_SPANS;
-    const pw = TOTAL_LEN/totalPanels;
-    addBeam(X0,deckY+0.3,z, X0+TOTAL_LEN,deckY+0.3,z, 0.5, matSteel);
-    addBeam(X0,deckY+TRUSS_H,z, X0+TOTAL_LEN,deckY+TRUSS_H,z, 0.5, matSteel);
-    for(let i=0;i<=totalPanels;i++){
-        const x = X0 + i*pw;
-        addBeam(x,deckY+0.3,z, x,deckY+TRUSS_H,z, 0.35, matSteel);
-        if(i<totalPanels){
-            const xNext = x+pw;
-            if(i%2===0) addBeam(x,deckY+0.3,z, xNext,deckY+TRUSS_H,z, 0.32, matSteel);
-            else addBeam(x,deckY+TRUSS_H,z, xNext,deckY+0.3,z, 0.32, matSteel);
+        if (pageNum > 0) {
+          pdf.addPage();
         }
-    }
-});
 
-{
-    const totalPanels = PANELS_PER_SPAN*NUM_SPANS;
-    const pw = TOTAL_LEN/totalPanels;
-    for(let i=0;i<=totalPanels;i+=2){
-        const x = X0+i*pw;
-        addBeam(x,deckY+TRUSS_H,-DECK_W/2, x,deckY+TRUSS_H,DECK_W/2, 0.3, matSteel);
-    }
-}
+        // Calculate the height in mm for this slice
+        const sliceHeightMm = sliceHeightPx * ratio;
+        pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, sliceHeightMm);
 
-const pierPositions = [X0, X0+SPAN_LEN, X0+SPAN_LEN*2, X0+SPAN_LEN*3];
-pierPositions.forEach((x,i)=>{
-    const isAbutment = (i===0 || i===pierPositions.length-1);
-    const w = isAbutment ? 6 : 2.6;
-    const h = 8.4;
-    const geo = new THREE.BoxGeometry(w, h, isAbutment?DECK_W+1:3.2);
-    const pier = new THREE.Mesh(geo, matPier);
-    pier.position.set(x, deckY-0.3-h/2, 0);
-    structureGroup.add(pier);
-});
+        remainingHeight -= sliceHeightMm;
+        sourceY += sliceHeightPx;
+        pageNum++;
+      }
 
-const sensorPositions = [
-    [X0+SPAN_LEN*1.5, deckY-0.6, DECK_W/2],
-    [X0+SPAN_LEN*1.5, deckY-0.6, -DECK_W/2],
-    [X0+SPAN_LEN, deckY-3, 1.8],
-    [X0+SPAN_LEN*2, deckY-3, -1.8],
-    [X0+SPAN_LEN*0.5, deckY+TRUSS_H+0.6, 0],
-    [X0+SPAN_LEN*2.5, deckY+TRUSS_H+0.6, 0],
-];
-sensorPositions.forEach(p=>{
-    const s = new THREE.Mesh(new THREE.SphereGeometry(0.42,16,16), matSensor);
-    s.position.set(...p);
-    sensorGroup.add(s);
-    const ring = new THREE.Mesh(new THREE.RingGeometry(0.6,0.7,24), new THREE.MeshBasicMaterial({color:0x4a90b8, transparent:true, opacity:0.5, side:THREE.DoubleSide}));
-    ring.position.copy(s.position);
-    sensorGroup.add(ring);
-});
-
-const spanBCI = [72, 58, 44];
-for(let i=0;i<NUM_SPANS;i++){
-    const x = X0 + SPAN_LEN*i + SPAN_LEN/2;
-    const geo = new THREE.BoxGeometry(SPAN_LEN-1, 0.08, DECK_W+0.4);
-    const mat = new THREE.MeshBasicMaterial({color:spanColor(spanBCI[i]), transparent:true, opacity:0.55});
-    const slab = new THREE.Mesh(geo, mat);
-    slab.position.set(x, deckY+0.42, 0);
-    stressGroup.add(slab);
-}
-
-const defectPositions = [
-    [X0+SPAN_LEN*2, deckY-3.2, 1.8],
-    [X0+SPAN_LEN*1.92, deckY+1.2, DECK_W/2],
-];
-defectPositions.forEach(p=>{
-    const m = new THREE.Mesh(new THREE.OctahedronGeometry(0.5,0), matDefect);
-    m.position.set(...p);
-    defectGroup.add(m);
-});
-
-stressGroup.visible = false;
-defectGroup.visible = false;
-
-/* ===================== INTERACTION ===================== */
-let rotY = 0.4, rotX = 0.18, autoRotate = true, idleTimer = null;
-let dragging = false, lastX=0, lastY=0;
-
-function onResize(){
-    const w = canvas.clientWidth, h = canvas.clientHeight;
-    renderer.setSize(w,h,false);
-    camera.aspect = w/h;
-    camera.updateProjectionMatrix();
-}
-window.addEventListener('resize', onResize);
-new ResizeObserver(onResize).observe(canvas);
-
-canvas.addEventListener('pointerdown', e=>{
-    dragging = true; autoRotate = false;
-    lastX = e.clientX; lastY = e.clientY;
-    clearTimeout(idleTimer);
-});
-window.addEventListener('pointerup', ()=>{
-    dragging = false;
-    clearTimeout(idleTimer);
-    idleTimer = setTimeout(()=>{ autoRotate = true; }, 3000);
-});
-window.addEventListener('pointermove', e=>{
-    if(!dragging) return;
-    const dx = e.clientX-lastX, dy = e.clientY-lastY;
-    rotY += dx*0.006;
-    rotX += dy*0.006;
-    lastX=e.clientX; lastY=e.clientY;
-});
-canvas.addEventListener('wheel', e=>{
-    e.preventDefault();
-    camDistance = Math.min(100, Math.max(26, camDistance + e.deltaY*0.04));
-}, {passive:false});
-
-function bindLayerPills(selector, switchMatch){
-    document.querySelectorAll(selector).forEach(pill=>{
-        pill.addEventListener('click', ()=>{
-            pill.classList.toggle('on');
-            const layer = pill.dataset.layer;
-            const on = pill.classList.contains('on');
-            if(layer==='structure') structureGroup.visible = on;
-            if(layer==='sensors') sensorGroup.visible = on;
-            if(layer==='stress') stressGroup.visible = on;
-            if(layer==='defects') defectGroup.visible = on;
-            document.querySelectorAll(`.vc-pill[data-layer="${layer}"], .switch[data-target="${layer}"]`).forEach(el=>{
-                if(el.classList.contains('switch')) el.classList.toggle('on', on);
-                else el.classList.toggle('on', on);
-            });
-        });
+      pdf.save('spanSense-report.pdf');
+      btn.textContent = '📄 Download PDF';
+      btn.disabled = false;
+    }).catch(err => {
+      console.warn('PDF error:', err);
+      btn.textContent = '📄 Download PDF';
+      btn.disabled = false;
+      alert('Could not generate PDF. Please try again.');
     });
-}
-bindLayerPills('.vc-pill');
-document.querySelectorAll('.switch').forEach(sw=>{
-    sw.addEventListener('click', ()=>{
-        const target = sw.dataset.target;
-        const pill = document.querySelector(`.vc-pill[data-layer="${target}"]`);
-        if(pill) pill.click();
-    });
-});
-
-const yawReadout = document.getElementById('yaw-readout');
-const tiltReadout = document.getElementById('tilt-readout');
-const zoomReadout = document.getElementById('zoom-readout');
-
-function animate(){
-    requestAnimationFrame(animate);
-    if(autoRotate && !dragging) rotY += 0.0022;
-    rig.rotation.set(rotX, rotY, 0);
-    camera.position.set(0, camHeight, camDistance);
-    camera.lookAt(0, 1.5, 0);
-    const yawDeg = ((rotY*180/Math.PI)%360+360)%360;
-    const tiltDeg = ((rotX*180/Math.PI)%360+360)%360;
-    yawReadout.textContent = yawDeg.toFixed(1).padStart(5,'0')+'°';
-    tiltReadout.textContent = tiltDeg.toFixed(1).padStart(5,'0')+'°';
-    zoomReadout.textContent = (58/camDistance).toFixed(2)+'x';
-    renderer.render(scene, camera);
-}
-onResize();
-animate();
+  });
 </script>
 </body>
 </html>
