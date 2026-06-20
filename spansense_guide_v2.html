@@ -209,6 +209,7 @@
       <span class="hero-tag">📊 Dashboard</span>
       <span class="hero-tag">🗺️ Interactive Map</span>
       <span class="hero-tag">🔍 Inspections</span>
+      <span class="hero-tag">🧊 Digital Twin</span>
       <span class="hero-tag">📅 Planning</span>
       <span class="hero-tag">📄 Reports</span>
       <span class="hero-tag">💾 Export</span>
@@ -225,7 +226,7 @@
 
 <!-- ===== DIVIDER ===== -->
 <div class="divider-strip">
-  <strong>No install. No servers.</strong> &nbsp;spanSense runs entirely in your browser — open it and everything is immediately available across all six modules.
+  <strong>No install. No servers.</strong> &nbsp;spanSense runs entirely in your browser — open it and everything is immediately available across all seven modules.
 </div>
 
 <!-- ===== DASHBOARD ===== -->
@@ -369,6 +370,26 @@
   </div>
 </section>
 
+<!-- ===== TWINVIEW ===== -->
+<section class="section section-dark">
+  <div style="margin-bottom:36px;">
+    <div class="eyebrow">Digital Twin</div>
+    <h2 class="section-title">Your structure, modelled in 3D</h2>
+    <p class="section-sub">twinView builds an interactive 3D model from each structure's real span count, length, and condition data. Orbit, zoom, and toggle layers to inspect it the way you would on site.</p>
+  </div>
+  <label class="img-slot dark-slot loaded" id="slot-twin" style="border-radius:16px;overflow:hidden;">
+    <div class="slot-placeholder" style="border-radius:16px;aspect-ratio:16/7;"><div class="slot-icon">🧊</div><div class="slot-label">twinView 3D model</div><div class="slot-hint">Click to load</div></div>
+    <img alt="twinView" style="border-radius:16px;" src="guide-assets/twinview.png">
+    <input type="file" accept="image/*" onchange="loadImg(this,'slot-twin')">
+  </label>
+  <div class="feature-strip">
+    <div class="feature-item"><div class="feature-item-icon">🧱</div><h4>Structure layer</h4><p>Real span count, length, and geometry per structure</p></div>
+    <div class="feature-item"><div class="feature-item-icon">📡</div><h4>Sensors</h4><p>Monitoring points placed across the structure</p></div>
+    <div class="feature-item"><div class="feature-item-icon">🌡️</div><h4>Stress overlay</h4><p>Per-span condition colour-coded from live BCI scores</p></div>
+    <div class="feature-item"><div class="feature-item-icon">⚠️</div><h4>Defects</h4><p>Real defect records plotted on the model</p></div>
+  </div>
+</section>
+
 <!-- ===== PLANNING ===== -->
 <section class="section">
   <div style="margin-bottom:36px;">
@@ -376,12 +397,27 @@
     <h2 class="section-title">Plan your programme, never miss an inspection</h2>
     <p class="section-sub">A multi-year planning calendar aligned to 2-year GI and 6-year PI cycles. Switch between Month, Year, and Gantt views.</p>
   </div>
-  <div class="screen-frame screen-frame-light">
-    <label class="img-slot loaded" id="slot-planning">
-      <div class="slot-placeholder"><div class="slot-icon">📅</div><div class="slot-label">Inspection Planning calendar</div><div class="slot-hint">Click to load</div></div>
-      <img alt="Planning" src="guide-assets/planning.png">
-      <input type="file" accept="image/*" onchange="loadImg(this,'slot-planning')">
-    </label>
+  <div class="two-up">
+    <div>
+      <div class="screen-frame screen-frame-light">
+        <label class="img-slot loaded" id="slot-planning-cal">
+          <div class="slot-placeholder"><div class="slot-icon">📅</div><div class="slot-label">Calendar (light)</div><div class="slot-hint">Click to load</div></div>
+          <img alt="Planning calendar" src="guide-assets/planning-calendar-light.png">
+          <input type="file" accept="image/*" onchange="loadImg(this,'slot-planning-cal')">
+        </label>
+      </div>
+      <p class="caption">Month calendar — light mode</p>
+    </div>
+    <div>
+      <div class="screen-frame">
+        <label class="img-slot dark-slot loaded" id="slot-planning-gantt">
+          <div class="slot-placeholder"><div class="slot-icon">📊</div><div class="slot-label">Gantt (dark)</div><div class="slot-hint">Click to load</div></div>
+          <img alt="Planning Gantt chart" src="guide-assets/planning-gantt-dark.png">
+          <input type="file" accept="image/*" onchange="loadImg(this,'slot-planning-gantt')">
+        </label>
+      </div>
+      <p class="caption">Gantt programme view — dark mode</p>
+    </div>
   </div>
   <div class="feature-strip">
     <div class="feature-item"><div class="feature-item-icon">📅</div><h4>Month view</h4><p>All inspections due per calendar month</p></div>
