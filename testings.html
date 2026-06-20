@@ -1,601 +1,361 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>spanSense — asset management</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --teal: #5b8c8a; --teal-dark: #3d6462; --teal-light: #8ab4b0;
-      --teal-pale: #c5dbd8; --teal-faint: #eaf4f3;
-      --ink: #1e2d2c; --text: #2c4a48; --muted: #6b8685;
-      --border: #d6e8e6; --bg: #f5f9f8; --white: #ffffff;
-    }
-    body { font-family: 'Inter', sans-serif; background: var(--white); color: var(--text); font-size: 15px; line-height: 1.6; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpanSense — Navbar Mock</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
-    .pdf-download-btn {
-      position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-      z-index: 1001; background: var(--teal); color: white; border: none;
-      padding: 14px 32px; border-radius: 60px; font-weight: 700; font-size: 0.9rem;
-      cursor: pointer; display: flex; align-items: center; gap: 10px;
-      box-shadow: 0 4px 20px rgba(91,140,138,0.4); transition: all 0.3s ease;
-    }
-    .pdf-download-btn:hover { transform: translateX(-50%) translateY(-2px); box-shadow: 0 8px 32px rgba(91,140,138,0.5); background: var(--teal-dark); }
-    .pdf-download-btn:active { transform: translateX(-50%) scale(0.96); }
+        body {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background: #f5f7fb;
+            color: #2c3e44;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 40px;
+        }
 
-    .img-slot { position: relative; cursor: pointer; display: block; border-radius: 11px; overflow: hidden; background: #1e2d2c22; }
-    .img-slot img { width: 100%; display: block; border-radius: 11px; }
-    .img-slot .slot-placeholder {
-      width: 100%; aspect-ratio: 16/9;
-      background: linear-gradient(135deg, rgba(91,140,138,0.15), rgba(61,100,98,0.25));
-      border: 2px dashed rgba(91,140,138,0.4); border-radius: 11px;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 8px; color: var(--teal-light); transition: all 0.2s;
-    }
-    .img-slot .slot-placeholder:hover { background: rgba(91,140,138,0.2); border-color: var(--teal-light); }
-    .img-slot .slot-placeholder .slot-icon { font-size: 28px; opacity: 0.7; }
-    .img-slot .slot-placeholder .slot-label { font-size: 12px; font-weight: 600; opacity: 0.8; }
-    .img-slot .slot-placeholder .slot-hint { font-size: 11px; opacity: 0.5; }
-    .img-slot input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-    .img-slot.loaded .slot-placeholder { display: none; }
-    .img-slot:not(.loaded) img { display: none; }
+        /* ---------- NAVIGATION BAR (optimized) ---------- */
+        .navbar {
+            position: relative;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            max-width: 1100px;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 60px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+            z-index: 1100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            height: 58px;
+            transition: all 0.3s ease;
+        }
 
-    .dark-slot .slot-placeholder { background: linear-gradient(135deg, rgba(30,45,44,0.8), rgba(44,74,72,0.8)); border-color: rgba(138,180,176,0.3); }
+        .navbar .left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
 
-    .hero {
-      background: linear-gradient(135deg, #1e3432 0%, #2c4a48 50%, #3d6462 100%);
-      color: white; padding: 60px 64px 0; overflow: hidden;
-      display: grid; grid-template-columns: 1fr 1.2fr; gap: 48px; align-items: end;
-    }
-    .hero-text { padding-bottom: 56px; }
-    .hero-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--teal-light); margin-bottom: 16px; }
-    .hero h1 { font-size: 48px; font-weight: 800; line-height: 1.1; letter-spacing: -0.025em; margin-bottom: 18px; }
-    .hero h1 em { color: var(--teal-pale); font-style: normal; }
-    .hero-desc { font-size: 16px; color: rgba(255,255,255,0.65); line-height: 1.65; max-width: 400px; margin-bottom: 36px; }
-    .hero-tags { display: flex; gap: 10px; flex-wrap: wrap; }
-    .hero-tag { background: rgba(197,219,216,0.15); border: 1px solid rgba(197,219,216,0.3); color: var(--teal-pale); font-size: 12px; font-weight: 600; padding: 5px 14px; border-radius: 30px; }
-    .hero-screen { align-self: flex-end; }
-    .hero-screen .img-slot { border-radius: 16px 16px 0 0; box-shadow: 0 -8px 48px rgba(0,0,0,0.35); }
-    .hero-screen .img-slot img { border-radius: 16px 16px 0 0; }
-    .hero-screen .img-slot .slot-placeholder { border-radius: 16px 16px 0 0; aspect-ratio: 16/10; }
+        .navbar .logo {
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #5b8c8a 0%, #7ba8a5 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            white-space: nowrap;
+        }
 
-    .section { padding: 72px 64px; }
-    .section-alt { background: var(--bg); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-    .section-dark { background: #1a2b2a; color: white; }
+        .navbar .menu {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
 
-    .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--teal); margin-bottom: 8px; }
-    .section-dark .eyebrow { color: var(--teal-light); }
-    .section-title { font-size: 34px; font-weight: 800; color: var(--ink); letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 10px; }
-    .section-dark .section-title { color: white; }
-    .section-sub { font-size: 15px; color: var(--muted); max-width: 520px; line-height: 1.65; }
-    .section-dark .section-sub { color: rgba(255,255,255,0.55); }
+        .navbar .menu a {
+            text-decoration: none;
+            color: #4a5b6e;
+            font-weight: 500;
+            font-size: 0.78rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 30px;
+            white-space: nowrap;
+        }
 
-    .split { display: grid; grid-template-columns: 1fr 1.6fr; gap: 56px; align-items: center; }
-    .split.flip { grid-template-columns: 1.6fr 1fr; }
-    .split.flip .split-text { order: 2; }
-    .split.flip .split-visual { order: 1; }
-    .split-text h2 { font-size: 28px; font-weight: 800; color: var(--ink); letter-spacing: -0.02em; line-height: 1.25; margin-bottom: 12px; }
-    .section-dark .split-text h2 { color: white; }
-    .split-text p { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 20px; }
-    .section-dark .split-text p { color: rgba(255,255,255,0.55); }
+        .navbar .menu a i {
+            font-size: 0.85rem;
+            width: 16px;
+            text-align: center;
+        }
 
-    .bullets { list-style: none; display: flex; flex-direction: column; gap: 9px; }
-    .bullets li { font-size: 13.5px; color: var(--text); display: flex; align-items: flex-start; gap: 9px; line-height: 1.5; }
-    .section-dark .bullets li { color: rgba(255,255,255,0.7); }
-    .bullets li::before { content: '✓'; color: var(--teal); font-weight: 800; flex-shrink: 0; margin-top: 1px; }
-    .section-dark .bullets li::before { color: var(--teal-light); }
+        .navbar .menu a:hover {
+            color: #5b8c8a;
+            background: rgba(91, 140, 138, 0.08);
+        }
 
-    .screen-frame { background: #1a2827; border-radius: 18px; padding: 10px; box-shadow: 0 8px 48px rgba(0,0,0,0.2); }
-    .screen-frame-light { background: #dde8e6; }
+        .navbar .menu a.active {
+            background: rgba(91, 140, 138, 0.12);
+            color: #5b8c8a;
+        }
 
-    .two-up { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
-    .three-up { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: start; }
+        /* Special styling for TwinView */
+        .navbar .menu a.twinview {
+            color: #6b5b8a;
+        }
 
-    .caption { font-size: 12px; color: var(--muted); margin-top: 10px; text-align: center; font-style: italic; }
-    .section-dark .caption { color: rgba(255,255,255,0.35); }
+        .navbar .menu a.twinview:hover {
+            color: #7b6b9a;
+            background: rgba(107, 91, 138, 0.08);
+        }
 
-    .divider-strip { background: var(--teal-faint); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 22px 64px; font-size: 14px; color: var(--teal-dark); font-weight: 500; }
-    .divider-strip strong { font-weight: 700; color: var(--ink); }
+        .navbar .menu a.twinview.active {
+            background: rgba(107, 91, 138, 0.12);
+            color: #7b6b9a;
+        }
 
-    .feature-strip { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; box-shadow: 0 2px 16px rgba(44,74,72,0.06); margin-top: 40px; }
-    .feature-item { padding: 24px 20px; border-right: 1px solid var(--border); background: var(--white); }
-    .feature-item:last-child { border-right: none; }
-    .feature-item-icon { font-size: 22px; margin-bottom: 10px; }
-    .feature-item h4 { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 5px; }
-    .feature-item p { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+        .navbar .menu a.twinview i {
+            color: #7b6b9a;
+        }
 
-    .bci-bands { display: flex; gap: 14px; margin-top: 24px; flex-wrap: wrap; }
-    .bci-band { flex: 1; min-width: 90px; border-radius: 12px; padding: 14px; }
-    .bci-band-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.65; margin-bottom: 5px; }
-    .bci-band-score { font-size: 20px; font-weight: 800; }
-    .bci-band-name { font-size: 11px; font-weight: 600; margin-top: 2px; }
-    .band-critical { background: rgba(255,107,107,0.15); color: #ff6b6b; }
-    .band-poor { background: rgba(255,209,102,0.15); color: #c89a1a; }
-    .band-fair { background: rgba(91,140,138,0.2); color: var(--teal-light); }
-    .band-good { background: rgba(107,203,119,0.15); color: #4caf64; }
+        .navbar .right {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
 
-    .footer { background: #1a2b2a; color: white; padding: 52px 64px; display: grid; grid-template-columns: 1fr auto; gap: 48px; align-items: center; }
-    .footer h2 { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 8px; }
-    .footer h2 span { color: var(--teal-pale); }
-    .footer p { font-size: 14px; color: rgba(255,255,255,0.5); line-height: 1.6; max-width: 420px; }
-    .footer-contact { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
-    .footer-contact-item { font-size: 13px; color: rgba(255,255,255,0.5); }
-    .footer-contact-item strong { color: var(--teal-pale); }
+        .night-mode-toggle {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #8a9ba8;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
 
-    /* hide scrollbar */
-    html { scrollbar-width: none; -ms-overflow-style: none; }
-    html::-webkit-scrollbar { display: none; }
+        .night-mode-toggle:hover {
+            background: #f0f4f8;
+            color: #5b8c8a;
+        }
 
-    .glass-scrollbar {
-      position: fixed; right: 10px; top: 50%; transform: translateY(-50%);
-      width: 10px; height: 55vh;
-      background: rgba(255,255,255,0.6); backdrop-filter: blur(8px);
-      border-radius: 20px; border: 1px solid rgba(255,255,255,0.3);
-      box-shadow: 0 4px 16px rgba(0,0,0,0.06); z-index: 1000;
-      overflow: hidden; cursor: default; user-select: none;
-    }
-    .glass-scrollbar .thumb {
-      width: 100%; background: linear-gradient(180deg, #a0c8c4, #5b8c8a);
-      border-radius: 20px; position: absolute; top: 0; left: 0;
-      box-shadow: inset 0 1px 2px rgba(255,255,255,0.3), 0 0 12px rgba(91,140,138,0.35);
-      cursor: grab; user-select: none;
-    }
-    .glass-scrollbar .thumb:active { cursor: grabbing; }
-    @media (max-width: 860px) { .glass-scrollbar { display: none !important; } }
+        .navbar .account-links {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
-    @media print {
-      .img-slot .slot-placeholder { display: none !important; }
-      .img-slot:not(.loaded) { display: none; }
-      .hero, .section-dark, .footer { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .section { padding: 48px; }
-      .glass-scrollbar, .pdf-download-btn { display: none !important; }
-    }
-    .pdf-export .pdf-download-btn { display: none !important; }
-    .pdf-export .glass-scrollbar { display: none !important; }
-    .pdf-export .img-slot .slot-placeholder { display: none !important; }
-    .pdf-export .img-slot:not(.loaded) { display: none; }
-  </style>
+        .navbar .account-links a {
+            text-decoration: none;
+            color: #6a7c8e;
+            font-size: 0.78rem;
+            transition: color 0.2s;
+            padding: 6px 10px;
+            border-radius: 30px;
+            white-space: nowrap;
+        }
+
+        .navbar .account-links a:hover {
+            color: #5b8c8a;
+            background: rgba(91, 140, 138, 0.08);
+        }
+
+        .navbar .account-links a.active {
+            background: rgba(91, 140, 138, 0.12);
+            color: #5b8c8a;
+        }
+
+        /* Demo content */
+        .demo-content {
+            margin-top: 60px;
+            padding: 40px;
+            background: white;
+            border-radius: 24px;
+            border: 1px solid #e9edf2;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        .demo-content h2 {
+            color: #2c5a57;
+            margin-bottom: 12px;
+        }
+
+        .demo-content p {
+            color: #8a9ba8;
+            line-height: 1.6;
+        }
+
+        /* Night Mode */
+        .night-mode {
+            background-color: #1a2428 !important;
+            color: #d4dfe3;
+        }
+
+        .night-mode .navbar {
+            background: rgba(35, 46, 52, 0.95) !important;
+            border-color: #2f3e45;
+        }
+
+        .night-mode .navbar .logo {
+            background: linear-gradient(135deg, #8ab4b0 0%, #a0c8c4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .night-mode .navbar .menu a {
+            color: #9ab0b8;
+        }
+
+        .night-mode .navbar .menu a:hover {
+            color: #8ab4b0;
+            background: rgba(138, 180, 176, 0.15);
+        }
+
+        .night-mode .navbar .menu a.active {
+            background: rgba(138, 180, 176, 0.2);
+            color: #8ab4b0;
+        }
+
+        .night-mode .navbar .menu a.twinview {
+            color: #a89ac0;
+        }
+
+        .night-mode .navbar .menu a.twinview:hover {
+            color: #b8aad0;
+            background: rgba(138, 180, 176, 0.15);
+        }
+
+        .night-mode .navbar .menu a.twinview.active {
+            background: rgba(138, 180, 176, 0.2);
+            color: #b8aad0;
+        }
+
+        .night-mode .navbar .menu a.twinview i {
+            color: #a89ac0;
+        }
+
+        .night-mode .night-mode-toggle {
+            color: #9ab0b8;
+        }
+
+        .night-mode .night-mode-toggle:hover {
+            background: #2f3e45;
+            color: #8ab4b0;
+        }
+
+        .night-mode .navbar .account-links a {
+            color: #8aa4ac;
+        }
+
+        .night-mode .navbar .account-links a:hover {
+            color: #8ab4b0;
+            background: rgba(138, 180, 176, 0.15);
+        }
+
+        .night-mode .navbar .account-links a.active {
+            background: rgba(138, 180, 176, 0.2);
+            color: #8ab4b0;
+        }
+
+        .night-mode .demo-content {
+            background: #232e34;
+            border-color: #2f3e45;
+        }
+
+        .night-mode .demo-content h2 {
+            color: #d4dfe3;
+        }
+
+        /* Responsive */
+        @media (max-width: 1100px) {
+            .navbar { width: 70%; }
+        }
+
+        @media (max-width: 900px) {
+            .navbar { width: 80%; padding: 0 16px; }
+            .navbar .menu a { font-size: 0.7rem; padding: 4px 10px; }
+            .navbar .menu a i { font-size: 0.75rem; width: 14px; }
+            .navbar .account-links a { font-size: 0.7rem; padding: 4px 8px; }
+        }
+
+        @media (max-width: 768px) {
+            .navbar { width: 95%; padding: 0 12px; height: 52px; }
+            .navbar .menu { gap: 3px; }
+            .navbar .menu a { font-size: 0.65rem; padding: 4px 8px; }
+            .navbar .menu a i { font-size: 0.7rem; width: 12px; }
+            .navbar .logo { font-size: 0.9rem; }
+            .navbar .account-links a { font-size: 0.65rem; padding: 4px 6px; }
+            .navbar .right { gap: 8px; }
+            .night-mode-toggle { width: 28px; height: 28px; font-size: 0.75rem; }
+        }
+
+        @media (max-width: 600px) {
+            .navbar .menu a span { display: none; }
+            .navbar .menu a { padding: 4px 10px; }
+            .navbar .menu a i { font-size: 0.9rem; width: auto; }
+            .navbar .account-links a span { display: none; }
+            .navbar .account-links a { padding: 4px 10px; }
+        }
+    </style>
 </head>
 <body>
 
-<button class="pdf-download-btn" id="pdfDownloadBtn">📄 Download PDF</button>
+    <!-- ===== NAVBAR ===== -->
+    <nav class="navbar">
+        <div class="left">
+            <div class="logo">spanSense</div>
+            <div class="menu">
+                <a href="#" class="active"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a>
+                <a href="#"><i class="fas fa-calendar-alt"></i><span>Planning</span></a>
+                <a href="#"><i class="fas fa-database"></i><span>Database</span></a>
+                <a href="#"><i class="fas fa-map"></i><span>Map</span></a>
+                <a href="#" class="twinview"><i class="fas fa-cube"></i><span>TwinView</span></a>
+            </div>
+        </div>
+        <div class="right">
+            <div class="night-mode-toggle" id="nightModeToggle"><i class="fas fa-moon"></i></div>
+            <div class="account-links">
+                <a href="#"><span>Account</span></a>
+                <a href="#" class="active"><span>Contact Us</span></a>
+            </div>
+        </div>
+    </nav>
 
-<!-- ===== HERO ===== -->
-<section class="hero">
-  <div class="hero-text">
-    <div class="hero-eyebrow">spanSense</div>
-    <h1>Bridge asset<br>management,<br><em>reimagined.</em></h1>
-    <p class="hero-desc">A modern web platform for managing structure stock — from the map to the report, inspection to export.</p>
-    <div class="hero-tags">
-      <span class="hero-tag">📊 Dashboard</span>
-      <span class="hero-tag">🗺️ Interactive Map</span>
-      <span class="hero-tag">🔍 Inspections</span>
-      <span class="hero-tag">🧊 Digital Twin</span>
-      <span class="hero-tag">📅 Planning</span>
-      <span class="hero-tag">📄 Reports</span>
-      <span class="hero-tag">💾 Export</span>
+    <!-- ===== DEMO CONTENT ===== -->
+    <div class="demo-content">
+        <h2>Navbar Mock — TwinView Added</h2>
+        <p>
+            <strong>Dashboard</strong> · <strong>Planning</strong> · <strong>Database</strong> · <strong>Map</strong> · <strong>TwinView</strong>
+            <br><br>
+            The navbar now includes <strong>TwinView</strong> with the <i class="fas fa-cube"></i> cube icon.
+            All links are more compact for a cleaner fit.
+            <br><br>
+            <span style="font-size: 0.85rem; color: #8a9ba8;">
+                Click the moon icon to toggle night mode.
+            </span>
+        </p>
     </div>
-  </div>
-  <div class="hero-screen">
-    <label class="img-slot dark-slot loaded" id="slot-hero">
-      <div class="slot-placeholder"><div class="slot-icon">🗺️</div><div class="slot-label">Map screenshot</div><div class="slot-hint">Click to load</div></div>
-      <img alt="Map (dark mode)" src="guide-assets/map-dark.png">
-      <input type="file" accept="image/*" onchange="loadImg(this,'slot-hero')">
-    </label>
-  </div>
-</section>
 
-<!-- ===== DIVIDER ===== -->
-<div class="divider-strip">
-  <strong>No install. No servers.</strong> &nbsp;spanSense runs entirely in your browser — open it and everything is immediately available across all seven modules.
-</div>
+    <script>
+        // ===== NIGHT MODE TOGGLE =====
+        (function() {
+            const toggleBtn = document.getElementById('nightModeToggle');
+            if (!toggleBtn) return;
 
-<!-- ===== DASHBOARD ===== -->
-<section class="section">
-  <div class="split">
-    <div class="split-text">
-      <div class="eyebrow">Dashboard</div>
-      <h2>Everything at a glance</h2>
-      <p>The home screen surfaces live KPIs, condition charts, and critical structure alerts the moment you log in.</p>
-      <ul class="bullets">
-        <li>Total assets, high-risk count, upcoming & overdue inspections</li>
-        <li>Asset inventory by type — pie chart</li>
-        <li>BCI score distribution across the portfolio</li>
-        <li>Bridge condition trend over time</li>
-      </ul>
-    </div>
-    <div class="split-visual">
-      <div class="screen-frame">
-        <label class="img-slot dark-slot loaded" id="slot-dashboard">
-          <div class="slot-placeholder"><div class="slot-icon">📊</div><div class="slot-label">Dashboard</div><div class="slot-hint">Click to load</div></div>
-          <img alt="Dashboard" src="guide-assets/dashboard.png">
-          <input type="file" accept="image/*" onchange="loadImg(this,'slot-dashboard')">
-        </label>
-      </div>
-    </div>
-  </div>
-</section>
+            toggleBtn.onclick = function(e) {
+                e.preventDefault();
+                document.body.classList.toggle('night-mode');
+                this.innerHTML = document.body.classList.contains('night-mode') ?
+                    '<i class="fas fa-sun"></i>' :
+                    '<i class="fas fa-moon"></i>';
+                localStorage.setItem('nightMode', document.body.classList.contains('night-mode') ? 'on' : 'off');
+            };
 
-<!-- ===== MAP ===== -->
-<section class="section section-dark">
-  <div style="margin-bottom:36px;">
-    <div class="eyebrow">Interactive Map</div>
-    <h2 class="section-title">Your structure stock on the map</h2>
-    <p class="section-sub">Every structure plotted with colour-coded markers by type. Click any marker to open its full record, view BCI scores, and start a new inspection.</p>
-  </div>
-  <label class="img-slot dark-slot loaded" id="slot-map" style="border-radius:16px;overflow:hidden;">
-    <div class="slot-placeholder" style="border-radius:16px;aspect-ratio:16/7;"><div class="slot-icon">🗺️</div><div class="slot-label">Full map view</div><div class="slot-hint">Click to load</div></div>
-    <img alt="Map" style="border-radius:16px;" src="guide-assets/map-full.png">
-    <input type="file" accept="image/*" onchange="loadImg(this,'slot-map')">
-  </label>
-</section>
+            if (localStorage.getItem('nightMode') === 'on') {
+                document.body.classList.add('night-mode');
+                toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
+            }
+        })();
+    </script>
 
-<!-- ===== INSPECTION ===== -->
-<section class="section">
-  <div style="margin-bottom:36px;">
-    <div class="eyebrow">Inspection</div>
-    <h2 class="section-title">Element-by-element defect recording</h2>
-    <p class="section-sub">Log inspections span by span. Record severity, extent, and works required per element — BCI scores calculate in real time.</p>
-  </div>
-  <div class="screen-frame screen-frame-light" style="margin-bottom:24px;">
-    <label class="img-slot loaded" id="slot-insp-light">
-      <div class="slot-placeholder"><div class="slot-icon">🔍</div><div class="slot-label">Inspection form (light mode)</div><div class="slot-hint">Click to load</div></div>
-      <img alt="Inspection light" src="guide-assets/inspection-light.png">
-      <input type="file" accept="image/*" onchange="loadImg(this,'slot-insp-light')">
-    </label>
-  </div>
-  <div class="three-up" style="margin-top:24px;">
-    <div>
-      <div class="screen-frame">
-        <label class="img-slot dark-slot loaded" id="slot-insp-dark">
-          <div class="slot-placeholder"><div class="slot-icon">🌙</div><div class="slot-label">Inspection (dark)</div><div class="slot-hint">Click to load</div></div>
-          <img alt="Inspection dark" src="guide-assets/inspection-dark.png">
-          <input type="file" accept="image/*" onchange="loadImg(this,'slot-insp-dark')">
-        </label>
-      </div>
-      <p class="caption" style="color:var(--muted);">Dark mode — element table with BCI scores</p>
-    </div>
-    <div>
-      <div class="screen-frame">
-        <label class="img-slot dark-slot loaded" id="slot-defect">
-          <div class="slot-placeholder"><div class="slot-icon">⚠️</div><div class="slot-label">Edit defect modal</div><div class="slot-hint">Click to load</div></div>
-          <img alt="Edit defect" src="guide-assets/defect-modal.png">
-          <input type="file" accept="image/*" onchange="loadImg(this,'slot-defect')">
-        </label>
-      </div>
-      <p class="caption" style="color:var(--muted);">Per-element defect — severity, extent & works</p>
-    </div>
-    <div>
-      <div class="screen-frame screen-frame-light">
-        <label class="img-slot loaded" id="slot-complete">
-          <div class="slot-placeholder"><div class="slot-icon">✅</div><div class="slot-label">Inspection complete</div><div class="slot-hint">Click to load</div></div>
-          <img alt="Inspection complete" src="guide-assets/previous-inspections.png">
-          <input type="file" accept="image/*" onchange="loadImg(this,'slot-complete')">
-        </label>
-      </div>
-      <p class="caption" style="color:var(--muted);">Inspection saved — summary & next actions</p>
-    </div>
-  </div>
-</section>
-
-<!-- ===== PREVIOUS INSPECTIONS ===== -->
-<section class="section section-alt">
-  <div class="split flip">
-    <div class="split-visual">
-      <div class="screen-frame">
-        <label class="img-slot dark-slot loaded" id="slot-prev">
-          <div class="slot-placeholder"><div class="slot-icon">📋</div><div class="slot-label">Previous inspections</div><div class="slot-hint">Click to load</div></div>
-          <img alt="Previous inspections" src="guide-assets/previous-inspections.png">
-          <input type="file" accept="image/*" onchange="loadImg(this,'slot-prev')">
-        </label>
-      </div>
-    </div>
-    <div class="split-text">
-      <div class="eyebrow">Inspection History</div>
-      <h2>Full history per structure</h2>
-      <p>Every inspection is stored and filterable by type. BCI trends are tracked automatically over time.</p>
-      <ul class="bullets">
-        <li>Filter by Principal (PI), General (GI), or Superficial (SI)</li>
-        <li>CRIT and AV scores shown per row</li>
-        <li>Total inspection count and last inspection date</li>
-        <li>Open, edit, or generate a report from any past record</li>
-      </ul>
-    </div>
-  </div>
-</section>
-
-<!-- ===== BCI ===== -->
-<section class="section section-dark">
-  <div class="split">
-    <div class="split-text">
-      <div class="eyebrow">BCI Scoring</div>
-      <h2>UK-standard BCI scores, calculated automatically</h2>
-      <p>BCIav and BCIcrit are computed from element-level defect inputs — no manual formula, no spreadsheet.</p>
-      <div class="bci-bands">
-        <div class="bci-band band-critical"><div class="bci-band-label">Critical</div><div class="bci-band-score">0–40</div><div class="bci-band-name">Immediate action</div></div>
-        <div class="bci-band band-poor"><div class="bci-band-label">Poor</div><div class="bci-band-score">40–60</div><div class="bci-band-name">Investigate</div></div>
-        <div class="bci-band band-fair"><div class="bci-band-label">Fair</div><div class="bci-band-score">60–80</div><div class="bci-band-name">Monitor</div></div>
-        <div class="bci-band band-good"><div class="bci-band-label">Good</div><div class="bci-band-score">80–100</div><div class="bci-band-name">Maintain</div></div>
-      </div>
-    </div>
-    <div class="split-visual">
-      <div class="screen-frame">
-        <label class="img-slot dark-slot loaded" id="slot-bci">
-          <div class="slot-placeholder"><div class="slot-icon">📈</div><div class="slot-label">BCI scores / element table</div><div class="slot-hint">Click to load</div></div>
-          <img alt="BCI scores" src="guide-assets/inspection-light.png">
-          <input type="file" accept="image/*" onchange="loadImg(this,'slot-bci')">
-        </label>
-      </div>
-      <p class="caption">BCIav and BCIcrit auto-calculated at the top of every inspection</p>
-    </div>
-  </div>
-</section>
-
-<!-- ===== TWINVIEW ===== -->
-<section class="section section-dark">
-  <div style="margin-bottom:36px;">
-    <div class="eyebrow">Digital Twin</div>
-    <h2 class="section-title">Your structure, modelled in 3D</h2>
-    <p class="section-sub">twinView builds an interactive 3D model from each structure's real span count, length, and condition data. Orbit, zoom, and toggle layers to inspect it the way you would on site.</p>
-  </div>
-  <label class="img-slot dark-slot loaded" id="slot-twin" style="border-radius:16px;overflow:hidden;">
-    <div class="slot-placeholder" style="border-radius:16px;aspect-ratio:16/7;"><div class="slot-icon">🧊</div><div class="slot-label">twinView 3D model</div><div class="slot-hint">Click to load</div></div>
-    <img alt="twinView" style="border-radius:16px;" src="guide-assets/twinview.png">
-    <input type="file" accept="image/*" onchange="loadImg(this,'slot-twin')">
-  </label>
-  <div class="feature-strip">
-    <div class="feature-item"><div class="feature-item-icon">🧱</div><h4>Structure layer</h4><p>Real span count, length, and geometry per structure</p></div>
-    <div class="feature-item"><div class="feature-item-icon">📡</div><h4>Sensors</h4><p>Monitoring points placed across the structure</p></div>
-    <div class="feature-item"><div class="feature-item-icon">🌡️</div><h4>Stress overlay</h4><p>Per-span condition colour-coded from live BCI scores</p></div>
-    <div class="feature-item"><div class="feature-item-icon">⚠️</div><h4>Defects</h4><p>Real defect records plotted on the model</p></div>
-  </div>
-</section>
-
-<!-- ===== PLANNING ===== -->
-<section class="section">
-  <div style="margin-bottom:36px;">
-    <div class="eyebrow">Inspection Planning</div>
-    <h2 class="section-title">Plan your programme, never miss an inspection</h2>
-    <p class="section-sub">A multi-year planning calendar aligned to 2-year GI and 6-year PI cycles. Switch between Month, Year, and Gantt views.</p>
-  </div>
-  <div class="two-up">
-    <div>
-      <div class="screen-frame screen-frame-light">
-        <label class="img-slot loaded" id="slot-planning-cal">
-          <div class="slot-placeholder"><div class="slot-icon">📅</div><div class="slot-label">Calendar (light)</div><div class="slot-hint">Click to load</div></div>
-          <img alt="Planning calendar" src="guide-assets/planning-calendar-light.png">
-          <input type="file" accept="image/*" onchange="loadImg(this,'slot-planning-cal')">
-        </label>
-      </div>
-      <p class="caption">Month calendar — light mode</p>
-    </div>
-    <div>
-      <div class="screen-frame">
-        <label class="img-slot dark-slot loaded" id="slot-planning-gantt">
-          <div class="slot-placeholder"><div class="slot-icon">📊</div><div class="slot-label">Gantt (dark)</div><div class="slot-hint">Click to load</div></div>
-          <img alt="Planning Gantt chart" src="guide-assets/planning-gantt-dark.png">
-          <input type="file" accept="image/*" onchange="loadImg(this,'slot-planning-gantt')">
-        </label>
-      </div>
-      <p class="caption">Gantt programme view — dark mode</p>
-    </div>
-  </div>
-  <div class="feature-strip">
-    <div class="feature-item"><div class="feature-item-icon">📅</div><h4>Month view</h4><p>All inspections due per calendar month</p></div>
-    <div class="feature-item"><div class="feature-item-icon">📊</div><h4>Gantt view</h4><p>Multi-year scrollable timeline per structure</p></div>
-    <div class="feature-item"><div class="feature-item-icon">⚠️</div><h4>Overdue alerts</h4><p>Structures requiring attention flagged automatically</p></div>
-    <div class="feature-item"><div class="feature-item-icon">📄</div><h4>Export to PDF</h4><p>Share the full programme for sign-off</p></div>
-  </div>
-</section>
-
-<!-- ===== EXPORT ===== -->
-<section class="section section-dark">
-  <div class="split flip">
-    <div class="split-visual">
-      <div class="screen-frame">
-        <label class="img-slot dark-slot loaded" id="slot-export">
-          <div class="slot-placeholder"><div class="slot-icon">💾</div><div class="slot-label">Database Export</div><div class="slot-hint">Click to load</div></div>
-          <img alt="Export" src="guide-assets/export.png">
-          <input type="file" accept="image/*" onchange="loadImg(this,'slot-export')">
-        </label>
-      </div>
-    </div>
-    <div class="split-text">
-      <div class="eyebrow">Data Export</div>
-      <h2>Your data,<br>your format</h2>
-      <p>Export bridges, inspections, or reports in the format that fits your workflow.</p>
-      <ul class="bullets">
-        <li>Bridge records — CSV, JSON, XML</li>
-        <li>Inspection records — CSV, PDF, XLSX</li>
-        <li>Reports — PDF, DOCX</li>
-        <li>Filter by structure type before exporting</li>
-        <li>Column picker — only the fields you need</li>
-      </ul>
-    </div>
-  </div>
-</section>
-
-<!-- ===== DARK / LIGHT MODE ===== -->
-<section class="section">
-  <div style="margin-bottom: 36px; text-align: center;">
-    <div class="eyebrow" style="display:flex;justify-content:center;">UI</div>
-    <h2 class="section-title" style="text-align:center;">Modern, clean, and dark-mode ready</h2>
-    <p class="section-sub" style="margin: 0 auto; text-align:center;">Every screen designed for clarity — field tablet or desktop.</p>
-  </div>
-  <div class="two-up">
-    <div>
-      <div class="screen-frame">
-        <label class="img-slot dark-slot loaded" id="slot-dark2">
-          <div class="slot-placeholder"><div class="slot-icon">🌙</div><div class="slot-label">Any dark mode screen</div><div class="slot-hint">Click to load</div></div>
-          <img alt="Dark mode" src="guide-assets/inspection-dark.png">
-          <input type="file" accept="image/*" onchange="loadImg(this,'slot-dark2')">
-        </label>
-      </div>
-      <p class="caption">Dark mode</p>
-    </div>
-    <div>
-      <div class="screen-frame screen-frame-light">
-        <label class="img-slot loaded" id="slot-light2">
-          <div class="slot-placeholder"><div class="slot-icon">☀️</div><div class="slot-label">Light mode screen</div><div class="slot-hint">Click to load</div></div>
-          <img alt="Light mode" src="guide-assets/inspection-light.png">
-          <input type="file" accept="image/*" onchange="loadImg(this,'slot-light2')">
-        </label>
-      </div>
-      <p class="caption">Light mode</p>
-    </div>
-  </div>
-</section>
-
-<!-- ===== FOOTER ===== -->
-<div class="footer">
-  <div>
-    <h2><span>span</span>Sense</h2>
-    <p>Bridge asset management, reimagined. Built for the field, designed for the office.</p>
-  </div>
-  <div class="footer-contact">
-    <div class="footer-contact-item"><strong>📬</strong> hello@spansense.dev</div>
-    <div class="footer-contact-item"><strong>🌐</strong> spansense.dev</div>
-    <div class="footer-contact-item"><strong>📍</strong> London · Bristol · remote</div>
-  </div>
-</div>
-
-<!-- ===== GLASS SCROLLBAR ===== -->
-<div class="glass-scrollbar" id="glassScrollbar">
-  <div class="thumb" id="scrollThumb"></div>
-</div>
-
-<script>
-  // ===== IMAGE LOADER =====
-  function loadImg(input, slotId) {
-    const file = input.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const slot = document.getElementById(slotId);
-      const img = slot.querySelector('img');
-      if (img) img.src = e.target.result;
-      slot.classList.add('loaded');
-    };
-    reader.readAsDataURL(file);
-  }
-
-  // ===== GLASS SCROLLBAR =====
-  (function initScrollbar() {
-    const thumb = document.getElementById('scrollThumb');
-    const bar = document.getElementById('glassScrollbar');
-    if (!thumb || !bar) return;
-
-    const updateThumb = () => {
-      const sh = document.documentElement.scrollHeight - window.innerHeight;
-      const st = window.scrollY;
-      const ratio = sh > 0 ? st / sh : 0;
-      const thumbH = Math.max(30, (window.innerHeight / document.documentElement.scrollHeight) * bar.clientHeight);
-      thumb.style.height = thumbH + 'px';
-      thumb.style.top = (ratio * (bar.clientHeight - thumbH)) + 'px';
-    };
-
-    window.addEventListener('scroll', updateThumb);
-    window.addEventListener('resize', updateThumb);
-    updateThumb();
-
-    let isDragging = false;
-    thumb.addEventListener('mousedown', (e) => {
-      isDragging = true;
-      document.body.style.userSelect = 'none';
-    });
-    window.addEventListener('mousemove', (e) => {
-      if (!isDragging) return;
-      const rect = bar.getBoundingClientRect();
-      const y = (e.clientY - rect.top) / rect.height;
-      const sh = document.documentElement.scrollHeight - window.innerHeight;
-      window.scrollTo(0, y * sh);
-    });
-    window.addEventListener('mouseup', () => {
-      isDragging = false;
-      document.body.style.userSelect = '';
-    });
-  })();
-
-  // ===== PDF EXPORT — fixed multi-page clipping =====
-  document.getElementById('pdfDownloadBtn').addEventListener('click', function() {
-    const btn = this;
-    btn.textContent = '⏳ Generating...';
-    btn.disabled = true;
-
-    // Ensure all slots are loaded
-    document.querySelectorAll('.img-slot').forEach(slot => slot.classList.add('loaded'));
-
-    // Use a high scale for crispness, but we'll handle tiling manually
-    const scale = 2;
-    html2canvas(document.body, {
-      scale: scale,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: '#ffffff',
-      logging: false,
-      onclone: (doc) => {
-        doc.querySelectorAll('.img-slot .slot-placeholder').forEach(el => el.style.display = 'none');
-      }
-    }).then(canvas => {
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-
-      // Total image dimensions in mm (at 72 DPI, but we scale)
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      const ratio = pageWidth / imgWidth;
-      const totalHeightMm = imgHeight * ratio;
-
-      let remainingHeight = totalHeightMm;
-      let sourceY = 0; // in mm (relative to image)
-
-      // A4 page height in mm
-      const pageHeightMm = pageHeight;
-
-      // We'll slice the canvas vertically
-      const canvasPageHeight = pageHeightMm / ratio; // height of one page in canvas pixels
-
-      let pageNum = 0;
-      while (remainingHeight > 0) {
-        const sliceHeightPx = Math.min(canvasPageHeight, remainingHeight / ratio);
-        // Create a temporary canvas for this page slice
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = imgWidth;
-        tempCanvas.height = sliceHeightPx;
-        const ctx = tempCanvas.getContext('2d');
-        ctx.drawImage(canvas, 0, sourceY, imgWidth, sliceHeightPx, 0, 0, imgWidth, sliceHeightPx);
-
-        const imgData = tempCanvas.toDataURL('image/png');
-
-        if (pageNum > 0) {
-          pdf.addPage();
-        }
-
-        // Calculate the height in mm for this slice
-        const sliceHeightMm = sliceHeightPx * ratio;
-        pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, sliceHeightMm);
-
-        remainingHeight -= sliceHeightMm;
-        sourceY += sliceHeightPx;
-        pageNum++;
-      }
-
-      pdf.save('spanSense-report.pdf');
-      btn.textContent = '📄 Download PDF';
-      btn.disabled = false;
-    }).catch(err => {
-      console.warn('PDF error:', err);
-      btn.textContent = '📄 Download PDF';
-      btn.disabled = false;
-      alert('Could not generate PDF. Please try again.');
-    });
-  });
-</script>
 </body>
 </html>
