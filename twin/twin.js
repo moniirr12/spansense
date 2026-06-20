@@ -58,8 +58,6 @@ function renderDropdownList(filter) {
     }
 
     ddList.innerHTML = filtered.map(function(b) {
-        var bciClass = getBciClass(b.bci_av != null ? parseFloat(b.bci_av) : null);
-        var bciLabel = b.bci_av != null ? Math.round(parseFloat(b.bci_av)) : '—';
         var isSelected = selectedBridge && String(selectedBridge.id) === String(b.id);
         return '<div class="dd-item ' + (isSelected ? 'selected' : '') + '" data-id="' + b.id + '">' +
             '<div class="dd-icon"><i class="fa-solid fa-bridge"></i></div>' +
@@ -67,7 +65,6 @@ function renderDropdownList(filter) {
                 '<div class="dd-name">' + b.name + '</div>' +
                 '<div class="dd-id">' + b.id + '</div>' +
             '</div>' +
-            '<span class="dd-bci ' + bciClass + '">' + bciLabel + '</span>' +
             '<i class="fa-solid fa-check dd-check"></i>' +
         '</div>';
     }).join('');
