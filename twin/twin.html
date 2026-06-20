@@ -28,8 +28,8 @@ body {
     top: 20px;
     left: 50%;
     transform: translateX(-50%);
-    width: 60%;
-    max-width: 1100px;
+    width: 67%;
+    max-width: 1190px;
     background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -51,7 +51,7 @@ body {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
-.navbar .menu { display: flex; gap: 24px; }
+.navbar .menu { display: flex; gap: 16px; }
 .navbar .menu a {
     text-decoration: none;
     color: #4a5b6e;
@@ -760,6 +760,7 @@ html::-webkit-scrollbar { display: none; }
             <a href="../dashboard/dashboard.html"><i class="fas fa-chart-pie"></i>Dashboard</a>
             <a href="../database/database.html"><i class="fas fa-database"></i>Database</a>
             <a href="../planning/planning.html"><i class="fas fa-calendar-alt"></i>Planning</a>
+            <a href="../twin/twin.html" class="active"><i class="fas fa-cube"></i>twinView</a>
         </div>
     </div>
     <div class="right">
@@ -859,7 +860,7 @@ html::-webkit-scrollbar { display: none; }
         <div class="right-col">
             <div class="viewer-card">
                 <div class="vc-head">
-                    <h2><i class="fa-solid fa-cube"></i>Structural model</h2>
+                    <h2><i class="fa-solid fa-cube"></i>Structure model</h2>
                     <div class="vc-layer-toggles">
                         <div class="vc-pill on" data-layer="structure"><span class="sw"></span>Structure</div>
                         <div class="vc-pill on" data-layer="sensors"><span class="sw"></span>Sensors</div>

@@ -518,9 +518,21 @@ function animate() {
 /* ============================================================
    THEME TOGGLE
    ============================================================ */
-document.getElementById('nightToggle').addEventListener('click', function() {
+var nightToggle = document.getElementById('nightToggle');
+nightToggle.addEventListener('click', function() {
     document.body.classList.toggle('night-mode');
+    if (document.body.classList.contains('night-mode')) {
+        nightToggle.innerHTML = '<i class="fas fa-sun"></i>';
+        localStorage.setItem('nightMode', 'on');
+    } else {
+        nightToggle.innerHTML = '<i class="fas fa-moon"></i>';
+        localStorage.setItem('nightMode', 'off');
+    }
 });
+if (localStorage.getItem('nightMode') === 'on') {
+    document.body.classList.add('night-mode');
+    nightToggle.innerHTML = '<i class="fas fa-sun"></i>';
+}
 
 /* ============================================================
    INIT
