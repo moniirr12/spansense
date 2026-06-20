@@ -59,7 +59,7 @@
     /* ===== HERO ===== */
     .hero {
       background: linear-gradient(135deg, #1e3432 0%, #2c4a48 50%, #3d6462 100%);
-      color: white; padding: 60px 64px 0; overflow: hidden;
+      color: white; padding: 60px 64px 56px; overflow: hidden;
       display: grid; grid-template-columns: 1fr 1.2fr; gap: 48px; align-items: end;
     }
     .hero-text { padding-bottom: 56px; }
@@ -70,14 +70,15 @@
     .hero-tags { display: flex; gap: 10px; flex-wrap: wrap; }
     .hero-tag { background: rgba(197,219,216,0.15); border: 1px solid rgba(197,219,216,0.3); color: var(--teal-pale); font-size: 12px; font-weight: 600; padding: 5px 14px; border-radius: 30px; }
     .hero-screen { align-self: flex-end; }
-    .hero-screen .img-slot { border-radius: 16px 16px 0 0; box-shadow: 0 -8px 48px rgba(0,0,0,0.35); }
-    .hero-screen .img-slot img { border-radius: 16px 16px 0 0; }
-    .hero-screen .img-slot .slot-placeholder { border-radius: 16px 16px 0 0; aspect-ratio: 16/10; }
+    .hero-screen .img-slot { border-radius: 16px; box-shadow: 0 16px 48px rgba(0,0,0,0.35); }
+    .hero-screen .img-slot img { border-radius: 16px; }
+    .hero-screen .img-slot .slot-placeholder { border-radius: 16px; aspect-ratio: 16/10; }
 
     /* ===== LAYOUT ===== */
     .section { padding: 72px 64px; }
     .section-alt { background: var(--bg); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
     .section-dark { background: #1a2b2a; color: white; }
+    .section-dark.section-dark-alt { background: #2a4744; }
 
     .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--teal); margin-bottom: 8px; }
     .section-dark .eyebrow { color: var(--teal-light); }
@@ -230,48 +231,44 @@
   <strong>No install. No servers.</strong> &nbsp;spanSense runs entirely in your browser — open it and everything is immediately available across all seven modules.
 </div>
 
-<!-- ===== DASHBOARD ===== -->
-<section class="section" id="sec-dashboard">
-  <div class="split">
-    <div class="split-text">
-      <div class="eyebrow">Dashboard</div>
-      <h2>Everything at a glance</h2>
-      <p>The home screen surfaces live KPIs, condition charts, and critical structure alerts the moment you log in.</p>
-      <ul class="bullets">
-        <li>Total assets, high-risk count, upcoming & overdue inspections</li>
-        <li>Asset inventory by type — pie chart</li>
-        <li>BCI score distribution across the portfolio</li>
-        <li>Bridge condition trend over time</li>
-      </ul>
-    </div>
-    <div class="split-visual">
-      <div class="screen-frame">
-        <label class="img-slot dark-slot loaded" id="slot-dashboard">
-          <div class="slot-placeholder"><div class="slot-icon">📊</div><div class="slot-label">Dashboard</div><div class="slot-hint">Click to load</div></div>
-          <img alt="Dashboard" src="guide-assets/dashboard.png">
-          <input type="file" accept="image/*" onchange="loadImg(this,'slot-dashboard')">
-        </label>
-      </div>
-    </div>
+<!-- ===== TWINVIEW ===== -->
+<section class="section section-dark" id="sec-twin">
+  <div style="margin-bottom:36px;">
+    <div class="eyebrow">Digital Twin</div>
+    <h2 class="section-title">Your structure, modelled in 3D</h2>
+    <p class="section-sub">twinView builds an interactive 3D model from each structure's real span count, length, and condition data. Orbit, zoom, and toggle layers to inspect it the way you would on site.</p>
+  </div>
+  <label class="img-slot dark-slot loaded" id="slot-twin" style="border-radius:16px;overflow:hidden;">
+    <div class="slot-placeholder" style="border-radius:16px;aspect-ratio:16/7;"><div class="slot-icon">🧊</div><div class="slot-label">twinView 3D model</div><div class="slot-hint">Click to load</div></div>
+    <img alt="twinView" style="border-radius:16px;" src="guide-assets/twinview.png">
+    <input type="file" accept="image/*" onchange="loadImg(this,'slot-twin')">
+  </label>
+  <div class="feature-strip">
+    <div class="feature-item"><div class="feature-item-icon">🧱</div><h4>Structure layer</h4><p>Real span count, length, and geometry per structure</p></div>
+    <div class="feature-item"><div class="feature-item-icon">📡</div><h4>Sensors</h4><p>Monitoring points placed across the structure</p></div>
+    <div class="feature-item"><div class="feature-item-icon">🌡️</div><h4>Stress overlay</h4><p>Per-span condition colour-coded from live BCI scores</p></div>
+    <div class="feature-item"><div class="feature-item-icon">⚠️</div><h4>Defects</h4><p>Real defect records plotted on the model</p></div>
   </div>
 </section>
 
 <!-- ===== MAP ===== -->
-<section class="section section-dark" id="sec-map">
+<section class="section" id="sec-map">
   <div style="margin-bottom:36px;">
     <div class="eyebrow">Interactive Map</div>
     <h2 class="section-title">Your structure stock on the map</h2>
     <p class="section-sub">Every structure plotted with colour-coded markers by type. Click any marker to open its full record, view BCI scores, and start a new inspection.</p>
   </div>
-  <label class="img-slot dark-slot loaded" id="slot-map" style="border-radius:16px;overflow:hidden;">
-    <div class="slot-placeholder" style="border-radius:16px;aspect-ratio:16/7;"><div class="slot-icon">🗺️</div><div class="slot-label">Full map view</div><div class="slot-hint">Click to load</div></div>
-    <img alt="Map" style="border-radius:16px;" src="guide-assets/map-full.png">
-    <input type="file" accept="image/*" onchange="loadImg(this,'slot-map')">
-  </label>
+  <div class="screen-frame">
+    <label class="img-slot dark-slot loaded" id="slot-map" style="border-radius:12px;overflow:hidden;">
+      <div class="slot-placeholder" style="border-radius:12px;aspect-ratio:16/7;"><div class="slot-icon">🗺️</div><div class="slot-label">Full map view</div><div class="slot-hint">Click to load</div></div>
+      <img alt="Map" style="border-radius:12px;" src="guide-assets/map-full.png">
+      <input type="file" accept="image/*" onchange="loadImg(this,'slot-map')">
+    </label>
+  </div>
 </section>
 
 <!-- ===== INSPECTION ===== -->
-<section class="section" id="sec-inspection">
+<section class="section section-dark" id="sec-inspection">
   <div style="margin-bottom:36px;">
     <div class="eyebrow">Inspection</div>
     <h2 class="section-title">Element-by-element defect recording</h2>
@@ -293,7 +290,7 @@
           <input type="file" accept="image/*" onchange="loadImg(this,'slot-insp-dark')">
         </label>
       </div>
-      <p class="caption" style="color:var(--muted);">Dark mode — element table with BCI scores</p>
+      <p class="caption">Dark mode — element table with BCI scores</p>
     </div>
     <div>
       <div class="screen-frame">
@@ -303,7 +300,7 @@
           <input type="file" accept="image/*" onchange="loadImg(this,'slot-defect')">
         </label>
       </div>
-      <p class="caption" style="color:var(--muted);">Per-element defect — severity, extent & works</p>
+      <p class="caption">Per-element defect — severity, extent & works</p>
     </div>
     <div>
       <div class="screen-frame screen-frame-light">
@@ -313,13 +310,13 @@
           <input type="file" accept="image/*" onchange="loadImg(this,'slot-complete')">
         </label>
       </div>
-      <p class="caption" style="color:var(--muted);">Inspection saved — summary & next actions</p>
+      <p class="caption">Inspection saved — summary & next actions</p>
     </div>
   </div>
 </section>
 
 <!-- ===== PREVIOUS INSPECTIONS ===== -->
-<section class="section section-alt" id="sec-prev">
+<section class="section" id="sec-prev">
   <div class="split flip">
     <div class="split-visual">
       <div class="screen-frame">
@@ -371,28 +368,34 @@
   </div>
 </section>
 
-<!-- ===== TWINVIEW ===== -->
-<section class="section section-dark" id="sec-twin">
-  <div style="margin-bottom:36px;">
-    <div class="eyebrow">Digital Twin</div>
-    <h2 class="section-title">Your structure, modelled in 3D</h2>
-    <p class="section-sub">twinView builds an interactive 3D model from each structure's real span count, length, and condition data. Orbit, zoom, and toggle layers to inspect it the way you would on site.</p>
-  </div>
-  <label class="img-slot dark-slot loaded" id="slot-twin" style="border-radius:16px;overflow:hidden;">
-    <div class="slot-placeholder" style="border-radius:16px;aspect-ratio:16/7;"><div class="slot-icon">🧊</div><div class="slot-label">twinView 3D model</div><div class="slot-hint">Click to load</div></div>
-    <img alt="twinView" style="border-radius:16px;" src="guide-assets/twinview.png">
-    <input type="file" accept="image/*" onchange="loadImg(this,'slot-twin')">
-  </label>
-  <div class="feature-strip">
-    <div class="feature-item"><div class="feature-item-icon">🧱</div><h4>Structure layer</h4><p>Real span count, length, and geometry per structure</p></div>
-    <div class="feature-item"><div class="feature-item-icon">📡</div><h4>Sensors</h4><p>Monitoring points placed across the structure</p></div>
-    <div class="feature-item"><div class="feature-item-icon">🌡️</div><h4>Stress overlay</h4><p>Per-span condition colour-coded from live BCI scores</p></div>
-    <div class="feature-item"><div class="feature-item-icon">⚠️</div><h4>Defects</h4><p>Real defect records plotted on the model</p></div>
+<!-- ===== DASHBOARD ===== -->
+<section class="section" id="sec-dashboard">
+  <div class="split">
+    <div class="split-text">
+      <div class="eyebrow">Dashboard</div>
+      <h2>Everything at a glance</h2>
+      <p>The home screen surfaces live KPIs, condition charts, and critical structure alerts the moment you log in.</p>
+      <ul class="bullets">
+        <li>Total assets, high-risk count, upcoming & overdue inspections</li>
+        <li>Asset inventory by type — pie chart</li>
+        <li>BCI score distribution across the portfolio</li>
+        <li>Bridge condition trend over time</li>
+      </ul>
+    </div>
+    <div class="split-visual">
+      <div class="screen-frame">
+        <label class="img-slot dark-slot loaded" id="slot-dashboard">
+          <div class="slot-placeholder"><div class="slot-icon">📊</div><div class="slot-label">Dashboard</div><div class="slot-hint">Click to load</div></div>
+          <img alt="Dashboard" src="guide-assets/dashboard.png">
+          <input type="file" accept="image/*" onchange="loadImg(this,'slot-dashboard')">
+        </label>
+      </div>
+    </div>
   </div>
 </section>
 
 <!-- ===== PLANNING ===== -->
-<section class="section" id="sec-planning">
+<section class="section section-dark" id="sec-planning">
   <div style="margin-bottom:36px;">
     <div class="eyebrow">Inspection Planning</div>
     <h2 class="section-title">Plan your programme, never miss an inspection</h2>
@@ -429,7 +432,7 @@
 </section>
 
 <!-- ===== EXPORT ===== -->
-<section class="section section-dark" id="sec-export">
+<section class="section section-dark section-dark-alt" id="sec-export">
   <div class="split flip">
     <div class="split-visual">
       <div class="screen-frame">
