@@ -3,7 +3,7 @@
 // ============================================
 
 // --- Dynamic API Base URL (works on localhost AND production) ---
-const API_BASE = window.location.origin.includes('localhost')
+var API_BASE = window.location.origin.includes('localhost')
     ? 'http://localhost:3000'
     : window.location.origin;  // e.g. https://spansense.onrender.com
 

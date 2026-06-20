@@ -1,8 +1,8 @@
 let criticalBridgesCount = 0;
 
 
-const API_BASE = window.location.hostname === 'localhost' 
-    ? 'http://localhost:3000' 
+var API_BASE = window.location.hostname === 'localhost'
+    ? 'http://localhost:3000'
     : 'https://spansense.onrender.com';
 
 document.addEventListener('DOMContentLoaded', function () {

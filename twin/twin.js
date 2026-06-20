@@ -157,9 +157,7 @@ async function selectBridge(bridgeId) {
         document.getElementById('bciCritTile').className = 'bci-tile ' + critClass;
 
         document.getElementById('bciAvg').textContent = bridge.bciAvg != null ? Math.round(bridge.bciAvg) : '—';
-        document.getElementById('bciAvgSub').textContent = 'across ' + bridge.spans + ' span' + (bridge.spans > 1 ? 's' : '');
         document.getElementById('bciCrit').textContent = bridge.bciCrit != null ? Math.round(bridge.bciCrit) : '—';
-        document.getElementById('bciCritSub').textContent = bridge.bciCritLocation || '—';
 
         document.getElementById('factSpan').textContent = bridge.spanLength ? (bridge.spanLength * bridge.spans).toFixed(1) + ' m' : '—';
         document.getElementById('factSpans').textContent = bridge.spans;
