@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const { Pool } = require("pg");
 const bodyParser = require("body-parser");
@@ -172,6 +173,12 @@ async function initDatabase() {
                 timestamp TIMESTAMP
             )
         `);
+
+        // Twin view 3D position (nullable until set via the future defect-placement
+        // interface; twin.js only renders defects that have these set)
+        await pool.query(`ALTER TABLE defects ADD COLUMN IF NOT EXISTS pos_x DECIMAL`);
+        await pool.query(`ALTER TABLE defects ADD COLUMN IF NOT EXISTS pos_y DECIMAL`);
+        await pool.query(`ALTER TABLE defects ADD COLUMN IF NOT EXISTS pos_z DECIMAL`);
 
         // Defect photos table
         await pool.query(`
@@ -567,15 +574,15 @@ app.get('/api/defectsbci', async (req, res) => {
 app.get('/api/bridges', async (req, res) => {
     try {
         const rows = await dbAll(`
-            SELECT b.id, b.name, b.location, b.latitude, b.longitude, b.span, b.length, 
+            SELECT b.id, b.name, b.location, b.latitude, b.longitude, b.span, b.length,
                     b.built_year, b.type, b.span_number, b.OSE, b.OSN,
-                    b.primary_material, b.secondary_material, b.organization_id,
+                    b.primary_material, b.secondary_material, b.organization_id, b.bci_av,
                     MAX(i.inspection_date) as last_inspected
             FROM bridges b
             LEFT JOIN inspections i ON b.id = i.structure_id
-            GROUP BY b.id, b.name, b.location, b.latitude, b.longitude, b.span, b.length, 
+            GROUP BY b.id, b.name, b.location, b.latitude, b.longitude, b.span, b.length,
                      b.built_year, b.type, b.span_number, b.OSE, b.OSN,
-                     b.primary_material, b.secondary_material, b.organization_id
+                     b.primary_material, b.secondary_material, b.organization_id, b.bci_av
             ORDER BY b.name
         `);
         res.json(rows);
@@ -594,6 +601,141 @@ app.get('/api/bridges/:id', async (req, res) => {
         res.json(row);
     } catch (err) {
         res.status(500).json({ error: 'Database error' });
+    }
+});
+
+// Severity codes match the dropdown in inspection/inspectionA.js (1-5)
+const SEVERITY_LABELS = { 1: 'Minor', 2: 'Moderate', 3: 'Severe', 4: 'Critical', 5: 'Emergency' };
+const GI_CYCLE_YEARS = 2;
+const PI_CYCLE_YEARS = 6;
+
+// Aggregated data for the twinView 3D digital twin (twin/twin.html + twin.js).
+// 3D geometry (deck width/truss height/panels per span) is NOT here - it's
+// hand-authored per bridge id in twin/bridgeModels.js, not stored in the DB.
+app.get('/api/twin/:structureId', async (req, res) => {
+    try {
+        const { structureId } = req.params;
+
+        const bridge = await dbGet('SELECT * FROM bridges WHERE id = $1', [structureId]);
+        if (!bridge) {
+            return res.status(404).json({ error: 'Bridge not found' });
+        }
+
+        const allInspections = await dbAll(
+            `SELECT id, inspection_date, inspection_type, overall_bciave, overall_bcicrit
+             FROM inspections WHERE structure_id = $1 ORDER BY inspection_date ASC`,
+            [structureId]
+        );
+        const latestInspection = allInspections.length
+            ? allInspections[allInspections.length - 1]
+            : null;
+
+        let spans = [];
+        let defects = [];
+        if (latestInspection) {
+            spans = await dbAll(
+                `SELECT span_number, bci_crit, bci_av FROM inspection_spans
+                 WHERE inspection_id = $1 ORDER BY span_number ASC`,
+                [latestInspection.id]
+            );
+            const defectRows = await dbAll(
+                `SELECT span_number, element_no, severity, works_required, pos_x, pos_y, pos_z
+                 FROM defects WHERE inspection_id = $1
+                 ORDER BY span_number, element_no`,
+                [latestInspection.id]
+            );
+            defects = defectRows.map(d => {
+                const sev = parseInt(d.severity, 10);
+                return {
+                    spanNumber: d.span_number,
+                    elementNo: d.element_no,
+                    severity: sev || null,
+                    severityLabel: SEVERITY_LABELS[sev] || null,
+                    worksRequired: d.works_required === 'Y',
+                    x: d.pos_x !== null ? parseFloat(d.pos_x) : null,
+                    y: d.pos_y !== null ? parseFloat(d.pos_y) : null,
+                    z: d.pos_z !== null ? parseFloat(d.pos_z) : null
+                };
+            });
+        }
+
+        const spanBCI = spans.map(s => s.bci_av !== null ? parseFloat(s.bci_av) : null);
+        const critSpan = spans.reduce((worst, s) => {
+            if (s.bci_crit === null) return worst;
+            return (!worst || parseFloat(s.bci_crit) < parseFloat(worst.bci_crit)) ? s : worst;
+        }, null);
+
+        const bciAvg = latestInspection?.overall_bciave != null
+            ? parseFloat(latestInspection.overall_bciave)
+            : (bridge.bci_av != null ? parseFloat(bridge.bci_av) : null);
+        const bciCrit = latestInspection?.overall_bcicrit != null
+            ? parseFloat(latestInspection.overall_bcicrit)
+            : (critSpan ? parseFloat(critSpan.bci_crit) : null);
+
+        const openDefects = defects.filter(d => d.worksRequired).length;
+
+        // Next-due / overdue, following the 2yr GI / 6yr PI cycle used in planning.html
+        function lastDateOf(type) {
+            const matches = allInspections.filter(i => i.inspection_type === type);
+            return matches.length ? new Date(matches[matches.length - 1].inspection_date) : null;
+        }
+        const lastGI = lastDateOf('GI');
+        const lastPI = lastDateOf('PI');
+        const dueDates = [];
+        if (lastGI) dueDates.push({ type: 'GI', date: new Date(lastGI.getFullYear() + GI_CYCLE_YEARS, lastGI.getMonth(), lastGI.getDate()) });
+        if (lastPI) dueDates.push({ type: 'PI', date: new Date(lastPI.getFullYear() + PI_CYCLE_YEARS, lastPI.getMonth(), lastPI.getDate()) });
+        dueDates.sort((a, b) => a.date - b.date);
+        const nextDue = dueDates[0] || null;
+        const isOverdue = nextDue ? nextDue.date < new Date() : false;
+
+        const dateFmt = d => d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        const monthYearFmt = d => d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+
+        const lastInspectionLabel = latestInspection
+            ? `${latestInspection.inspection_type || 'Inspection'} · ${dateFmt(new Date(latestInspection.inspection_date))}`
+            : null;
+        const nextInspectionLabel = nextDue
+            ? `${nextDue.type} · ${monthYearFmt(nextDue.date)}${isOverdue ? ' (overdue)' : ''}`
+            : null;
+
+        const years = allInspections
+            .map(i => new Date(i.inspection_date).getFullYear())
+            .concat(nextDue ? [nextDue.date.getFullYear()] : []);
+        const timelineRange = years.length ? `${Math.min(...years)} — ${Math.max(...years)}` : null;
+
+        const inspections = allInspections.map(i => ({
+            type: i.inspection_type || 'GI',
+            date: monthYearFmt(new Date(i.inspection_date)),
+            timestamp: new Date(i.inspection_date).getTime()
+        }));
+
+        const spanNumber = bridge.span_number || spans.length || 1;
+        const material = [bridge.primary_material, bridge.secondary_material].filter(Boolean).join(' / ') || null;
+
+        res.json({
+            id: bridge.id,
+            name: bridge.name,
+            location: bridge.location,
+            type: bridge.type,
+            spans: spanNumber,
+            spanLength: bridge.length ? bridge.length / spanNumber : null,
+            material,
+            yearBuilt: bridge.built_year,
+            bciAvg,
+            bciCrit,
+            bciCritLocation: critSpan ? `span ${critSpan.span_number}` : null,
+            spanBCI,
+            defects,
+            inspections,
+            timelineRange,
+            lastInspection: lastInspectionLabel,
+            nextInspection: nextInspectionLabel,
+            isOverdue,
+            openDefects
+        });
+    } catch (err) {
+        console.error('Twin data error:', err);
+        res.status(500).json({ error: err.message });
     }
 });
 
