@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>SpanSense — Bridge Inspection | Defect Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="inspection.css">
+    <link rel="stylesheet" href="saveSequence.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <style>
+        /* ============================================
+           MODERN LAYOUT ADDITIONS
+           Original CSS preserved in external files
+           ============================================ */
+
+
+        /* Add padding to body for fixed navbar */
+        body {
+            padding-top: 90px !important;
+        }
+
+        /* Main wrapper - 75% width */
+        .inspection-wrapper {
+            max-width: 75%;
+            margin: 0 auto;
+            padding: 0;
+        }
+
+        /* Flex layout for main content + sidebar */
+        .inspection-layout {
+            display: flex;
+            gap: 32px;
+            align-items: flex-start;
+        }
+
+        /* Original content container */
+        .inspection-main {
+            flex: 2;
+            min-width: 0;
+        }
+
+        /* Right Sidebar */
+        .bridge-sidebar {
+            width: 280px;
+            flex-shrink: 0;
+            position: sticky;
+            top: 110px;
+        }
+
+        .sidebar-card {
+            background: white;
+            border-radius: 28px;
+            border: 1px solid #e9edf2;
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.03);
+            transition: all 0.2s;
+        }
+
+        .sidebar-card:hover {
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        .bridge-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #2c4a48;
+            margin-bottom: 4px;
+        }
+
+        .bridge-id {
+            font-size: 0.7rem;
+            color: #8a9ba8;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 16px;
+        }
+
+        .mock-image {
+            width: 100%;
+            height: 140px;
+            background: linear-gradient(135deg, #c5dbd8 0%, #a8c4c0 100%);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .mock-image i {
+            font-size: 3.2rem;
+            color: white;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .mock-image span {
+            position: absolute;
+            bottom: 12px;
+            right: 16px;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            padding: 4px 10px;
+            border-radius: 40px;
+            font-size: 0.6rem;
+            color: white;
+            font-weight: 500;
+        }
+
+        .sidebar-divider {
+            height: 1px;
+            background: #eef2f6;
+            margin: 14px 0;
+        }
+
+        .sidebar-stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 0.85rem;
+        }
+
+        .sidebar-stat-label {
+            color: #8a9ba8;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .sidebar-stat-value {
+            font-weight: 600;
+            color: #2c4a48;
+        }
+
+        .sidebar-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #e8f5f0;
+            color: #2d7a6e;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .sidebar-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .sidebar-btn {
+            padding: 10px;
+            border-radius: 44px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            font-weight: 500;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: #5b8c8a;
+        }
+
+        .sidebar-btn.primary {
+            background: #5b8c8a;
+            border-color: #5b8c8a;
+            color: white;
+        }
+
+        .sidebar-btn.primary:hover {
+            background: #4a7876;
+        }
+
+        /* Ensure original container fits within new layout */
+        .container {
+            max-width: 100% !important;
+            padding: 0 !important;
+        }
+
+        /* Bridge header card adjustments */
+        .bridge-header-card {
+            max-width: 100% !important;
+            margin-top: 0 !important;
+        }
+
+        /* Responsive */
+        @media (max-width: 1100px) {
+            .inspection-wrapper {
+                max-width: 90%;
+            }
+        }
+
+        @media (max-width: 860px) {
+            .inspection-wrapper {
+                max-width: 95%;
+            }
+            .inspection-layout {
+                flex-direction: column;
+            }
+            .bridge-sidebar {
+                width: 100%;
+                position: static;
+                margin-top: 24px;
+            }
+        }
+
+        /* Night mode for sidebar */
+        .night-mode .sidebar-card {
+            background: #232e34;
+            border-color: #2f3e45;
+        }
+
+        .night-mode .bridge-name,
+        .night-mode .sidebar-stat-value {
+            color: #d4dfe3;
+        }
+
+        .night-mode .sidebar-stat-label {
+            color: #8aa4ac;
+        }
+
+        .night-mode .mock-image {
+            background: linear-gradient(135deg, #2f4a48, #1e3a38);
+        }
+
+        .night-mode .mock-image i {
+            color: #8ab4b0;
+        }
+
+        .night-mode .sidebar-btn {
+            background: #1e2a2f;
+            border-color: #3a4b53;
+            color: #9ab0b8;
+        }
+
+        .night-mode .sidebar-btn.primary {
+            background: #3a6b62;
+            border-color: #7aaea4;
+            color: white;
+        }
+
+        .night-mode .sidebar-status {
+            background: #1e2a2f;
+            color: #8ab4b0;
+        }
+
+
+
+
+        /* ===== SPECIAL STATE ROWS ===== */
+        .no-defects-row .aligned-grid {
+            background: #f0f7f4 !important;
+            border-color: #b8dcc8 !important;
+        }
+        .no-defects-row .badge {
+            background: #e8f5f0 !important;
+            border-color: #b8dcc8 !important;
+        }
+        .no-defects-row .badge .badge-value {
+            color: #2d7a6e !important;
+        }
+        .not-inspected-row .aligned-grid {
+            background: #fff8ee !important;
+            border-color: #e8d4b8 !important;
+        }
+        .not-inspected-row .badge {
+            background: #fff8ee !important;
+            border-color: #e8d4b8 !important;
+        }
+        .not-inspected-row .badge .badge-value {
+            color: #BA7517 !important;
+        }
+        .night-mode .no-defects-row .aligned-grid {
+            background: #1e3a3e !important;
+            border-color: #3a5a60 !important;
+        }
+        .night-mode .no-defects-row .badge {
+            background: #1e3a3e !important;
+            border-color: #3a5a60 !important;
+        }
+        .night-mode .not-inspected-row .aligned-grid {
+            background: #3a3020 !important;
+            border-color: #5a4a30 !important;
+        }
+        .night-mode .not-inspected-row .badge {
+            background: #3a3020 !important;
+            border-color: #5a4a30 !important;
+        }
+
+
+        /* ===== MODAL PANELS - HIDDEN BY DEFAULT ===== */
+        #of-defect-panel,
+        #of-no-defects-panel,
+        #of-not-inspected-panel {
+            display: none;
+        }
+
+        /* ============================================
+           LOCATE DEFECTS ON 3D MODEL — NEW FOR THIS MOCK
+           ============================================ */
+        .locate3d-launch-row {
+            padding: 0 24px 20px;
+        }
+        .btn-locate3d {
+            width: 100%;
+            padding: 12px;
+            border-radius: 14px;
+            border: 1px solid #8ab4b0;
+            background: #eef4f2;
+            color: #2c5a57;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-locate3d:hover { background: #dcebe8; }
+        .night-mode .btn-locate3d { background: #1e3a38; border-color: #6e9c98; color: #d4dfe3; }
+        .night-mode .btn-locate3d:hover { background: #234542; }
+
+        .locate3d-container { max-width: 1320px; width: 92%; max-height: 88vh; }
+        .locate3d-viewer-panel { flex: 2.3; }
+        .locate3d-defects-panel { max-height: none; }
+
+        .locate3d-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 14px 24px 0;
+        }
+        .locate3d-hint {
+            font-size: 0.75rem;
+            color: #8a9ba8;
+            font-style: italic;
+        }
+        .locate3d-hint.armed { color: #2c5a57; font-weight: 600; font-style: normal; }
+
+        .vc-layer-toggles { display: flex; gap: 8px; flex-wrap: wrap; }
+        .vc-pill {
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: #6a7c8e;
+            padding: 6px 12px;
+            border-radius: 30px;
+            border: 1px solid #e2e8f0;
+            background: #fafbfc;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: inherit;
+            user-select: none;
+        }
+        .vc-pill .sw { width: 6px; height: 6px; border-radius: 50%; background: #b8c4cc; }
+        .vc-pill:hover { border-color: #8ab4b0; color: #5b8c8a; }
+        .vc-pill.on { background: #eef4f2; border-color: #8ab4b0; color: #2c5a57; }
+        .vc-pill.on .sw { background: #5b8c8a; box-shadow: 0 0 6px rgba(91,140,138,0.5); }
+        .vc-pill[data-layer="stress"].on .sw { background: #c28b5a; box-shadow: 0 0 6px rgba(194,139,90,0.5); }
+        .vc-pill[data-layer="defects"].on .sw { background: #c0392b; box-shadow: 0 0 6px rgba(192,57,43,0.5); }
+        .vc-pill[data-layer="sensors"].on .sw { background: #4a90b8; box-shadow: 0 0 6px rgba(74,144,184,0.5); }
+        .night-mode .vc-pill { background:#1e2a2f; border-color:#3a4b53; color:#9ab0b8; }
+        .night-mode .vc-pill.on { background:#2f4a48; border-color:#6e9c98; color:#d4dfe3; }
+
+        .locate3d-stage {
+            position: relative;
+            border-radius: 18px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(91, 140, 138, 0.18);
+            flex: 1;
+            min-height: 420px;
+            margin: 14px 24px 24px;
+        }
+        .night-mode .locate3d-stage { background: rgba(20,30,32,0.4); border-color: rgba(110,156,152,0.25); }
+        #locate3d-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; }
+        #locate3d-canvas:active { cursor: grabbing; }
+        #locate3d-canvas.armed { cursor: crosshair; }
+        #locate3d-canvas.armed:active { cursor: crosshair; }
+
+        .defect-card-item.armed { border-color: #5b8c8a; background: #eef4f2; box-shadow: 0 0 0 2px rgba(91,140,138,0.25); }
+        .night-mode .defect-card-item.armed { background: #1e3a38; border-color: #6e9c98; }
+        .defect-located-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #2d7a6e;
+        }
+        .night-mode .defect-located-tag { color: #8ab4b0; }
+
+        @media (max-width: 860px) {
+            .locate3d-container { flex-direction: column; width: 95%; max-height: 90vh; }
+            .locate3d-defects-panel { max-height: 35vh; }
+            .locate3d-stage { min-height: 320px; }
+        }
+    </style>
+<base target="_blank">
+<base target="_blank">
+<base target="_blank">
+</head>
+<body>
+
+    <!-- STICKY LEFT CONCLUSIONS BAR -->
+    <div class="conclusions-bar" id="conclusionsBar" onclick="openSplitModal()">
+        <div class="bar-pulse" id="barPulse"></div>
+        <div class="bar-icon" id="barIcon"><i class="fas fa-pen"></i></div>
+        <div class="bar-label">Conclusions</div>
+        <div class="bar-status" id="barStatus">Required</div>
+    </div>
+
+    <!-- ORIGINAL NAVBAR (now floating) -->
+    <div class="navbar">
+        <div class="left">
+            <div class="logo">spanSense</div>
+        </div>
+
+        <div class="right">
+            <div class="night-mode-toggle" id="nightModeToggle"><i class="fas fa-moon"></i></div>
+            <div class="account-links">
+                <a href="#">Account</a>
+                <a href="#">Contact Us</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 75% WRAPPER WITH SIDEBAR LAYOUT -->
+    <div class="inspection-wrapper">
+        <div class="inspection-layout">
+
+            <!-- ORIGINAL CONTENT (LEFT SIDE) -->
+            <div class="inspection-main">
+
+                <h2 id="bridgeHeader">Loading...</h2>
+
+                <div class="stats-three-cards">
+                    <!-- BCI Average Card -->
+                    <div class="stat-card average">
+                        <div class="stat-label">BCI AVERAGE</div>
+                        <div class="stat-value" id="bciAvResult">100.00</div>
+                    </div>
+
+                    <!-- BCI Critical Card -->
+                    <div class="stat-card critical">
+                        <div class="stat-label">BCI CRITICAL</div>
+                        <div class="stat-value critical" id="bciCritResult">100.00</div>
+                    </div>
+
+                    <!-- Date Card -->
+                    <div class="stat-card">
+                        <div class="stat-label">INSPECTION DATE</div>
+                        <div class="date-card-content">
+                            <div class="date-select-wrapper">
+                                <select id="inspectionDates">
+                                    <option value="">-- Select inspection date --</option>
+                                </select>
+                            </div>
+                            <div class="action-button-wrapper">
+                                <button class="load-btn-inline" onclick="view()">
+                                    <i class="fas fa-table"></i> Hide Empty Rows
+                                </button>
+                                <!-- NEW: Row density toggle -->
+                                <button class="load-btn-inline row-density-toggle" id="rowDensityToggle" onclick="toggleRowDensity()" title="Toggle row density">
+                                    <i class="fas fa-compress-alt" id="rowDensityIcon"></i> <span id="rowDensityLabel">Compact</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="bci-sticky-sidebar" id="bciStickySidebar">
+                    <div class="stat-card average">
+                        <div class="stat-label">BCI AVERAGE</div>
+                        <div class="stat-value" id="bciAvSidebar">100.00</div>
+                    </div>
+                    <div class="stat-card critical">
+                        <div class="stat-label">BCI CRITICAL</div>
+                        <div class="stat-value critical" id="bciCritSidebar">100.00</div>
+                    </div>
+                </div>
+
+
+
+                <!-- TABLE CONTAINER WITH TEMPLATES - ORIGINAL -->
+                <div class="table-container">
+                    <template id="templateButtonRow">
+                        <tr class="button-row" style="display: none;">
+                            <td colspan="5">
+                                <button class="btn-add-defect">Add Defect</button>
+                            </td>
+                        </tr>
+                    </template>
+
+
+                    <template id="templateRow">
+                        <tr class="expandable-row" style="display: none;">
+                            <td colspan="5">
+                                <div class="aligned-grid">
+                                    <div class="retrieved-ribbon"><i class="fas fa-lock"></i> Retrieved</div>
+
+                                    <div class="grid-badges">
+                                        <div class="badge">
+                                            <div class="badge-label">SEVERITY</div>
+                                            <div class="badge-value addSeverity">Add</div>
+                                        </div>
+                                        <div class="badge">
+                                            <div class="badge-label">EXTENT</div>
+                                            <div class="badge-value addExtent">Add</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="grid-content">
+                                        <div class="content-row">
+                                            <div class="row-label">DEFECT</div>
+                                            <div class="row-value addDefect">Add</div>
+                                            <!-- PRIMARY TAG ADDED HERE -->
+                                            <div class="primary-tag" onclick="event.stopPropagation(); setAsPrimaryDefect(this)">
+                                                <div class="dot"></div>
+                                                <span>Primary</span>
+                                            </div>
+                                        </div>
+                                        <div class="content-row works-row" id="worksRow">
+                                            <div class="row-label">WORKS</div>
+                                            <div class="row-value addWorks">Add</div>
+                                        </div>
+                                        <div class="content-row conditional-row priority-row" id="priorityRow">
+                                            <div class="row-label">PRIORITY</div>
+                                            <div class="row-value addPriority">Add</div>
+                                        </div>
+                                        <div class="content-row conditional-row cost-row" id="costRow">
+                                            <div class="row-label">COST</div>
+                                            <div class="row-value addCost">Add</div>
+                                        </div>
+                                        <div class="comment-row">
+                                            <div class="comment-box">
+                                                <div class="comment-label">INSPECTOR COMMENT</div>
+                                                <div class="comment-value addComment">Add</div>
+                                            </div>
+                                        </div>
+                                        <div class="addRemedialWorks" hidden></div>
+                                        <div class="defectId" hidden></div>
+                                    </div>
+
+                                    <div class="grid-buttons">
+                                        <button onclick="openPhotoModal(event)" class="btn-photo view-photos" title="View">
+                                            <i class="fas fa-camera"></i>
+                                        </button>
+                                        <button class="btn-copy" title="Edit">
+                                            <i class="fas fa-pencil-alt"></i>
+                                        </button>
+                                        <button class="btn-delete" title="Delete">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                        <button class="btn-edit" title="Copy">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+
+                                </div>
+                            </td>
+                        </tr>
+                    </template>
+
+                </div>
+
+                <!-- SPAN NAVIGATION - ORIGINAL -->
+                <div class="span-navigation">
+                    <div class="span-toggles" id="spanToggles"></div>
+                    <div class="span-content">
+                        <h3 id="current-span-title">Span 1 Elements</h3>
+                        <table id="inspectionElementsTable">
+                            <thead>
+                                <tr>
+                                    <th class="itemno">No</th>
+                                    <th>Element Description</th>
+                                    <th>Severity</th>
+                                    <th>Extent</th>
+                                    <th>Defect</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- NEW RIGHT SIDEBAR -->
+            <aside class="bridge-sidebar">
+                <div class="sidebar-card">
+                    <div class="bridge-name" id="sidebarBridgeName">Golden Gate Overpass</div>
+                    <div class="bridge-id" id="sidebarBridgeId">Bridge ID: A-104</div>
+
+                    <div class="mock-image">
+                        <i class="fas fa-bridge"></i>
+                        <span>spanSense ©</span>
+                    </div>
+
+                    <div class="sidebar-divider"></div>
+                    <div class="sidebar-stat">
+                        <span class="sidebar-stat-label"><i class="fas fa-road"></i> Spans</span>
+                        <span class="sidebar-stat-value" id="sidebarSpanCount">4</span>
+                    </div>
+                    <div class="sidebar-stat">
+                        <span class="sidebar-stat-label"><i class="fas fa-ruler-horizontal"></i> Length</span>
+                        <span class="sidebar-stat-value" id="sidebarLength">128 m</span>
+                    </div>
+                    <div class="sidebar-stat">
+                        <span class="sidebar-stat-label"><i class="fas fa-clipboard-check"></i> Built Year</span>
+                        <span class="sidebar-built" id="sidebarBuiltYear">--</span>
+                    </div>
+                    <div class="sidebar-stat">
+                        <span class="sidebar-stat-label"><i class="fas fa-calendar-check"></i> Last Inspection</span>
+                        <span class="sidebar-stat-value" id="sidebarLastInsp">14 Mar 2026</span>
+                    </div>
+                    <div class="sidebar-divider"></div>
+                    <div class="sidebar-actions">
+                        <button class="sidebar-btn primary" id="saveDraftBtn"><i class="fas fa-save"></i> Save Draft</button>
+                        <button class="btn-preview-inspection" id="previewInspection">Preview</button>
+                    </div>
+                </div>
+                <!-- NAVIGATION BUTTONS - ORIGINAL -->
+                <div class="navigation">
+                    <button id="toInspection1">Back</button>
+                    <button class="btn-save-inspection" id="saveInspection">Save</button>
+                </div>
+            </aside>
+
+        </div>
+    </div>
+
+    <!-- ALL MODALS - ORIGINAL (unchanged) -->
+    <div id="uploadModal-photo" class="modal-overlay-photo">
+        <div class="modal-photo">
+            <div class="modal-header-photo">
+                <span>Upload Photos</span>
+                <button class="close-btn-photo" onclick="closePhotoModal()">&times;</button>
+            </div>
+            <div id="previewContainer-photo" class="preview-container-photo">
+                <label class="add-photo-photo" for="photoInput-photo">+</label>
+                <input type="file" id="photoInput-photo" accept="image/*" onchange="previewImages()" multiple />
+            </div>
+            <div class="modal-footer-photo">
+                <button class="btn-photo btn-cancel" onclick="closePhotoModal()">CANCEL</button>
+                <button type="button" class="btn-photo btn-upload" id="savePhotosBtn">SAVE</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Details</h2>
+                <button class="close-btn" id="modalCloseBtn">&times;</button>
+            </div>
+
+
+            <div class="modal-body v-modal-body">
+
+                <!-- OPTION F: SEGMENTED CONTROL -->
+                <div class="of-segmented-control">
+                    <button class="of-segment of-active" data-state="defect" onclick="setModalSegment(this,'defect')">
+                        <i class="fas fa-circle" style="font-size:0.45rem;"></i> Add Defect
+                    </button>
+                    <button class="of-segment of-seg-green" data-state="no-defects" onclick="setModalSegment(this,'no-defects')">
+                        <i class="fas fa-check"></i> No Defects
+                    </button>
+                    <button class="of-segment of-seg-orange" data-state="not-inspected" onclick="setModalSegment(this,'not-inspected')">
+                        <i class="fas fa-ban"></i> Not Inspected
+                    </button>
+                </div>
+
+                <!-- STATE: ADD DEFECT (default) -->
+                <div id="of-defect-panel" style="display:none;">
+
+                    <!-- DEFECT SECTION -->
+                    <div class="v-section">
+                        <div class="v-section-label" style="color:#8ab4b0;">Defect</div>
+                        <div class="defect-split-row">
+                            <div class="defect-split-half">
+                                <div class="v-label">Element</div>
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <select id="defectType">
+                                        <option value="1">1 Metalwork</option>
+                                        <option value="2">2 RC & prestressed concrete</option>
+                                        <option value="3">3 Masonry, brickwork & MC</option>
+                                        <option value="4">4 Paintwork & coatings</option>
+                                        <option value="5">5 Vegetation</option>
+                                        <option value="6">6 Foundation</option>
+                                        <option value="7">7 Invert, apron & riverbed</option>
+                                        <option value="8">8 Drainage</option>
+                                        <option value="9">9 Surfacing</option>
+                                        <option value="10">10 Expansion joints</option>
+                                        <option value="11">11 Embankments</option>
+                                        <option value="12">12 Bearings</option>
+                                        <option value="13">13 Impact damage</option>
+                                        <option value="14">14 Waterproofing</option>
+                                        <option value="15">15 Stone slab bridges</option>
+                                        <option value="16">16 Timber</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="defect-split-half">
+                                <div class="v-label">No.</div>
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <select id="defectNumber"></select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="v-divider"></div>
+
+                    <!-- SCORES SECTION -->
+                    <div class="v-section">
+                        <div class="v-section-label" style="color:#378ADD;">Scores</div>
+                        <div class="scores-row-steppers">
+
+                            <div class="score-stepper-card severity-stepper" id="severityStepperCard">
+                                <div class="stepper-header">
+                                    <div class="stepper-label">Severity</div>
+                                    <div class="stepper-value" id="severityStepperValue">1</div>
+                                </div>
+                                <div class="progress-bar-track">
+                                    <div class="progress-bar-fill" id="severityProgressBar" data-value="1"></div>
+                                </div>
+                                <div class="stepper-track">
+                                    <button class="stepper-step sev-1 active" data-val="1">1</button>
+                                    <button class="stepper-step sev-2" data-val="2">2</button>
+                                    <button class="stepper-step sev-3" data-val="3">3</button>
+                                    <button class="stepper-step sev-4" data-val="4">4</button>
+                                    <button class="stepper-step sev-5" data-val="5">5</button>
+                                </div>
+                                <select id="severity" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;">
+                                    <option value="1" selected>1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                </select>
+                            </div>
+
+                            <div class="score-stepper-card extent-stepper" id="extentStepperCard">
+                                <div class="stepper-header">
+                                    <div class="stepper-label">Extent</div>
+                                    <div class="stepper-value" id="extentStepperValue">A</div>
+                                </div>
+                                <div class="progress-bar-track">
+                                    <div class="progress-bar-fill" id="extentProgressBar" data-value="A"></div>
+                                </div>
+                                <div class="stepper-track">
+                                    <button class="stepper-step active" data-val="A">A</button>
+                                    <button class="stepper-step" data-val="B">B</button>
+                                    <button class="stepper-step" data-val="C">C</button>
+                                    <button class="stepper-step" data-val="D">D</button>
+                                    <button class="stepper-step" data-val="E">E</button>
+                                </div>
+                                <select id="extent" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;">
+                                    <option value="A" selected>A</option>
+                                    <option value="B">B</option>
+                                    <option value="C">C</option>
+                                    <option value="D">D</option>
+                                    <option value="E">E</option>
+                                </select>
+                            </div>
+
+                            <div class="score-stepper-card works-stepper works-yes" id="worksStepperCard">
+                                <div class="stepper-header">
+                                    <div class="stepper-label">Works</div>
+                                    <div class="stepper-value" id="worksStepperValue">Yes</div>
+                                </div>
+                                <div class="progress-bar-track">
+                                    <div class="progress-bar-fill" id="worksProgressBar"></div>
+                                </div>
+                                <div class="stepper-track">
+                                    <button class="stepper-step works-no-step" data-val="N">No</button>
+                                    <button class="stepper-step works-yes-step active" data-val="Y">Yes</button>
+                                    <button class="stepper-step works-monitor-step" data-val="M">Mon</button>
+                                </div>
+                                <select id="works" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;">
+                                    <option value="N">No</option>
+                                    <option value="Y" selected>Yes</option>
+                                    <option value="M">Monitor</option>
+                                </select>
+                            </div>
+
+
+                        </div>
+                    </div>
+
+                    <div class="v-divider"></div>
+
+                    <!-- WORKS DETAIL -->
+                    <div class="v-section" id="worksDetailSection" style="display:none;">
+                        <div class="v-section-label" style="color:#BA7517;">
+                            <span class="v-badge-amber">Works Detail</span>
+                        </div>
+                        <div class="works-detail-panel">
+                            <div class="works-row-pills">
+                                <div class="works-half">
+                                    <div class="v-label">Priority</div>
+                                    <div class="form-group" id="priorityGroup" style="margin-bottom:0;">
+                                        <select id="priority">
+                                            <option value="L">Low</option>
+                                            <option value="M">Medium</option>
+                                            <option value="H">High</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="works-half">
+                                    <div class="v-label">Est. Cost</div>
+                                    <div class="form-group" id="costGroup" style="margin-bottom:0;">
+                                        <input type="number" id="cost" placeholder="Enter amount">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="works-full" style="margin-top:10px;">
+                                <div class="v-label">Remedial Works</div>
+                                <div class="form-group" id="remedialWorksGroup" style="margin-bottom:0;">
+                                    <textarea id="remedialWorks" rows="2" placeholder="Describe..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="v-divider" id="worksDetailDivider" style="display:none;"></div>
+
+                    <!-- COMMENT -->
+                    <div class="v-section">
+                        <div class="v-section-label" style="color:#8a9ba8;">Comment</div>
+                        <div class="comment-panel">
+                            <div class="form-group" style="margin-bottom:0;">
+                                <textarea id="comment" rows="3" placeholder="Enter your comment here..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                </div><!-- /#of-defect-panel -->
+
+                <!-- STATE: NO DEFECTS -->
+                <div id="of-no-defects-panel" style="display:none;">
+                    <div class="of-state-panel">
+                        <div class="of-state-icon of-state-icon--green">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <h3 class="of-state-title">No Defects Found</h3>
+                        <p class="of-state-desc">This element will be marked as having no defects.<br>Severity 1, Extent A, Works: No</p>
+                        <div class="comment-panel" style="text-align:left;width:100%;">
+                            <div class="form-group" style="margin-bottom:0;">
+                                <textarea id="of-no-defects-comment" rows="3" placeholder="Optional comment (e.g. 'Visual inspection only, no defects observed')..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STATE: NOT INSPECTED -->
+                <div id="of-not-inspected-panel" style="display:none;">
+                    <div class="of-state-panel">
+                        <div class="of-state-icon of-state-icon--orange">
+                            <i class="fas fa-ban"></i>
+                        </div>
+                        <h3 class="of-state-title">Not Inspected</h3>
+                        <p class="of-state-desc">This element will be marked as not inspected.<br>Add a reason below.</p>
+                        <div class="comment-panel" style="text-align:left;width:100%;">
+                            <div class="form-group" style="margin-bottom:0;">
+                                <textarea id="of-not-inspected-comment" rows="3" placeholder="Reason (e.g. 'Access restricted', 'Covered by scaffolding')..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /.modal-body -->
+
+            <div class="modal-footer">
+                <button class="btn btn-save" id="modalSaveBtn" onclick="saveChanges()">Save</button>
+                <button class="btn btn-back" id="modalBackBtn" onclick="closeModal()">Back</button>
+            </div>
+        </div>
+    </div>
+
+
+
+
+    <!-- SPLIT MODAL -->
+    <div class="split-modal-overlay" id="splitModal">
+        <div class="split-modal-container">
+            <div class="conclusions-modal">
+                <div class="modal-header">
+                    <h2><i class="fas fa-clipboard-check"></i> Inspection Conclusions</h2>
+                    <button class="close-btn" onclick="closeSplitModal()">&times;</button>
+                </div>
+                <textarea id="conclusionsText" placeholder="Summarize overall bridge condition..."></textarea>
+                <div class="modal-footer" style="padding: 16px 24px; text-align: right;">
+                    <button class="btn-save-conclusions" onclick="saveConclusions()">Save Conclusions</button>
+                </div>
+                <!-- NEW: open the 3D defect locator -->
+                <div class="locate3d-launch-row">
+                    <button class="btn-locate3d" id="openLocate3dBtn" onclick="openLocate3dModal()">
+                        <i class="fas fa-cube"></i> Locate Defects on 3D Model
+                    </button>
+                </div>
+            </div>
+            <div class="defects-panel-modal">
+                <div class="panel-header">
+                    <h3><i class="fas fa-clipboard-list"></i> Defects Summary</h3>
+                    <span class="defect-count-badge" id="splitDefectCount">0</span>
+                </div>
+                <div class="defects-list-container" id="splitDefectsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: LOCATE DEFECTS ON 3D MODEL MODAL -->
+    <div class="split-modal-overlay" id="locate3dModal">
+        <div class="split-modal-container locate3d-container">
+            <div class="conclusions-modal locate3d-viewer-panel">
+                <div class="modal-header">
+                    <h2><i class="fas fa-cube"></i> Locate Defects on 3D Model</h2>
+                    <button class="close-btn" onclick="closeLocate3dModal()">&times;</button>
+                </div>
+                <div class="locate3d-toolbar">
+                    <div class="vc-layer-toggles">
+                        <div class="vc-pill on" data-layer="structure"><span class="sw"></span>Structure</div>
+                        <div class="vc-pill on" data-layer="sensors"><span class="sw"></span>Sensors</div>
+                        <div class="vc-pill on" data-layer="defects"><span class="sw"></span>Defects</div>
+                        <div class="vc-pill on" data-layer="stress"><span class="sw"></span>Stress</div>
+                    </div>
+                    <div class="locate3d-hint" id="locate3dHint">Select a defect on the right, then click the model to place it.</div>
+                </div>
+                <div class="locate3d-stage">
+                    <canvas id="locate3d-canvas"></canvas>
+                </div>
+            </div>
+            <div class="defects-panel-modal locate3d-defects-panel">
+                <div class="panel-header">
+                    <h3><i class="fas fa-map-marker-alt"></i> Defects</h3>
+                    <span class="defect-count-badge" id="locate3dDefectCount">0</span>
+                </div>
+                <div class="defects-list-container" id="locate3dDefectsList"></div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- ============================================
+     SAVE SEQUENCE OVERLAY
+     ============================================ -->
+    <div class="save-overlay hidden" id="saveOverlay">
+        <div class="save-container" id="savingState">
+            <div class="save-icon-wrap">
+                <i class="fas fa-save"></i>
+            </div>
+            <div class="save-status" id="saveStatusText">Saving inspection</div>
+            <div class="save-detail" id="saveDetailText">Preparing data...</div>
+            <div class="progress-wrap">
+                <div class="progress-track">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="save-container success-flash" id="successFlash" style="display:none;">
+            <div class="success-ring">
+                <i class="fas fa-check"></i>
+            </div>
+            <div class="success-title">Saved successfully</div>
+        </div>
+    </div>
+
+    <!-- ============================================
+     LANDSCAPE POST-SAVE MODAL
+     ============================================ -->
+    <div class="post-save-overlay" id="postSaveOverlay">
+        <div class="post-save-modal">
+
+            <!-- LEFT: Summary -->
+            <div class="post-save-left">
+                <div class="post-save-header">
+                    <span><i class="fas fa-clipboard-check"></i> Inspection Complete</span>
+                </div>
+
+                <div class="success-banner">
+                    <div class="success-icon">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <h3>Inspection Saved</h3>
+                    <p id="psBridgeName">Golden Gate Overpass</p>
+                </div>
+
+                <div class="inspection-summary">
+                    <div class="summary-row">
+                        <span class="summary-label"><i class="fas fa-road"></i> Spans</span>
+                        <span class="summary-value" id="psSpanCount">4 inspected</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label"><i class="fas fa-exclamation-circle"></i> Defects</span>
+                        <span class="summary-value" id="psDefectCount">7 recorded</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label"><i class="fas fa-calendar"></i> Date</span>
+                        <span class="summary-value" id="psDate">12 Jun 2026</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label"><i class="fas fa-chart-line"></i> BCI Average</span>
+                        <span class="summary-value bci-av" id="psBciAv">87.4</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label"><i class="fas fa-exclamation-triangle"></i> BCI Critical</span>
+                        <span class="summary-value bci-crit" id="psBciCrit">62.1</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: Actions -->
+            <div class="post-save-right">
+                <div class="right-title">What next?</div>
+
+                <div class="action-grid">
+                    <a href="#" class="action-btn primary" onclick="goHome(event)">
+                        <div class="action-icon"><i class="fas fa-home"></i></div>
+                        <span class="action-label">Return Home</span>
+                        <span class="action-desc">Back to dashboard</span>
+                    </a>
+                    <a href="#" class="action-btn secondary" onclick="newInspection(event)">
+                        <div class="action-icon"><i class="fas fa-plus"></i></div>
+                        <span class="action-label">New Inspection</span>
+                        <span class="action-desc">Start fresh</span>
+                    </a>
+                </div>
+
+                <a href="#" class="action-btn-wide" onclick="viewReport(event)">
+                    <div class="wide-icon"><i class="fas fa-file-alt"></i></div>
+                    <div class="wide-text">
+                        <div class="wide-label">View Report</div>
+                        <div class="wide-desc">Preview the full inspection</div>
+                    </div>
+                    <i class="fas fa-chevron-right wide-arrow"></i>
+                </a>
+
+                <div class="post-save-footer">
+                    <p><i class="fas fa-shield-alt"></i> All data saved securely</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- GLASS SCROLLBAR -->
+    <div class="glass-scrollbar" id="glassScrollbar">
+        <div class="thumb" id="glassThumb"></div>
+    </div>
+
+    <script>
+        // Function to update the bridge header card with data
+        function updateBridgeHeader(structureName, structureId, bridgeData) {
+            const bridgeNameEl = document.getElementById('bridgeName');
+            const bridgeIdEl = document.getElementById('bridgeId');
+            if (bridgeNameEl) bridgeNameEl.textContent = structureName || 'Loading...';
+            if (bridgeIdEl) bridgeIdEl.textContent = `Structure ID: ${structureId || '--'}`;
+
+            if (bridgeData) {
+                const locationEl = document.getElementById('bridgeLocation');
+                const typeEl = document.getElementById('bridgeType');
+                const yearEl = document.getElementById('bridgeYear');
+                if (locationEl) locationEl.textContent = bridgeData.location || bridgeData.crosses || '--';
+                if (typeEl) typeEl.textContent = bridgeData.structure_type || 'Bridge';
+                if (yearEl) yearEl.textContent = bridgeData.year_built || '--';
+            }
+        }
+
+        function updateInspectorDisplay(name) {
+            const inspectorSpan = document.getElementById('inspectorNameDisplay');
+            if (inspectorSpan && name) {
+                inspectorSpan.textContent = name;
+            }
+        }
+
+        // Dark mode toggle
+        (function() {
+            const toggleBtn = document.getElementById('nightModeToggle');
+            if (!toggleBtn) return;
+
+            toggleBtn.onclick = function() {
+                document.body.classList.toggle('night-mode');
+                if (document.body.classList.contains('night-mode')) {
+                    this.innerHTML = '<i class="fas fa-sun"></i>';
+                    localStorage.setItem('nightMode', 'on');
+                } else {
+                    this.innerHTML = '<i class="fas fa-moon"></i>';
+                    localStorage.setItem('nightMode', 'off');
+                }
+            };
+
+            if (localStorage.getItem('nightMode') === 'on') {
+                document.body.classList.add('night-mode');
+                toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
+            }
+        })();
+
+        window.updateBridgeHeader = updateBridgeHeader;
+        window.updateInspectorDisplay = updateInspectorDisplay;
+    </script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+        // ===== SINGLE SOURCE OF TRUTH FOR PILL SELECTORS =====
+
+        function setSeverity(val) {
+            var sel = document.getElementById('severity');
+            if (sel) sel.value = String(val);
+            var disp = document.getElementById('severityDisplay');
+            if (disp) disp.textContent = val;
+            document.querySelectorAll('.severity-card .pill').forEach(function(p) {
+                p.classList.toggle('active', parseInt(p.dataset.val) === val);
+            });
+        }
+
+        function setExtent(val) {
+            var sel = document.getElementById('extent');
+            if (sel) sel.value = val;
+            var disp = document.getElementById('extentDisplay');
+            if (disp) disp.textContent = val;
+            document.querySelectorAll('.extent-card .pill').forEach(function(p) {
+                p.classList.toggle('active', p.dataset.val === val);
+            });
+        }
+
+        function setWorks(val) {
+            // Update hidden select
+            var sel = document.getElementById('works');
+            if (sel) sel.value = val;
+
+            // Update display text
+            var display = document.getElementById('worksDisplay');
+            if (display) {
+                if (val === 'Y') display.textContent = 'Yes';
+                else if (val === 'N') display.textContent = 'No';
+                else display.textContent = 'Monitor';
+            }
+
+            // Update card color
+            var card = document.querySelector('.works-card');
+            if (card) {
+                card.classList.remove('works-yes', 'works-no', 'works-monitor');
+                if (val === 'Y') card.classList.add('works-yes');
+                else if (val === 'N') card.classList.add('works-no');
+                else if (val === 'M') card.classList.add('works-monitor');
+            }
+
+            // Show/hide works detail section
+            var detail = document.getElementById('worksDetailSection');
+            var divider = document.getElementById('worksDetailDivider');
+
+            if (val === 'Y') {
+                if (detail) detail.style.display = 'block';
+                if (divider) divider.style.display = 'block';
+            } else {
+                if (detail) detail.style.display = 'none';
+                if (divider) divider.style.display = 'none';
+            }
+
+            // Update pill active states
+            document.querySelectorAll('.works-card .pill').forEach(function(p) {
+                p.classList.toggle('active', p.dataset.val === val);
+            });
+
+            // Sync conditional fields visibility (priority, cost, remedial works)
+            if (typeof updateConditionalFieldsVisibility === 'function') {
+                updateConditionalFieldsVisibility(val);
+            }
+        }
+
+        function initModalPills() {
+            var sev = document.getElementById('severity');
+            var ext = document.getElementById('extent');
+            var wrk = document.getElementById('works');
+
+            if (sev) setSeverity(parseInt(sev.value) || 3);
+            if (ext) setExtent(ext.value || 'B');
+            if (wrk) setWorks(wrk.value || 'Y');
+
+            console.log('initModalPills called:', {
+                severity: sev ? sev.value : 'N/A',
+                extent: ext ? ext.value : 'N/A',
+                works: wrk ? wrk.value : 'N/A'
+            });
+        }
+
+        // Defect type → number cascade
+        var defectTypeEl = document.getElementById('defectType');
+        if (defectTypeEl) {
+            defectTypeEl.addEventListener('change', function() {
+                var type = this.value;
+                var numSelect = document.getElementById('defectNumber');
+                if (!numSelect) return;
+                numSelect.innerHTML = '';
+                for (var i = 1; i <= 4; i++) {
+                    var opt = document.createElement('option');
+                    opt.value = type + '.' + i;
+                    opt.textContent = type + '.' + i;
+                    if (i === 1) opt.selected = true;
+                    numSelect.appendChild(opt);
+                }
+            });
+        }
+
+        // Event delegation for pills
+        document.querySelector('.severity-card')?.addEventListener('click', function(e) {
+            var pill = e.target.closest('.pill');
+            if (!pill) return;
+            setSeverity(parseInt(pill.dataset.val));
+        });
+
+        document.querySelector('.extent-card')?.addEventListener('click', function(e) {
+            var pill = e.target.closest('.pill');
+            if (!pill) return;
+            setExtent(pill.dataset.val);
+        });
+
+        document.querySelector('.works-card')?.addEventListener('click', function(e) {
+            var pill = e.target.closest('.pill');
+            if (!pill) return;
+            setWorks(pill.dataset.val);
+        });
+
+        // Hook into existing openModal AFTER external JS has loaded
+        var originalOpenModal = window.openModal;
+        window.openModal = function() {
+            // Call original first (sets up modal display, scroll lock, etc.)
+            if (originalOpenModal) originalOpenModal.apply(this, arguments);
+
+            // Then sync pills to match current select values
+            // Use rAF to ensure DOM is fully updated
+            requestAnimationFrame(function() {
+                initModalPills();
+            });
+        };
+
+        // Also expose initModalPills globally so edit handler can call it directly
+        window.initModalPills = initModalPills;
+    });
+    </script>
+
+    <script src="saveSequence.js"></script>
+    <script src="inspectionA.js"></script>
+    <script src="inspection.js"></script>
+    <script src="bci.js"></script>
+    <script src="spans.js"></script>
+    <script src="photo.js"></script>
+    <script src="../inspection1/inspection1.js"></script>
+
+    <!-- NEW: 3D defect locator (additive only — nothing above this line was changed from inspection.html) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="../twin/bridgeModels.js"></script>
+    <script src="locate3d.js"></script>
+</body>
+</html>
