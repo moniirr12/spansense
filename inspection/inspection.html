@@ -34,6 +34,14 @@
             display: flex;
             gap: 32px;
             align-items: flex-start;
+            /* .bridge-sidebar is position:sticky with top:110px, but a sticky
+               element can't stick past its containing block's bottom edge.
+               With few table rows .inspection-main is shorter than the
+               sidebar, so this flex container (the sidebar's containing
+               block) shrinks too, clamping the sidebar back up near the top
+               instead of the intended 110px offset. The min-height keeps
+               enough room so that clamp never engages. */
+            min-height: 620px;
         }
         
         /* Original content container */
@@ -310,12 +318,12 @@
            Stacks both bars and centers them as a group,
            horizontally, in the gutter to the left of the
            75%-wide content wrapper (inspection-wrapper).
-           Vertically it's pinned a fixed distance from the
-           top (not viewport-centered) so it clears
-           #bciStickySidebar (spans.js), which sticks at
-           ~y=140-288px once scrolled into view — centering
-           on viewport height would let the rail drift up
-           into that zone on shorter screens.
+           top:320px below is just the pre-JS fallback —
+           positionLeftRail() in spans.js overrides it on
+           load to align with the table's header row. The
+           table always renders below the BCI cards, so this
+           also keeps it clear of #bciStickySidebar (spans.js),
+           which sticks at ~y=140-288px once scrolled into view.
            ============================================ */
         .left-floating-rail {
             position: fixed;
@@ -458,6 +466,21 @@
             color: #2d7a6e;
         }
         .night-mode .defect-located-tag { color: #8ab4b0; }
+        .defect-remove-btn {
+            border: none;
+            background: transparent;
+            color: #c0392b;
+            cursor: pointer;
+            padding: 0;
+            margin-left: 2px;
+            font-size: 0.75rem;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+        }
+        .defect-remove-btn:hover { color: #962d22; }
+        .night-mode .defect-remove-btn { color: #e57373; }
+        .night-mode .defect-remove-btn:hover { color: #ef9a9a; }
 
         @media (max-width: 860px) {
             .locate3d-container { flex-direction: column; width: 95%; max-height: 90vh; }

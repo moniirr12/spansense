@@ -757,6 +757,31 @@ function injectRetrievedRibbon(row) {
   syncValues();
 })();
 
+// ============================================
+// LEFT FLOATING RAIL — align with table header
+// ============================================
+(function() {
+  const rail = document.querySelector('.left-floating-rail');
+  const mainEl = document.querySelector('.inspection-main');
+  if (!rail || !mainEl) return;
+
+  function positionLeftRail() {
+    const theadRow = document.querySelector('#inspectionElementsTable thead tr');
+    if (!theadRow) return;
+    rail.style.top = theadRow.getBoundingClientRect().top + 'px';
+  }
+
+  positionLeftRail();
+  window.addEventListener('resize', positionLeftRail);
+
+  // Bridge name/stats load asynchronously and can change the height of
+  // everything above the table — re-measure whenever that shifts the
+  // main column's size instead of guessing a fixed delay.
+  if (typeof ResizeObserver !== 'undefined') {
+    new ResizeObserver(positionLeftRail).observe(mainEl);
+  }
+})();
+
 // Make functions globally available
 window.initializeSpanButtons = initializeSpanButtons;
 window.handleSpanButtonClick = handleSpanButtonClick;
