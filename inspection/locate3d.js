@@ -19,6 +19,7 @@
    ============================================================ */
 
 var armedDefectIndex = null;
+var hoveredMarkerIndex = null;
 var locate3dReady = false;
 var locate3dVisible = false;
 var locateMarkerMeshes = {}; // defect array-index -> THREE.Mesh
@@ -346,6 +347,32 @@ function bindLocate3DInteraction() {
         l3d.camDistance = Math.min(120, Math.max(20, l3d.camDistance + e.deltaY * 0.04));
     }, { passive: false });
 
+    // Reverse of the list's onmouseenter->marker-scale: hovering a marker
+    // directly in the 3D scene highlights its row in the defects list.
+    var hoverRaycaster = new THREE.Raycaster();
+    canvas.addEventListener('pointermove', function(e) {
+        if (l3d.dragging || !l3d.defectGroup.visible) return;
+
+        var rect = canvas.getBoundingClientRect();
+        var ndc = new THREE.Vector2(
+            ((e.clientX - rect.left) / rect.width) * 2 - 1,
+            -((e.clientY - rect.top) / rect.height) * 2 + 1
+        );
+        hoverRaycaster.setFromCamera(ndc, l3d.camera);
+        var hits = hoverRaycaster.intersectObjects(l3d.defectGroup.children, true);
+
+        var hitIndex = null;
+        if (hits.length) {
+            for (var key in locateMarkerMeshes) {
+                if (locateMarkerMeshes[key] === hits[0].object) { hitIndex = key; break; }
+            }
+        }
+        if (hitIndex !== hoveredMarkerIndex) setMarkerHover(hitIndex);
+    });
+    canvas.addEventListener('pointerleave', function() {
+        if (hoveredMarkerIndex != null) setMarkerHover(null);
+    });
+
     document.querySelectorAll('#locate3dModal .vc-pill').forEach(function(pill) {
         pill.addEventListener('click', function() {
             pill.classList.toggle('on');
@@ -533,6 +560,7 @@ function renderLocate3DDefectsList() {
         var severityColor = getSeverityColorHex(def.severity);
 
         html += '<div class="defect-card-item' + (isArmed ? ' armed' : '') + '" style="border-left: 4px solid ' + severityColor + ';" ' +
+            'data-defect-index="' + i + '" ' +
             'onclick="armLocate3DDefect(' + i + ')" onmouseenter="highlightLocate3DMarker(' + i + ', true)" onmouseleave="highlightLocate3DMarker(' + i + ', false)">' +
             '<div class="defect-location">Span ' + (def.span != null ? def.span : 'N/A') + ' · ' + escapeHtml(elementDescription) + '</div>' +
             '<div class="defect-description" style="font-size: 0.75rem;">' + (def.severity || 'N/A') + (def.extent || 'N/A') + '. (' + escapeHtml(combinedDefect) + ') ' + escapeHtml(fullDefectDescription) + '</div>' +
@@ -553,6 +581,28 @@ function highlightLocate3DMarker(index, on) {
     mesh.material.emissiveIntensity = on ? 2.4 : mesh.userData.baseEmissiveIntensity;
 }
 window.highlightLocate3DMarker = highlightLocate3DMarker;
+
+function highlightDefectListItem(index, on) {
+    var item = document.querySelector('#locate3dDefectsList .defect-card-item[data-defect-index="' + index + '"]');
+    if (!item) return;
+    item.classList.toggle('hovered', on);
+    if (on) item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+window.highlightDefectListItem = highlightDefectListItem;
+
+// Single entry point for marker<->list hover, used by the 3D-scene raycast
+// hover (list-item hover already calls highlightLocate3DMarker directly).
+function setMarkerHover(index) {
+    if (hoveredMarkerIndex != null) {
+        highlightLocate3DMarker(hoveredMarkerIndex, false);
+        highlightDefectListItem(hoveredMarkerIndex, false);
+    }
+    hoveredMarkerIndex = index;
+    if (hoveredMarkerIndex != null) {
+        highlightLocate3DMarker(hoveredMarkerIndex, true);
+        highlightDefectListItem(hoveredMarkerIndex, true);
+    }
+}
 
 function armLocate3DDefect(index) {
     armedDefectIndex = (armedDefectIndex === index) ? null : index;
