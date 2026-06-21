@@ -1554,9 +1554,9 @@ body {
 .split-modal-container {
     display: flex;
     gap: 20px;
-    max-width: 1100px;
-    width: 90%;
-    max-height: 80vh;
+    max-width: 1180px;
+    width: 91%;
+    max-height: 84vh;
 }
 .conclusions-modal, .defects-panel-modal {
     background: white;
@@ -1599,6 +1599,8 @@ body {
     cursor: pointer;
 }
 .defect-card-item:hover { border-color: #8ab4b0; transform: translateX(3px); background: white; }
+.defect-card-item.hovered { border-color: #8ab4b0; transform: translateX(3px); background: white; box-shadow: 0 0 0 2px rgba(138,180,176,0.35); }
+.night-mode .defect-card-item.hovered { background: #1e3a38; }
 .defect-location { font-weight: 700; font-size: 0.8rem; color: #2c4a48; margin-bottom: 4px; }
 .defect-count-badge {
     background: #8ab4b0;

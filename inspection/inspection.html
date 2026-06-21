@@ -392,9 +392,10 @@
             .left-floating-rail { display: none; }
         }
 
-        .locate3d-container { max-width: 1320px; width: 92%; max-height: 88vh; }
-        .locate3d-viewer-panel { flex: 2.3; }
-        .locate3d-defects-panel { max-height: none; }
+        /* The 3D stage's 420px min-height can exceed the defects panel's
+           60vh cap on shorter screens, capping it shorter than the viewer
+           column it's stretched next to (flex row, align-items: stretch). */
+        #locate3dModal .defects-panel-modal { max-height: none; }
 
         .locate3d-toolbar {
             display: flex;
@@ -483,8 +484,6 @@
         .night-mode .defect-remove-btn:hover { color: #ef9a9a; }
 
         @media (max-width: 860px) {
-            .locate3d-container { flex-direction: column; width: 95%; max-height: 90vh; }
-            .locate3d-defects-panel { max-height: 35vh; }
             .locate3d-stage { min-height: 320px; }
         }
     </style>
@@ -517,8 +516,8 @@
         <div class="right">
             <div class="night-mode-toggle" id="nightModeToggle"><i class="fas fa-moon"></i></div>
             <div class="account-links">
-                <a href="#">Account</a>
-                <a href="#">Contact Us</a>
+                <a href="../accounts/accounts.html">Account</a>
+                <a href="../contacts/contacts.html">Contact Us</a>
             </div>
         </div>
     </div>
@@ -989,7 +988,7 @@
                     <h2><i class="fas fa-clipboard-check"></i> Inspection Conclusions</h2>
                     <button class="close-btn" onclick="closeSplitModal()">&times;</button>
                 </div>
-                <textarea id="conclusionsText" placeholder="Summarize overall bridge condition..."></textarea>
+                <textarea id="conclusionsText" placeholder="Summarise overall bridge condition."></textarea>
                 <div class="modal-footer" style="padding: 16px 24px; text-align: right;">
                     <button class="btn-save-conclusions" onclick="saveConclusions()">Save Conclusions</button>
                 </div>
@@ -1006,8 +1005,8 @@
 
     <!-- LOCATE DEFECTS ON 3D MODEL MODAL -->
     <div class="split-modal-overlay" id="locate3dModal">
-        <div class="split-modal-container locate3d-container">
-            <div class="conclusions-modal locate3d-viewer-panel">
+        <div class="split-modal-container">
+            <div class="conclusions-modal">
                 <div class="modal-header">
                     <h2><i class="fas fa-cube"></i> Locate Defects on 3D Model</h2>
                     <button class="close-btn" onclick="closeLocate3dModal()">&times;</button>
@@ -1025,7 +1024,7 @@
                     <canvas id="locate3d-canvas"></canvas>
                 </div>
             </div>
-            <div class="defects-panel-modal locate3d-defects-panel">
+            <div class="defects-panel-modal">
                 <div class="panel-header">
                     <h3><i class="fas fa-map-marker-alt"></i> Defects</h3>
                     <span class="defect-count-badge" id="locate3dDefectCount">0</span>
