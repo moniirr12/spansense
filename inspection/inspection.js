@@ -884,39 +884,62 @@ function addButtonRowForMainRow(mainRow) {
   return buttonRow;
 }
 
+// Table rows can't transition height/display directly, so the fade+lift
+// animation runs on each row's inner content (the .aligned-grid card, or
+// the Add Defect button) while the <tr> itself flips display instantly.
+const ROW_ANIM_MS = 200;
+function showRowAnimated(rowEl) {
+  if (!rowEl) return;
+  clearTimeout(rowEl._collapseTimer);
+  rowEl.style.display = "table-row";
+  const content = rowEl.querySelector("td")?.firstElementChild;
+  if (!content) return;
+  content.style.transition = "none";
+  content.style.opacity = "0";
+  content.style.transform = "translateY(-6px)";
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      content.style.transition = `opacity ${ROW_ANIM_MS}ms ease, transform ${ROW_ANIM_MS}ms ease`;
+      content.style.opacity = "1";
+      content.style.transform = "translateY(0)";
+    });
+  });
+}
+function hideRowAnimated(rowEl) {
+  if (!rowEl) return;
+  const content = rowEl.querySelector("td")?.firstElementChild;
+  if (!content) { rowEl.style.display = "none"; return; }
+  content.style.transition = `opacity ${ROW_ANIM_MS}ms ease, transform ${ROW_ANIM_MS}ms ease`;
+  content.style.opacity = "0";
+  content.style.transform = "translateY(-6px)";
+  clearTimeout(rowEl._collapseTimer);
+  rowEl._collapseTimer = setTimeout(() => {
+    rowEl.style.display = "none";
+  }, ROW_ANIM_MS);
+}
+
 function toggleButtonRow(row) {
   console.log("toggleButtonRow called for row:", row);
   const allRows = document.querySelectorAll("#inspectionElementsTable tbody tr.main-row");
   allRows.forEach((otherRow) => {
     if (otherRow !== row && otherRow.classList.contains("expanded")) {
       otherRow.classList.remove("expanded");
-      const otherButtonRow = findButtonRow(otherRow);
-      if (otherButtonRow) otherButtonRow.style.display = "none";
-      const otherExpandableRows = findAllExpandableRows(otherRow);
-      otherExpandableRows.forEach((expandableRow) => {
-        expandableRow.style.display = "none";
-      });
+      hideRowAnimated(findButtonRow(otherRow));
+      findAllExpandableRows(otherRow).forEach(hideRowAnimated);
     }
   });
   if (row.classList.contains("expanded")) {
     console.log("Row is expanded. Collapsing...");
     row.classList.remove("expanded");
-    const buttonRow = findButtonRow(row);
-    if (buttonRow) buttonRow.style.display = "none";
-    const expandableRows = findAllExpandableRows(row);
-    expandableRows.forEach((expandableRow) => {
-      expandableRow.style.display = "none";
-    });
+    hideRowAnimated(findButtonRow(row));
+    findAllExpandableRows(row).forEach(hideRowAnimated);
   } else {
     console.log("Row is not expanded. Expanding...");
     row.classList.add("expanded");
     let buttonRow = findButtonRow(row);
     if (!buttonRow) buttonRow = addButtonRowForMainRow(row);
-    if (buttonRow) buttonRow.style.display = "table-row";
-    const expandableRows = findAllExpandableRows(row);
-    expandableRows.forEach((expandableRow) => {
-      expandableRow.style.display = "table-row";
-    });
+    showRowAnimated(buttonRow);
+    findAllExpandableRows(row).forEach(showRowAnimated);
   }
 }
 

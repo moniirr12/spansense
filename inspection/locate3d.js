@@ -398,6 +398,26 @@ function placeDefectPoint(index, x, y, z) {
     renderLocate3DDefectsList();
 }
 
+function removeDefectPoint(index) {
+    var inspectionData = JSON.parse(sessionStorage.getItem('inspectionData') || '{}');
+    if (inspectionData.defects && inspectionData.defects[index]) {
+        delete inspectionData.defects[index].x;
+        delete inspectionData.defects[index].y;
+        delete inspectionData.defects[index].z;
+        sessionStorage.setItem('inspectionData', JSON.stringify(inspectionData));
+    }
+
+    var mesh = locateMarkerMeshes[index];
+    if (mesh) {
+        l3d.defectGroup.remove(mesh);
+        mesh.geometry.dispose();
+        delete locateMarkerMeshes[index];
+    }
+
+    renderLocate3DDefectsList();
+}
+window.removeDefectPoint = removeDefectPoint;
+
 /* ============================================================
    BRIDGE DATA (derived from sessionStorage + the sidebar's
    already-displayed mock stats — there's no live geometry API
@@ -479,7 +499,8 @@ function renderLocate3DDefectsList() {
             '<div class="defect-location">Span ' + (def.span != null ? def.span : 'N/A') + ' · ' + escapeHtml(elementDescription) + '</div>' +
             '<div class="defect-description" style="font-size: 0.75rem;">' + (def.severity || 'N/A') + (def.extent || 'N/A') + '. (' + escapeHtml(combinedDefect) + ') ' + escapeHtml(fullDefectDescription) + '</div>' +
             (located
-                ? '<div class="defect-located-tag"><i class="fas fa-check-circle"></i> Located (' + raw.x.toFixed(2) + ', ' + raw.y.toFixed(2) + ', ' + raw.z.toFixed(2) + ')</div>'
+                ? '<div class="defect-located-tag"><i class="fas fa-check-circle"></i> Located (' + raw.x.toFixed(2) + ', ' + raw.y.toFixed(2) + ', ' + raw.z.toFixed(2) + ')' +
+                  '<button type="button" class="defect-remove-btn" title="Remove from model" onclick="event.stopPropagation(); removeDefectPoint(' + i + ')"><i class="fas fa-times"></i></button></div>'
                 : '') +
             '</div>';
     });
