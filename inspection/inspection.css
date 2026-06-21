@@ -1554,8 +1554,8 @@ body {
 .split-modal-container {
     display: flex;
     gap: 20px;
-    max-width: 1180px;
-    width: 91%;
+    max-width: 944px;
+    width: 73%;
     max-height: 84vh;
 }
 .conclusions-modal, .defects-panel-modal {

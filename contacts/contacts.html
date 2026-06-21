@@ -9,10 +9,20 @@
     <script>
         // Hide the module menu when arriving from the inspection pages, before
         // first paint (in <head>) so the menu never flashes visible then hidden.
+        // The hidden state also persists while bouncing between Account and
+        // Contact Us, so it doesn't reappear just because the immediate
+        // referrer is the other of the two rather than an inspection page.
         (function() {
             var ref = document.referrer || '';
-            if (ref.indexOf('/inspection/inspection.html') !== -1 || ref.indexOf('/inspection1/inspection1.html') !== -1) {
+            var fromInspection = ref.indexOf('/inspection/inspection.html') !== -1 || ref.indexOf('/inspection1/inspection1.html') !== -1;
+            var fromAccountsOrContacts = ref.indexOf('/accounts/accounts.html') !== -1 || ref.indexOf('/contacts/contacts.html') !== -1;
+            var persisted = sessionStorage.getItem('hideNavModules') === '1';
+
+            if (fromInspection || (fromAccountsOrContacts && persisted)) {
                 document.documentElement.classList.add('hide-modules');
+                sessionStorage.setItem('hideNavModules', '1');
+            } else {
+                sessionStorage.removeItem('hideNavModules');
             }
         })();
     </script>
@@ -33,8 +43,8 @@
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            width: 67%;
-            max-width: 1190px;
+            width: 60%;
+            max-width: 1100px;
             background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);

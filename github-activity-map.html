@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>spansense — GitHub Activity Map</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --border:#30363d; --text:#c9d1d9;
+    --muted:#8b949e; --accent:#58a6ff; --green:#3fb950; --purple:#a371f7;
+    --orange:#d29922; --red:#f85149;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; padding:0 0 60px 0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  }
+  header{
+    padding:32px 5vw 20px; border-bottom:1px solid var(--border);
+    background:linear-gradient(180deg,#11151c,#0d1117);
+  }
+  header h1{margin:0 0 4px; font-size:1.6rem;}
+  header p{margin:0; color:var(--muted); font-size:0.92rem;}
+  .repo-link{color:var(--accent); text-decoration:none;}
+  .repo-link:hover{text-decoration:underline;}
+
+  .stats{
+    display:flex; gap:14px; flex-wrap:wrap; padding:20px 5vw 0;
+  }
+  .stat{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px;
+    padding:14px 18px; min-width:120px; flex:1;
+  }
+  .stat .num{font-size:1.6rem; font-weight:700; color:var(--accent);}
+  .stat .label{font-size:0.78rem; color:var(--muted); text-transform:uppercase; letter-spacing:.04em;}
+
+  section{padding:28px 5vw 0;}
+  h2{font-size:1.05rem; margin:0 0 14px; color:#fff; display:flex; align-items:center; gap:8px;}
+  h2 .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block;}
+  .panel{
+    background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:20px;
+    overflow-x:auto;
+  }
+  .note{
+    margin-top:14px; font-size:0.85rem; color:var(--muted); border-left:3px solid var(--orange);
+    padding:8px 14px; background:#1c1f12;border-radius:0 6px 6px 0;
+  }
+  .legend{display:flex; gap:18px; flex-wrap:wrap; margin-bottom:14px; font-size:0.82rem; color:var(--muted);}
+  .legend span{display:inline-flex; align-items:center; gap:6px;}
+  .legend i{width:10px;height:10px;border-radius:50%;display:inline-block;}
+
+  table{width:100%; border-collapse:collapse; font-size:0.86rem;}
+  th,td{text-align:left; padding:9px 10px; border-bottom:1px solid var(--border);}
+  th{color:var(--muted); font-weight:600; font-size:0.78rem; text-transform:uppercase; letter-spacing:.03em;}
+  tr:hover td{background:#1c2128;}
+  .badge{
+    display:inline-block; padding:2px 8px; border-radius:12px; font-size:0.72rem; font-weight:600;
+  }
+  .badge.merged{background:#1f3b27; color:var(--green);}
+  .badge.closed{background:#3b1f23; color:var(--red);}
+  .pr-link{color:var(--accent); text-decoration:none; font-weight:600;}
+  .pr-link:hover{text-decoration:underline;}
+  .branch-tag{
+    font-family:ui-monospace,Consolas,monospace; font-size:0.78rem; padding:1px 6px;
+    border-radius:4px; background:#21262d; color:#e6edf3;
+  }
+  canvas{max-height:280px;}
+  footer{text-align:center; color:var(--muted); font-size:0.78rem; padding:30px 5vw 0;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📍 spansense — GitHub Activity Map</h1>
+  <p>Repository <a class="repo-link" href="https://github.com/moniirr12/spansense" target="_blank">moniirr12/spansense</a> · generated from live GitHub API data (commits, push events, pull requests)</p>
+</header>
+
+<div class="stats">
+  <div class="stat"><div class="num">89</div><div class="label">Commits</div></div>
+  <div class="stat"><div class="num">80</div><div class="label">Pushes</div></div>
+  <div class="stat"><div class="num">14</div><div class="label">Pull Requests</div></div>
+  <div class="stat"><div class="num">13</div><div class="label">Merged</div></div>
+  <div class="stat"><div class="num">3</div><div class="label">Branches</div></div>
+  <div class="stat"><div class="num">8</div><div class="label">Days Active</div></div>
+  <div class="stat"><div class="num">Jun 14 → Jun 21</div><div class="label">Date Range</div></div>
+</div>
+
+<section>
+  <h2><span class="dot"></span>Branch &amp; Pull Request Graph</h2>
+  <div class="panel">
+    <div class="legend">
+      <span><i style="background:#58a6ff"></i>main</span>
+      <span><i style="background:#a371f7"></i>databaaseChanges</span>
+      <span><i style="background:#3fb950"></i>testing-defect-on-3d-model</span>
+    </div>
+    <pre class="mermaid">
+%%{init: {'theme':'dark', 'gitGraph': {'showCommitLabel': true, 'mainBranchName': 'main'}}}%%
+gitGraph
+  commit id: "Initial commit"
+  commit id: "Backend setup (Postgres/API)"
+  commit id: "Frontend refactors"
+  commit id: "UI + map.css fixes"
+  commit id: "Misc fixes (Jun15-18)"
+  commit id: "Feature showcase + demo"
+  branch databaaseChanges
+  commit id: "Global BCI proforma fix"
+  checkout main
+  merge databaaseChanges id: "PR #1 ✅ 6/19 00:13"
+  checkout databaaseChanges
+  commit id: "Mock twinView + nav cleanup"
+  checkout main
+  merge databaaseChanges id: "PR #2 ✅ 6/19 22:28"
+  checkout databaaseChanges
+  commit id: "Real data in twinview"
+  checkout main
+  merge databaaseChanges id: "PR #3 ✅ 6/20 00:02"
+  checkout databaaseChanges
+  commit id: "Guide + BCI avg fix"
+  checkout main
+  merge databaaseChanges id: "PR #4 ✅ 6/20 12:06"
+  checkout databaaseChanges
+  commit id: "Bug fixes twinview/dashboard"
+  checkout main
+  merge databaaseChanges id: "PR #5 ✅ 6/20 12:32"
+  checkout databaaseChanges
+  commit id: "twinView navbar + dark mode fix"
+  checkout main
+  merge databaaseChanges id: "PR #6 ✅ 6/20 14:06"
+  checkout databaaseChanges
+  branch testing-defect-on-3d-model
+  commit id: "Testing defects on 3D model"
+  checkout databaaseChanges
+  commit id: "spansenseGuide layout/colour"
+  checkout main
+  merge databaaseChanges id: "PR #8 ✅ 6/20 20:57"
+  checkout testing-defect-on-3d-model
+  commit id: "Inspection.html + twinview tweaks"
+  commit id: "Smooth BCI + twin view UI"
+  checkout main
+  merge testing-defect-on-3d-model id: "PR #9 ✅ 6/21 11:54"
+  checkout testing-defect-on-3d-model
+  commit id: "Expandable rows + defect removal"
+  checkout main
+  merge testing-defect-on-3d-model id: "PR #10 ✅ 6/21 12:26"
+  checkout testing-defect-on-3d-model
+  commit id: "Defect viz + scrollbar/animation"
+  checkout main
+  merge testing-defect-on-3d-model id: "PR #11 ✅ 6/21 12:51"
+  checkout testing-defect-on-3d-model
+  commit id: "Row animation + badge styles"
+  checkout main
+  merge testing-defect-on-3d-model id: "PR #12 ✅ 6/21 13:13"
+  checkout testing-defect-on-3d-model
+  commit id: "Defect panel hover/layout styles"
+  checkout main
+  merge testing-defect-on-3d-model id: "PR #13 ✅ 6/21 16:26"
+  checkout testing-defect-on-3d-model
+  commit id: "Hide module menu, target=_self"
+  checkout main
+  merge testing-defect-on-3d-model id: "PR #14 ✅ 6/21 16:39"
+    </pre>
+    <div class="note">
+      <strong>PR #7</strong> (<span class="branch-tag">testing-defect-on-3d-model</span> → <span class="branch-tag">databaaseChanges</span>) was opened 6/20 20:56 but <strong>closed without merging</strong> at 6/21 12:25 — it was superseded once <span class="branch-tag">databaaseChanges</span> fully merged into <span class="branch-tag">main</span> via PR&nbsp;#8 a minute later. From that point, <span class="branch-tag">testing-defect-on-3d-model</span> targeted <span class="branch-tag">main</span> directly (PRs #9–14).
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="dot"></span>Daily Activity (commits vs. pushes)</h2>
+  <div class="panel">
+    <canvas id="activityChart"></canvas>
+  </div>
+</section>
+
+<section>
+  <h2><span class="dot"></span>All Pull Requests</h2>
+  <div class="panel">
+    <table id="prTable">
+      <thead>
+        <tr><th>#</th><th>Title</th><th>Head → Base</th><th>Opened</th><th>Closed/Merged</th><th>Status</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+
+<footer>Generated by Claude Code from the GitHub REST API (commits, events, pulls endpoints) for moniirr12/spansense.</footer>
+
+<script>
+mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+
+const prData = [
+  [14,"Add script to hide module menu on inspection page navigation","testing-defect-on-3d-model → main","2026-06-21 16:39","2026-06-21 16:39","merged"],
+  [13,"twinview model defect interaction: update styles for defect panels","testing-defect-on-3d-model → main","2026-06-21 16:25","2026-06-21 16:25","merged"],
+  [12,"Improve expandable row animations and adjust badge styles","testing-defect-on-3d-model → main","2026-06-21 13:13","2026-06-21 13:13","merged"],
+  [11,"Enhance defect visualization and animation twinview","testing-defect-on-3d-model → main","2026-06-21 12:50","2026-06-21 12:50","merged"],
+  [10,"Added animated expandable row transitions and defect removal","testing-defect-on-3d-model → main","2026-06-21 12:26","2026-06-21 12:26","merged"],
+  [9,"Testing defect on 3d model + minor inspection.html changes","testing-defect-on-3d-model → main","2026-06-21 11:54","2026-06-21 11:54","merged"],
+  [8,"Minor changes to layout and colour to spansenseGuide","databaaseChanges → main","2026-06-20 20:57","2026-06-20 20:57","merged"],
+  [7,"Testing defects on 3d model","testing-defect-on-3d-model → databaaseChanges","2026-06-20 20:56","2026-06-21 12:25","closed"],
+  [6,"Added twinView on navbar","databaaseChanges → main","2026-06-20 14:05","2026-06-20 14:06","merged"],
+  [5,"Fixed bugs in twinview and dashboard","databaaseChanges → main","2026-06-20 12:31","2026-06-20 12:31","merged"],
+  [4,"Twinview bci avg fix and spansenseGuide pdf fix","databaaseChanges → main","2026-06-20 12:06","2026-06-20 12:06","merged"],
+  [3,"Trying real data in twinview","databaaseChanges → main","2026-06-20 00:01","2026-06-20 00:02","merged"],
+  [2,"Minor change to database.html and new twin.html","databaaseChanges → main","2026-06-19 22:26","2026-06-19 22:28","merged"],
+  [1,"Refactor: Ensure generateBCIProformaSeparately is globally accessible","databaaseChanges → main","2026-06-19 00:13","2026-06-19 00:13","merged"],
+];
+
+const tbody = document.querySelector('#prTable tbody');
+for (const [num, title, flow, opened, closed, status] of prData) {
+  const tr = document.createElement('tr');
+  const [head, base] = flow.split(' → ');
+  tr.innerHTML = `
+    <td><a class="pr-link" href="https://github.com/moniirr12/spansense/pull/${num}" target="_blank">#${num}</a></td>
+    <td>${title}</td>
+    <td><span class="branch-tag">${head}</span> → <span class="branch-tag">${base}</span></td>
+    <td>${opened}</td>
+    <td>${closed}</td>
+    <td><span class="badge ${status}">${status}</span></td>
+  `;
+  tbody.appendChild(tr);
+}
+
+const days = ['Jun 14','Jun 15','Jun 16','Jun 17','Jun 18','Jun 19','Jun 20','Jun 21'];
+const commits = [48,1,6,0,1,6,14,13];
+const pushes  = [45,1,6,0,1,3,12,12];
+
+new Chart(document.getElementById('activityChart'), {
+  type: 'bar',
+  data: {
+    labels: days,
+    datasets: [
+      { label: 'Commits', data: commits, backgroundColor: '#58a6ff' },
+      { label: 'Pushes', data: pushes, backgroundColor: '#3fb950' },
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { labels: { color: '#c9d1d9' } } },
+    scales: {
+      x: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' } },
+      y: { ticks: { color: '#8b949e' }, grid: { color: '#30363d' }, beginAtZero: true }
+    }
+  }
+});
+</script>
+</body>
+</html>
