@@ -886,10 +886,15 @@ function addButtonRowForMainRow(mainRow) {
 
 // Table rows can't transition height/display directly, so each row's inner
 // content (the .aligned-grid card, or the Add Defect button) is what
-// actually grows/shrinks — animating its max-height from/to its measured
-// scrollHeight makes the <tr> itself appear to expand and collapse smoothly,
-// rather than popping to full height with only the content fading inside it.
-const ROW_ANIM_MS = 240;
+// actually grows/shrinks. max-height alone isn't enough though: the
+// content's own padding/border take up guaranteed space max-height can't
+// remove, so without animating those too the row visibly plateaus a few
+// px short of 0 right before the cleanup timer snaps it to display:none.
+const ROW_ANIM_MS = 320;
+const ROW_ANIM_EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
+const ROW_ANIM_PROPS = ["max-height", "padding-top", "padding-bottom", "border-top-width", "border-bottom-width", "opacity"];
+const ROW_ANIM_TRANSITION = ROW_ANIM_PROPS.map(p => `${p} ${ROW_ANIM_MS}ms ${ROW_ANIM_EASE}`).join(", ");
+
 function showRowAnimated(rowEl) {
   if (!rowEl) return;
   clearTimeout(rowEl._collapseTimer);
@@ -897,25 +902,41 @@ function showRowAnimated(rowEl) {
   rowEl.style.display = "table-row";
   const content = rowEl.querySelector("td")?.firstElementChild;
   if (!content) return;
-  const targetHeight = content.scrollHeight;
+
+  // Measure the natural (fully open) box before touching anything.
   content.style.transition = "none";
+  content.style.maxHeight = "none";
+  content.style.paddingTop = content.style.paddingBottom = "";
+  content.style.borderTopWidth = content.style.borderBottomWidth = "";
+  const cs = getComputedStyle(content);
+  const target = { maxHeight: content.scrollHeight + "px", paddingTop: cs.paddingTop, paddingBottom: cs.paddingBottom, borderTopWidth: cs.borderTopWidth, borderBottomWidth: cs.borderBottomWidth };
+
+  // Snap to the collapsed state instantly, then transition open.
   content.style.overflow = "hidden";
+  content.style.minHeight = "0px";
   content.style.maxHeight = "0px";
+  content.style.paddingTop = content.style.paddingBottom = "0px";
+  content.style.borderTopWidth = content.style.borderBottomWidth = "0px";
   content.style.opacity = "0";
-  content.style.transform = "translateY(-6px)";
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      content.style.transition = `max-height ${ROW_ANIM_MS}ms ease, opacity ${ROW_ANIM_MS}ms ease, transform ${ROW_ANIM_MS}ms ease`;
-      content.style.maxHeight = targetHeight + "px";
-      content.style.opacity = "1";
-      content.style.transform = "translateY(0)";
-    });
-  });
-  // Once settled, drop the max-height clamp so later dynamic content
-  // (e.g. an edited comment wrapping to more lines) isn't clipped.
+  content.offsetHeight; // force layout to commit the "from" state before transitioning
+
+  content.style.transition = ROW_ANIM_TRANSITION;
+  content.style.maxHeight = target.maxHeight;
+  content.style.paddingTop = target.paddingTop;
+  content.style.paddingBottom = target.paddingBottom;
+  content.style.borderTopWidth = target.borderTopWidth;
+  content.style.borderBottomWidth = target.borderBottomWidth;
+  content.style.opacity = "1";
+
+  // Once settled, drop the inline clamps so later dynamic content (e.g.
+  // an edited comment wrapping to more lines) isn't clipped, and so a
+  // row-density switch can still apply its own padding via CSS.
   rowEl._expandTimer = setTimeout(() => {
     content.style.maxHeight = "none";
     content.style.overflow = "visible";
+    content.style.minHeight = "";
+    content.style.paddingTop = content.style.paddingBottom = "";
+    content.style.borderTopWidth = content.style.borderBottomWidth = "";
   }, ROW_ANIM_MS);
 }
 function hideRowAnimated(rowEl) {
@@ -923,20 +944,26 @@ function hideRowAnimated(rowEl) {
   const content = rowEl.querySelector("td")?.firstElementChild;
   if (!content) { rowEl.style.display = "none"; return; }
   clearTimeout(rowEl._expandTimer);
-  // Snap max-height to the current rendered height first (a no-op
-  // visually) since you can't transition from "none" to a px value.
-  const currentHeight = content.scrollHeight;
+
+  // Snap max-height/padding/border to their current rendered values first
+  // (a no-op visually) since transitions need a concrete starting value.
+  const cs = getComputedStyle(content);
+  const current = { maxHeight: content.scrollHeight + "px", paddingTop: cs.paddingTop, paddingBottom: cs.paddingBottom, borderTopWidth: cs.borderTopWidth, borderBottomWidth: cs.borderBottomWidth };
   content.style.transition = "none";
   content.style.overflow = "hidden";
-  content.style.maxHeight = currentHeight + "px";
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      content.style.transition = `max-height ${ROW_ANIM_MS}ms ease, opacity ${ROW_ANIM_MS}ms ease, transform ${ROW_ANIM_MS}ms ease`;
-      content.style.maxHeight = "0px";
-      content.style.opacity = "0";
-      content.style.transform = "translateY(-6px)";
-    });
-  });
+  content.style.minHeight = "0px";
+  content.style.maxHeight = current.maxHeight;
+  content.style.paddingTop = current.paddingTop;
+  content.style.paddingBottom = current.paddingBottom;
+  content.style.borderTopWidth = current.borderTopWidth;
+  content.style.borderBottomWidth = current.borderBottomWidth;
+  content.offsetHeight; // force layout to commit the "from" state before transitioning
+
+  content.style.transition = ROW_ANIM_TRANSITION;
+  content.style.maxHeight = "0px";
+  content.style.paddingTop = content.style.paddingBottom = "0px";
+  content.style.borderTopWidth = content.style.borderBottomWidth = "0px";
+  content.style.opacity = "0";
   clearTimeout(rowEl._collapseTimer);
   rowEl._collapseTimer = setTimeout(() => {
     rowEl.style.display = "none";

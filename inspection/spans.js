@@ -768,7 +768,14 @@ function injectRetrievedRibbon(row) {
   function positionLeftRail() {
     const theadRow = document.querySelector('#inspectionElementsTable thead tr');
     if (!theadRow) return;
-    rail.style.top = theadRow.getBoundingClientRect().top + 'px';
+    // rail is position:fixed, so its "top" is viewport-relative and must stay
+    // constant regardless of scroll position. getBoundingClientRect().top is
+    // relative to the CURRENT scroll, so add scrollY back to recover the
+    // table's position as if scrolled to the very top — otherwise, expanding
+    // a row further down the page (which resizes .inspection-main and
+    // re-fires this via the ResizeObserver) would compute a tiny/negative
+    // value and snap the rail to the top of (or off) the viewport.
+    rail.style.top = (theadRow.getBoundingClientRect().top + window.scrollY) + 'px';
   }
 
   positionLeftRail();
