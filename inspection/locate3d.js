@@ -646,6 +646,7 @@ function openLocate3dModal() {
     if (!modal) return;
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
+    document.body.classList.add('modal-open');
     locate3dVisible = true;
 
     initLocate3DEngine();
@@ -673,6 +674,7 @@ function closeLocate3dModal() {
     var splitModal = document.getElementById('splitModal');
     if (!splitModal || !splitModal.classList.contains('active')) {
         document.body.style.overflow = '';
+        document.body.classList.remove('modal-open');
     }
     locate3dVisible = false;
 }

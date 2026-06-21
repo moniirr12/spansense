@@ -337,11 +337,13 @@ function openSplitModal() {
     renderDefectsSummary();
     document.getElementById('splitModal').classList.add('active');
     document.body.style.overflow = 'hidden';
+    document.body.classList.add('modal-open');
 }
 
 function closeSplitModal() {
     document.getElementById('splitModal').classList.remove('active');
     document.body.style.overflow = '';
+    document.body.classList.remove('modal-open');
 }
 
 function saveConclusions() {
