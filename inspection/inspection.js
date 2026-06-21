@@ -884,34 +884,59 @@ function addButtonRowForMainRow(mainRow) {
   return buttonRow;
 }
 
-// Table rows can't transition height/display directly, so the fade+lift
-// animation runs on each row's inner content (the .aligned-grid card, or
-// the Add Defect button) while the <tr> itself flips display instantly.
-const ROW_ANIM_MS = 200;
+// Table rows can't transition height/display directly, so each row's inner
+// content (the .aligned-grid card, or the Add Defect button) is what
+// actually grows/shrinks — animating its max-height from/to its measured
+// scrollHeight makes the <tr> itself appear to expand and collapse smoothly,
+// rather than popping to full height with only the content fading inside it.
+const ROW_ANIM_MS = 240;
 function showRowAnimated(rowEl) {
   if (!rowEl) return;
   clearTimeout(rowEl._collapseTimer);
+  clearTimeout(rowEl._expandTimer);
   rowEl.style.display = "table-row";
   const content = rowEl.querySelector("td")?.firstElementChild;
   if (!content) return;
+  const targetHeight = content.scrollHeight;
   content.style.transition = "none";
+  content.style.overflow = "hidden";
+  content.style.maxHeight = "0px";
   content.style.opacity = "0";
   content.style.transform = "translateY(-6px)";
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      content.style.transition = `opacity ${ROW_ANIM_MS}ms ease, transform ${ROW_ANIM_MS}ms ease`;
+      content.style.transition = `max-height ${ROW_ANIM_MS}ms ease, opacity ${ROW_ANIM_MS}ms ease, transform ${ROW_ANIM_MS}ms ease`;
+      content.style.maxHeight = targetHeight + "px";
       content.style.opacity = "1";
       content.style.transform = "translateY(0)";
     });
   });
+  // Once settled, drop the max-height clamp so later dynamic content
+  // (e.g. an edited comment wrapping to more lines) isn't clipped.
+  rowEl._expandTimer = setTimeout(() => {
+    content.style.maxHeight = "none";
+    content.style.overflow = "visible";
+  }, ROW_ANIM_MS);
 }
 function hideRowAnimated(rowEl) {
   if (!rowEl) return;
   const content = rowEl.querySelector("td")?.firstElementChild;
   if (!content) { rowEl.style.display = "none"; return; }
-  content.style.transition = `opacity ${ROW_ANIM_MS}ms ease, transform ${ROW_ANIM_MS}ms ease`;
-  content.style.opacity = "0";
-  content.style.transform = "translateY(-6px)";
+  clearTimeout(rowEl._expandTimer);
+  // Snap max-height to the current rendered height first (a no-op
+  // visually) since you can't transition from "none" to a px value.
+  const currentHeight = content.scrollHeight;
+  content.style.transition = "none";
+  content.style.overflow = "hidden";
+  content.style.maxHeight = currentHeight + "px";
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      content.style.transition = `max-height ${ROW_ANIM_MS}ms ease, opacity ${ROW_ANIM_MS}ms ease, transform ${ROW_ANIM_MS}ms ease`;
+      content.style.maxHeight = "0px";
+      content.style.opacity = "0";
+      content.style.transform = "translateY(-6px)";
+    });
+  });
   clearTimeout(rowEl._collapseTimer);
   rowEl._collapseTimer = setTimeout(() => {
     rowEl.style.display = "none";

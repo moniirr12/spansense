@@ -75,7 +75,6 @@ function initLocate3DEngine() {
         matDeck: new THREE.MeshStandardMaterial({ color: 0x394645, metalness: 0.25, roughness: 0.6 }),
         matPier: new THREE.MeshStandardMaterial({ color: 0x435150, metalness: 0.15, roughness: 0.7 }),
         matSensor: new THREE.MeshStandardMaterial({ color: 0x6db3d8, emissive: 0x4a90b8, emissiveIntensity: 1.3 }),
-        matDefect: new THREE.MeshStandardMaterial({ color: 0xe06a5a, emissive: 0xc0392b, emissiveIntensity: 1.1 }),
         camDistance: camDistance,
         camHeight: camHeight,
         rotY: 0.4,
@@ -103,6 +102,42 @@ function generateSensorsLocate3D(bridge) {
         sensors.push({ x: x, y: -0.6, z: -(deckW / 2 - 0.5) });
     }
     return sensors;
+}
+
+/* ============================================================
+   DEFECT MARKERS — colored by severity (same palette as the
+   severity badges elsewhere in the app, see inspection.css
+   .severity .sev-1..5) so markers are visually distinguishable,
+   and each gets its own material instance (no longer shared)
+   so hover-highlighting one doesn't affect the others.
+   ============================================================ */
+function getSeverityMarkerColor(severity) {
+    switch (parseInt(severity, 10)) {
+        case 1: return 0x2d7a6e;
+        case 2: return 0xBA7517;
+        case 3: return 0xc47070;
+        case 4: return 0xc0392b;
+        case 5: return 0xc0392b;
+        default: return 0xe06a5a;
+    }
+}
+function getSeverityColorHex(severity) {
+    switch (parseInt(severity, 10)) {
+        case 1: return '#2d7a6e';
+        case 2: return '#BA7517';
+        case 3: return '#c47070';
+        case 4: return '#c0392b';
+        case 5: return '#c0392b';
+        default: return '#e06a5a';
+    }
+}
+function createDefectMarker(severity) {
+    var color = getSeverityMarkerColor(severity);
+    var mat = new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 1.1 });
+    var mesh = new THREE.Mesh(new THREE.OctahedronGeometry(0.5, 0), mat);
+    mesh.userData.baseEmissiveIntensity = 1.1;
+    mesh.userData.baseScale = 1;
+    return mesh;
 }
 
 /* ============================================================
@@ -237,7 +272,7 @@ function rebuildLocate3DModel(bridge) {
 
     // Defects already placed in a previous session render as markers immediately
     (bridge.defects || []).forEach(function(d) {
-        var m = new THREE.Mesh(new THREE.OctahedronGeometry(0.5, 0), l3d.matDefect);
+        var m = createDefectMarker(d.severity);
         m.position.set(d.x, d.y, d.z);
         defectGroup.add(m);
         locateMarkerMeshes[d.index] = m;
@@ -389,7 +424,7 @@ function placeDefectPoint(index, x, y, z) {
     if (existing) {
         existing.position.set(x, y, z); // re-clickable/movable: overwrite, don't duplicate
     } else {
-        var m = new THREE.Mesh(new THREE.OctahedronGeometry(0.5, 0), l3d.matDefect);
+        var m = createDefectMarker(inspectionData.defects[index].severity);
         m.position.set(x, y, z);
         l3d.defectGroup.add(m);
         locateMarkerMeshes[index] = m;
@@ -411,6 +446,7 @@ function removeDefectPoint(index) {
     if (mesh) {
         l3d.defectGroup.remove(mesh);
         mesh.geometry.dispose();
+        mesh.material.dispose();
         delete locateMarkerMeshes[index];
     }
 
@@ -447,7 +483,7 @@ function getLocate3DBridgeData() {
     var defects = [];
     (inspectionData.defects || []).forEach(function(d, i) {
         if (d.x != null && d.y != null && d.z != null) {
-            defects.push({ index: i, x: d.x, y: d.y, z: d.z });
+            defects.push({ index: i, x: d.x, y: d.y, z: d.z, severity: d.severity });
         }
     });
 
@@ -494,8 +530,10 @@ function renderLocate3DDefectsList() {
         var elementDescription = (typeof getElementDescriptionSafe === 'function')
             ? getElementDescriptionSafe(elementNumber) : ('Element ' + elementNumber);
         var isArmed = (armedDefectIndex === i);
+        var severityColor = getSeverityColorHex(def.severity);
 
-        html += '<div class="defect-card-item' + (isArmed ? ' armed' : '') + '" onclick="armLocate3DDefect(' + i + ')">' +
+        html += '<div class="defect-card-item' + (isArmed ? ' armed' : '') + '" style="border-left: 4px solid ' + severityColor + ';" ' +
+            'onclick="armLocate3DDefect(' + i + ')" onmouseenter="highlightLocate3DMarker(' + i + ', true)" onmouseleave="highlightLocate3DMarker(' + i + ', false)">' +
             '<div class="defect-location">Span ' + (def.span != null ? def.span : 'N/A') + ' · ' + escapeHtml(elementDescription) + '</div>' +
             '<div class="defect-description" style="font-size: 0.75rem;">' + (def.severity || 'N/A') + (def.extent || 'N/A') + '. (' + escapeHtml(combinedDefect) + ') ' + escapeHtml(fullDefectDescription) + '</div>' +
             (located
@@ -506,6 +544,15 @@ function renderLocate3DDefectsList() {
     });
     container.innerHTML = html;
 }
+
+function highlightLocate3DMarker(index, on) {
+    var mesh = locateMarkerMeshes[index];
+    if (!mesh) return;
+    var targetScale = on ? mesh.userData.baseScale * 1.6 : mesh.userData.baseScale;
+    mesh.scale.setScalar(targetScale);
+    mesh.material.emissiveIntensity = on ? 2.4 : mesh.userData.baseEmissiveIntensity;
+}
+window.highlightLocate3DMarker = highlightLocate3DMarker;
 
 function armLocate3DDefect(index) {
     armedDefectIndex = (armedDefectIndex === index) ? null : index;
