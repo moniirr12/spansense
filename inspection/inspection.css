@@ -1787,23 +1787,20 @@ body {
 
 
 /* Scrollbar styling */
-.modal-body::-webkit-scrollbar, .preview-container-photo::-webkit-scrollbar,
-.defects-list-container::-webkit-scrollbar { width: 6px; }
-.modal-body::-webkit-scrollbar-track, .preview-container-photo::-webkit-scrollbar-track,
-.defects-list-container::-webkit-scrollbar-track { background: #eef2f8; border-radius: 10px; }
-.modal-body::-webkit-scrollbar-thumb, .preview-container-photo::-webkit-scrollbar-thumb,
-.defects-list-container::-webkit-scrollbar-thumb { background: #c5dbd8; border-radius: 10px; }
-.modal-body::-webkit-scrollbar-thumb:hover, .preview-container-photo::-webkit-scrollbar-thumb:hover,
-.defects-list-container::-webkit-scrollbar-thumb:hover { background: #8ab4b0; }
+.modal-body::-webkit-scrollbar, .preview-container-photo::-webkit-scrollbar { width: 6px; }
+.modal-body::-webkit-scrollbar-track, .preview-container-photo::-webkit-scrollbar-track { background: #eef2f8; border-radius: 10px; }
+.modal-body::-webkit-scrollbar-thumb, .preview-container-photo::-webkit-scrollbar-thumb { background: #c5dbd8; border-radius: 10px; }
+.modal-body::-webkit-scrollbar-thumb:hover, .preview-container-photo::-webkit-scrollbar-thumb:hover { background: #8ab4b0; }
 .night-mode .modal-body::-webkit-scrollbar-track,
-.night-mode .preview-container-photo::-webkit-scrollbar-track,
-.night-mode .defects-list-container::-webkit-scrollbar-track { background: #1e2a2f; }
+.night-mode .preview-container-photo::-webkit-scrollbar-track { background: #1e2a2f; }
 .night-mode .modal-body::-webkit-scrollbar-thumb,
-.night-mode .preview-container-photo::-webkit-scrollbar-thumb,
-.night-mode .defects-list-container::-webkit-scrollbar-thumb { background: #2f4a48; }
+.night-mode .preview-container-photo::-webkit-scrollbar-thumb { background: #2f4a48; }
 .night-mode .modal-body::-webkit-scrollbar-thumb:hover,
-.night-mode .preview-container-photo::-webkit-scrollbar-thumb:hover,
-.night-mode .defects-list-container::-webkit-scrollbar-thumb:hover { background: #3a5c5a; }
+.night-mode .preview-container-photo::-webkit-scrollbar-thumb:hover { background: #3a5c5a; }
+
+/* Defects list panels (split modal + locate3d modal) scroll without a visible scrollbar */
+.defects-list-container { scrollbar-width: none; -ms-overflow-style: none; }
+.defects-list-container::-webkit-scrollbar { display: none; }
 
 /* Hidden elements */
 #inspectionDetails, #historicalDefects { display: none; }
@@ -3154,21 +3151,21 @@ body.contracted-rows #inspectionElementsTable tr.expandable-row .grid-badges {
 body.contracted-rows #inspectionElementsTable tr.expandable-row .badge {
     flex-direction: row;
     align-items: center;
-    gap: 6px;
-    padding: 5px 10px;
+    gap: 8px;
+    padding: 7px 14px;
     min-width: 0;
     min-height: 0;
     border-radius: 10px;
-    border-width: 1.5px;
+    border-width: 2px;
 }
 
 body.contracted-rows #inspectionElementsTable tr.expandable-row .badge .badge-label {
-    font-size: 0.5rem;
+    font-size: 0.55rem;
     margin-bottom: 0;
 }
 
 body.contracted-rows #inspectionElementsTable tr.expandable-row .badge .badge-value {
-    font-size: 0.95rem;
+    font-size: 1.25rem;
 }
 
 /* 3. Content rows — tighter spacing */
