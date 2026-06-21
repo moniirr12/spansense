@@ -830,13 +830,14 @@ function updateTableVisibility() {
         }
     });
 
-    // ✅ FIXED: Use the correct class name 'load-btn-inline'
-    const button = document.querySelector(".load-btn-inline");
+    const button = document.getElementById('rowFilterToggle');
+    const icon = document.getElementById('rowFilterIcon');
     if (button) {
-        button.textContent = showOnlyNonEmptyRows ? "Show All Rows" : "Hide Empty Rows";
-        console.log('Button text updated to:', button.textContent);
+        button.classList.toggle('active', showOnlyNonEmptyRows);
+        button.title = showOnlyNonEmptyRows ? 'Show all rows' : 'Hide empty rows';
+        if (icon) icon.className = showOnlyNonEmptyRows ? 'fas fa-filter-circle-xmark' : 'fas fa-filter';
     } else {
-        console.warn('Button with class "load-btn-inline" not found');
+        console.warn('Row filter toggle button not found');
     }
 }
 

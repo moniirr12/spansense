@@ -304,6 +304,166 @@
         #of-not-inspected-panel {
             display: none;
         }
+
+        /* ============================================
+           LEFT FLOATING RAIL — CONCLUSIONS + TWIN VIEW
+           Stacks both bars and centers them as a group,
+           horizontally, in the gutter to the left of the
+           75%-wide content wrapper (inspection-wrapper).
+           Vertically it's pinned a fixed distance from the
+           top (not viewport-centered) so it clears
+           #bciStickySidebar (spans.js), which sticks at
+           ~y=140-288px once scrolled into view — centering
+           on viewport height would let the rail drift up
+           into that zone on shorter screens.
+           ============================================ */
+        .left-floating-rail {
+            position: fixed;
+            left: 6.25%;
+            top: 320px;
+            transform: translateX(-50%);
+            z-index: 90;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+        .left-floating-rail .conclusions-bar,
+        .left-floating-rail .twin-view-bar {
+            position: static;
+            left: auto;
+            top: auto;
+            margin: 0;
+            transform: none;
+        }
+        .left-floating-rail .conclusions-bar:hover,
+        .left-floating-rail .twin-view-bar:hover {
+            transform: scale(1.02);
+        }
+        .twin-view-bar {
+            background: white;
+            border: 1px solid #e9edf2;
+            border-radius: 18px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            padding: 10px 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            width: 120px;
+        }
+        .twin-view-bar:hover { box-shadow: 0 8px 30px rgba(0,0,0,0.12); border-color: #8ab4b0; }
+        .twin-view-bar .bar-icon {
+            width: 34px;
+            height: 34px;
+            background: #eef4f2;
+            color: #5b8c8a;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.05rem;
+        }
+        .twin-view-bar .bar-label {
+            font-size: 0.62rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #8a9ba8;
+            white-space: nowrap;
+        }
+        .night-mode .twin-view-bar { background: #212f33; border-color: #2f3e45; }
+        .night-mode .twin-view-bar .bar-icon { background: #1e3a38; color: #8ab4b0; }
+        @media (max-width: 860px) {
+            .left-floating-rail { left: 24px; transform: none; }
+        }
+        @media (max-width: 768px) {
+            .left-floating-rail { display: none; }
+        }
+
+        .locate3d-container { max-width: 1320px; width: 92%; max-height: 88vh; }
+        .locate3d-viewer-panel { flex: 2.3; }
+        .locate3d-defects-panel { max-height: none; }
+
+        .locate3d-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 14px 24px 0;
+        }
+        .locate3d-hint {
+            font-size: 0.75rem;
+            color: #8a9ba8;
+            font-style: italic;
+        }
+        .locate3d-hint.armed { color: #2c5a57; font-weight: 600; font-style: normal; }
+
+        .vc-layer-toggles { display: flex; gap: 8px; flex-wrap: wrap; }
+        .vc-pill {
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: #6a7c8e;
+            padding: 6px 12px;
+            border-radius: 30px;
+            border: 1px solid #e2e8f0;
+            background: #fafbfc;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-family: inherit;
+            user-select: none;
+        }
+        .vc-pill .sw { width: 6px; height: 6px; border-radius: 50%; background: #b8c4cc; }
+        .vc-pill:hover { border-color: #8ab4b0; color: #5b8c8a; }
+        .vc-pill.on { background: #eef4f2; border-color: #8ab4b0; color: #2c5a57; }
+        .vc-pill.on .sw { background: #5b8c8a; box-shadow: 0 0 6px rgba(91,140,138,0.5); }
+        .vc-pill[data-layer="stress"].on .sw { background: #c28b5a; box-shadow: 0 0 6px rgba(194,139,90,0.5); }
+        .vc-pill[data-layer="defects"].on .sw { background: #c0392b; box-shadow: 0 0 6px rgba(192,57,43,0.5); }
+        .vc-pill[data-layer="sensors"].on .sw { background: #4a90b8; box-shadow: 0 0 6px rgba(74,144,184,0.5); }
+        .night-mode .vc-pill { background:#1e2a2f; border-color:#3a4b53; color:#9ab0b8; }
+        .night-mode .vc-pill.on { background:#2f4a48; border-color:#6e9c98; color:#d4dfe3; }
+
+        .locate3d-stage {
+            position: relative;
+            border-radius: 18px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(91, 140, 138, 0.18);
+            flex: 1;
+            min-height: 420px;
+            margin: 14px 24px 24px;
+        }
+        .night-mode .locate3d-stage { background: rgba(20,30,32,0.4); border-color: rgba(110,156,152,0.25); }
+        #locate3d-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; }
+        #locate3d-canvas:active { cursor: grabbing; }
+        #locate3d-canvas.armed { cursor: crosshair; }
+        #locate3d-canvas.armed:active { cursor: crosshair; }
+
+        .defect-card-item.armed { border-color: #5b8c8a; background: #eef4f2; box-shadow: 0 0 0 2px rgba(91,140,138,0.25); }
+        .night-mode .defect-card-item.armed { background: #1e3a38; border-color: #6e9c98; }
+        .defect-located-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #2d7a6e;
+        }
+        .night-mode .defect-located-tag { color: #8ab4b0; }
+
+        @media (max-width: 860px) {
+            .locate3d-container { flex-direction: column; width: 95%; max-height: 90vh; }
+            .locate3d-defects-panel { max-height: 35vh; }
+            .locate3d-stage { min-height: 320px; }
+        }
     </style>
 <base target="_blank">
 <base target="_blank">
@@ -311,12 +471,18 @@
 </head>
 <body>
 
-    <!-- STICKY LEFT CONCLUSIONS BAR -->
-    <div class="conclusions-bar" id="conclusionsBar" onclick="openSplitModal()">
-        <div class="bar-pulse" id="barPulse"></div>
-        <div class="bar-icon" id="barIcon"><i class="fas fa-pen"></i></div>
-        <div class="bar-label">Conclusions</div>
-        <div class="bar-status" id="barStatus">Required</div>
+    <!-- STICKY LEFT FLOATING RAIL: CONCLUSIONS + TWIN VIEW -->
+    <div class="left-floating-rail">
+        <div class="conclusions-bar" id="conclusionsBar" onclick="openSplitModal()">
+            <div class="bar-pulse" id="barPulse"></div>
+            <div class="bar-icon" id="barIcon"><i class="fas fa-pen"></i></div>
+            <div class="bar-label">Conclusions</div>
+        </div>
+
+        <div class="twin-view-bar" id="twinViewBar" onclick="openLocate3dModal()">
+            <div class="bar-icon"><i class="fas fa-cube"></i></div>
+            <div class="bar-label">Twin View</div>
+        </div>
     </div>
 
     <!-- ORIGINAL NAVBAR (now floating) -->
@@ -366,12 +532,12 @@
                                 </select>
                             </div>
                             <div class="action-button-wrapper">
-                                <button class="load-btn-inline" onclick="view()">
-                                    <i class="fas fa-table"></i> Hide Empty Rows
+                                <button class="load-btn-inline row-filter-toggle" id="rowFilterToggle" onclick="view()" title="Hide empty rows">
+                                    <i class="fas fa-filter" id="rowFilterIcon"></i>
                                 </button>
                                 <!-- NEW: Row density toggle -->
-                                <button class="load-btn-inline row-density-toggle" id="rowDensityToggle" onclick="toggleRowDensity()" title="Toggle row density">
-                                    <i class="fas fa-compress-alt" id="rowDensityIcon"></i> <span id="rowDensityLabel">Compact</span>
+                                <button class="load-btn-inline row-density-toggle" id="rowDensityToggle" onclick="toggleRowDensity()" title="Switch to compact rows">
+                                    <i class="fas fa-compress-alt" id="rowDensityIcon"></i>
                                 </button>
                             </div>
                         </div>
@@ -813,7 +979,38 @@
                 <div class="defects-list-container" id="splitDefectsList"></div>
             </div>
         </div>
-    </div> 
+    </div>
+
+    <!-- LOCATE DEFECTS ON 3D MODEL MODAL -->
+    <div class="split-modal-overlay" id="locate3dModal">
+        <div class="split-modal-container locate3d-container">
+            <div class="conclusions-modal locate3d-viewer-panel">
+                <div class="modal-header">
+                    <h2><i class="fas fa-cube"></i> Locate Defects on 3D Model</h2>
+                    <button class="close-btn" onclick="closeLocate3dModal()">&times;</button>
+                </div>
+                <div class="locate3d-toolbar">
+                    <div class="vc-layer-toggles">
+                        <div class="vc-pill on" data-layer="structure"><span class="sw"></span>Structure</div>
+                        <div class="vc-pill on" data-layer="sensors"><span class="sw"></span>Sensors</div>
+                        <div class="vc-pill on" data-layer="defects"><span class="sw"></span>Defects</div>
+                        <div class="vc-pill on" data-layer="stress"><span class="sw"></span>Stress</div>
+                    </div>
+                    <div class="locate3d-hint" id="locate3dHint">Select a defect on the right, then click the model to place it.</div>
+                </div>
+                <div class="locate3d-stage">
+                    <canvas id="locate3d-canvas"></canvas>
+                </div>
+            </div>
+            <div class="defects-panel-modal locate3d-defects-panel">
+                <div class="panel-header">
+                    <h3><i class="fas fa-map-marker-alt"></i> Defects</h3>
+                    <span class="defect-count-badge" id="locate3dDefectCount">0</span>
+                </div>
+                <div class="defects-list-container" id="locate3dDefectsList"></div>
+            </div>
+        </div>
+    </div>
 
 
 
@@ -1125,5 +1322,10 @@
     <script src="spans.js"></script>
     <script src="photo.js"></script>
     <script src="../inspection1/inspection1.js"></script>
+
+    <!-- 3D defect locator -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="../twin/bridgeModels.js"></script>
+    <script src="locate3d.js"></script>
 </body>
 </html>

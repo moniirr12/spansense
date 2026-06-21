@@ -155,7 +155,7 @@ const importanceMapping = {
     }
   
   // Event listener for the button
-  document.getElementById("showArrayButton").addEventListener("click", function () {
+  document.getElementById("showArrayButton")?.addEventListener("click", function () {
     const tableBody = document.querySelector("#inspectionElementsTable tbody");
     const rows = tableBody.querySelectorAll("tr.main-row"); // Select rows with the class "main-row"
     const severityValues = [];
@@ -287,6 +287,37 @@ const importanceMapping = {
 
 
 
+// Tweens a BCI score element's displayed number instead of snapping straight
+// to the new value, so edits to defects don't make the score jump abruptly.
+const bciTweenFrames = new WeakMap();
+function setBciValue(el, value) {
+    if (!el) return;
+    const target = parseFloat(value);
+    const current = parseFloat(el.textContent);
+    if (isNaN(current) || Math.abs(target - current) < 0.005) {
+        el.textContent = target.toFixed(2);
+        return;
+    }
+
+    const pending = bciTweenFrames.get(el);
+    if (pending) cancelAnimationFrame(pending);
+
+    const duration = 450;
+    const start = performance.now();
+    function step(now) {
+        const t = Math.min(1, (now - start) / duration);
+        const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
+        el.textContent = (current + (target - current) * eased).toFixed(2);
+        if (t < 1) {
+            bciTweenFrames.set(el, requestAnimationFrame(step));
+        } else {
+            bciTweenFrames.delete(el);
+        }
+    }
+    bciTweenFrames.set(el, requestAnimationFrame(step));
+}
+window.setBciValue = setBciValue;
+
 function updateBCIScores() {
   // Get all main rows
   const mainRows = document.querySelectorAll("#inspectionElementsTable tbody tr.main-row");
@@ -311,12 +342,9 @@ function updateBCIScores() {
   const { bciAv, bciCrit } = calculateBCI(severityValues, extentValues, itemNumbers);
 
   // Update the BCI score fields in the DOM
-  document.getElementById("bciAvResult").textContent = bciAv.toFixed(2);
-  document.getElementById("bciCritResult").textContent = bciCrit.toFixed(2);
+  setBciValue(document.getElementById("bciAvResult"), bciAv);
+  setBciValue(document.getElementById("bciCritResult"), bciCrit);
 
   // Return the values so they can be used elsewhere
   return { bciAv, bciCrit };
 }
-
-// Export the function
-module.exports = updateBCIScores;
