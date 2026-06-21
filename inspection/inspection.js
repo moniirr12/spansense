@@ -362,8 +362,8 @@ function refreshBCIScores() {
     if (isEditMode && spanDefects.length === 0 && spanData.bciAv != null && spanData.bciCrit != null) {
         bciAv = parseFloat(spanData.bciAv);
         bciCrit = parseFloat(spanData.bciCrit);
-        if (bciAvElement) bciAvElement.textContent = bciAv.toFixed(2);
-        if (bciCritElement) bciCritElement.textContent = bciCrit.toFixed(2);
+        if (bciAvElement) setBciValue(bciAvElement, bciAv);
+        if (bciCritElement) setBciValue(bciCritElement, bciCrit);
         console.log("Edit mode, no defects loaded yet - using stored BCI:", spanData.bciAv, spanData.bciCrit);
         return { bciAv, bciCrit };
     }
@@ -383,22 +383,22 @@ function refreshBCIScores() {
                 const calculated = calculateBCI(severityValues, extentValues, itemNumbers);
                 bciAv = calculated.bciAv;
                 bciCrit = calculated.bciCrit;
-                if (bciAvElement) bciAvElement.textContent = bciAv.toFixed(2);
-                if (bciCritElement) bciCritElement.textContent = bciCrit.toFixed(2);
+                if (bciAvElement) setBciValue(bciAvElement, bciAv);
+                if (bciCritElement) setBciValue(bciCritElement, bciCrit);
                 console.log(`BCI calculated: Av=${bciAv.toFixed(2)}, Crit=${bciCrit.toFixed(2)}`);
             } catch (error) {
                 console.error("Error calculating BCI:", error);
                 bciAv = 100;
                 bciCrit = 100;
-                if (bciAvElement) bciAvElement.textContent = '100.00';
-                if (bciCritElement) bciCritElement.textContent = '100.00';
+                if (bciAvElement) setBciValue(bciAvElement, 100);
+                if (bciCritElement) setBciValue(bciCritElement, 100);
             }
         } else {
             console.warn("calculateBCI function not found");
         }
     } else {
-        if (bciAvElement) bciAvElement.textContent = '100.00';
-        if (bciCritElement) bciCritElement.textContent = '100.00';
+        if (bciAvElement) setBciValue(bciAvElement, 100);
+        if (bciCritElement) setBciValue(bciCritElement, 100);
         console.log("No defects - BCI set to 100/100");
     }
     spanData.bciAv = bciAv.toFixed(2);
@@ -700,19 +700,13 @@ async function loadDefectsFromAPI(structureId, inspectionDate, currentSpan) {
             if (conclusionsTextarea) conclusionsTextarea.value = inspectionData.conclusions;
             const conclusionsBar = document.getElementById('conclusionsBar');
             const barIcon = document.getElementById('barIcon');
-            const barStatus = document.getElementById('barStatus');
-            const barPulse = document.getElementById('barPulse');
             if (conclusionsBar) {
                 if (inspectionData.conclusions.trim().length > 0) {
                     conclusionsBar.classList.add('done');
                     if (barIcon) barIcon.innerHTML = '<i class="fas fa-check"></i>';
-                    if (barStatus) barStatus.textContent = 'Saved';
-                    if (barPulse) barPulse.style.background = '#22c55e';
                 } else {
                     conclusionsBar.classList.remove('done');
                     if (barIcon) barIcon.innerHTML = '<i class="fas fa-pen"></i>';
-                    if (barStatus) barStatus.textContent = 'Required';
-                    if (barPulse) barPulse.style.background = '#e8a87c';
                 }
             }
             console.log('Conclusions loaded from API:', inspectionData.conclusions);
@@ -1342,9 +1336,7 @@ function refreshAllConditionalFields() {
 const conclusionsModalOverlay = document.getElementById('conclusionsModalOverlay');
 const conclusionsTextarea = document.getElementById('inspectionConclusionsText');
 const conclusionsBar = document.getElementById('conclusionsBar');
-const barPulse = document.getElementById('barPulse');
 const barIcon = document.getElementById('barIcon');
-const barStatus = document.getElementById('barStatus');
 const charCounter = document.getElementById('charCounter');
 
 function loadSavedConclusions() {
@@ -1354,8 +1346,6 @@ function loadSavedConclusions() {
         if (savedConclusions.trim().length > 0) {
             conclusionsBar.classList.add('done');
             barIcon.innerHTML = '<i class="fas fa-check"></i>';
-            barStatus.textContent = 'Saved';
-            barPulse.style.background = '#22c55e';
         }
         updateCharCount();
     }
@@ -1409,13 +1399,9 @@ function saveConclusions() {
     if (text.trim().length > 0) {
         conclusionsBar.classList.add('done');
         barIcon.innerHTML = '<i class="fas fa-check"></i>';
-        barStatus.textContent = 'Saved';
-        barPulse.style.background = '#22c55e';
     } else {
         conclusionsBar.classList.remove('done');
         barIcon.innerHTML = '<i class="fas fa-pen"></i>';
-        barStatus.textContent = 'Required';
-        barPulse.style.background = '#e8a87c';
     }
     closeConclusionsModal();
     showToast('Conclusions saved successfully!', 'success');
@@ -1728,38 +1714,32 @@ function showDraftToast(message) {
         const saved = localStorage.getItem(ROW_DENSITY_KEY);
         const btn = document.getElementById('rowDensityToggle');
         const icon = document.getElementById('rowDensityIcon');
-        const label = document.getElementById('rowDensityLabel');
-        
+
         if (saved === 'contracted') {
             document.body.classList.add('contracted-rows');
-            if (btn) btn.classList.add('active');
+            if (btn) { btn.classList.add('active'); btn.title = 'Switch to expanded rows'; }
             if (icon) icon.className = 'fas fa-expand-alt';
-            if (label) label.textContent = 'Expanded';
         } else {
             // Default: bulky mode
             document.body.classList.remove('contracted-rows');
-            if (btn) btn.classList.remove('active');
+            if (btn) { btn.classList.remove('active'); btn.title = 'Switch to compact rows'; }
             if (icon) icon.className = 'fas fa-compress-alt';
-            if (label) label.textContent = 'Compact';
         }
     }
-    
+
     window.toggleRowDensity = function() {
         const isContracted = document.body.classList.toggle('contracted-rows');
         const btn = document.getElementById('rowDensityToggle');
         const icon = document.getElementById('rowDensityIcon');
-        const label = document.getElementById('rowDensityLabel');
-        
+
         localStorage.setItem(ROW_DENSITY_KEY, isContracted ? 'contracted' : 'bulky');
-        
+
         if (isContracted) {
-            if (btn) btn.classList.add('active');
+            if (btn) { btn.classList.add('active'); btn.title = 'Switch to expanded rows'; }
             if (icon) icon.className = 'fas fa-expand-alt';
-            if (label) label.textContent = 'Expanded';
         } else {
-            if (btn) btn.classList.remove('active');
+            if (btn) { btn.classList.remove('active'); btn.title = 'Switch to compact rows'; }
             if (icon) icon.className = 'fas fa-compress-alt';
-            if (label) label.textContent = 'Compact';
         }
     };
     

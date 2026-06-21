@@ -355,14 +355,11 @@ function saveConclusions() {
         }
         
         const bar = document.getElementById('conclusionsBar');
-        const barStatus = document.getElementById('barStatus');
-        if (bar && barStatus) {
+        if (bar) {
             if (conclusionsSaved && conclusionsSaved.trim().length > 0) {
                 bar.classList.add('done');
-                barStatus.innerText = 'Done';
             } else {
                 bar.classList.remove('done');
-                barStatus.innerText = 'Required';
             }
         }
         
@@ -729,7 +726,7 @@ function injectRetrievedRibbon(row) {
       const maxTravel = 200 + EXTRA_OFFSET;
       const travel = Math.min(scrolledPast * SPEED, maxTravel);
       const sidebarY = (-200 - EXTRA_OFFSET) + travel;
-      const opacity  = Math.min(1, scrolledPast / 40);
+      const opacity  = Math.min(1, scrolledPast / 90);
 
       sidebar.style.transform = `translateY(${sidebarY}px)`;
       sidebar.style.opacity = opacity;
