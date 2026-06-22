@@ -34,28 +34,27 @@
             display: flex;
             gap: 32px;
             align-items: flex-start;
-            /* .bridge-sidebar is position:sticky with top:110px, but a sticky
-               element can't stick past its containing block's bottom edge.
-               With few table rows .inspection-main is shorter than the
-               sidebar, so this flex container (the sidebar's containing
-               block) shrinks too, clamping the sidebar back up near the top
-               instead of the intended 110px offset. The min-height keeps
-               enough room so that clamp never engages. */
-            min-height: 620px;
         }
-        
+
         /* Original content container */
         .inspection-main {
             flex: 2;
             min-width: 0;
+            /* .bridge-sidebar is position:fixed (out of flow), so this
+               margin reserves the space it would otherwise occupy
+               (280px width + 32px gap) to keep it from overlapping. */
+            margin-right: 312px;
         }
-        
-        /* Right Sidebar */
+
+        /* Right Sidebar - fixed in place, doesn't move on scroll.
+           top:162px aligns it with the top of the Inspection Date card. */
         .bridge-sidebar {
             width: 280px;
             flex-shrink: 0;
-            position: sticky;
-            top: 110px;
+            position: fixed;
+            top: 162px;
+            right: 12.5%;
+            z-index: 90;
         }
         
         .sidebar-card {
@@ -158,11 +157,18 @@
         
         .sidebar-actions {
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             gap: 10px;
             margin-top: 12px;
         }
-        
+
+        .sidebar-actions .sidebar-btn,
+        .sidebar-actions .btn-preview-inspection {
+            flex: 1;
+            padding: 10px;
+            font-size: 0.78rem;
+        }
+
         .sidebar-btn {
             padding: 10px;
             border-radius: 44px;
@@ -206,14 +212,20 @@
             .inspection-wrapper {
                 max-width: 90%;
             }
+            .bridge-sidebar {
+                right: 5%;
+            }
         }
-        
+
         @media (max-width: 860px) {
             .inspection-wrapper {
                 max-width: 95%;
             }
             .inspection-layout {
                 flex-direction: column;
+            }
+            .inspection-main {
+                margin-right: 0;
             }
             .bridge-sidebar {
                 width: 100%;
@@ -391,11 +403,6 @@
         @media (max-width: 768px) {
             .left-floating-rail { display: none; }
         }
-
-        /* The 3D stage's 420px min-height can exceed the defects panel's
-           60vh cap on shorter screens, capping it shorter than the viewer
-           column it's stretched next to (flex row, align-items: stretch). */
-        #locate3dModal .defects-panel-modal { max-height: none; }
 
         .locate3d-toolbar {
             display: flex;
@@ -994,7 +1001,7 @@
             </div>
             <div class="defects-panel-modal">
                 <div class="panel-header">
-                    <h3><i class="fas fa-clipboard-list"></i> Defects Summary</h3>
+                    <h3><i class="fas fa-clipboard-list"></i> Defects</h3>
                     <span class="defect-count-badge" id="splitDefectCount">0</span>
                 </div>
                 <div class="defects-list-container" id="splitDefectsList"></div>

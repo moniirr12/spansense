@@ -109,14 +109,21 @@ body {
 .inspection-main {
     flex: 2;
     min-width: 0;
+    /* .bridge-sidebar is position:fixed (out of flow), so this
+       margin reserves the space it would otherwise occupy
+       (280px width + 32px gap) to keep it from overlapping. */
+    margin-right: 312px;
 }
 
-/* ========== RIGHT SIDEBAR ========== */
+/* ========== RIGHT SIDEBAR - fixed in place, doesn't move on scroll.
+   top:160px aligns it with the top of the Inspection Date card. ========== */
 .bridge-sidebar {
     width: 280px;
     flex-shrink: 0;
-    position: sticky;
-    top: 110px;
+    position: fixed;
+    top: 160px;
+    right: 12.5%;
+    z-index: 90;
 }
 
 .sidebar-card {
@@ -219,9 +226,15 @@ body {
 
 .sidebar-actions {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 10px;
     margin-top: 12px;
+}
+
+.sidebar-actions .sidebar-btn {
+    flex: 1;
+    padding: 10px;
+    font-size: 0.78rem;
 }
 
 .sidebar-btn {
@@ -592,14 +605,15 @@ textarea:focus {
 }
 
 #toIndex {
-    background: #f1f3f5;
-    color: #6a7c8e;
-    border: 1px solid #e9edf2;
+    background: #eef1f4;
+    color: #4a5b6e;
+    border: 1px solid #cbd5dd;
 }
 
 #toIndex:hover {
-    background: #e9ecef;
-    color: #4a5b6e;
+    background: #e3e8ec;
+    color: #2c3e4e;
+    border-color: #adbac5;
 }
 
 #toBCI {
@@ -798,17 +812,24 @@ textarea:focus {
     .inspection-wrapper {
         max-width: 90%;
     }
+    .bridge-sidebar {
+        right: 5%;
+    }
 }
 
 @media (max-width: 860px) {
     .inspection-wrapper {
         max-width: 95%;
     }
-    
+
     .inspection-layout {
         flex-direction: column;
     }
-    
+
+    .inspection-main {
+        margin-right: 0;
+    }
+
     .bridge-sidebar {
         width: 100%;
         position: static;
