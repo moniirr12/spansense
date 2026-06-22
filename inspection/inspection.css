@@ -147,6 +147,13 @@ body {
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
     border-color: #c5dbd8;
 }
+/* No lift on the date card — it has interactive controls inside it
+   (dropdown, icon buttons) that shouldn't jump on hover. */
+.stat-card.date-card:hover {
+    transform: none;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+    border-color: #8ab4b0;
+}
 .stat-card .stat-label {
     font-size: 0.65rem;
     font-weight: 700;
@@ -208,6 +215,8 @@ body {
 }
 .custom-date-dropdown .ddt-trigger:hover,
 .custom-date-dropdown.open .ddt-trigger { border-color: #8ab4b0; background: white; }
+.custom-date-dropdown .ddt-trigger span.placeholder { color: #8a9ba8; font-weight: 400; }
+.night-mode .custom-date-dropdown .ddt-trigger span.placeholder { color: #7a92a0; }
 .custom-date-dropdown .ddt-chevron { font-size: 0.7rem; color: #8a9ba8; transition: transform 0.2s ease; flex-shrink: 0; }
 .custom-date-dropdown.open .ddt-chevron { transform: rotate(180deg); }
 .custom-date-dropdown .ddt-panel {
@@ -270,8 +279,7 @@ body {
 }
 .load-btn-inline:hover {
     background: #5b8c8a;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(91, 140, 138, 0.25);
+    box-shadow: 0 4px 14px rgba(91, 140, 138, 0.35);
 }
 
 /* ---------- SPAN TABS ---------- */

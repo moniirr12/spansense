@@ -359,7 +359,7 @@ async function loadInspectionDates() {
         
         console.log('API Response:', data);
         
-        dropdown.innerHTML = '<option value="">-- Select inspection date --</option>';
+        dropdown.innerHTML = '<option value="">Select inspection date</option>';
         
         if (data && data.length > 0) {
             // Check if data is an array of strings (dates only)
@@ -435,6 +435,11 @@ function renderCustomDateDropdown() {
 
     panel.innerHTML = '';
     Array.from(select.options).forEach((option) => {
+        // Skip the blank placeholder option — it's not a real choice, so it
+        // shouldn't take up a row in the list (informational disabled
+        // options like "No previous inspections found" still show).
+        if (option.value === '' && !option.disabled) return;
+
         const item = document.createElement('div');
         item.className = 'ddt-item' + (option.disabled ? ' disabled' : '') + (option.selected ? ' active' : '');
         item.textContent = option.textContent;
@@ -449,7 +454,9 @@ function renderCustomDateDropdown() {
     });
 
     const selectedOption = select.options[select.selectedIndex];
-    label.textContent = selectedOption ? selectedOption.textContent : '-- Select inspection date --';
+    const hasRealSelection = selectedOption && selectedOption.value !== '';
+    label.textContent = hasRealSelection ? selectedOption.textContent : 'Select inspection date';
+    label.classList.toggle('placeholder', !hasRealSelection);
 }
 
 function closeCustomDateDropdown() {
