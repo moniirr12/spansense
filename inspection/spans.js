@@ -791,6 +791,35 @@ function injectRetrievedRibbon(row) {
   }
 })();
 
+// ============================================
+// BRIDGE INFO SIDEBAR — remove sticky's catch-up scroll
+// position:sticky's `top` is the threshold it locks at. The sidebar's
+// natural (pre-scroll) offset is further down than the 110px CSS
+// fallback, so it visibly scrolls along with the page for that gap
+// before locking. Setting `top` to its actual measured offset closes
+// the gap so it's pinned from the first pixel of scroll instead.
+// ============================================
+(function() {
+  const sidebar = document.querySelector('.bridge-sidebar');
+  const bridgeHeader = document.getElementById('bridgeHeader');
+  if (!sidebar) return;
+
+  function pinBridgeSidebar() {
+    if (getComputedStyle(sidebar).position !== 'sticky') return;
+    sidebar.style.top = (sidebar.getBoundingClientRect().top + window.scrollY) + 'px';
+  }
+
+  pinBridgeSidebar();
+  window.addEventListener('resize', pinBridgeSidebar);
+
+  // The bridge name starts as a "Loading..." placeholder and is replaced
+  // once fetched — that can change #bridgeHeader's height (e.g. wrapping
+  // to two lines), which shifts the sidebar's natural offset.
+  if (typeof ResizeObserver !== 'undefined' && bridgeHeader) {
+    new ResizeObserver(pinBridgeSidebar).observe(bridgeHeader);
+  }
+})();
+
 // Make functions globally available
 window.initializeSpanButtons = initializeSpanButtons;
 window.handleSpanButtonClick = handleSpanButtonClick;

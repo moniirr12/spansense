@@ -158,12 +158,13 @@
         
         .sidebar-actions {
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             gap: 10px;
             margin-top: 12px;
         }
-        
+
         .sidebar-btn {
+            flex: 1;
             padding: 10px;
             border-radius: 44px;
             border: 1px solid #e2e8f0;
@@ -188,7 +189,13 @@
         .sidebar-btn.primary:hover {
             background: #4a7876;
         }
-        
+
+        .sidebar-actions .btn-preview-inspection {
+            flex: 1;
+            padding: 10px;
+            font-size: 0.8rem;
+        }
+
         /* Ensure original container fits within new layout */
         .container {
             max-width: 100% !important;
@@ -392,11 +399,6 @@
             .left-floating-rail { display: none; }
         }
 
-        /* The 3D stage's 420px min-height can exceed the defects panel's
-           60vh cap on shorter screens, capping it shorter than the viewer
-           column it's stretched next to (flex row, align-items: stretch). */
-        #locate3dModal .defects-panel-modal { max-height: none; }
-
         .locate3d-toolbar {
             display: flex;
             align-items: center;
@@ -548,9 +550,16 @@
                         <div class="stat-label">INSPECTION DATE</div>
                         <div class="date-card-content">
                             <div class="date-select-wrapper">
-                                <select id="inspectionDates">
+                                <select id="inspectionDates" style="display:none;">
                                     <option value="">-- Select inspection date --</option>
                                 </select>
+                                <div class="custom-date-dropdown" id="inspectionDatesDropdown">
+                                    <button type="button" class="ddt-trigger" id="inspectionDatesTrigger">
+                                        <span id="inspectionDatesLabel">-- Select inspection date --</span>
+                                        <i class="fas fa-chevron-down ddt-chevron"></i>
+                                    </button>
+                                    <div class="ddt-panel" id="inspectionDatesPanel"></div>
+                                </div>
                             </div>
                             <div class="action-button-wrapper">
                                 <button class="load-btn-inline row-filter-toggle" id="rowFilterToggle" onclick="view()" title="Hide empty rows">
