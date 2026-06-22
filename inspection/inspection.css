@@ -183,6 +183,74 @@ body {
 .date-select-wrapper select:hover { border-color: #8ab4b0; background: white; }
 .action-button-wrapper { flex-shrink: 0; }
 
+/* Custom date dropdown — styled after the map.html structure search bar,
+   since a native <select> can't be themed (its option list stays
+   browser-native even in night mode). The real <select> above stays in
+   the DOM, hidden, as the source of truth for existing population/change-event code. */
+.custom-date-dropdown { position: relative; width: 100%; }
+.custom-date-dropdown .ddt-trigger {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    background: #fafbfc;
+    border: 1px solid #e2e8f0;
+    border-radius: 40px;
+    color: #2c4a48;
+    cursor: pointer;
+    font-weight: 500;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+.custom-date-dropdown .ddt-trigger:hover,
+.custom-date-dropdown.open .ddt-trigger { border-color: #8ab4b0; background: white; }
+.custom-date-dropdown .ddt-chevron { font-size: 0.7rem; color: #8a9ba8; transition: transform 0.2s ease; flex-shrink: 0; }
+.custom-date-dropdown.open .ddt-chevron { transform: rotate(180deg); }
+.custom-date-dropdown .ddt-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #e9edf2;
+    border-radius: 12px;
+    max-height: 260px;
+    overflow-y: auto;
+    width: 100%;
+    z-index: 1001;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.1);
+    display: none;
+}
+.custom-date-dropdown.open .ddt-panel { display: block; }
+.custom-date-dropdown .ddt-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: #6a7c8e;
+    border-bottom: 1px solid #e9edf2;
+    transition: all 0.15s;
+}
+.custom-date-dropdown .ddt-item:last-child { border-bottom: none; }
+.custom-date-dropdown .ddt-item:hover, .custom-date-dropdown .ddt-item.active { background: #eef4f2; color: #5b8c8a; }
+.custom-date-dropdown .ddt-item.disabled { color: #b8c4cc; cursor: default; }
+.custom-date-dropdown .ddt-item.disabled:hover { background: none; color: #b8c4cc; }
+
+.night-mode .custom-date-dropdown .ddt-trigger {
+    background: #1e2a2f;
+    border-color: #3a4b53;
+    color: #c5d3d9;
+}
+.night-mode .custom-date-dropdown .ddt-trigger:hover,
+.night-mode .custom-date-dropdown.open .ddt-trigger { background: #2a3a40; border-color: #8ab4b0; }
+.night-mode .custom-date-dropdown .ddt-panel { background: #2f3e48; border-color: #3e525e; }
+.night-mode .custom-date-dropdown .ddt-item { color: #a8c4cc; border-bottom-color: #3e525e; }
+.night-mode .custom-date-dropdown .ddt-item:hover, .night-mode .custom-date-dropdown .ddt-item.active { background: #3a6b62; color: white; }
+.night-mode .custom-date-dropdown .ddt-item.disabled { color: #5a6e76; }
+.night-mode .custom-date-dropdown .ddt-item.disabled:hover { background: none; color: #5a6e76; }
+
 .load-btn-inline {
     padding: 10px 24px;
     border: none;
@@ -1551,11 +1619,14 @@ body {
 }
 
 /* ---------- SPLIT MODAL (Conclusions + Defects) ---------- */
+/* Fixed height (not just a cap) so every split-modal-container — conclusions
+   AND twin view — renders at identical dimensions regardless of its content. */
 .split-modal-container {
     display: flex;
     gap: 20px;
     max-width: 944px;
     width: 73%;
+    height: 78vh;
     max-height: 84vh;
 }
 .conclusions-modal, .defects-panel-modal {
@@ -1567,7 +1638,7 @@ body {
     overflow: hidden;
 }
 .conclusions-modal { flex: 2; }
-.defects-panel-modal { flex: 1; max-height: 60vh; }
+.defects-panel-modal { flex: 1; }
 .conclusions-modal .modal-header, .defects-panel-modal .panel-header {
     padding: 18px 24px;
     border-bottom: 1px solid #e9edf2;
@@ -1577,6 +1648,7 @@ body {
     align-items: center;
 }
 .conclusions-modal textarea {
+    flex: 1;
     width: calc(100% - 48px);
     min-height: 320px;
     padding: 16px;
