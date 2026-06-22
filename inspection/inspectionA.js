@@ -383,10 +383,10 @@ async function loadInspectionDates() {
                             default: typeLabel = inspectionType || 'Inspection';
                         }
                         
-                        option.textContent = `${date} - ${typeLabel}`;
+                        option.textContent = `${formatDate(date)} - ${typeLabel}`;
                     } catch (error) {
                         console.error(`Failed to fetch type for ${date}:`, error);
-                        option.textContent = `${date} - Inspection`;
+                        option.textContent = `${formatDate(date)} - Inspection`;
                     }
                     
                     dropdown.appendChild(option);
@@ -407,7 +407,7 @@ async function loadInspectionDates() {
                         default: typeLabel = type || 'Inspection';
                     }
                     
-                    option.textContent = `${option.value} - ${typeLabel}`;
+                    option.textContent = `${formatDate(option.value)} - ${typeLabel}`;
                     dropdown.appendChild(option);
                 }
             }
