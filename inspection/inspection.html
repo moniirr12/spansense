@@ -555,9 +555,16 @@
                         <div class="stat-label">INSPECTION DATE</div>
                         <div class="date-card-content">
                             <div class="date-select-wrapper">
-                                <select id="inspectionDates">
+                                <select id="inspectionDates" style="display:none;">
                                     <option value="">-- Select inspection date --</option>
                                 </select>
+                                <div class="custom-date-dropdown" id="inspectionDatesDropdown">
+                                    <button type="button" class="ddt-trigger" id="inspectionDatesTrigger">
+                                        <span id="inspectionDatesLabel">-- Select inspection date --</span>
+                                        <i class="fas fa-chevron-down ddt-chevron"></i>
+                                    </button>
+                                    <div class="ddt-panel" id="inspectionDatesPanel"></div>
+                                </div>
                             </div>
                             <div class="action-button-wrapper">
                                 <button class="load-btn-inline row-filter-toggle" id="rowFilterToggle" onclick="view()" title="Hide empty rows">

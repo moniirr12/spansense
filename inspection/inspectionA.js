@@ -359,7 +359,7 @@ async function loadInspectionDates() {
         
         console.log('API Response:', data);
         
-        dropdown.innerHTML = '<option value="">-- Select inspection --</option>';
+        dropdown.innerHTML = '<option value="">-- Select inspection date --</option>';
         
         if (data && data.length > 0) {
             // Check if data is an array of strings (dates only)
@@ -418,7 +418,59 @@ async function loadInspectionDates() {
         console.error('Failed to load inspections:', error);
         dropdown.innerHTML = '<option value="" disabled>Error loading inspections</option>';
     }
+
+    renderCustomDateDropdown();
 }
+
+// Custom-styled stand-in for the #inspectionDates <select> (native option lists
+// can't be themed/dark-moded). Mirrors the select's <option>s into a styled
+// panel and forwards selection back onto the real select so existing
+// population/change-event code above keeps working unchanged.
+function renderCustomDateDropdown() {
+    const select = document.getElementById('inspectionDates');
+    const trigger = document.getElementById('inspectionDatesTrigger');
+    const label = document.getElementById('inspectionDatesLabel');
+    const panel = document.getElementById('inspectionDatesPanel');
+    if (!select || !trigger || !label || !panel) return;
+
+    panel.innerHTML = '';
+    Array.from(select.options).forEach((option) => {
+        const item = document.createElement('div');
+        item.className = 'ddt-item' + (option.disabled ? ' disabled' : '') + (option.selected ? ' active' : '');
+        item.textContent = option.textContent;
+        if (!option.disabled) {
+            item.addEventListener('click', () => {
+                select.value = option.value;
+                select.dispatchEvent(new Event('change'));
+                closeCustomDateDropdown();
+            });
+        }
+        panel.appendChild(item);
+    });
+
+    const selectedOption = select.options[select.selectedIndex];
+    label.textContent = selectedOption ? selectedOption.textContent : '-- Select inspection date --';
+}
+
+function closeCustomDateDropdown() {
+    const wrapper = document.getElementById('inspectionDatesDropdown');
+    if (wrapper) wrapper.classList.remove('open');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const wrapper = document.getElementById('inspectionDatesDropdown');
+    const trigger = document.getElementById('inspectionDatesTrigger');
+    if (!wrapper || !trigger) return;
+
+    trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        wrapper.classList.toggle('open');
+    });
+    document.addEventListener('click', (e) => {
+        if (!wrapper.contains(e.target)) closeCustomDateDropdown();
+    });
+    renderCustomDateDropdown();
+});
 
 // Call it when page loads
 document.addEventListener("DOMContentLoaded", loadInspectionDates);
