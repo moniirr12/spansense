@@ -6,6 +6,15 @@ var API_BASE = (window.location.hostname === 'localhost')
     ? 'http://localhost:3000'
     : 'https://spansense.onrender.com';
 
+// Formats raw ISO/SQL date strings (e.g. "2026-11-07T00:00:00.000Z") into the
+// "7 Nov 2026" style used elsewhere in the app (Dashboard, Database table, sidebar).
+function formatDate(dateString) {
+    if (!dateString) return '--';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 // Helper function to convert image URL to dataURL
 async function imageUrlToDataURL(url) {
     return new Promise((resolve) => {
@@ -495,7 +504,7 @@ async function generateSimplePDFReport(doc, mode = 'download') {
                     margin: [0, 0, 0, 25]
                 }] : []),
                 {
-                    text: `Inspection Date: ${inspectionDate}`,
+                    text: `Inspection Date: ${formatDate(inspectionDate)}`,
                     fontSize: 10,
                     alignment: 'center',
                     margin: [0, 0, 0, 5]
@@ -757,7 +766,7 @@ async function generateSimplePDFReport(doc, mode = 'download') {
                     body: [
                         ['Inspector Name:', inspectionData.inspectorName || 'Not recorded'],
                         ['Inspection Type:', inspectionData.inspectionType || 'N/A'],
-                        ['Inspection Date:', inspectionData.inspectionDate || 'N/A'],
+                        ['Inspection Date:', inspectionData.inspectionDate ? formatDate(inspectionData.inspectionDate) : 'N/A'],
                         ['Total Spans:', inspectionData.totalSpans || 'N/A']
                     ]
                 },
@@ -1241,8 +1250,8 @@ function buildBCIProformaContent(bciFormData) {
         defects.forEach(function(d) { defByEl[d.element_no != null ? d.element_no : d.elementNumber] = d; });
 
         var inspector  = spanData.inspector_name  || '';
-        var date       = spanData.inspection_date || '';
-        var nextInsp   = spanData.next_inspection || '';
+        var date       = spanData.inspection_date ? formatDate(spanData.inspection_date) : '';
+        var nextInsp   = spanData.next_inspection ? formatDate(spanData.next_inspection) : '';
         var roadRef    = bridgeData.road_ref || bridgeData.location || '';
         var mapRef     = bridgeData.grid_reference || (bridgeData.latitude && bridgeData.longitude ? '' + Number(bridgeData.latitude).toFixed(3) + ', ' + Number(bridgeData.longitude).toFixed(3) : '');
         var osE        = bridgeData.easting  || bridgeData.OSE || '';

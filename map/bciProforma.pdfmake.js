@@ -406,7 +406,7 @@ function buildBCIPage2Content(bciFormData) {
         var spanWorks = (worksRequired.worksRequired || []).filter(function(w) { return Number(w.spanNumber) === spanNum; });
 
         var inspector = spanData.inspector_name  || '';
-        var date      = spanData.inspection_date || '';
+        var date      = spanData.inspection_date ? formatDate(spanData.inspection_date) : '';
         var comments  = spanData.comments        || '';
 
         content.push({ text: '', pageBreak: 'before' });

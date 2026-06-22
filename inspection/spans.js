@@ -143,7 +143,7 @@ function viewReport(e) {
                     <div class="meta">
                         <div class="meta-item">
                             <div class="meta-label">Inspection Date</div>
-                            <div class="meta-value">${inspectionData.inspectionDate || 'N/A'}</div>
+                            <div class="meta-value">${inspectionData.inspectionDate ? formatDate(inspectionData.inspectionDate) : 'N/A'}</div>
                         </div>
                         <div class="meta-item">
                             <div class="meta-label">Total Defects</div>
@@ -511,7 +511,7 @@ if (previewButton) {
       <body>
         <div class="container">
           <h1>${inspectionData.structureName || 'Structure'} Inspection</h1>
-          <p><strong>Date:</strong> ${inspectionData.inspectionDate || 'N/A'}</p>
+          <p><strong>Date:</strong> ${inspectionData.inspectionDate ? formatDate(inspectionData.inspectionDate) : 'N/A'}</p>
           <h2>Inspection Details</h2>
           <pre>${JSON.stringify(inspectionData, null, 2)}</pre>
           <h2>All Defects (${defects.length})</h2>
