@@ -77,13 +77,13 @@
 </header>
 
 <div class="stats">
-  <div class="stat"><div class="num">89</div><div class="label">Commits</div></div>
-  <div class="stat"><div class="num">80</div><div class="label">Pushes</div></div>
-  <div class="stat"><div class="num">14</div><div class="label">Pull Requests</div></div>
-  <div class="stat"><div class="num">13</div><div class="label">Merged</div></div>
-  <div class="stat"><div class="num">3</div><div class="label">Branches</div></div>
-  <div class="stat"><div class="num">8</div><div class="label">Days Active</div></div>
-  <div class="stat"><div class="num">Jun 14 → Jun 21</div><div class="label">Date Range</div></div>
+  <div class="stat"><div class="num">101</div><div class="label">Commits</div></div>
+  <div class="stat"><div class="num">71</div><div class="label">Pushes</div></div>
+  <div class="stat"><div class="num">19</div><div class="label">Pull Requests</div></div>
+  <div class="stat"><div class="num">18</div><div class="label">Merged</div></div>
+  <div class="stat"><div class="num">4</div><div class="label">Branches</div></div>
+  <div class="stat"><div class="num">7</div><div class="label">Days Active</div></div>
+  <div class="stat"><div class="num">Jun 14 → Jun 22</div><div class="label">Date Range</div></div>
 </div>
 
 <section>
@@ -91,8 +91,10 @@
   <div class="panel">
     <div class="legend">
       <span><i style="background:#58a6ff"></i>main</span>
-      <span><i style="background:#a371f7"></i>databaaseChanges</span>
+      <span><i style="background:#a371f7"></i>databaaseChanges (deleted)</span>
       <span><i style="background:#3fb950"></i>testing-defect-on-3d-model</span>
+      <span><i style="background:#d29922"></i>testing-II</span>
+      <span><i style="background:#f85149"></i>chief</span>
     </div>
     <pre class="mermaid">
 %%{init: {'theme':'dark', 'gitGraph': {'showCommitLabel': true, 'mainBranchName': 'main'}}}%%
@@ -159,9 +161,36 @@ gitGraph
   commit id: "Hide module menu, target=_self"
   checkout main
   merge testing-defect-on-3d-model id: "PR #14 ✅ 6/21 16:39"
+  checkout testing-defect-on-3d-model
+  commit id: "Module menu visibility + layout styles"
+  checkout main
+  merge testing-defect-on-3d-model id: "PR #15 ✅ 6/21 23:25"
+  checkout testing-defect-on-3d-model
+  branch testing-II
+  commit id: "Custom date dropdown + sidebar layout"
+  checkout testing-defect-on-3d-model
+  merge testing-II id: "PR #16 ✅ 6/22 00:03"
+  checkout main
+  commit id: "Inspection layout refactor (direct push)"
+  commit id: "Custom date dropdown on main (direct push)"
+  branch chief
+  commit id: "Date card styles + dropdown placeholder polish"
+  checkout main
+  merge chief id: "PR #17 ✅ 6/22 18:17"
+  checkout chief
+  commit id: "Consistent date formatting app-wide"
+  checkout main
+  merge chief id: "PR #18 ✅ 6/22 18:44"
+  checkout chief
+  commit id: "Per-structure 3D model shapes (9 kinds)"
+  checkout main
+  merge chief id: "PR #19 ✅ 6/22 19:44"
     </pre>
     <div class="note">
-      <strong>PR #7</strong> (<span class="branch-tag">testing-defect-on-3d-model</span> → <span class="branch-tag">databaaseChanges</span>) was opened 6/20 20:56 but <strong>closed without merging</strong> at 6/21 12:25 — it was superseded once <span class="branch-tag">databaaseChanges</span> fully merged into <span class="branch-tag">main</span> via PR&nbsp;#8 a minute later. From that point, <span class="branch-tag">testing-defect-on-3d-model</span> targeted <span class="branch-tag">main</span> directly (PRs #9–14).
+      <strong>PR #7</strong> (<span class="branch-tag">testing-defect-on-3d-model</span> → <span class="branch-tag">databaaseChanges</span>) was opened 6/20 20:56 but <strong>closed without merging</strong> at 6/21 12:25 — it was superseded once <span class="branch-tag">databaaseChanges</span> fully merged into <span class="branch-tag">main</span> via PR&nbsp;#8 a minute later. From that point, <span class="branch-tag">testing-defect-on-3d-model</span> targeted <span class="branch-tag">main</span> directly (PRs #9–14). <span class="branch-tag">databaaseChanges</span> itself has since been deleted upstream.
+    </div>
+    <div class="note">
+      <strong>PR #16</strong> (<span class="branch-tag">testing-II</span> → <span class="branch-tag">testing-defect-on-3d-model</span>) merged 6/22 00:03, but <span class="branch-tag">testing-defect-on-3d-model</span> was never merged into <span class="branch-tag">main</span> again afterward — its custom-date-dropdown work was instead independently re-implemented and pushed directly to <span class="branch-tag">main</span> (no PR) before <span class="branch-tag">chief</span> took over as the active branch for all further work (PRs #17–19).
     </div>
   </div>
 </section>
@@ -191,6 +220,11 @@ gitGraph
 mermaid.initialize({ startOnLoad: true, theme: 'dark' });
 
 const prData = [
+  [19,"Enhance bridge model definitions with per-kind parameters and improve structure rendering logic","chief → main","2026-06-22 19:44","2026-06-22 19:44","merged"],
+  [18,"Format inspection dates consistently across the application","chief → main","2026-06-22 18:44","2026-06-22 18:44","merged"],
+  [17,"Update date card styles and improve dropdown placeholder handling","chief → main","2026-06-22 18:17","2026-06-22 18:17","merged"],
+  [16,"Implement custom date dropdown and enhance sidebar layout for better usability","testing-II → testing-defect-on-3d-model","2026-06-22 00:02","2026-06-22 00:03","merged"],
+  [15,"Enhance module menu visibility handling and update layout styles across multiple pages","testing-defect-on-3d-model → main","2026-06-21 23:25","2026-06-21 23:25","merged"],
   [14,"Add script to hide module menu on inspection page navigation","testing-defect-on-3d-model → main","2026-06-21 16:39","2026-06-21 16:39","merged"],
   [13,"twinview model defect interaction: update styles for defect panels","testing-defect-on-3d-model → main","2026-06-21 16:25","2026-06-21 16:25","merged"],
   [12,"Improve expandable row animations and adjust badge styles","testing-defect-on-3d-model → main","2026-06-21 13:13","2026-06-21 13:13","merged"],
@@ -222,9 +256,9 @@ for (const [num, title, flow, opened, closed, status] of prData) {
   tbody.appendChild(tr);
 }
 
-const days = ['Jun 14','Jun 15','Jun 16','Jun 17','Jun 18','Jun 19','Jun 20','Jun 21'];
-const commits = [48,1,6,0,1,6,14,13];
-const pushes  = [45,1,6,0,1,3,12,12];
+const days = ['Jun 14','Jun 15','Jun 16','Jun 17','Jun 18','Jun 19','Jun 20','Jun 21','Jun 22'];
+const commits = [48,0,7,0,1,6,14,13,12];
+const pushes  = [24,1,6,0,1,3,12,14,10];
 
 new Chart(document.getElementById('activityChart'), {
   type: 'bar',

@@ -7,23 +7,26 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <script>
-        // Hide the module menu when arriving from the inspection pages, before
-        // first paint (in <head>) so the menu never flashes visible then hidden.
-        // The hidden state also persists while bouncing between Account and
-        // Contact Us, so it doesn't reappear just because the immediate
-        // referrer is the other of the two rather than an inspection page.
+        // Hide the module menu when arriving from the inspection pages or the
+        // public index page, before first paint (in <head>) so the menu never
+        // flashes visible then hidden. The hidden state also persists while
+        // bouncing between Account and Contact Us, so it doesn't reappear
+        // just because the immediate referrer is the other of the two rather
+        // than an inspection/index page.
         (function() {
             var ref = document.referrer || '';
             var fromInspection = ref.indexOf('/inspection/inspection.html') !== -1 || ref.indexOf('/inspection1/inspection1.html') !== -1;
+            var fromIndex = /\/index\.html(\?.*)?$/.test(ref) || /^https?:\/\/[^/]+\/?(\?.*)?$/.test(ref);
             var fromAccountsOrContacts = ref.indexOf('/accounts/accounts.html') !== -1 || ref.indexOf('/contacts/contacts.html') !== -1;
             var persisted = sessionStorage.getItem('hideNavModules') === '1';
 
-            if (fromInspection || (fromAccountsOrContacts && persisted)) {
+            if (fromInspection || fromIndex || (fromAccountsOrContacts && persisted)) {
                 document.documentElement.classList.add('hide-modules');
                 sessionStorage.setItem('hideNavModules', '1');
             } else {
                 sessionStorage.removeItem('hideNavModules');
             }
+            window.__fromIndexPage = fromIndex;
         })();
     </script>
     <style>
@@ -298,6 +301,19 @@
             gap: 10px;
         }
         .account-card h2 i { color: #8ab4b0; }
+
+        /* Draws attention to the Profile Details card when arriving here
+           specifically to look up your identity/profile info. */
+        .account-card.highlight-pulse {
+            border-color: #8ab4b0;
+            box-shadow: 0 0 0 4px rgba(138, 180, 176, 0.3), 0 4px 16px rgba(0, 0, 0, 0.03);
+            animation: profileCardPulse 1.6s ease-out 2;
+        }
+        @keyframes profileCardPulse {
+            0%   { box-shadow: 0 0 0 0 rgba(138, 180, 176, 0.55), 0 4px 16px rgba(0, 0, 0, 0.03); }
+            70%  { box-shadow: 0 0 0 10px rgba(138, 180, 176, 0), 0 4px 16px rgba(0, 0, 0, 0.03); }
+            100% { box-shadow: 0 0 0 0 rgba(138, 180, 176, 0), 0 4px 16px rgba(0, 0, 0, 0.03); }
+        }
 
         /* Form fields inside cards */
         .form-group {
@@ -719,7 +735,7 @@
         <!-- ACCOUNT GRID: Profile + Security -->
         <div class="account-grid">
             <!-- LEFT: Profile Details -->
-            <div class="account-card">
+            <div class="account-card" id="profileDetailsCard">
                 <h2><i class="fas fa-id-card"></i> Profile Details</h2>
                 <form onsubmit="event.preventDefault(); showToast('Saved', 'Your profile has been updated', 'success');">
                     <div class="form-row">
@@ -967,6 +983,18 @@
                 toast.classList.remove('show');
                 setTimeout(() => toast.remove(), 400);
             }, 4000);
+        }
+
+        // ============================================
+        // HIGHLIGHT PROFILE DETAILS ON ARRIVAL FROM INDEX
+        // ============================================
+        if (window.__fromIndexPage) {
+            const card = document.getElementById('profileDetailsCard');
+            if (card) {
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                card.classList.add('highlight-pulse');
+                setTimeout(() => card.classList.remove('highlight-pulse'), 3200);
+            }
         }
     </script>
 
