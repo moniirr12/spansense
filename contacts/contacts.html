@@ -7,18 +7,20 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <script>
-        // Hide the module menu when arriving from the inspection pages, before
-        // first paint (in <head>) so the menu never flashes visible then hidden.
-        // The hidden state also persists while bouncing between Account and
-        // Contact Us, so it doesn't reappear just because the immediate
-        // referrer is the other of the two rather than an inspection page.
+        // Hide the module menu when arriving from the inspection pages or the
+        // public index page, before first paint (in <head>) so the menu never
+        // flashes visible then hidden. The hidden state also persists while
+        // bouncing between Account and Contact Us, so it doesn't reappear
+        // just because the immediate referrer is the other of the two rather
+        // than an inspection/index page.
         (function() {
             var ref = document.referrer || '';
             var fromInspection = ref.indexOf('/inspection/inspection.html') !== -1 || ref.indexOf('/inspection1/inspection1.html') !== -1;
+            var fromIndex = /\/index\.html(\?.*)?$/.test(ref) || /^https?:\/\/[^/]+\/?(\?.*)?$/.test(ref);
             var fromAccountsOrContacts = ref.indexOf('/accounts/accounts.html') !== -1 || ref.indexOf('/contacts/contacts.html') !== -1;
             var persisted = sessionStorage.getItem('hideNavModules') === '1';
 
-            if (fromInspection || (fromAccountsOrContacts && persisted)) {
+            if (fromInspection || fromIndex || (fromAccountsOrContacts && persisted)) {
                 document.documentElement.classList.add('hide-modules');
                 sessionStorage.setItem('hideNavModules', '1');
             } else {
