@@ -988,19 +988,32 @@ function updateBridgeModalData(structureId) {
         .then(bridge => {
             const bciScoreElement = document.getElementById('bciScore');
             const lastInspectedElement = document.getElementById('lastInspected');
+            const locationElement = document.getElementById('modalLocation');
+            const spanElement = document.getElementById('modalSpan');
+            const lengthElement = document.getElementById('modalLength');
+            const builtElement = document.getElementById('modalBuilt');
+            const typeElement = document.getElementById('modalType');
 
             if (bciScoreElement && bridge.bci_av) {
                 const bciValue = Math.round(parseFloat(bridge.bci_av));
-                bciScoreElement.innerHTML = bciValue;
-                if (bciValue >= 80) bciScoreElement.style.color = '#5b8c8a';
-                else if (bciValue >= 65) bciScoreElement.style.color = '#eab308';
-                else if (bciValue >= 40) bciScoreElement.style.color = '#f97316';
-                else bciScoreElement.style.color = '#dc2626';
+                let label, color;
+                if (bciValue >= 80) { label = 'Good'; color = '#5b8c8a'; }
+                else if (bciValue >= 65) { label = 'Fair'; color = '#eab308'; }
+                else if (bciValue >= 40) { label = 'Poor'; color = '#f97316'; }
+                else { label = 'Critical'; color = '#dc2626'; }
+                bciScoreElement.innerHTML = `${bciValue} — ${label}`;
+                bciScoreElement.style.color = color;
             }
 
             if (lastInspectedElement && bridge.last_inspection) {
                 lastInspectedElement.textContent = bridge.last_inspection;
             }
+
+            if (locationElement) locationElement.textContent = bridge.location || '--';
+            if (spanElement) spanElement.textContent = bridge.span ? `${bridge.span}m` : '--';
+            if (lengthElement) lengthElement.textContent = bridge.length ? `${bridge.length}m` : '--';
+            if (builtElement) builtElement.textContent = bridge.built_year || '--';
+            if (typeElement) typeElement.textContent = bridge.type || '--';
         })
         .catch(error => console.error('Error fetching bridge data:', error));
 }
