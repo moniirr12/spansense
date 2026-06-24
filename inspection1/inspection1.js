@@ -420,7 +420,11 @@ async function fetchAndUpdateBridgeData(bridgeId) {
         
         const bridgeData = await response.json();
         console.log('Bridge data received:', bridgeData);
-        
+
+        // Drives which element list/BCI scoring config applies (Bridge,
+        // Retaining wall, ...) - see inspection.js/bci.js.
+        if (bridgeData.type) sessionStorage.setItem('structureType', bridgeData.type);
+
         if (spanCountEl) spanCountEl.innerText = bridgeData.span_number || bridgeData.total_spans || '--';
         
         if (lengthEl) {

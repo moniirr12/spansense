@@ -80,9 +80,9 @@ document.addEventListener('DOMContentLoaded', initializeFileExplorer);
 // Add these new functions
 function toggleView() {
     isFolderView = !isFolderView;
-    viewToggleBtn.textContent = isFolderView 
-        ? "List View" 
-        : "Folder View";
+    viewToggleBtn.innerHTML = isFolderView
+        ? '<i class="fas fa-list"></i> List View'
+        : '<i class="fas fa-th-large"></i> Folder View';
     refreshView();
 }
 

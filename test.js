@@ -165,46 +165,71 @@ async function generateSimplePDFReport(doc, mode = 'download') {
         });
 
         // SECOND: Define all elements list (after defectsData is defined)
-        const allElementsList = [
-            { category: "Deck Elements", mainNumber: "4.1", subNumber: "4.1.1", name: "Primary deck element", elementNo: 1 },
-            { category: "Deck Elements", mainNumber: "4.1", subNumber: "4.1.2", name: "Secondary deck elements - Transverse beams", elementNo: 2 },
-            { category: "Deck Elements", mainNumber: "4.1", subNumber: "4.1.3", name: "Elements from table G.5", elementNo: 3 },
-            { category: "Deck Elements", mainNumber: "4.1", subNumber: "4.1.4", name: "Half joints", elementNo: 4 },
-            { category: "Deck Elements", mainNumber: "4.1", subNumber: "4.1.5", name: "Tie beam/rod", elementNo: 5 },
-            { category: "Deck Elements", mainNumber: "4.1", subNumber: "4.1.6", name: "Parapet beam or cantilever", elementNo: 6 },
-            { category: "Deck Elements", mainNumber: "4.1", subNumber: "4.1.7", name: "Deck bracing", elementNo: 7 },
-            { category: "Load-bearing Substructure", mainNumber: "4.2", subNumber: "4.2.1", name: "Foundations", elementNo: 8 },
-            { category: "Load-bearing Substructure", mainNumber: "4.2", subNumber: "4.2.2", name: "Abutments (incl. arch springing)", elementNo: 9 },
-            { category: "Load-bearing Substructure", mainNumber: "4.2", subNumber: "4.2.3", name: "Spandrel wall/head wall", elementNo: 10 },
-            { category: "Load-bearing Substructure", mainNumber: "4.2", subNumber: "4.2.4", name: "Pier/column", elementNo: 11 },
-            { category: "Load-bearing Substructure", mainNumber: "4.2", subNumber: "4.2.5", name: "Cross-head/capping beam", elementNo: 12 },
-            { category: "Load-bearing Substructure", mainNumber: "4.2", subNumber: "4.2.6", name: "Bearings", elementNo: 13 },
-            { category: "Load-bearing Substructure", mainNumber: "4.2", subNumber: "4.2.7", name: "Bearing plinth/shelf", elementNo: 14 },
-            { category: "Durability Elements", mainNumber: "4.3", subNumber: "4.3.1", name: "Superstructure drainage", elementNo: 15 },
-            { category: "Durability Elements", mainNumber: "4.3", subNumber: "4.3.2", name: "Substructure drainage", elementNo: 16 },
-            { category: "Durability Elements", mainNumber: "4.3", subNumber: "4.3.3", name: "Waterproofing", elementNo: 17 },
-            { category: "Durability Elements", mainNumber: "4.3", subNumber: "4.3.4", name: "Movement/expansion joints", elementNo: 18 },
-            { category: "Durability Elements", mainNumber: "4.3", subNumber: "4.3.5", name: "Finishes: deck elements", elementNo: 19 },
-            { category: "Durability Elements", mainNumber: "4.3", subNumber: "4.3.6", name: "Finishes: substructure elements", elementNo: 20 },
-            { category: "Durability Elements", mainNumber: "4.3", subNumber: "4.3.7", name: "Finishes: parapets/safety fences", elementNo: 21 },
-            { category: "Safety Elements", mainNumber: "4.4", subNumber: "4.4.1", name: "Access/walkways/gantries", elementNo: 22 },
-            { category: "Safety Elements", mainNumber: "4.4", subNumber: "4.4.2", name: "Handrail/parapets/safety fences", elementNo: 23 },
-            { category: "Safety Elements", mainNumber: "4.4", subNumber: "4.4.3", name: "Carriageway surfacing", elementNo: 24 },
-            { category: "Safety Elements", mainNumber: "4.4", subNumber: "4.4.4", name: "Footway/verge/footbridge surfacing", elementNo: 25 },
-            { category: "Other Bridge Elements", mainNumber: "4.5", subNumber: "4.5.1", name: "Invert/river bed", elementNo: 26 },
-            { category: "Other Bridge Elements", mainNumber: "4.5", subNumber: "4.5.2", name: "Aprons", elementNo: 27 },
-            { category: "Other Bridge Elements", mainNumber: "4.5", subNumber: "4.5.3", name: "Fenders/cutwaters/collision prot.", elementNo: 28 },
-            { category: "Other Bridge Elements", mainNumber: "4.5", subNumber: "4.5.4", name: "River training works", elementNo: 29 },
-            { category: "Other Bridge Elements", mainNumber: "4.5", subNumber: "4.5.5", name: "Revetment/batter paving", elementNo: 30 },
-            { category: "Other Bridge Elements", mainNumber: "4.5", subNumber: "4.5.6", name: "Wing walls", elementNo: 31 },
-            { category: "Other Bridge Elements", mainNumber: "4.5", subNumber: "4.5.7", name: "Retaining walls", elementNo: 32 },
-            { category: "Other Bridge Elements", mainNumber: "4.5", subNumber: "4.5.8", name: "Embankments", elementNo: 33 },
-            { category: "Other Bridge Elements", mainNumber: "4.5", subNumber: "4.5.9", name: "Machinery", elementNo: 34 },
-            { category: "Ancillary Elements", mainNumber: "4.6", subNumber: "4.6.1", name: "Approach rails/barriers/walls", elementNo: 35 },
-            { category: "Ancillary Elements", mainNumber: "4.6", subNumber: "4.6.2", name: "Signs", elementNo: 36 },
-            { category: "Ancillary Elements", mainNumber: "4.6", subNumber: "4.6.3", name: "Lighting", elementNo: 37 },
-            { category: "Ancillary Elements", mainNumber: "4.6", subNumber: "4.6.4", name: "Services", elementNo: 38 }
-        ];
+        const ALL_ELEMENTS_LIST_BY_TYPE = {
+            Bridge: [
+                { category: "Deck Elements", mainNumber: "4.1", subNumber: "4.1.1", name: "Primary deck element", elementNo: 1 },
+                { category: "Deck Elements", mainNumber: "4.1", subNumber: "4.1.2", name: "Secondary deck elements - Transverse beams", elementNo: 2 },
+                { category: "Deck Elements", mainNumber: "4.1", subNumber: "4.1.3", name: "Elements from table G.5", elementNo: 3 },
+                { category: "Deck Elements", mainNumber: "4.1", subNumber: "4.1.4", name: "Half joints", elementNo: 4 },
+                { category: "Deck Elements", mainNumber: "4.1", subNumber: "4.1.5", name: "Tie beam/rod", elementNo: 5 },
+                { category: "Deck Elements", mainNumber: "4.1", subNumber: "4.1.6", name: "Parapet beam or cantilever", elementNo: 6 },
+                { category: "Deck Elements", mainNumber: "4.1", subNumber: "4.1.7", name: "Deck bracing", elementNo: 7 },
+                { category: "Load-bearing Substructure", mainNumber: "4.2", subNumber: "4.2.1", name: "Foundations", elementNo: 8 },
+                { category: "Load-bearing Substructure", mainNumber: "4.2", subNumber: "4.2.2", name: "Abutments (incl. arch springing)", elementNo: 9 },
+                { category: "Load-bearing Substructure", mainNumber: "4.2", subNumber: "4.2.3", name: "Spandrel wall/head wall", elementNo: 10 },
+                { category: "Load-bearing Substructure", mainNumber: "4.2", subNumber: "4.2.4", name: "Pier/column", elementNo: 11 },
+                { category: "Load-bearing Substructure", mainNumber: "4.2", subNumber: "4.2.5", name: "Cross-head/capping beam", elementNo: 12 },
+                { category: "Load-bearing Substructure", mainNumber: "4.2", subNumber: "4.2.6", name: "Bearings", elementNo: 13 },
+                { category: "Load-bearing Substructure", mainNumber: "4.2", subNumber: "4.2.7", name: "Bearing plinth/shelf", elementNo: 14 },
+                { category: "Durability Elements", mainNumber: "4.3", subNumber: "4.3.1", name: "Superstructure drainage", elementNo: 15 },
+                { category: "Durability Elements", mainNumber: "4.3", subNumber: "4.3.2", name: "Substructure drainage", elementNo: 16 },
+                { category: "Durability Elements", mainNumber: "4.3", subNumber: "4.3.3", name: "Waterproofing", elementNo: 17 },
+                { category: "Durability Elements", mainNumber: "4.3", subNumber: "4.3.4", name: "Movement/expansion joints", elementNo: 18 },
+                { category: "Durability Elements", mainNumber: "4.3", subNumber: "4.3.5", name: "Finishes: deck elements", elementNo: 19 },
+                { category: "Durability Elements", mainNumber: "4.3", subNumber: "4.3.6", name: "Finishes: substructure elements", elementNo: 20 },
+                { category: "Durability Elements", mainNumber: "4.3", subNumber: "4.3.7", name: "Finishes: parapets/safety fences", elementNo: 21 },
+                { category: "Safety Elements", mainNumber: "4.4", subNumber: "4.4.1", name: "Access/walkways/gantries", elementNo: 22 },
+                { category: "Safety Elements", mainNumber: "4.4", subNumber: "4.4.2", name: "Handrail/parapets/safety fences", elementNo: 23 },
+                { category: "Safety Elements", mainNumber: "4.4", subNumber: "4.4.3", name: "Carriageway surfacing", elementNo: 24 },
+                { category: "Safety Elements", mainNumber: "4.4", subNumber: "4.4.4", name: "Footway/verge/footbridge surfacing", elementNo: 25 },
+                { category: "Other Bridge Elements", mainNumber: "4.5", subNumber: "4.5.1", name: "Invert/river bed", elementNo: 26 },
+                { category: "Other Bridge Elements", mainNumber: "4.5", subNumber: "4.5.2", name: "Aprons", elementNo: 27 },
+                { category: "Other Bridge Elements", mainNumber: "4.5", subNumber: "4.5.3", name: "Fenders/cutwaters/collision prot.", elementNo: 28 },
+                { category: "Other Bridge Elements", mainNumber: "4.5", subNumber: "4.5.4", name: "River training works", elementNo: 29 },
+                { category: "Other Bridge Elements", mainNumber: "4.5", subNumber: "4.5.5", name: "Revetment/batter paving", elementNo: 30 },
+                { category: "Other Bridge Elements", mainNumber: "4.5", subNumber: "4.5.6", name: "Wing walls", elementNo: 31 },
+                { category: "Other Bridge Elements", mainNumber: "4.5", subNumber: "4.5.7", name: "Retaining walls", elementNo: 32 },
+                { category: "Other Bridge Elements", mainNumber: "4.5", subNumber: "4.5.8", name: "Embankments", elementNo: 33 },
+                { category: "Other Bridge Elements", mainNumber: "4.5", subNumber: "4.5.9", name: "Machinery", elementNo: 34 },
+                { category: "Ancillary Elements", mainNumber: "4.6", subNumber: "4.6.1", name: "Approach rails/barriers/walls", elementNo: 35 },
+                { category: "Ancillary Elements", mainNumber: "4.6", subNumber: "4.6.2", name: "Signs", elementNo: 36 },
+                { category: "Ancillary Elements", mainNumber: "4.6", subNumber: "4.6.3", name: "Lighting", elementNo: 37 },
+                { category: "Ancillary Elements", mainNumber: "4.6", subNumber: "4.6.4", name: "Services", elementNo: 38 }
+            ],
+            "Retaining wall": [
+                { category: "Main Elements", mainNumber: "4.1", subNumber: "4.1.1", name: "Foundations", elementNo: 1 },
+                { category: "Main Elements", mainNumber: "4.1", subNumber: "4.1.2", name: "Retaining wall: Primary", elementNo: 2 },
+                { category: "Main Elements", mainNumber: "4.1", subNumber: "4.1.3", name: "Retaining wall: Secondary", elementNo: 3 },
+                { category: "Main Elements", mainNumber: "4.1", subNumber: "4.1.4", name: "Parapet beam/plinth", elementNo: 4 },
+                { category: "Durability Elements", mainNumber: "4.2", subNumber: "4.2.1", name: "Drainage", elementNo: 5 },
+                { category: "Durability Elements", mainNumber: "4.2", subNumber: "4.2.2", name: "Movement/Expansion Joints", elementNo: 6 },
+                { category: "Durability Elements", mainNumber: "4.2", subNumber: "4.2.3", name: "Surface finishes: wall", elementNo: 7 },
+                { category: "Durability Elements", mainNumber: "4.2", subNumber: "4.2.4", name: "Surface finishes: handrail/parapet", elementNo: 8 },
+                { category: "Safety Elements", mainNumber: "4.3", subNumber: "4.3.1", name: "Handrail/parapets/safety fences", elementNo: 9 },
+                { category: "Safety Elements", mainNumber: "4.3", subNumber: "4.3.2", name: "Carriageway: Top of Wall", elementNo: 10 },
+                { category: "Safety Elements", mainNumber: "4.3", subNumber: "4.3.3", name: "Carriageway: Foot of Wall", elementNo: 11 },
+                { category: "Safety Elements", mainNumber: "4.3", subNumber: "4.3.4", name: "Footway/verge: Top of Wall", elementNo: 12 },
+                { category: "Safety Elements", mainNumber: "4.3", subNumber: "4.3.5", name: "Footway/verge: Foot of Wall", elementNo: 13 },
+                { category: "Other Elements", mainNumber: "4.4", subNumber: "4.4.1", name: "Embankment", elementNo: 14 },
+                { category: "Other Elements", mainNumber: "4.4", subNumber: "4.4.2", name: "Superstructure drainage", elementNo: 15 },
+                { category: "Other Elements", mainNumber: "4.4", subNumber: "4.4.3", name: "Invert/river bed", elementNo: 16 },
+                { category: "Other Elements", mainNumber: "4.4", subNumber: "4.4.4", name: "Aprons", elementNo: 17 },
+                { category: "Ancillary Elements", mainNumber: "4.5", subNumber: "4.5.1", name: "Signs", elementNo: 18 },
+                { category: "Ancillary Elements", mainNumber: "4.5", subNumber: "4.5.2", name: "Lighting", elementNo: 19 },
+                { category: "Ancillary Elements", mainNumber: "4.5", subNumber: "4.5.3", name: "Services", elementNo: 20 }
+            ]
+        };
+        const allElementsList = ALL_ELEMENTS_LIST_BY_TYPE[bridgeData.type] || ALL_ELEMENTS_LIST_BY_TYPE.Bridge;
 
         // Create lookup map from elementNo to name
         const elementNameMap = {};
@@ -307,7 +332,7 @@ async function generateSimplePDFReport(doc, mode = 'download') {
         const { bciAv, bciCrit } = calculateBCI(severityScores);
         
         function getBCICategory(score) {
-            if (score >= 90) return { text: 'Excellent', color: '#22c55e' };
+            if (score >= 90) return { text: 'Very Good', color: '#22c55e' };
             if (score >= 80) return { text: 'Good', color: '#8ab4b0' };
             if (score >= 65) return { text: 'Fair', color: '#eab308' };
             if (score >= 40) return { text: 'Poor', color: '#f97316' };
@@ -1241,6 +1266,10 @@ function buildBCIProformaContent(bciFormData) {
     var bridgeData = bciFormData.bridgeData || {};
     var totalSpans = bciFormData.totalSpans || 1;
     var spansData = bciFormData.spansData || [];
+    var proformaConfig = getBCIProformaConfig(bridgeData.type || 'Bridge');
+    var BCI_ELEMENTS = proformaConfig.elements;
+    var BCI_GROUPS = proformaConfig.groups;
+    var BCI_SPARE = proformaConfig.spare;
 
     for (var spanIdx = 0; spanIdx < totalSpans; spanIdx++) {
         var spanNum  = spanIdx + 1;

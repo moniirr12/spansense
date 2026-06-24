@@ -556,6 +556,7 @@ body {
 .bci-excellent { background: #eef4f2; color: #5b8c8a; }
 .bci-good      { background: #eef4f2; color: #2d7a6e; }
 .bci-fair      { background: #fff7ed; color: #c28b5a; }
+.bci-poor      { background: #fff1e6; color: #c2703a; }
 .bci-critical  { background: #fdf2f2; color: #c47070; }
 
 /* ============================================
@@ -755,6 +756,7 @@ body {
 .night-mode .bci-excellent { background: #1e3a3e; color: #8ab4b0; }
 .night-mode .bci-good      { background: #1e3a3e; color: #8ab4b0; }
 .night-mode .bci-fair      { background: #3a3020; color: #d4a84a; }
+.night-mode .bci-poor      { background: #3a2a1a; color: #d4915a; }
 .night-mode .bci-critical  { background: #3a2020; color: #e8a0a0; }
 
 /* Glass scrollbar night mode */

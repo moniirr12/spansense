@@ -541,51 +541,80 @@ document.getElementById("toInspection1").addEventListener("click", function() {
 // ELEMENTS DATABASE
 // ============================================
 
-const ELEMENTS_DB = {
-    1: { category: "Deck Elements", description: "Primary deck element" },
-    2: { category: "Deck Elements", description: "Secondary deck elements - Transverse beams" },
-    3: { category: "Deck Elements", description: "Secondary deck elements - Others" },
-    4: { category: "Deck Elements", description: "Half joints" },
-    5: { category: "Deck Elements", description: "Tie beam/rod" },
-    6: { category: "Deck Elements", description: "Parapet beam or cantilever" },
-    7: { category: "Deck Elements", description: "Deck bracing" },
-    8: { category: "Load-bearing Substructure", description: "Foundations" },
-    9: { category: "Load-bearing Substructure", description: "Abutments (incl. arch springing)" },
-    10: { category: "Load-bearing Substructure", description: "Spandrel wall/head wall" },
-    11: { category: "Load-bearing Substructure", description: "Pier/column" },
-    12: { category: "Load-bearing Substructure", description: "Cross-head/capping beam" },
-    13: { category: "Load-bearing Substructure", description: "Bearings" },
-    14: { category: "Load-bearing Substructure", description: "Bearing plinth/shelf" },
-    15: { category: "Durability Elements", description: "Superstructure drainage" },
-    16: { category: "Durability Elements", description: "Substructure drainage" },
-    17: { category: "Durability Elements", description: "Waterproofing" },
-    18: { category: "Durability Elements", description: "Movement/expansion joints" },
-    19: { category: "Durability Elements", description: "Finishes: deck elements" },
-    20: { category: "Durability Elements", description: "Finishes: substructure elements" },
-    21: { category: "Durability Elements", description: "Finishes: parapets/safety fences" },
-    22: { category: "Safety Elements", description: "Access/walkways/gantries" },
-    23: { category: "Safety Elements", description: "Handrail/parapets/safety fences" },
-    24: { category: "Safety Elements", description: "Carriageway surfacing" },
-    25: { category: "Safety Elements", description: "Footway/verge/footbridge surfacing" },
-    26: { category: "Other Bridge Elements", description: "Invert/river bed" },
-    27: { category: "Other Bridge Elements", description: "Aprons" },
-    28: { category: "Other Bridge Elements", description: "Fenders/cutwaters/collision prot." },
-    29: { category: "Other Bridge Elements", description: "River training works" },
-    30: { category: "Other Bridge Elements", description: "Revetment/batter paving" },
-    31: { category: "Other Bridge Elements", description: "Wing walls" },
-    32: { category: "Other Bridge Elements", description: "Retaining walls" },
-    33: { category: "Other Bridge Elements", description: "Embankments" },
-    34: { category: "Other Bridge Elements", description: "Machinery" },
-    35: { category: "Ancillary Elements", description: "Approach rails/barriers/walls" },
-    36: { category: "Ancillary Elements", description: "Signs" },
-    37: { category: "Ancillary Elements", description: "Lighting" },
-    38: { category: "Ancillary Elements", description: "Services" }
+// Keyed by structure type (bridges.type) - must stay in sync with the
+// `elements` DB table seeded by scripts/migrate-structure-types.js, since
+// this is a synchronous mirror used where an async fetch isn't practical
+// (Preview panel, locate3d.js defect labels).
+const ELEMENTS_DB_BY_TYPE = {
+    "Bridge": {
+        1: { category: "Deck Elements", description: "Primary deck element" },
+        2: { category: "Deck Elements", description: "Secondary deck elements - Transverse beams" },
+        3: { category: "Deck Elements", description: "Secondary deck elements - Others" },
+        4: { category: "Deck Elements", description: "Half joints" },
+        5: { category: "Deck Elements", description: "Tie beam/rod" },
+        6: { category: "Deck Elements", description: "Parapet beam or cantilever" },
+        7: { category: "Deck Elements", description: "Deck bracing" },
+        8: { category: "Load-bearing Substructure", description: "Foundations" },
+        9: { category: "Load-bearing Substructure", description: "Abutments (incl. arch springing)" },
+        10: { category: "Load-bearing Substructure", description: "Spandrel wall/head wall" },
+        11: { category: "Load-bearing Substructure", description: "Pier/column" },
+        12: { category: "Load-bearing Substructure", description: "Cross-head/capping beam" },
+        13: { category: "Load-bearing Substructure", description: "Bearings" },
+        14: { category: "Load-bearing Substructure", description: "Bearing plinth/shelf" },
+        15: { category: "Durability Elements", description: "Superstructure drainage" },
+        16: { category: "Durability Elements", description: "Substructure drainage" },
+        17: { category: "Durability Elements", description: "Waterproofing" },
+        18: { category: "Durability Elements", description: "Movement/expansion joints" },
+        19: { category: "Durability Elements", description: "Finishes: deck elements" },
+        20: { category: "Durability Elements", description: "Finishes: substructure elements" },
+        21: { category: "Durability Elements", description: "Finishes: parapets/safety fences" },
+        22: { category: "Safety Elements", description: "Access/walkways/gantries" },
+        23: { category: "Safety Elements", description: "Handrail/parapets/safety fences" },
+        24: { category: "Safety Elements", description: "Carriageway surfacing" },
+        25: { category: "Safety Elements", description: "Footway/verge/footbridge surfacing" },
+        26: { category: "Other Bridge Elements", description: "Invert/river bed" },
+        27: { category: "Other Bridge Elements", description: "Aprons" },
+        28: { category: "Other Bridge Elements", description: "Fenders/cutwaters/collision prot." },
+        29: { category: "Other Bridge Elements", description: "River training works" },
+        30: { category: "Other Bridge Elements", description: "Revetment/batter paving" },
+        31: { category: "Other Bridge Elements", description: "Wing walls" },
+        32: { category: "Other Bridge Elements", description: "Retaining walls" },
+        33: { category: "Other Bridge Elements", description: "Embankments" },
+        34: { category: "Other Bridge Elements", description: "Machinery" },
+        35: { category: "Ancillary Elements", description: "Approach rails/barriers/walls" },
+        36: { category: "Ancillary Elements", description: "Signs" },
+        37: { category: "Ancillary Elements", description: "Lighting" },
+        38: { category: "Ancillary Elements", description: "Services" }
+    },
+    "Retaining wall": {
+        1: { category: "Main Elements", description: "Foundations" },
+        2: { category: "Main Elements", description: "Retaining wall: Primary" },
+        3: { category: "Main Elements", description: "Retaining wall: Secondary" },
+        4: { category: "Main Elements", description: "Parapet beam/plinth" },
+        5: { category: "Durability Elements", description: "Drainage" },
+        6: { category: "Durability Elements", description: "Movement/Expansion Joints" },
+        7: { category: "Durability Elements", description: "Surface finishes: wall" },
+        8: { category: "Durability Elements", description: "Surface finishes: handrail/parapet" },
+        9: { category: "Safety Elements", description: "Handrail/parapets/safety fences" },
+        10: { category: "Safety Elements", description: "Carriageway: Top of Wall" },
+        11: { category: "Safety Elements", description: "Carriageway: Foot of Wall" },
+        12: { category: "Safety Elements", description: "Footway/verge: Top of Wall" },
+        13: { category: "Safety Elements", description: "Footway/verge: Foot of Wall" },
+        14: { category: "Other Elements", description: "Embankment" },
+        15: { category: "Other Elements", description: "Superstructure drainage" },
+        16: { category: "Other Elements", description: "Invert/river bed" },
+        17: { category: "Other Elements", description: "Aprons" },
+        18: { category: "Ancillary Elements", description: "Signs" },
+        19: { category: "Ancillary Elements", description: "Lighting" },
+        20: { category: "Ancillary Elements", description: "Services" }
+    }
 };
 
-function getElementDescriptionSafe(elementNumber) {
-    const element = ELEMENTS_DB[elementNumber];
+function getElementDescriptionSafe(elementNumber, structureType = sessionStorage.getItem('structureType') || 'Bridge') {
+    const elementsDb = ELEMENTS_DB_BY_TYPE[structureType] || ELEMENTS_DB_BY_TYPE['Bridge'];
+    const element = elementsDb[elementNumber];
     if (!element) {
-        console.warn(`Element ${elementNumber} not found in database`);
+        console.warn(`Element ${elementNumber} not found in database for structure type "${structureType}"`);
         return `Element ${elementNumber}`;
     }
     return element.description;

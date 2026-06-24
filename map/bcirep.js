@@ -661,7 +661,26 @@ function createActionButtons(doc) {
 // Replace your existing updateBridgeModalData with this:
 async function updateBridgeModalData(structureId) {
     console.log('Updating bridge modal for structure:', structureId);
-    
+
+    // Quick-info grid (location badge + span/length/built/type) - independent
+    // of the BCI/last-inspected fetch below, so a failure here doesn't affect that.
+    fetch(`/api/bridges/${structureId}`)
+        .then(response => response.ok ? response.json() : null)
+        .then(bridge => {
+            if (!bridge) return;
+            const locationElement = document.getElementById('modalLocation');
+            const spanElement = document.getElementById('modalSpan');
+            const lengthElement = document.getElementById('modalLength');
+            const builtElement = document.getElementById('modalBuilt');
+            const typeElement = document.getElementById('modalType');
+            if (locationElement) locationElement.textContent = bridge.location || '--';
+            if (spanElement) spanElement.textContent = bridge.span ? `${bridge.span}m` : '--';
+            if (lengthElement) lengthElement.textContent = bridge.length ? `${bridge.length}m` : '--';
+            if (builtElement) builtElement.textContent = bridge.built_year || '--';
+            if (typeElement) typeElement.textContent = bridge.type || '--';
+        })
+        .catch(error => console.error('Error fetching bridge quick-info:', error));
+
     try {
         // Use the SAME endpoint that works in the Previous Inspections modal
         const response = await fetch(`/api/previousInspections?structureId=${structureId}`);
@@ -708,7 +727,7 @@ async function updateBridgeModalData(structureId) {
                 let color = '';
                 
                 if (bciValue >= 90) {
-                    category = 'Excellent';
+                    category = 'Very Good';
                     color = '#22c55e';
                 } else if (bciValue >= 80) {
                     category = 'Good';

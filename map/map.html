@@ -133,14 +133,14 @@
         </div>
     </div>
 
-    <!-- Modal Dialog Box - Cleaner version -->
+    <!-- Modal Dialog Box - Glassmorphism card -->
     <div id="bridgeModal" class="modal bridge-modal">
-        <div class="modal-content bridge-modal-content">
-            <!-- New header matching documents modal -->
-            <div class="documents-modal-header">
-                <div class="header-content">
+        <div class="modal-content bridge-modal-content bridge-card">
+            <!-- Header -->
+            <div class="card-header">
+                <div class="header-main">
                     <div class="bridge-avatar" id="modalBridgeAvatar">GM</div>
-                    <div class="bridge-info">
+                    <div class="header-text">
                         <h2>Structure ID: <span id="assetId"></span></h2>
                         <div class="bridge-name" id="modalTitle">Gateshead Millennium Bridge</div>
                     </div>
@@ -148,44 +148,55 @@
                 <span class="close">&times;</span>
             </div>
 
-            <!-- Bridge Photo -->
-            <div class="photo-wrapper">
+            <!-- Bridge Photo, with location badge embedded in the image area -->
+            <div class="photo-section">
                 <img id="bridgePhoto" class="bridge-img" src="" alt="Bridge Photo">
+                <div class="photo-badge"><i class="fas fa-map-marker-alt"></i> <span id="modalLocation">--</span></div>
             </div>
 
-            <!-- Bridge Stats Cards -->
-            <div class="bridge-stats">
-                <div class="stat-card">
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="stat-pill">
                     <div class="stat-icon">
                         <i class="fas fa-chart-line"></i>
                     </div>
                     <div class="stat-info">
                         <span class="stat-label">BCI average Score</span>
-                        <strong id="bciScore" class="stat-value">45 - Poor</strong>
+                        <strong id="bciScore" class="stat-value">--</strong>
                     </div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-pill">
                     <div class="stat-icon">
                         <i class="fas fa-calendar-check"></i>
                     </div>
                     <div class="stat-info">
                         <span class="stat-label">Last Inspected</span>
-                        <strong id="lastInspected" class="stat-value">Feb 2025</strong>
+                        <strong id="lastInspected" class="stat-value">--</strong>
                     </div>
                 </div>
             </div>
 
+            <!-- Quick Info -->
+            <div class="info-grid">
+                <div class="info-item"><i class="fas fa-ruler-horizontal"></i> Span <strong id="modalSpan">--</strong></div>
+                <div class="info-item"><i class="fas fa-ruler-combined"></i> Length <strong id="modalLength">--</strong></div>
+                <div class="info-item"><i class="fas fa-calendar-alt"></i> Built <strong id="modalBuilt">--</strong></div>
+                <div class="info-item"><i class="fas fa-layer-group"></i> Type <strong id="modalType">--</strong></div>
+            </div>
+
             <!-- Action Buttons -->
-            <div class="bridge-actions">
-                <button id="addInspection" class="action-btn primary-action">
+            <div class="actions-section">
+                <button id="addInspection" class="action-btn btn-primary">
                     <i class="fas fa-plus-circle"></i> New Inspection
                 </button>
-                <button id="seeDocuments" class="action-btn secondary-action">
-                    <i class="fas fa-folder-open"></i> Previous Inspections
-                </button>
-                <button id="docs" class="action-btn secondary-action">
-                    <i class="fas fa-file-alt"></i> Documents
-                </button>
+                <div class="btn-secondary-row">
+                    <button id="seeDocuments" class="action-btn btn-secondary">
+                        <i class="fas fa-folder-open"></i> Previous Inspections
+                    </button>
+                    <button id="docs" class="action-btn btn-secondary">
+                        <i class="fas fa-file-alt"></i> Documents
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -283,10 +294,10 @@
             </div>
             <div class="modal-body">
                 <div class="toolbar">
-                    <button id="newFolderBtn" class="document-explorer">📁 New Folder</button>
-                    <button id="uploadBtn" class="document-explorer">⬆️ Upload File</button>
-                    <button id="deleteBtn" disabled class="document-explorer">🗑️ Delete</button>
-                    <button id="viewToggleBtn" class="document-explorer">Folder View</button>
+                    <button id="newFolderBtn" class="document-explorer"><i class="fas fa-folder-plus"></i> New Folder</button>
+                    <button id="uploadBtn" class="document-explorer"><i class="fas fa-upload"></i> Upload File</button>
+                    <button id="deleteBtn" disabled class="document-explorer"><i class="fas fa-trash-alt"></i> Delete</button>
+                    <button id="viewToggleBtn" class="document-explorer"><i class="fas fa-th-large"></i> Folder View</button>
                 </div>
                 <div class="breadcrumbs" id="breadcrumbs">
                     <span class="breadcrumb" data-id="">Home</span>
@@ -313,11 +324,11 @@
     <script>
         // Documents Modal close functionality
         function closeDocumentsModal() {
-            document.getElementById('documentsModal').style.display = 'none';
+            document.getElementById('fileExplorerModal').style.display = 'none';
         }
 
         // Close on backdrop click
-        document.getElementById('documentsModal').addEventListener('click', function(e) {
+        document.getElementById('fileExplorerModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closeDocumentsModal();
             }

@@ -335,9 +335,22 @@ app.get('/api/inspection-dates/:structureId', async (req, res) => {
 });
 
 // Get elements of the table in inspection.html
+// Structure types with their own distinct row in the `elements` table.
+// Any other type (Footbridge, Culvert, ...) uses the Bridge list - they
+// share the same BCI methodology (same importance mapping/critical elements
+// in inspection/bci.js's STRUCTURE_TYPE_CONFIG too).
+const SEEDED_ELEMENT_TYPES = ["Bridge", "Retaining wall"];
+function resolveElementsType(requestedType) {
+    return SEEDED_ELEMENT_TYPES.includes(requestedType) ? requestedType : "Bridge";
+}
+
 app.get("/get_elements", async (req, res) => {
     try {
-        const rows = await dbAll("SELECT element_number, description FROM elements ORDER BY element_number ASC");
+        const structureType = resolveElementsType(req.query.type || "Bridge");
+        const rows = await dbAll(
+            "SELECT element_number, description FROM elements WHERE structure_type = $1 ORDER BY display_order ASC",
+            [structureType]
+        );
         res.json(rows.map(row => ({
             no: row.element_number,
             description: row.description,
@@ -489,7 +502,11 @@ app.get('/api/previousInspections', async (req, res) => {
 // API endpoint to fetch elements
 app.get('/api/elements', async (req, res) => {
     try {
-        const rows = await dbAll('SELECT element_number, description FROM elements');
+        const structureType = resolveElementsType(req.query.type || 'Bridge');
+        const rows = await dbAll(
+            'SELECT element_number, description FROM elements WHERE structure_type = $1 ORDER BY display_order ASC',
+            [structureType]
+        );
         res.json(rows);
     } catch (err) {
         console.error('Error fetching elements:', err);
@@ -1973,6 +1990,29 @@ app.get('/api/dashboard/critical-bridges', async (req, res) => {
         res.json({ success: true, data: rows });
     } catch (err) {
         console.error('Critical bridges error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Recent activity feed: most recently submitted inspections
+app.get('/api/dashboard/recent-activity', async (req, res) => {
+    try {
+        const rows = await dbAll(`
+            SELECT
+                structure_id,
+                structure_name,
+                inspector_name,
+                created_at,
+                overall_bciave,
+                overall_bcicrit
+            FROM inspections
+            ORDER BY created_at DESC
+            LIMIT 5
+        `);
+
+        res.json({ success: true, data: rows });
+    } catch (err) {
+        console.error('Recent activity error:', err);
         res.status(500).json({ success: false, error: err.message });
     }
 });
