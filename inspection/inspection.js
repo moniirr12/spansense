@@ -380,7 +380,8 @@ function refreshBCIScores() {
         const itemNumbers = bciDefects.map(d => parseInt(d.elementNumber, 10));
         if (typeof calculateBCI === 'function') {
             try {
-                const calculated = calculateBCI(severityValues, extentValues, itemNumbers);
+                const structureType = sessionStorage.getItem('structureType') || 'Bridge';
+                const calculated = calculateBCI(severityValues, extentValues, itemNumbers, structureType);
                 bciAv = calculated.bciAv;
                 bciCrit = calculated.bciCrit;
                 if (bciAvElement) setBciValue(bciAvElement, bciAv);
@@ -645,7 +646,8 @@ window.addEventListener('load', async function() {
 
 async function loadInspectionElements() {
   try {
-    const elementsResponse = await fetch("/get_elements");
+    const structureType = sessionStorage.getItem('structureType') || 'Bridge';
+    const elementsResponse = await fetch(`/get_elements?type=${encodeURIComponent(structureType)}`);
     const elementsData = await elementsResponse.json();
     const tableBody = document.querySelector("#inspectionElementsTable tbody");
     tableBody.innerHTML = "";

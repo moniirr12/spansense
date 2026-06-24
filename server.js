@@ -337,7 +337,11 @@ app.get('/api/inspection-dates/:structureId', async (req, res) => {
 // Get elements of the table in inspection.html
 app.get("/get_elements", async (req, res) => {
     try {
-        const rows = await dbAll("SELECT element_number, description FROM elements ORDER BY element_number ASC");
+        const structureType = req.query.type || "Bridge";
+        const rows = await dbAll(
+            "SELECT element_number, description FROM elements WHERE structure_type = $1 ORDER BY display_order ASC",
+            [structureType]
+        );
         res.json(rows.map(row => ({
             no: row.element_number,
             description: row.description,
@@ -489,7 +493,11 @@ app.get('/api/previousInspections', async (req, res) => {
 // API endpoint to fetch elements
 app.get('/api/elements', async (req, res) => {
     try {
-        const rows = await dbAll('SELECT element_number, description FROM elements');
+        const structureType = req.query.type || 'Bridge';
+        const rows = await dbAll(
+            'SELECT element_number, description FROM elements WHERE structure_type = $1 ORDER BY display_order ASC',
+            [structureType]
+        );
         res.json(rows);
     } catch (err) {
         console.error('Error fetching elements:', err);
