@@ -294,10 +294,10 @@
             </div>
             <div class="modal-body">
                 <div class="toolbar">
-                    <button id="newFolderBtn" class="document-explorer">📁 New Folder</button>
-                    <button id="uploadBtn" class="document-explorer">⬆️ Upload File</button>
-                    <button id="deleteBtn" disabled class="document-explorer">🗑️ Delete</button>
-                    <button id="viewToggleBtn" class="document-explorer">Folder View</button>
+                    <button id="newFolderBtn" class="document-explorer"><i class="fas fa-folder-plus"></i> New Folder</button>
+                    <button id="uploadBtn" class="document-explorer"><i class="fas fa-upload"></i> Upload File</button>
+                    <button id="deleteBtn" disabled class="document-explorer"><i class="fas fa-trash-alt"></i> Delete</button>
+                    <button id="viewToggleBtn" class="document-explorer"><i class="fas fa-th-large"></i> Folder View</button>
                 </div>
                 <div class="breadcrumbs" id="breadcrumbs">
                     <span class="breadcrumb" data-id="">Home</span>
@@ -324,11 +324,11 @@
     <script>
         // Documents Modal close functionality
         function closeDocumentsModal() {
-            document.getElementById('documentsModal').style.display = 'none';
+            document.getElementById('fileExplorerModal').style.display = 'none';
         }
 
         // Close on backdrop click
-        document.getElementById('documentsModal').addEventListener('click', function(e) {
+        document.getElementById('fileExplorerModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closeDocumentsModal();
             }
