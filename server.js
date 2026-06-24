@@ -1994,6 +1994,29 @@ app.get('/api/dashboard/critical-bridges', async (req, res) => {
     }
 });
 
+// Recent activity feed: most recently submitted inspections
+app.get('/api/dashboard/recent-activity', async (req, res) => {
+    try {
+        const rows = await dbAll(`
+            SELECT
+                structure_id,
+                structure_name,
+                inspector_name,
+                created_at,
+                overall_bciave,
+                overall_bcicrit
+            FROM inspections
+            ORDER BY created_at DESC
+            LIMIT 10
+        `);
+
+        res.json({ success: true, data: rows });
+    } catch (err) {
+        console.error('Recent activity error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 // Start the server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

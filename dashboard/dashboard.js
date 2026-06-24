@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function () {
     fetchBCIDistribution();
     fetchConditionDistribution();
     fetchCriticalBridges();
+    fetchRecentActivity();
     
     const changePageButton = document.getElementById('toHome');
     if (changePageButton) {
@@ -444,6 +445,91 @@ function renderCriticalBridges(data) {
                 </div>
             </div>`;
     }).join('');
+}
+
+async function fetchRecentActivity() {
+    try {
+        const response = await fetch(API_BASE + '/api/dashboard/recent-activity', {
+            credentials: 'include'
+        });
+
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        const result = await response.json();
+
+        if (result.success && result.data) {
+            renderRecentActivity(result.data);
+        }
+    } catch (error) {
+        console.error('Error fetching recent activity:', error);
+        document.getElementById('recent-activity-list').innerHTML = `
+            <div class="activity-item">
+                <div style="color: var(--text-muted); font-size: 0.8rem;">Could not load data.</div>
+            </div>`;
+    }
+}
+
+function renderRecentActivity(data) {
+    const list = document.getElementById('recent-activity-list');
+
+    if (!data.length) {
+        list.innerHTML = `
+            <div class="activity-item">
+                <div style="color: var(--text-muted); font-size: 0.8rem;">No recent inspections.</div>
+            </div>`;
+        return;
+    }
+
+    list.innerHTML = data.map(item => {
+        const bci = item.overall_bciave !== null ? Math.round(item.overall_bciave) : '—';
+        const tier = bciTier(item.overall_bciave);
+        const initials = getInitials(item.inspector_name);
+        const inspector = item.inspector_name || 'Unknown';
+        const isComplete = item.overall_bciave !== null;
+
+        return `
+            <div class="activity-item">
+                <div class="activity-avatar activity-avatar-${tier.avatarColor}">${initials}</div>
+                <div class="activity-content">
+                    <div class="activity-title">${item.structure_name || 'Structure ' + item.structure_id}</div>
+                    <div class="activity-meta">${inspector} &nbsp;·&nbsp; ${formatRelativeTime(item.created_at)}</div>
+                </div>
+                <span class="activity-bci bci-${tier.band}">${bci}</span>
+                <span class="activity-status ${isComplete ? 'status-completed' : 'status-in-progress'}">${isComplete ? 'Done' : 'Draft'}</span>
+            </div>`;
+    }).join('');
+}
+
+function bciTier(bciAve) {
+    if (bciAve === null || bciAve === undefined) return { band: 'fair', avatarColor: 'blue' };
+    if (bciAve >= 90) return { band: 'excellent', avatarColor: 'green' };
+    if (bciAve >= 80) return { band: 'good', avatarColor: 'green' };
+    if (bciAve >= 65) return { band: 'fair', avatarColor: 'blue' };
+    if (bciAve >= 40) return { band: 'poor', avatarColor: 'orange' };
+    return { band: 'critical', avatarColor: 'red' };
+}
+
+function getInitials(name) {
+    if (!name) return '?';
+    return name.split(' ').filter(Boolean).map(n => n[0]).join('').substring(0, 2).toUpperCase();
+}
+
+function formatRelativeTime(dateString) {
+    if (!dateString) return '—';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+
+    const diffMs = Date.now() - date.getTime();
+    const diffMins = Math.round(diffMs / 60000);
+    const diffHours = Math.round(diffMs / 3600000);
+    const diffDays = Math.round(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} min${diffMins === 1 ? '' : 's'} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return formatDate(dateString);
 }
 
 function formatDate(dateString) {
