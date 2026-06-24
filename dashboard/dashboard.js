@@ -83,7 +83,7 @@ async function fetchTypeDistribution() {
       console.log('BCI API response:', result);
     
     if (result.success && result.data) {
-      renderPieChart(result.data);
+      renderTypeBarChart(result.data);
     } else {
       throw new Error('Invalid response format');
     }
@@ -93,48 +93,50 @@ async function fetchTypeDistribution() {
   }
 }
 
-function renderPieChart(typeData) {
+function renderTypeBarChart(typeData) {
   const ctx = document.getElementById('typeChart').getContext('2d');
-  
-  // Prepare data
-  const labels = typeData.map(item => item.type || 'Unknown');
-  const counts = typeData.map(item => item.count);
-  
-  // Colors for each type
-  const backgroundColors = [
-    'rgba(54, 162, 235, 0.7)',  // bridge - blue
-    'rgba(75, 192, 192, 0.7)',  // footbridge - green
-    'rgba(255, 159, 64, 0.7)',  // retaining wall - orange
-    'rgba(153, 102, 255, 0.7)'  // any others - purple
-  ];
-  
+
+  // Sort by count descending so the most common type reads first.
+  const sorted = [...typeData].sort((a, b) => b.count - a.count);
+  const labels = sorted.map(item => item.type || 'Unknown');
+  const counts = sorted.map(item => item.count);
+
+  // Teal-forward palette consistent with the rest of the dashboard.
+  const backgroundColors = ['#5b8c8a', '#8ab4b0', '#4a90b8', '#c28b5a', '#a371c7'];
+
   new Chart(ctx, {
-    type: 'pie',
+    type: 'bar',
     data: {
       labels: labels,
       datasets: [{
+        label: 'Structures',
         data: counts,
-        backgroundColor: backgroundColors,
-        borderWidth: 1
+        backgroundColor: labels.map((_, i) => backgroundColors[i % backgroundColors.length]),
+        borderWidth: 0,
+        borderRadius: 6
       }]
     },
     options: {
+      indexAxis: 'y',
       responsive: true,
+      maintainAspectRatio: true,
+      aspectRatio: 1.4,
       plugins: {
-        legend: {
-          position: 'bottom',
-        },
+        legend: { display: false },
         tooltip: {
           callbacks: {
             label: function(context) {
-              const label = context.label || '';
               const value = context.raw || 0;
               const total = context.dataset.data.reduce((a, b) => a + b, 0);
-              const percentage = Math.round((value / total) * 100);
-              return `${label}: ${value} (${percentage}%)`;
+              const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+              return `${value} (${percentage}%)`;
             }
           }
         }
+      },
+      scales: {
+        x: { beginAtZero: true, ticks: { precision: 0 }, title: { display: true, text: 'Number of Structures' } },
+        y: { grid: { display: false } }
       }
     }
   });

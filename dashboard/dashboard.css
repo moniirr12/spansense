@@ -697,6 +697,11 @@ body {
     border-bottom-color: #2f3e45;
 }
 
+.night-mode .bridge-table .row.header {
+    background: #1e2a2f;
+    color: #6a8090;
+}
+
 .night-mode .bridge-table .row:hover {
     background: #2a3a40;
 }
