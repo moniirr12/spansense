@@ -18,57 +18,102 @@ var BCI_COLORS = {
     priorityL: '#16a34a',
 };
 
-// ─── 38 BCI elements ─────────────────────────────────────────────────────────
-var BCI_ELEMENTS = [
-    { no: 1,  desc: 'Primary deck element (Table G.4)' },
-    { no: 2,  desc: 'Secondary deck elements - Transverse beams' },
-    { no: 3,  desc: 'Elements from table G.5' },
-    { no: 4,  desc: 'Half joints' },
-    { no: 5,  desc: 'Tie beam/rod' },
-    { no: 6,  desc: 'Parapet beam or cantilever' },
-    { no: 7,  desc: 'Deck bracing' },
-    { no: 8,  desc: 'Foundations' },
-    { no: 9,  desc: 'Abutments (incl. arch springing)' },
-    { no: 10, desc: 'Spandrel wall/head wall' },
-    { no: 11, desc: 'Pier/column' },
-    { no: 12, desc: 'Cross-head/capping beam' },
-    { no: 13, desc: 'Bearings' },
-    { no: 14, desc: 'Bearing plinth/shelf' },
-    { no: 15, desc: 'Superstructure drainage' },
-    { no: 16, desc: 'Substructure drainage' },
-    { no: 17, desc: 'Waterproofing' },
-    { no: 18, desc: 'Movement/expansion joints' },
-    { no: 19, desc: 'Finishes: deck elements' },
-    { no: 20, desc: 'Finishes: substructure elements' },
-    { no: 21, desc: 'Finishes: parapets/safety fences' },
-    { no: 22, desc: 'Access/walkways/gantries' },
-    { no: 23, desc: 'Handrail/parapets/safety fences' },
-    { no: 24, desc: 'Carriageway surfacing' },
-    { no: 25, desc: 'Footway/verge/footbridge surfacing' },
-    { no: 26, desc: 'Invert/river bed' },
-    { no: 27, desc: 'Aprons' },
-    { no: 28, desc: 'Fenders/cutwaters/collision prot.' },
-    { no: 29, desc: 'River training works' },
-    { no: 30, desc: 'Revetment/batter paving' },
-    { no: 31, desc: 'Wing walls' },
-    { no: 32, desc: 'Retaining walls' },
-    { no: 33, desc: 'Embankments' },
-    { no: 34, desc: 'Machinery' },
-    { no: 35, desc: 'Approach rails/barriers/walls' },
-    { no: 36, desc: 'Signs' },
-    { no: 37, desc: 'Lighting' },
-    { no: 38, desc: 'Services' },
-];
+// ─── BCI elements, per structure type ────────────────────────────────────────
+var BCI_ELEMENTS_BY_TYPE = {
+    Bridge: [
+        { no: 1,  desc: 'Primary deck element (Table G.4)' },
+        { no: 2,  desc: 'Secondary deck elements - Transverse beams' },
+        { no: 3,  desc: 'Elements from table G.5' },
+        { no: 4,  desc: 'Half joints' },
+        { no: 5,  desc: 'Tie beam/rod' },
+        { no: 6,  desc: 'Parapet beam or cantilever' },
+        { no: 7,  desc: 'Deck bracing' },
+        { no: 8,  desc: 'Foundations' },
+        { no: 9,  desc: 'Abutments (incl. arch springing)' },
+        { no: 10, desc: 'Spandrel wall/head wall' },
+        { no: 11, desc: 'Pier/column' },
+        { no: 12, desc: 'Cross-head/capping beam' },
+        { no: 13, desc: 'Bearings' },
+        { no: 14, desc: 'Bearing plinth/shelf' },
+        { no: 15, desc: 'Superstructure drainage' },
+        { no: 16, desc: 'Substructure drainage' },
+        { no: 17, desc: 'Waterproofing' },
+        { no: 18, desc: 'Movement/expansion joints' },
+        { no: 19, desc: 'Finishes: deck elements' },
+        { no: 20, desc: 'Finishes: substructure elements' },
+        { no: 21, desc: 'Finishes: parapets/safety fences' },
+        { no: 22, desc: 'Access/walkways/gantries' },
+        { no: 23, desc: 'Handrail/parapets/safety fences' },
+        { no: 24, desc: 'Carriageway surfacing' },
+        { no: 25, desc: 'Footway/verge/footbridge surfacing' },
+        { no: 26, desc: 'Invert/river bed' },
+        { no: 27, desc: 'Aprons' },
+        { no: 28, desc: 'Fenders/cutwaters/collision prot.' },
+        { no: 29, desc: 'River training works' },
+        { no: 30, desc: 'Revetment/batter paving' },
+        { no: 31, desc: 'Wing walls' },
+        { no: 32, desc: 'Retaining walls' },
+        { no: 33, desc: 'Embankments' },
+        { no: 34, desc: 'Machinery' },
+        { no: 35, desc: 'Approach rails/barriers/walls' },
+        { no: 36, desc: 'Signs' },
+        { no: 37, desc: 'Lighting' },
+        { no: 38, desc: 'Services' },
+    ],
+    'Retaining wall': [
+        { no: 1,  desc: 'Foundations' },
+        { no: 2,  desc: 'Retaining wall: Primary' },
+        { no: 3,  desc: 'Retaining wall: Secondary' },
+        { no: 4,  desc: 'Parapet beam/plinth' },
+        { no: 5,  desc: 'Drainage' },
+        { no: 6,  desc: 'Movement/Expansion Joints' },
+        { no: 7,  desc: 'Surface finishes: wall' },
+        { no: 8,  desc: 'Surface finishes: handrail/parapet' },
+        { no: 9,  desc: 'Handrail/parapets/safety fences' },
+        { no: 10, desc: 'Carriageway: Top of Wall' },
+        { no: 11, desc: 'Carriageway: Foot of Wall' },
+        { no: 12, desc: 'Footway/verge: Top of Wall' },
+        { no: 13, desc: 'Footway/verge: Foot of Wall' },
+        { no: 14, desc: 'Embankment' },
+        { no: 15, desc: 'Superstructure drainage' },
+        { no: 16, desc: 'Invert/river bed' },
+        { no: 17, desc: 'Aprons' },
+        { no: 18, desc: 'Signs' },
+        { no: 19, desc: 'Lighting' },
+        { no: 20, desc: 'Services' },
+    ]
+};
 
-var BCI_GROUPS = [
-    { label: 'Deck Elements',             count: 7 },
-    { label: 'Load-bearing Substructure', count: 7 },
-    { label: 'Durability Elements',       count: 7 },
-    { label: 'Safety Elements',           count: 4 },
-    { label: 'Other Bridge Elements',     count: 9 },
-    { label: 'Ancillary Elements',        count: 4 },
-];
-var BCI_SPARE = [39, 40, 41, 42];
+var BCI_GROUPS_BY_TYPE = {
+    Bridge: [
+        { label: 'Deck Elements',             count: 7 },
+        { label: 'Load-bearing Substructure', count: 7 },
+        { label: 'Durability Elements',       count: 7 },
+        { label: 'Safety Elements',           count: 4 },
+        { label: 'Other Bridge Elements',     count: 9 },
+        { label: 'Ancillary Elements',        count: 4 },
+    ],
+    'Retaining wall': [
+        { label: 'Main Elements',       count: 4 },
+        { label: 'Durability Elements', count: 4 },
+        { label: 'Safety Elements',     count: 5 },
+        { label: 'Other Elements',      count: 4 },
+        { label: 'Ancillary Elements',  count: 3 },
+    ]
+};
+
+var BCI_SPARE_BY_TYPE = {
+    Bridge: [39, 40, 41, 42],
+    'Retaining wall': []
+};
+
+function getBCIProformaConfig(structureType) {
+    return {
+        elements: BCI_ELEMENTS_BY_TYPE[structureType] || BCI_ELEMENTS_BY_TYPE.Bridge,
+        groups: BCI_GROUPS_BY_TYPE[structureType] || BCI_GROUPS_BY_TYPE.Bridge,
+        spare: BCI_SPARE_BY_TYPE[structureType] || BCI_SPARE_BY_TYPE.Bridge
+    };
+}
 
 // ─── Table layout ───────────────────────────────────────────────────────────
 var GRID_LAYOUT = {
@@ -142,6 +187,10 @@ function buildBCIProformaContent(bciFormData) {
     var bridgeData = bciFormData.bridgeData || {};
     var totalSpans = bciFormData.totalSpans || 1;
     var spansData = bciFormData.spansData || [];
+    var proformaConfig = getBCIProformaConfig(bridgeData.type || 'Bridge');
+    var BCI_ELEMENTS = proformaConfig.elements;
+    var BCI_GROUPS = proformaConfig.groups;
+    var BCI_SPARE = proformaConfig.spare;
 
     for (var spanIdx = 0; spanIdx < totalSpans; spanIdx++) {
         var spanNum  = spanIdx + 1;
