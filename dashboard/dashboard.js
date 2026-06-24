@@ -284,12 +284,14 @@ function renderBCIHistogram(data) {
     const labels = data.map(item => item.bci_range);
     const counts = data.map(item => item.count);
 
+    // Band names are explained once by the shared .bci-legend below the
+    // chart, so the axis just needs the bare numeric ranges here.
     const labelMap = {
-        '0-39': '0-39\n(Very Poor)',
-        '40-64': '40-64\n(Poor)',
-        '65-79': '65-79\n(Fair)',
-        '80-89': '80-89\n(Good)',
-        '90-100': '90-100\n(Very Good)'
+        '0-39': '0-39',
+        '40-64': '40-64',
+        '65-79': '65-79',
+        '80-89': '80-89',
+        '90-100': '90-100'
     };
 
     // Same 5-band semantic palette used by the condition-over-time chart.
@@ -401,11 +403,8 @@ function renderConditionDistributionChart(data) {
             responsive: true,
             maintainAspectRatio: true,
             plugins: {
-                legend: { 
-                    position: 'bottom', 
-                    labels: { font: { size: 11 }, padding: 10, usePointStyle: true, boxWidth: 10 } 
-                },
-                tooltip: { 
+                legend: { display: false },
+                tooltip: {
                     mode: 'index',
                     callbacks: {
                         label: function(context) {
