@@ -439,7 +439,7 @@
                 'No inspections found</td></tr>';
         } else {
             displayData.forEach(function(row) {
-                var typeMap = { 'PI': 'Principal Inspection', 'GI': 'General Inspection', 'SI': 'Superficial Inspection' };
+                var typeMap = { 'PI': 'Principal', 'GI': 'General', 'SI': 'Superficial' };
                 var typeLabel = typeMap[row.inspection_type] || row.inspection_type || 'Inspection';
                 var bciAv   = row.overall_bciave   != null ? Math.round(parseFloat(row.overall_bciave))   : '--';
                 var bciCrit = row.overall_bcicrit  != null ? Math.round(parseFloat(row.overall_bcicrit))  : '--';

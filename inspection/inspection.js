@@ -576,6 +576,14 @@ function saveChanges() {
   if (isEditing) {
     const existingIndex = inspectionData.defects.findIndex(d => d.timestamp === defectData.timestamp);
     if (existingIndex >= 0) {
+      // Carry over any 3D location already placed via locate3d.js — this
+      // edit only touches severity/extent/etc., not the defect's position.
+      const existing = inspectionData.defects[existingIndex];
+      if (existing.x != null && existing.y != null && existing.z != null) {
+        inspectionDefect.x = existing.x;
+        inspectionDefect.y = existing.y;
+        inspectionDefect.z = existing.z;
+      }
       inspectionData.defects[existingIndex] = inspectionDefect;
     } else {
       inspectionData.defects.push(inspectionDefect);

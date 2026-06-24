@@ -1187,8 +1187,9 @@ app.post('/save-inspection', async (req, res) => {
                         inspection_id, span_number, element_no,
                         defect_no, defect_type, defect_number,
                         severity, extent, works_required,
-                        priority, cost, comments, remedial_works, timestamp
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id`,
+                        priority, cost, comments, remedial_works, timestamp,
+                        pos_x, pos_y, pos_z
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING id`,
                     [
                         inspectionId,
                         defect.spanNumber,
@@ -1203,7 +1204,10 @@ app.post('/save-inspection', async (req, res) => {
                         parseFloat(defect.cost) || 0,
                         defect.comments || '',
                         defect.remedial_works || '',
-                        defect.timestamp || new Date().toISOString()
+                        defect.timestamp || new Date().toISOString(),
+                        defect.posX ?? null,
+                        defect.posY ?? null,
+                        defect.posZ ?? null
                     ]
                 );
 
@@ -1369,8 +1373,9 @@ app.put('/update-inspection', async (req, res) => {
                     inspection_id, span_number, element_no, defect_no,
                     defect_type, defect_number, severity,
                     extent, works_required, priority,
-                    cost, comments, remedial_works, timestamp
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+                    cost, comments, remedial_works, timestamp,
+                    pos_x, pos_y, pos_z
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
                 [
                     inspectionId,
                     defect.spanNumber,
@@ -1385,7 +1390,10 @@ app.put('/update-inspection', async (req, res) => {
                     defect.cost || 0,
                     defect.comments || '',
                     defect.remedial_works || '',
-                    defect.timestamp || new Date().toISOString()
+                    defect.timestamp || new Date().toISOString(),
+                    defect.posX ?? null,
+                    defect.posY ?? null,
+                    defect.posZ ?? null
                 ]
             );
         }

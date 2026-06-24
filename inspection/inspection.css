@@ -326,6 +326,23 @@ body {
     overflow-x: visible;
 }
 
+/* Internal scroll so the table's own bottom edge (when scrolled to the
+   top, i.e. unscrolled) lines up with the fixed sidebar's Back/Save
+   buttons rather than the table just running on past them. */
+.elements-table-scroll {
+    max-height: 383px;
+    overflow-y: auto;
+}
+
+.elements-table-scroll::-webkit-scrollbar { width: 6px; }
+.elements-table-scroll::-webkit-scrollbar-thumb {
+    background: #c5d3d9;
+    border-radius: 6px;
+}
+.night-mode .elements-table-scroll::-webkit-scrollbar-thumb {
+    background: #3e525e;
+}
+
 /* 1. TABLE BASE — separate collapse with vertical gaps */
 #inspectionElementsTable {
     width: 100%;
