@@ -196,8 +196,9 @@ function renderBCIHistogram(data) {
         '90-100': '90-100\n(Very Good)'
     };
     
-    const colors = ['#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e'];
-    
+    // Same 5-band semantic palette used by the condition-over-time chart.
+    const colors = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e'];
+
     new Chart(ctx, {
         type: 'bar',
         data: {
@@ -206,7 +207,8 @@ function renderBCIHistogram(data) {
                 label: 'Number of Bridges',
                 data: counts,
                 backgroundColor: colors,
-                borderWidth: 0
+                borderWidth: 0,
+                borderRadius: 6
             }]
         },
         options: {
@@ -219,14 +221,14 @@ function renderBCIHistogram(data) {
                     callbacks: {
                         label: function(context) {
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const pct = total > 0 ? ((context.parsed.y / total) * 100).toFixed(1) : 0;
-                            return `${context.parsed.y} bridges (${pct}%)`;
+                            const pct = total > 0 ? Math.round((context.parsed.y / total) * 100) : 0;
+                            return `${context.parsed.y} (${pct}%)`;
                         }
                     }
                 }
             },
             scales: {
-                y: { beginAtZero: true, title: { display: true, text: 'Number of Bridges' } },
+                y: { beginAtZero: true, ticks: { precision: 0 }, title: { display: true, text: 'Number of Bridges' } },
                 x: { grid: { display: false } }
             }
         }
@@ -298,11 +300,11 @@ function renderConditionDistributionChart(data) {
         data: {
             labels: labels,
             datasets: [
-                { label: 'Very Good (90-100)', data: filteredData.map(d => d.very_good || 0), backgroundColor: '#22c55e' },
-                { label: 'Good (80-89)', data: filteredData.map(d => d.good || 0), backgroundColor: '#84cc16' },
-                { label: 'Fair (65-79)', data: filteredData.map(d => d.fair || 0), backgroundColor: '#eab308' },
-                { label: 'Poor (40-64)', data: filteredData.map(d => d.poor || 0), backgroundColor: '#f97316' },
-                { label: 'Critical (0-39)', data: filteredData.map(d => d.very_poor || 0), backgroundColor: '#ef4444' }
+                { label: 'Very Good (90-100)', data: filteredData.map(d => d.very_good || 0), backgroundColor: '#22c55e', borderRadius: 4 },
+                { label: 'Good (80-89)', data: filteredData.map(d => d.good || 0), backgroundColor: '#84cc16', borderRadius: 4 },
+                { label: 'Fair (65-79)', data: filteredData.map(d => d.fair || 0), backgroundColor: '#eab308', borderRadius: 4 },
+                { label: 'Poor (40-64)', data: filteredData.map(d => d.poor || 0), backgroundColor: '#f97316', borderRadius: 4 },
+                { label: 'Critical (0-39)', data: filteredData.map(d => d.very_poor || 0), backgroundColor: '#ef4444', borderRadius: 4 }
             ]
         },
         options: {
