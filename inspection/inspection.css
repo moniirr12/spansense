@@ -147,9 +147,12 @@ body {
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
     border-color: #c5dbd8;
 }
-/* No lift on the date card — it has interactive controls inside it
-   (dropdown, icon buttons) that shouldn't jump on hover. */
-.stat-card.date-card:hover {
+/* No lift — same glow-only hover used across the date card, BCI cards,
+   Conclusions and TwinView. The date card has interactive controls
+   inside it (dropdown, icon buttons) that shouldn't jump on hover. */
+.stat-card.date-card:hover,
+.stat-card.average:hover,
+.stat-card.critical:hover {
     transform: none;
     box-shadow: 0 8px 30px rgba(0,0,0,0.12);
     border-color: #8ab4b0;
@@ -1582,7 +1585,7 @@ body {
     margin-left: 25px;
     margin-top: 142px;
 }
-.conclusions-bar:hover { box-shadow: 0 8px 30px rgba(0,0,0,0.12); transform: translateY(-50%) scale(1.02); border-color: #8ab4b0; }
+.conclusions-bar:hover { box-shadow: 0 8px 30px rgba(0,0,0,0.12); transform: translateY(-50%); border-color: #8ab4b0; }
 .conclusions-bar .bar-pulse {
     width: 13px;
     height: 13px;

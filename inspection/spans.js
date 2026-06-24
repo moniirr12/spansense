@@ -386,6 +386,14 @@ window.closeSplitModal = closeSplitModal;
 window.saveConclusions = saveConclusions;
 window.renderDefectsSummary = renderDefectsSummary;
 
+// Close on backdrop click (clicking the dimmed area outside the panels).
+const splitModalEl = document.getElementById('splitModal');
+if (splitModalEl) {
+    splitModalEl.addEventListener('click', function(e) {
+        if (e.target === this) closeSplitModal();
+    });
+}
+
 const structureId = sessionStorage.getItem('structureId');
 const structureName = sessionStorage.getItem('structureName');
 

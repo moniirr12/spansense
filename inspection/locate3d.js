@@ -284,14 +284,17 @@ function rebuildLocate3DModel(bridge) {
     l3d.rotY = 0.4;
     l3d.rotX = 0.18;
 
-    // Center the camera's look-at target on the model's actual vertical
-    // extent (pier bottoms at deckY-8.7 up to the truss top, or just the
-    // deck if there's no truss) instead of a fixed point — a flat-deck
-    // structure with no truss sits much lower than a tall trussed one, so
-    // a fixed target left it hugging the bottom of the frame.
-    var modelBottom = deckY - 8.7;
-    var modelTop = deckY + Math.max(TRUSS_H, 0.3);
-    l3d.lookAtY = (modelBottom + modelTop) / 2;
+    // Center the camera's look-at target on the model's actual bounding
+    // box, computed AFTER applying the default rig rotation (rotX/rotY
+    // tilt the whole structure, which shifts its apparent center in Y and
+    // Z — a flat Y-only midpoint computed in local space doesn't account
+    // for that, so the model still hugged the bottom/sides once rotated).
+    rig.rotation.set(l3d.rotX, l3d.rotY, 0);
+    var box = new THREE.Box3().setFromObject(rig);
+    var center = box.getCenter(new THREE.Vector3());
+    l3d.lookAtX = center.x;
+    l3d.lookAtY = center.y;
+    l3d.lookAtZ = center.z;
 
     // Defects/sensors/stress default ON here (unlike twinView) — seeing
     // context while placing points is the whole point of this modal.
@@ -643,7 +646,11 @@ function animateLocate3D() {
     requestAnimationFrame(animateLocate3D);
     l3d.rig.rotation.set(l3d.rotX, l3d.rotY, 0);
     l3d.camera.position.set(0, l3d.camHeight, l3d.camDistance);
-    l3d.camera.lookAt(0, l3d.lookAtY != null ? l3d.lookAtY : 1.5, 0);
+    l3d.camera.lookAt(
+        l3d.lookAtX != null ? l3d.lookAtX : 0,
+        l3d.lookAtY != null ? l3d.lookAtY : 1.5,
+        l3d.lookAtZ != null ? l3d.lookAtZ : 0
+    );
     l3d.renderer.render(l3d.scene, l3d.camera);
 }
 
@@ -690,3 +697,11 @@ function closeLocate3dModal() {
 
 window.openLocate3dModal = openLocate3dModal;
 window.closeLocate3dModal = closeLocate3dModal;
+
+// Close on backdrop click (clicking the dimmed area outside the panels).
+var locate3dModalEl = document.getElementById('locate3dModal');
+if (locate3dModalEl) {
+    locate3dModalEl.addEventListener('click', function(e) {
+        if (e.target === this) closeLocate3dModal();
+    });
+}
