@@ -447,6 +447,7 @@ function renderCustomDateDropdown() {
             item.addEventListener('click', () => {
                 select.value = option.value;
                 select.dispatchEvent(new Event('change'));
+                renderCustomDateDropdown();
                 closeCustomDateDropdown();
             });
         }

@@ -66,6 +66,20 @@ let inspectionData = {
     spans: [],
 };
 
+function inspectionTypeFullName(code) {
+    switch (code) {
+        case 'PI': return 'Principal';
+        case 'GI': return 'General';
+        case 'SI': return 'Superficial';
+        default: return '';
+    }
+}
+
+function buildBridgeHeaderText(structureName, typeCode) {
+    const typeName = inspectionTypeFullName(typeCode);
+    return typeName ? `${structureName} ${typeName} Inspection` : `${structureName} Inspection`;
+}
+
 // DOM Elements
 const progressBar = document.getElementById('progress');
 const spanTabs = document.getElementById('span-tabs');
@@ -778,6 +792,11 @@ document.addEventListener("DOMContentLoaded", function () {
             button.classList.add('selected');
             inspectionData.inspectionType = selectedType;
             console.log('inspectionType updated:', selectedType);
+
+            const headerEl = document.getElementById('bridgeHeader');
+            if (headerEl && inspectionData.structureName) {
+                headerEl.textContent = buildBridgeHeaderText(inspectionData.structureName, selectedType);
+            }
         });
     });
 
@@ -798,7 +817,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             
             if (structureId && structureName) {
-                document.getElementById('bridgeHeader').textContent = `${structureName} Inspection`;
+                document.getElementById('bridgeHeader').textContent = buildBridgeHeaderText(structureName, inspectionData.inspectionType);
                 const sidebarBridgeName = document.getElementById('sidebarBridgeName');
                 const sidebarBridgeId = document.getElementById('sidebarBridgeId');
                 if (sidebarBridgeName) sidebarBridgeName.textContent = structureName;
@@ -823,12 +842,17 @@ document.addEventListener("DOMContentLoaded", function () {
                 .then(data => {
                     console.log('📊 Loaded existing inspection:', data);
                     populateInspectionForm(data);
+                    inspectionData.inspectionType = data.inspectionType;
+                    const headerEl = document.getElementById('bridgeHeader');
+                    if (headerEl && structureName) {
+                        headerEl.textContent = buildBridgeHeaderText(structureName, data.inspectionType);
+                    }
                 })
                 .catch(error => {
                     console.error('Failed to load inspection:', error);
                 });
         }
-        
+
         if (structureId) {
             loadBridgePhoto(structureId);
             fetchAndUpdateBridgeData(structureId);

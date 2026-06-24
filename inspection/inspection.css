@@ -283,7 +283,7 @@ body {
 }
 
 /* ---------- SPAN TABS ---------- */
-.span-navigation { margin-top: 28px; }
+.span-navigation { margin-top: 28px; margin-bottom: 32px; }
 .span-toggles {
     display: flex;
     gap: 8px;
