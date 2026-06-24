@@ -284,6 +284,15 @@ function rebuildLocate3DModel(bridge) {
     l3d.rotY = 0.4;
     l3d.rotX = 0.18;
 
+    // Center the camera's look-at target on the model's actual vertical
+    // extent (pier bottoms at deckY-8.7 up to the truss top, or just the
+    // deck if there's no truss) instead of a fixed point — a flat-deck
+    // structure with no truss sits much lower than a tall trussed one, so
+    // a fixed target left it hugging the bottom of the frame.
+    var modelBottom = deckY - 8.7;
+    var modelTop = deckY + Math.max(TRUSS_H, 0.3);
+    l3d.lookAtY = (modelBottom + modelTop) / 2;
+
     // Defects/sensors/stress default ON here (unlike twinView) — seeing
     // context while placing points is the whole point of this modal.
     structureGroup.visible = true;
@@ -634,7 +643,7 @@ function animateLocate3D() {
     requestAnimationFrame(animateLocate3D);
     l3d.rig.rotation.set(l3d.rotX, l3d.rotY, 0);
     l3d.camera.position.set(0, l3d.camHeight, l3d.camDistance);
-    l3d.camera.lookAt(0, 1.5, 0);
+    l3d.camera.lookAt(0, l3d.lookAtY != null ? l3d.lookAtY : 1.5, 0);
     l3d.renderer.render(l3d.scene, l3d.camera);
 }
 
