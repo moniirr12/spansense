@@ -71,16 +71,13 @@ const STRUCTURE_TYPE_CONFIG = {
       14: "Low",       // Embankment
       15: "Low",       // Superstructure drainage
       16: "Medium",    // Invert/river bed
-      17: "Medium",    // Aprons
-      9001: "Very High" // Additional HA Element: Anchoring system
+      17: "Medium"     // Aprons
       // 18 (Signs), 19 (Lighting), 20 (Services): ancillary, no importance assigned.
     },
-    // Foundations + Retaining wall Primary/Secondary. The Anchoring
-    // system is NOT included here - confirmed via real formulas across
-    // all 3 example proformas.
+    // Foundations + Retaining wall Primary/Secondary.
     criticalElements: [1, 2, 3],
-    // Items 1-17 + the Anchoring system (9001). Excludes ancillary 18-20.
-    bciAvIncludedElements: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 9001]
+    // Items 1-17. Excludes ancillary 18-20.
+    bciAvIncludedElements: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
   }
 };
 

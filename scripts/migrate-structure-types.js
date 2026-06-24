@@ -24,10 +24,9 @@ const RETAINING_WALL_ELEMENTS = [
     [15, 'Superstructure drainage', 15],
     [16, 'Invert/river bed', 16],
     [17, 'Aprons', 17],
-    [9001, 'Additional HA Element: Anchoring system', 18],
-    [18, 'Signs', 19],
-    [19, 'Lighting', 20],
-    [20, 'Services', 21]
+    [18, 'Signs', 18],
+    [19, 'Lighting', 19],
+    [20, 'Services', 20]
 ];
 
 async function main() {

@@ -604,7 +604,6 @@ const ELEMENTS_DB_BY_TYPE = {
         15: { category: "Other Elements", description: "Superstructure drainage" },
         16: { category: "Other Elements", description: "Invert/river bed" },
         17: { category: "Other Elements", description: "Aprons" },
-        9001: { category: "Additional HA Element", description: "Anchoring system" },
         18: { category: "Ancillary Elements", description: "Signs" },
         19: { category: "Ancillary Elements", description: "Lighting" },
         20: { category: "Ancillary Elements", description: "Services" }
