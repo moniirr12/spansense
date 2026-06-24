@@ -727,7 +727,7 @@ async function updateBridgeModalData(structureId) {
                 let color = '';
                 
                 if (bciValue >= 90) {
-                    category = 'Excellent';
+                    category = 'Very Good';
                     color = '#22c55e';
                 } else if (bciValue >= 80) {
                     category = 'Good';

@@ -332,7 +332,7 @@ async function generateSimplePDFReport(doc, mode = 'download') {
         const { bciAv, bciCrit } = calculateBCI(severityScores);
         
         function getBCICategory(score) {
-            if (score >= 90) return { text: 'Excellent', color: '#22c55e' };
+            if (score >= 90) return { text: 'Very Good', color: '#22c55e' };
             if (score >= 80) return { text: 'Good', color: '#8ab4b0' };
             if (score >= 65) return { text: 'Fair', color: '#eab308' };
             if (score >= 40) return { text: 'Poor', color: '#f97316' };

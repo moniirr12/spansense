@@ -2007,7 +2007,7 @@ app.get('/api/dashboard/recent-activity', async (req, res) => {
                 overall_bcicrit
             FROM inspections
             ORDER BY created_at DESC
-            LIMIT 10
+            LIMIT 5
         `);
 
         res.json({ success: true, data: rows });

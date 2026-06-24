@@ -296,7 +296,7 @@ function renderConditionDistributionChart(data) {
         data: {
             labels: labels,
             datasets: [
-                { label: 'Excellent (90-100)', data: filteredData.map(d => d.very_good || 0), backgroundColor: '#22c55e' },
+                { label: 'Very Good (90-100)', data: filteredData.map(d => d.very_good || 0), backgroundColor: '#22c55e' },
                 { label: 'Good (80-89)', data: filteredData.map(d => d.good || 0), backgroundColor: '#84cc16' },
                 { label: 'Fair (65-79)', data: filteredData.map(d => d.fair || 0), backgroundColor: '#eab308' },
                 { label: 'Poor (40-64)', data: filteredData.map(d => d.poor || 0), backgroundColor: '#f97316' },
