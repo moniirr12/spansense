@@ -301,6 +301,36 @@ body {
     font-weight: 600;
 }
 
+.chart-toggle {
+    display: flex;
+    gap: 2px;
+    background: #eef4f2;
+    border-radius: 20px;
+    padding: 2px;
+}
+
+.chart-toggle-btn {
+    padding: 4px 12px;
+    border: none;
+    background: transparent;
+    color: #5b8c8a;
+    border-radius: 18px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.chart-toggle-btn:hover {
+    color: #2c4a48;
+}
+
+.chart-toggle-btn.active {
+    background: #5b8c8a;
+    color: white;
+}
+
 .chart-body {
     padding: 20px;
     display: flex;
@@ -691,6 +721,23 @@ body {
 .night-mode .chart-badge {
     background: #2f4a48;
     color: #8ab4b0;
+}
+
+.night-mode .chart-toggle {
+    background: #2f4a48;
+}
+
+.night-mode .chart-toggle-btn {
+    color: #8ab4b0;
+}
+
+.night-mode .chart-toggle-btn:hover {
+    color: #d4dfe3;
+}
+
+.night-mode .chart-toggle-btn.active {
+    background: #5b8c8a;
+    color: white;
 }
 
 .night-mode .bridge-table .row {

@@ -101,25 +101,28 @@
                     </div>
                 </div>
 
-                <!-- Chart 2: BCI Score Distribution -->
+                <!-- Chart 2: Average BCI by Structure Type -->
                 <div class="chart-card">
                     <div class="chart-header">
-                        <h3>BCI Score Distribution</h3>
-                        <span class="chart-badge">Performance</span>
+                        <h3>Average BCI by Type</h3>
+                        <span class="chart-badge">Condition</span>
                     </div>
                     <div class="chart-body">
-                        <canvas id="bciHistogramChart" width="600" height="400"></canvas>
+                        <canvas id="avgBciByTypeChart" width="400" height="280"></canvas>
                     </div>
                 </div>
 
-                <!-- Chart 3: Bridge Condition Distribution Over Time -->
+                <!-- Chart 3: BCI Score Distribution (Current snapshot / By Year, via toggle) -->
                 <div class="chart-card wide-chart">
                     <div class="chart-header">
-                        <h3>Bridge Condition Over Time</h3>
-                        <span class="chart-badge">Trend Analysis</span>
+                        <h3>BCI Score Distribution</h3>
+                        <div class="chart-toggle">
+                            <button class="chart-toggle-btn active" data-view="current">Current</button>
+                            <button class="chart-toggle-btn" data-view="trend">By Year</button>
+                        </div>
                     </div>
                     <div class="chart-body">
-                        <canvas id="conditionDistributionChart" width="800" height="400"></canvas>
+                        <canvas id="bciHistogramChart" width="800" height="400"></canvas>
                     </div>
                 </div>
             </div>

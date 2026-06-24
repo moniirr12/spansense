@@ -1865,10 +1865,9 @@ app.get('/api/bci-distribution', async (req, res) => {
             bci_ranges AS (
                 SELECT 
                     structure_id,
-                    CASE 
+                    CASE
                         WHEN bci_av < 40 THEN '0-39'
-                        WHEN bci_av >= 40 AND bci_av < 50 THEN '40-49'
-                        WHEN bci_av >= 50 AND bci_av < 65 THEN '50-64'
+                        WHEN bci_av >= 40 AND bci_av < 65 THEN '40-64'
                         WHEN bci_av >= 65 AND bci_av < 80 THEN '65-79'
                         WHEN bci_av >= 80 AND bci_av < 90 THEN '80-89'
                         ELSE '90-100'
@@ -1880,18 +1879,17 @@ app.get('/api/bci-distribution', async (req, res) => {
                 COUNT(DISTINCT structure_id) as count
             FROM bci_ranges
             GROUP BY bci_range
-            ORDER BY 
+            ORDER BY
                 CASE bci_range
                     WHEN '0-39' THEN 1
-                    WHEN '40-49' THEN 2
-                    WHEN '50-64' THEN 3
-                    WHEN '65-79' THEN 4
-                    WHEN '80-89' THEN 5
-                    WHEN '90-100' THEN 6
+                    WHEN '40-64' THEN 2
+                    WHEN '65-79' THEN 3
+                    WHEN '80-89' THEN 4
+                    WHEN '90-100' THEN 5
                 END
         `);
 
-        const ranges = ['0-39', '40-49', '50-64', '65-79', '80-89', '90-100'];
+        const ranges = ['0-39', '40-64', '65-79', '80-89', '90-100'];
         const result = ranges.map(range => {
             const found = rows.find(r => r.bci_range === range);
             return { bci_range: range, count: found ? parseInt(found.count) : 0 };
@@ -1990,6 +1988,41 @@ app.get('/api/dashboard/critical-bridges', async (req, res) => {
         res.json({ success: true, data: rows });
     } catch (err) {
         console.error('Critical bridges error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Average BCI per structure type, using each structure's latest inspection
+app.get('/api/dashboard/avg-bci-by-type', async (req, res) => {
+    try {
+        const rows = await dbAll(`
+            WITH latest_inspections AS (
+                SELECT
+                    i.structure_id,
+                    s.bci_av
+                FROM inspections i
+                JOIN (
+                    SELECT structure_id, MAX(inspection_date) as latest_date
+                    FROM inspections
+                    GROUP BY structure_id
+                ) latest ON i.structure_id = latest.structure_id
+                         AND i.inspection_date = latest.latest_date
+                JOIN inspection_spans s ON i.id = s.inspection_id
+                WHERE s.bci_av IS NOT NULL
+            )
+            SELECT
+                b.type,
+                ROUND(AVG(li.bci_av)::numeric, 1) as avg_bci,
+                COUNT(DISTINCT li.structure_id) as count
+            FROM latest_inspections li
+            JOIN bridges b ON b.id = li.structure_id
+            GROUP BY b.type
+            ORDER BY avg_bci DESC
+        `);
+
+        res.json({ success: true, data: rows });
+    } catch (err) {
+        console.error('Average BCI by type error:', err);
         res.status(500).json({ success: false, error: err.message });
     }
 });
