@@ -416,10 +416,25 @@ function refreshBCIScores() {
     spanData.bciAv = bciAv.toFixed(2);
     spanData.bciCrit = bciCrit.toFixed(2);
     sessionStorage.setItem('inspectionData', JSON.stringify(inspectionData));
+    updateSpanProgress();
     return { bciAv, bciCrit };
 }
 
 window.refreshBCIScores = refreshBCIScores;
+
+// "X/Y reviewed" for the current span — an element counts as reviewed once
+// it has at least one recorded defect/no-defects/not-inspected entry.
+function updateSpanProgress() {
+    const progressEl = document.getElementById('spanProgressResult');
+    if (!progressEl) return;
+    const mainRows = document.querySelectorAll('#inspectionElementsTable tbody tr.main-row');
+    let reviewed = 0;
+    mainRows.forEach(row => {
+        if (findAllExpandableRows(row).length > 0) reviewed++;
+    });
+    progressEl.textContent = `${reviewed}/${mainRows.length}`;
+}
+window.updateSpanProgress = updateSpanProgress;
 
 // Headless equivalent of opening the modal, selecting the "No Defects" /
 // "Not Inspected" segment, and clicking Save — reuses saveChanges() so the
