@@ -518,6 +518,32 @@ body {
     background-image: radial-gradient(circle at center, #3a2020 14px, transparent 14px);
 }
 
+/* Severity/extent colour badges inside the expandable defect rows — mirrors
+   the main-row severity colours and the extent stepper's blue progression. */
+#inspectionElementsTable tr.expandable-row .addSeverity .sev-1 { color: #2d7a6e; }
+#inspectionElementsTable tr.expandable-row .addSeverity .sev-2 { color: #BA7517; }
+#inspectionElementsTable tr.expandable-row .addSeverity .sev-3 { color: #c47070; }
+#inspectionElementsTable tr.expandable-row .addSeverity .sev-4,
+#inspectionElementsTable tr.expandable-row .addSeverity .sev-5 { color: #c0392b; }
+
+#inspectionElementsTable tr.expandable-row .addExtent .ext-A { color: #5b8c8a; }
+#inspectionElementsTable tr.expandable-row .addExtent .ext-B { color: #4a9ab0; }
+#inspectionElementsTable tr.expandable-row .addExtent .ext-C { color: #3a88c0; }
+#inspectionElementsTable tr.expandable-row .addExtent .ext-D { color: #378ADD; }
+#inspectionElementsTable tr.expandable-row .addExtent .ext-E { color: #2a6fd4; }
+
+.night-mode #inspectionElementsTable tr.expandable-row .addSeverity .sev-1 { color: #8ab4b0; }
+.night-mode #inspectionElementsTable tr.expandable-row .addSeverity .sev-2 { color: #d4a84a; }
+.night-mode #inspectionElementsTable tr.expandable-row .addSeverity .sev-3 { color: #e8a0a0; }
+.night-mode #inspectionElementsTable tr.expandable-row .addSeverity .sev-4,
+.night-mode #inspectionElementsTable tr.expandable-row .addSeverity .sev-5 { color: #e07070; }
+
+.night-mode #inspectionElementsTable tr.expandable-row .addExtent .ext-A { color: #8ab4b0; }
+.night-mode #inspectionElementsTable tr.expandable-row .addExtent .ext-B { color: #6db8cc; }
+.night-mode #inspectionElementsTable tr.expandable-row .addExtent .ext-C { color: #5ba3d4; }
+.night-mode #inspectionElementsTable tr.expandable-row .addExtent .ext-D { color: #5b9fe8; }
+.night-mode #inspectionElementsTable tr.expandable-row .addExtent .ext-E { color: #4a8ee0; }
+
 /* Only show severity circle when cell has data */
 #inspectionElementsTable tr.main-row td.severity:empty {
     background-image: none;

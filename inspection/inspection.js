@@ -645,8 +645,10 @@ function saveChanges() {
     updateField(".addDefect", finalDefectCombined);
     const addDefectEl = currentExpandableRow.querySelector(".addDefect");
     if (addDefectEl) addDefectEl.dataset.code = finalDefectCombined;
-    updateField(".addSeverity", finalSeverity);
-    updateField(".addExtent", finalExtent);
+    const sevEl = currentExpandableRow.querySelector(".addSeverity");
+    if (sevEl) sevEl.innerHTML = severityBadgeHTML(finalSeverity);
+    const extEl = currentExpandableRow.querySelector(".addExtent");
+    if (extEl) extEl.innerHTML = extentBadgeHTML(finalExtent);
     updateField(".addWorks", finalWorks);
     updateField(".addPriority", priority);
     updateField(".addCost", cost);
@@ -1063,6 +1065,15 @@ function findMainRow(startRow) {
   return null;
 }
 
+// Colour-coded severity/extent badges for the expandable defect rows (see
+// the matching .sev-*/.ext-* rules in inspection.css).
+function severityBadgeHTML(value) {
+  return value ? `<span class="sev-${value}">${value}</span>` : '';
+}
+function extentBadgeHTML(value) {
+  return value ? `<span class="ext-${value}">${value}</span>` : '';
+}
+
 function addDefectToTable(mainRow, defectData, isRetrieved, isEditable = false) {
   console.group('addDefectToTable Debug');
   console.error('>>> addDefectToTable CALLED', {isRetrieved, isEditable, defect: defectData?.defectCombined});
@@ -1113,7 +1124,9 @@ function addDefectToTable(mainRow, defectData, isRetrieved, isEditable = false) 
     const element = expandableRow.querySelector(selector);
     if (element) {
       const value = defectData[dataKey];
-      element.textContent = value || '';
+      if (selector === '.addSeverity') element.innerHTML = severityBadgeHTML(value);
+      else if (selector === '.addExtent') element.innerHTML = extentBadgeHTML(value);
+      else element.textContent = value || '';
     }
   });
   const defectCode = defectData.defectCombined || '';
@@ -1121,9 +1134,9 @@ function addDefectToTable(mainRow, defectData, isRetrieved, isEditable = false) 
     const defectVal = expandableRow.querySelector('.addDefect');
     if (defectVal) defectVal.innerHTML = '<span style="color:#2d7a6e;font-weight:600;"><i class="fas fa-check-circle"></i> No Defects</span>';
     const sevVal = expandableRow.querySelector('.addSeverity');
-    if (sevVal) sevVal.innerHTML = '<span class="sev-1">1</span>';
+    if (sevVal) sevVal.innerHTML = severityBadgeHTML('1');
     const extVal = expandableRow.querySelector('.addExtent');
-    if (extVal) extVal.textContent = 'A';
+    if (extVal) extVal.innerHTML = extentBadgeHTML('A');
     const worksVal = expandableRow.querySelector('.addWorks');
     if (worksVal) worksVal.textContent = 'N';
     const priorityRow = expandableRow.querySelector('.priority-row');
@@ -1180,17 +1193,26 @@ function addDefectToTable(mainRow, defectData, isRetrieved, isEditable = false) 
   if (addDefectEl) addDefectEl.dataset.code = defectData.defectCombined || '';
   if (isRetrieved) expandableRow.classList.add("retrieved-defect");
   expandableRow.classList.toggle("editable", isEditable);
+  // The primary defect always sits right under the main row; later
+  // non-primary defects are appended after it (but still before any
+  // retrieved-defect row for this span, which stays at the bottom).
   let insertBeforeRow = null;
+  let lastOwnRow = mainRow;
   let nextRow = mainRow.nextElementSibling;
   while (nextRow && !nextRow.classList.contains("main-row")) {
     if (nextRow.classList.contains("retrieved-defect") && nextRow.dataset.span === currentSpan) {
       insertBeforeRow = nextRow;
       break;
     }
+    if (nextRow.classList.contains("expandable-row")) {
+      lastOwnRow = nextRow;
+    }
     nextRow = nextRow.nextElementSibling;
   }
   try {
-    const insertionPoint = insertBeforeRow || mainRow.nextSibling;
+    const insertionPoint = defectData.isPrimary
+      ? mainRow.nextSibling
+      : (insertBeforeRow || lastOwnRow.nextSibling);
     mainRow.parentNode.insertBefore(expandableRow, insertionPoint);
     expandableRow.style.display = "none";
     console.log("Row inserted successfully");
@@ -1728,6 +1750,8 @@ window.setAsPrimaryDefect = function(primaryTagElement) {
         if (tag) tag.classList.remove('filled');
     });
     primaryTagElement.classList.add('filled');
+    // Primary defect always sits right under the main row.
+    mainRow.parentNode.insertBefore(expandableRow, mainRow.nextSibling);
     updateMainRow(mainRow);
     console.log(`Primary defect set for element ${elementNumber}: ${currentDefect.defectCombined}`);
     showPrimaryFeedback(primaryTagElement);
@@ -1756,6 +1780,8 @@ function highlightPrimaryDefect(mainRow) {
             const tag = row.querySelector('.primary-tag');
             if (tag && row.dataset.timestamp === primaryDefect.timestamp) {
                 tag.classList.add('filled');
+                // Primary defect always sits right under the main row.
+                mainRow.parentNode.insertBefore(row, mainRow.nextSibling);
             }
         });
         updateMainRow(mainRow);

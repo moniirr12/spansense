@@ -607,8 +607,10 @@ if (inspectionDatesElement) {
                     };
                     
                     populateField(".addDefect", defect.def);
-                    populateField(".addSeverity", defect.s);
-                    populateField(".addExtent", defect.ex);
+                    const sevEl = expandableRow.querySelector(".addSeverity");
+                    if (sevEl) sevEl.innerHTML = severityBadgeHTML(defect.s);
+                    const extEl = expandableRow.querySelector(".addExtent");
+                    if (extEl) extEl.innerHTML = extentBadgeHTML(defect.ex);
                     populateField(".addWorks", defect.w, 'No');
                     populateField(".addPriority", defect.p);
                     populateField(".addCost", defect.cost);
