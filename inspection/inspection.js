@@ -424,11 +424,11 @@ window.refreshBCIScores = refreshBCIScores;
 // Headless equivalent of opening the modal, selecting the "No Defects" /
 // "Not Inspected" segment, and clicking Save — reuses saveChanges() so the
 // sessionStorage/BCI/row-update bookkeeping stays in exactly one place.
-function quickRecordElement(buttonRow, status, comment) {
+function quickRecordElement(buttonRow, status, comment, existingRow) {
   const mainRow = findMainRow(buttonRow);
   if (!mainRow) return;
   currentRow = mainRow;
-  currentExpandableRow = null;
+  currentExpandableRow = existingRow || null;
   document.getElementById("severity").value = "1";
   document.getElementById("extent").value = "A";
   document.getElementById("works").value = "N";
@@ -1276,6 +1276,7 @@ document.addEventListener("DOMContentLoaded", function () {
       if (!box) return;
       const status = quickBtn.classList.contains('btn-no-defects') ? 'no-defects' : 'not-inspected';
       box.dataset.pendingStatus = status;
+      delete box.dataset.editingTimestamp;
       const textarea = box.querySelector('.quick-confirm-comment');
       textarea.value = '';
       textarea.style.height = '';
@@ -1289,7 +1290,10 @@ document.addEventListener("DOMContentLoaded", function () {
     const cancelBtn = event.target.closest('.quick-confirm-cancel');
     if (cancelBtn) {
       const box = cancelBtn.closest('.quick-confirm-box');
-      if (box) box.style.display = 'none';
+      if (box) {
+        box.style.display = 'none';
+        delete box.dataset.editingTimestamp;
+      }
       return;
     }
     const confirmBtn = event.target.closest('.quick-confirm-confirm');
@@ -1298,7 +1302,12 @@ document.addEventListener("DOMContentLoaded", function () {
       const buttonRow = confirmBtn.closest('tr.button-row');
       if (!box || !buttonRow) return;
       const comment = box.querySelector('.quick-confirm-comment').value.trim();
-      quickRecordElement(buttonRow, box.dataset.pendingStatus, comment);
+      const editingTimestamp = box.dataset.editingTimestamp;
+      const existingRow = editingTimestamp
+        ? findAllExpandableRows(findMainRow(buttonRow)).find(r => r.dataset.timestamp === editingTimestamp)
+        : null;
+      quickRecordElement(buttonRow, box.dataset.pendingStatus, comment, existingRow);
+      delete box.dataset.editingTimestamp;
       box.style.display = 'none';
     }
   });
@@ -1365,6 +1374,27 @@ document.addEventListener("DOMContentLoaded", function () {
                   document.getElementById("remedialWorks").value = '';
               }
               document.getElementById("modalTitle").textContent = "Edit Defect";
+              // No Defects / Not Inspected only ever need a comment, so editing
+              // one reuses the same inline quick-confirm box as creating one,
+              // instead of opening the full modal just to tweak a comment.
+              if (editSegmentState === 'no-defects' || editSegmentState === 'not-inspected') {
+                  const buttonRow = addButtonRowForMainRow(currentRow);
+                  const box = buttonRow?.querySelector('.quick-confirm-box');
+                  if (box) {
+                      box.dataset.pendingStatus = editSegmentState;
+                      box.dataset.editingTimestamp = expandableRow.dataset.timestamp;
+                      const textarea = box.querySelector('.quick-confirm-comment');
+                      textarea.value = editSegmentComment;
+                      textarea.style.height = '';
+                      textarea.style.height = textarea.scrollHeight + 'px';
+                      const confirmBtn = box.querySelector('.quick-confirm-confirm');
+                      confirmBtn.classList.remove('confirm-green', 'confirm-orange');
+                      confirmBtn.classList.add(editSegmentState === 'no-defects' ? 'confirm-green' : 'confirm-orange');
+                      box.style.display = 'block';
+                      textarea.focus();
+                      return;
+                  }
+              }
               if (editSegmentState === 'no-defects') {
                   document.getElementById("of-no-defects-comment").value = editSegmentComment;
               } else if (editSegmentState === 'not-inspected') {
