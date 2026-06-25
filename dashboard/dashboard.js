@@ -8,11 +8,13 @@ var API_BASE = window.location.hostname === 'localhost'
 document.addEventListener('DOMContentLoaded', function () {
     fetchBridgeCount();
     fetchTypeDistribution();
+    fetchAvgBciByType();
     fetchBCIDistribution();
     fetchConditionDistribution();
     fetchCriticalBridges();
     fetchRecentActivity();
-    
+    initBciChartToggle();
+
     const changePageButton = document.getElementById('toHome');
     if (changePageButton) {
         changePageButton.addEventListener('click', function () {
@@ -38,9 +40,30 @@ document.addEventListener('DOMContentLoaded', function () {
     window.updateGlassScrollbar=u;
 })();
 
-let conditionDistributionChart = null;
-let typeChart = null;
-let bciHistogramChart = null;
+let bciChartInstance = null;
+let bciDistributionData = null;
+let conditionDistributionData = null;
+let activeBciView = 'current';
+
+function initBciChartToggle() {
+    const buttons = document.querySelectorAll('.chart-toggle-btn');
+    buttons.forEach(btn => {
+        btn.addEventListener('click', function () {
+            buttons.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            activeBciView = this.dataset.view;
+            renderActiveBciChart();
+        });
+    });
+}
+
+function renderActiveBciChart() {
+    if (activeBciView === 'trend') {
+        if (conditionDistributionData) renderConditionDistributionChart(conditionDistributionData);
+    } else {
+        if (bciDistributionData) renderBCIHistogram(bciDistributionData);
+    }
+}
 
 // Fetch total bridges count from your backend API
 async function fetchBridgeCount() {
@@ -83,7 +106,7 @@ async function fetchTypeDistribution() {
       console.log('BCI API response:', result);
     
     if (result.success && result.data) {
-      renderPieChart(result.data);
+      renderTypeBarChart(result.data);
     } else {
       throw new Error('Invalid response format');
     }
@@ -93,48 +116,116 @@ async function fetchTypeDistribution() {
   }
 }
 
-function renderPieChart(typeData) {
+function renderTypeBarChart(typeData) {
   const ctx = document.getElementById('typeChart').getContext('2d');
-  
-  // Prepare data
-  const labels = typeData.map(item => item.type || 'Unknown');
-  const counts = typeData.map(item => item.count);
-  
-  // Colors for each type
-  const backgroundColors = [
-    'rgba(54, 162, 235, 0.7)',  // bridge - blue
-    'rgba(75, 192, 192, 0.7)',  // footbridge - green
-    'rgba(255, 159, 64, 0.7)',  // retaining wall - orange
-    'rgba(153, 102, 255, 0.7)'  // any others - purple
-  ];
-  
+
+  // Sort by count descending so the most common type reads first.
+  const sorted = [...typeData].sort((a, b) => b.count - a.count);
+  const labels = sorted.map(item => item.type || 'Unknown');
+  const counts = sorted.map(item => item.count);
+
+  // Teal-forward palette consistent with the rest of the dashboard.
+  const backgroundColors = ['#5b8c8a', '#8ab4b0', '#4a90b8', '#c28b5a', '#a371c7'];
+
   new Chart(ctx, {
-    type: 'pie',
+    type: 'bar',
     data: {
       labels: labels,
       datasets: [{
+        label: 'Structures',
         data: counts,
-        backgroundColor: backgroundColors,
-        borderWidth: 1
+        backgroundColor: labels.map((_, i) => backgroundColors[i % backgroundColors.length]),
+        borderWidth: 0,
+        borderRadius: 6
       }]
     },
     options: {
+      indexAxis: 'y',
       responsive: true,
+      maintainAspectRatio: true,
+      aspectRatio: 1.4,
       plugins: {
-        legend: {
-          position: 'bottom',
-        },
+        legend: { display: false },
         tooltip: {
           callbacks: {
             label: function(context) {
-              const label = context.label || '';
               const value = context.raw || 0;
               const total = context.dataset.data.reduce((a, b) => a + b, 0);
-              const percentage = Math.round((value / total) * 100);
-              return `${label}: ${value} (${percentage}%)`;
+              const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+              return `${value} (${percentage}%)`;
             }
           }
         }
+      },
+      scales: {
+        x: { beginAtZero: true, ticks: { precision: 0 }, title: { display: true, text: 'Number of Structures' } },
+        y: { grid: { display: false } }
+      }
+    }
+  });
+}
+
+let avgBciByTypeChartInstance = null;
+
+async function fetchAvgBciByType() {
+  try {
+    const response = await fetch(API_BASE + '/api/dashboard/avg-bci-by-type', {
+      credentials: 'include'
+    });
+
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+    const result = await response.json();
+
+    if (result.success && result.data) {
+      renderAvgBciByTypeChart(result.data);
+    }
+  } catch (error) {
+    console.error('Error fetching average BCI by type:', error);
+  }
+}
+
+function renderAvgBciByTypeChart(typeData) {
+  if (avgBciByTypeChartInstance) {
+    avgBciByTypeChartInstance.destroy();
+    avgBciByTypeChartInstance = null;
+  }
+
+  const ctx = document.getElementById('avgBciByTypeChart').getContext('2d');
+
+  const sorted = [...typeData].sort((a, b) => b.avg_bci - a.avg_bci);
+  const labels = sorted.map(item => item.type || 'Unknown');
+  const values = sorted.map(item => item.avg_bci);
+  const colors = values.map(v => bciTier(v).color);
+
+  avgBciByTypeChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Average BCI',
+        data: values,
+        backgroundColor: colors,
+        borderWidth: 0,
+        borderRadius: 6
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: true,
+      aspectRatio: 1.4,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function(context) { return `Average BCI: ${context.raw}`; }
+          }
+        }
+      },
+      scales: {
+        x: { beginAtZero: true, max: 100, title: { display: true, text: 'Average BCI' } },
+        y: { grid: { display: false } }
       }
     }
   });
@@ -153,7 +244,8 @@ async function fetchBCIDistribution() {
         const result = await response.json();
         
         if (result.success && result.data) {
-            renderBCIHistogram(result.data);
+            bciDistributionData = result.data;
+            renderActiveBciChart();
         }
     } catch (error) {
         console.error('Error fetching BCI distribution:', error);
@@ -172,7 +264,8 @@ async function fetchConditionDistribution() {
         const result = await response.json();
         
         if (result.success && result.data) {
-            renderConditionDistributionChart(result.data);
+            conditionDistributionData = result.data;
+            renderActiveBciChart();
         }
     } catch (error) {
         console.error('Error fetching condition distribution:', error);
@@ -181,22 +274,30 @@ async function fetchConditionDistribution() {
 
 // Render BCI histogram
 function renderBCIHistogram(data) {
+    if (bciChartInstance) {
+        bciChartInstance.destroy();
+        bciChartInstance = null;
+    }
+
     const ctx = document.getElementById('bciHistogramChart').getContext('2d');
-    
+
     const labels = data.map(item => item.bci_range);
     const counts = data.map(item => item.count);
-    
+
+    // Band names are explained once by the shared .bci-legend below the
+    // chart, so the axis just needs the bare numeric ranges here.
     const labelMap = {
-        '0-39': '0-39\n(Very Poor)',
-        '40-49': '40-64\n(Poor)',
-        '65-79': '65-79\n(Fair)',
-        '80-89': '80-89\n(Good)',
-        '90-100': '90-100\n(Very Good)'
+        '0-39': '0-39',
+        '40-64': '40-64',
+        '65-79': '65-79',
+        '80-89': '80-89',
+        '90-100': '90-100'
     };
-    
-    const colors = ['#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e'];
-    
-    new Chart(ctx, {
+
+    // Same 5-band semantic palette used by the condition-over-time chart.
+    const colors = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e'];
+
+    bciChartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labels.map(l => labelMap[l]),
@@ -204,7 +305,8 @@ function renderBCIHistogram(data) {
                 label: 'Number of Bridges',
                 data: counts,
                 backgroundColor: colors,
-                borderWidth: 0
+                borderWidth: 0,
+                borderRadius: 6
             }]
         },
         options: {
@@ -217,14 +319,14 @@ function renderBCIHistogram(data) {
                     callbacks: {
                         label: function(context) {
                             const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const pct = total > 0 ? ((context.parsed.y / total) * 100).toFixed(1) : 0;
-                            return `${context.parsed.y} bridges (${pct}%)`;
+                            const pct = total > 0 ? Math.round((context.parsed.y / total) * 100) : 0;
+                            return `${context.parsed.y} (${pct}%)`;
                         }
                     }
                 }
             },
             scales: {
-                y: { beginAtZero: true, title: { display: true, text: 'Number of Bridges' } },
+                y: { beginAtZero: true, ticks: { precision: 0 }, title: { display: true, text: 'Number of Bridges' } },
                 x: { grid: { display: false } }
             }
         }
@@ -233,45 +335,39 @@ function renderBCIHistogram(data) {
 
 // Render condition distribution over time
 function renderConditionDistributionChart(data) {
-    const canvas = document.getElementById('conditionDistributionChart');
+    const canvas = document.getElementById('bciHistogramChart');
     if (!canvas) {
-        console.error('Canvas element conditionDistributionChart not found');
+        console.error('Canvas element bciHistogramChart not found');
         return;
     }
-    
-    // ✅ Set explicit canvas dimensions for better visibility
-    canvas.width = 800;
-    canvas.height = 500;
-    canvas.style.width = '100%';
-    canvas.style.height = 'auto';
-    
-    if (conditionDistributionChart && typeof conditionDistributionChart.destroy === 'function') {
-        conditionDistributionChart.destroy();
-        conditionDistributionChart = null;
+
+    if (bciChartInstance) {
+        bciChartInstance.destroy();
+        bciChartInstance = null;
     }
-    
+
     if (!data || !Array.isArray(data) || data.length === 0) {
         console.warn('No condition distribution data received:', data);
         const ctx = canvas.getContext('2d');
-        conditionDistributionChart = new Chart(ctx, {
+        bciChartInstance = new Chart(ctx, {
             type: 'bar',
-            data: { 
-                labels: ['No Data'], 
-                datasets: [{ 
-                    label: 'No inspection data available', 
-                    data: [0], 
-                    backgroundColor: '#cbd5e1' 
-                }] 
+            data: {
+                labels: ['No Data'],
+                datasets: [{
+                    label: 'No inspection data available',
+                    data: [0],
+                    backgroundColor: '#cbd5e1'
+                }]
             },
-            options: { 
-                responsive: true, 
-                maintainAspectRatio: true, 
-                plugins: { legend: { display: false } } 
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: { legend: { display: false } }
             }
         });
         return;
     }
-    
+
     const ctx = canvas.getContext('2d');
     
     // Filter out null period entries
@@ -291,27 +387,24 @@ function renderConditionDistributionChart(data) {
     });
     const maxValue = Math.max(...allValues, 10);
     
-    conditionDistributionChart = new Chart(ctx, {
+    bciChartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labels,
             datasets: [
-                { label: 'Very Good (90-100)', data: filteredData.map(d => d.very_good || 0), backgroundColor: '#22c55e' },
-                { label: 'Good (80-89)', data: filteredData.map(d => d.good || 0), backgroundColor: '#84cc16' },
-                { label: 'Fair (65-79)', data: filteredData.map(d => d.fair || 0), backgroundColor: '#eab308' },
-                { label: 'Poor (40-64)', data: filteredData.map(d => d.poor || 0), backgroundColor: '#f97316' },
-                { label: 'Critical (0-39)', data: filteredData.map(d => d.very_poor || 0), backgroundColor: '#ef4444' }
+                { label: 'Very Good (90-100)', data: filteredData.map(d => d.very_good || 0), backgroundColor: '#22c55e', borderRadius: 4 },
+                { label: 'Good (80-89)', data: filteredData.map(d => d.good || 0), backgroundColor: '#84cc16', borderRadius: 4 },
+                { label: 'Fair (65-79)', data: filteredData.map(d => d.fair || 0), backgroundColor: '#eab308', borderRadius: 4 },
+                { label: 'Poor (40-64)', data: filteredData.map(d => d.poor || 0), backgroundColor: '#f97316', borderRadius: 4 },
+                { label: 'Critical (0-39)', data: filteredData.map(d => d.very_poor || 0), backgroundColor: '#ef4444', borderRadius: 4 }
             ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: true,
             plugins: {
-                legend: { 
-                    position: 'bottom', 
-                    labels: { font: { size: 11 }, padding: 10, usePointStyle: true, boxWidth: 10 } 
-                },
-                tooltip: { 
+                legend: { display: false },
+                tooltip: {
                     mode: 'index',
                     callbacks: {
                         label: function(context) {
@@ -501,12 +594,12 @@ function renderRecentActivity(data) {
 }
 
 function bciTier(bciAve) {
-    if (bciAve === null || bciAve === undefined) return { band: 'fair', avatarColor: 'blue' };
-    if (bciAve >= 90) return { band: 'excellent', avatarColor: 'green' };
-    if (bciAve >= 80) return { band: 'good', avatarColor: 'green' };
-    if (bciAve >= 65) return { band: 'fair', avatarColor: 'blue' };
-    if (bciAve >= 40) return { band: 'poor', avatarColor: 'orange' };
-    return { band: 'critical', avatarColor: 'red' };
+    if (bciAve === null || bciAve === undefined) return { band: 'fair', avatarColor: 'blue', color: '#eab308' };
+    if (bciAve >= 90) return { band: 'excellent', avatarColor: 'green', color: '#22c55e' };
+    if (bciAve >= 80) return { band: 'good', avatarColor: 'green', color: '#84cc16' };
+    if (bciAve >= 65) return { band: 'fair', avatarColor: 'blue', color: '#eab308' };
+    if (bciAve >= 40) return { band: 'poor', avatarColor: 'orange', color: '#f97316' };
+    return { band: 'critical', avatarColor: 'red', color: '#ef4444' };
 }
 
 function getInitials(name) {

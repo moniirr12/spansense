@@ -308,7 +308,9 @@ function updateMainRow(potentialRow) {
   }
   const expandableRows = findAllExpandableRows(mainRow);
   if (expandableRows.length > 0) {
-    const firstDefect = expandableRows[0];
+    // The primary defect (see setAsPrimaryDefect) drives what the collapsed
+    // row shows, not just whichever defect happens to be first in the DOM.
+    const firstDefect = expandableRows.find(row => row.querySelector('.primary-tag')?.classList.contains('filled')) || expandableRows[0];
     const mainCells = mainRow.querySelectorAll("td");
     const severityValue = firstDefect.querySelector(".addSeverity")?.textContent || "";
     if (severityValue) {
@@ -369,7 +371,16 @@ function refreshBCIScores() {
     }
     if (spanDefects.length > 0) {
         const validDefects = spanDefects.filter(d => d.defectCombined !== '0.1');
-        const bciDefects = validDefects.map(d => {
+        // An element can carry several defects, but only the primary one
+        // (see setAsPrimaryDefect) counts toward BCI scoring. Falls back to
+        // whichever came first if none is marked primary yet.
+        const primaryByElement = new Map();
+        validDefects.forEach(d => {
+            const existing = primaryByElement.get(d.elementNumber);
+            if (!existing || d.isPrimary === true) primaryByElement.set(d.elementNumber, d);
+        });
+        const scoredDefects = Array.from(primaryByElement.values());
+        const bciDefects = scoredDefects.map(d => {
           if (d.defectCombined === '0.0') {
             return { severity: 1, extent: 'A', elementNumber: d.elementNumber };
           }
@@ -409,6 +420,28 @@ function refreshBCIScores() {
 }
 
 window.refreshBCIScores = refreshBCIScores;
+
+// Headless equivalent of opening the modal, selecting the "No Defects" /
+// "Not Inspected" segment, and clicking Save — reuses saveChanges() so the
+// sessionStorage/BCI/row-update bookkeeping stays in exactly one place.
+function quickRecordElement(buttonRow, status, comment) {
+  const mainRow = findMainRow(buttonRow);
+  if (!mainRow) return;
+  currentRow = mainRow;
+  currentExpandableRow = null;
+  document.getElementById("severity").value = "1";
+  document.getElementById("extent").value = "A";
+  document.getElementById("works").value = "N";
+  document.getElementById("priority").value = "";
+  document.getElementById("cost").value = "";
+  document.getElementById("remedialWorks").value = "";
+  const commentFieldId = status === 'no-defects' ? 'of-no-defects-comment' : 'of-not-inspected-comment';
+  document.getElementById(commentFieldId).value = comment || '';
+  const modal = document.getElementById('modal');
+  modal.dataset.modalState = status;
+  modal.dataset.ofState = status;
+  saveChanges();
+}
 
 function saveChanges() {
   console.group("===== SAVING DEFECT DATA =====");
@@ -513,6 +546,19 @@ function saveChanges() {
     finalWorks = works;
   }
 
+  let defects = JSON.parse(sessionStorage.getItem('defects')) || [];
+  const isEditing = !!currentExpandableRow?.dataset.timestamp;
+
+  // First defect entered for an element is primary by default (drives BCI
+  // scoring when there are several); later ones default to non-primary
+  // until the user explicitly switches via the .primary-tag toggle.
+  const isFirstForElement = !isEditing && !defects.some(d =>
+    d.elementNumber == elementNumber && d.spanNumber == selectedSpan
+  );
+  const isPrimary = isEditing
+    ? (currentExpandableRow?.querySelector('.primary-tag')?.classList.contains('filled') || false)
+    : isFirstForElement;
+
   const defectData = {
     defectCombined: finalDefectCombined,
     defectType: finalDefectType,
@@ -528,11 +574,8 @@ function saveChanges() {
     elementNumber: elementNumber,
     timestamp: currentExpandableRow?.dataset.timestamp || new Date().toISOString(),
     defectId: `${structureId}_${inspectionDate}_${selectedSpan}_${elementNumber}_${defectCombined}`,
-    isPrimary: currentExpandableRow?.querySelector('.primary-tag')?.classList.contains('filled') || false
+    isPrimary: isPrimary
   };
-
-  let defects = JSON.parse(sessionStorage.getItem('defects')) || [];
-  const isEditing = !!currentExpandableRow?.dataset.timestamp;
 
   if (isEditing) {
     const index = defects.findIndex(d => d.timestamp === currentExpandableRow.dataset.timestamp);
@@ -576,6 +619,14 @@ function saveChanges() {
   if (isEditing) {
     const existingIndex = inspectionData.defects.findIndex(d => d.timestamp === defectData.timestamp);
     if (existingIndex >= 0) {
+      // Carry over any 3D location already placed via locate3d.js — this
+      // edit only touches severity/extent/etc., not the defect's position.
+      const existing = inspectionData.defects[existingIndex];
+      if (existing.x != null && existing.y != null && existing.z != null) {
+        inspectionDefect.x = existing.x;
+        inspectionDefect.y = existing.y;
+        inspectionDefect.z = existing.z;
+      }
       inspectionData.defects[existingIndex] = inspectionDefect;
     } else {
       inspectionData.defects.push(inspectionDefect);
@@ -594,8 +645,10 @@ function saveChanges() {
     updateField(".addDefect", finalDefectCombined);
     const addDefectEl = currentExpandableRow.querySelector(".addDefect");
     if (addDefectEl) addDefectEl.dataset.code = finalDefectCombined;
-    updateField(".addSeverity", finalSeverity);
-    updateField(".addExtent", finalExtent);
+    const sevEl = currentExpandableRow.querySelector(".addSeverity");
+    if (sevEl) sevEl.innerHTML = severityBadgeHTML(finalSeverity);
+    const extEl = currentExpandableRow.querySelector(".addExtent");
+    if (extEl) extEl.innerHTML = extentBadgeHTML(finalExtent);
     updateField(".addWorks", finalWorks);
     updateField(".addPriority", priority);
     updateField(".addCost", cost);
@@ -1012,6 +1065,15 @@ function findMainRow(startRow) {
   return null;
 }
 
+// Colour-coded severity/extent badges for the expandable defect rows (see
+// the matching .sev-*/.ext-* rules in inspection.css).
+function severityBadgeHTML(value) {
+  return value ? `<span class="sev-${value}">${value}</span>` : '';
+}
+function extentBadgeHTML(value) {
+  return value ? `<span class="ext-${value}">${value}</span>` : '';
+}
+
 function addDefectToTable(mainRow, defectData, isRetrieved, isEditable = false) {
   console.group('addDefectToTable Debug');
   console.error('>>> addDefectToTable CALLED', {isRetrieved, isEditable, defect: defectData?.defectCombined});
@@ -1062,7 +1124,9 @@ function addDefectToTable(mainRow, defectData, isRetrieved, isEditable = false) 
     const element = expandableRow.querySelector(selector);
     if (element) {
       const value = defectData[dataKey];
-      element.textContent = value || '';
+      if (selector === '.addSeverity') element.innerHTML = severityBadgeHTML(value);
+      else if (selector === '.addExtent') element.innerHTML = extentBadgeHTML(value);
+      else element.textContent = value || '';
     }
   });
   const defectCode = defectData.defectCombined || '';
@@ -1070,9 +1134,9 @@ function addDefectToTable(mainRow, defectData, isRetrieved, isEditable = false) 
     const defectVal = expandableRow.querySelector('.addDefect');
     if (defectVal) defectVal.innerHTML = '<span style="color:#2d7a6e;font-weight:600;"><i class="fas fa-check-circle"></i> No Defects</span>';
     const sevVal = expandableRow.querySelector('.addSeverity');
-    if (sevVal) sevVal.innerHTML = '<span class="sev-1">1</span>';
+    if (sevVal) sevVal.innerHTML = severityBadgeHTML('1');
     const extVal = expandableRow.querySelector('.addExtent');
-    if (extVal) extVal.textContent = 'A';
+    if (extVal) extVal.innerHTML = extentBadgeHTML('A');
     const worksVal = expandableRow.querySelector('.addWorks');
     if (worksVal) worksVal.textContent = 'N';
     const priorityRow = expandableRow.querySelector('.priority-row');
@@ -1129,17 +1193,26 @@ function addDefectToTable(mainRow, defectData, isRetrieved, isEditable = false) 
   if (addDefectEl) addDefectEl.dataset.code = defectData.defectCombined || '';
   if (isRetrieved) expandableRow.classList.add("retrieved-defect");
   expandableRow.classList.toggle("editable", isEditable);
+  // The primary defect always sits right under the main row; later
+  // non-primary defects are appended after it (but still before any
+  // retrieved-defect row for this span, which stays at the bottom).
   let insertBeforeRow = null;
+  let lastOwnRow = mainRow;
   let nextRow = mainRow.nextElementSibling;
   while (nextRow && !nextRow.classList.contains("main-row")) {
     if (nextRow.classList.contains("retrieved-defect") && nextRow.dataset.span === currentSpan) {
       insertBeforeRow = nextRow;
       break;
     }
+    if (nextRow.classList.contains("expandable-row")) {
+      lastOwnRow = nextRow;
+    }
     nextRow = nextRow.nextElementSibling;
   }
   try {
-    const insertionPoint = insertBeforeRow || mainRow.nextSibling;
+    const insertionPoint = defectData.isPrimary
+      ? mainRow.nextSibling
+      : (insertBeforeRow || lastOwnRow.nextSibling);
     mainRow.parentNode.insertBefore(expandableRow, insertionPoint);
     expandableRow.style.display = "none";
     console.log("Row inserted successfully");
@@ -1191,6 +1264,49 @@ document.addEventListener("DOMContentLoaded", function () {
         openModal();
       }
     }
+  });
+  // Quick actions: "No Defects" / "Not Inspected" skip the full modal and
+  // just ask for an optional comment inline, then save via the same
+  // saveChanges() path the modal uses (see quickRecordElement below).
+  document.getElementById('inspectionElementsTable').addEventListener('click', function (event) {
+    const quickBtn = event.target.closest('.btn-no-defects, .btn-not-inspected');
+    if (quickBtn) {
+      const buttonRow = quickBtn.closest('tr.button-row');
+      const box = buttonRow?.querySelector('.quick-confirm-box');
+      if (!box) return;
+      const status = quickBtn.classList.contains('btn-no-defects') ? 'no-defects' : 'not-inspected';
+      box.dataset.pendingStatus = status;
+      const textarea = box.querySelector('.quick-confirm-comment');
+      textarea.value = '';
+      textarea.style.height = '';
+      const confirmBtn = box.querySelector('.quick-confirm-confirm');
+      confirmBtn.classList.remove('confirm-green', 'confirm-orange');
+      confirmBtn.classList.add(status === 'no-defects' ? 'confirm-green' : 'confirm-orange');
+      box.style.display = 'block';
+      textarea.focus();
+      return;
+    }
+    const cancelBtn = event.target.closest('.quick-confirm-cancel');
+    if (cancelBtn) {
+      const box = cancelBtn.closest('.quick-confirm-box');
+      if (box) box.style.display = 'none';
+      return;
+    }
+    const confirmBtn = event.target.closest('.quick-confirm-confirm');
+    if (confirmBtn) {
+      const box = confirmBtn.closest('.quick-confirm-box');
+      const buttonRow = confirmBtn.closest('tr.button-row');
+      if (!box || !buttonRow) return;
+      const comment = box.querySelector('.quick-confirm-comment').value.trim();
+      quickRecordElement(buttonRow, box.dataset.pendingStatus, comment);
+      box.style.display = 'none';
+    }
+  });
+  // Auto-grow the quick-confirm textarea: slim by default, taller as needed.
+  document.getElementById('inspectionElementsTable').addEventListener('input', function (event) {
+    if (!event.target.classList.contains('quick-confirm-comment')) return;
+    event.target.style.height = 'auto';
+    event.target.style.height = event.target.scrollHeight + 'px';
   });
   document.getElementById('inspectionElementsTable').addEventListener('click', function (event) {
       const target = event.target;
@@ -1266,12 +1382,41 @@ document.addEventListener("DOMContentLoaded", function () {
       const defectTimestamp = expandableRow.dataset.timestamp;
       if (defectTimestamp) {
         let defects = JSON.parse(sessionStorage.getItem('defects')) || [];
+        const deleted = defects.find(defect => defect.timestamp === defectTimestamp);
         defects = defects.filter(defect => defect.timestamp !== defectTimestamp);
+
+        // If the primary defect was just deleted, promote whichever
+        // remaining defect on this element is worst (highest ECS) so the
+        // element always has a primary as long as it still has defects.
+        if (deleted?.isPrimary) {
+          const siblings = defects.filter(d =>
+            d.elementNumber == deleted.elementNumber && d.spanNumber == deleted.spanNumber
+          );
+          if (siblings.length > 0) {
+            const worst = siblings.reduce((worst, d) => {
+              const ecs = calculateECS(`${d.severity}${d.extent}`);
+              const worstEcs = calculateECS(`${worst.severity}${worst.extent}`);
+              return ecs > worstEcs ? d : worst;
+            });
+            worst.isPrimary = true;
+          }
+        }
         sessionStorage.setItem('defects', JSON.stringify(defects));
+
+        let inspectionData = JSON.parse(sessionStorage.getItem('inspectionData') || '{}');
+        if (inspectionData.defects) {
+          inspectionData.defects = inspectionData.defects.filter(d => d.timestamp !== defectTimestamp);
+          inspectionData.defects.forEach(d => {
+            const match = defects.find(def => def.timestamp === d.timestamp);
+            if (match) d.isPrimary = match.isPrimary === true;
+          });
+          sessionStorage.setItem('inspectionData', JSON.stringify(inspectionData));
+        }
       }
       const mainRow = findMainRow(expandableRow);
       expandableRow.remove();
       if (mainRow) {
+        highlightPrimaryDefect(mainRow);
         updateMainRow(mainRow);
         const remainingRows = findAllExpandableRows(mainRow);
         if (remainingRows.length === 0) {
@@ -1605,7 +1750,9 @@ window.setAsPrimaryDefect = function(primaryTagElement) {
         if (tag) tag.classList.remove('filled');
     });
     primaryTagElement.classList.add('filled');
-    updateMainRowWithPrimary(mainRow, currentDefect);
+    // Primary defect always sits right under the main row.
+    mainRow.parentNode.insertBefore(expandableRow, mainRow.nextSibling);
+    updateMainRow(mainRow);
     console.log(`Primary defect set for element ${elementNumber}: ${currentDefect.defectCombined}`);
     showPrimaryFeedback(primaryTagElement);
 };
@@ -1616,13 +1763,6 @@ function showPrimaryFeedback(element) {
     setTimeout(() => {
         element.style.transform = 'scale(1)';
     }, 200);
-}
-
-function updateMainRowWithPrimary(mainRow, primaryDefect) {
-    const mainCells = mainRow.querySelectorAll("td");
-    if (mainCells.length >= 5 && primaryDefect) {
-        mainCells[4].textContent = primaryDefect.defectCombined || '';
-    }
 }
 
 function highlightPrimaryDefect(mainRow) {
@@ -1640,9 +1780,11 @@ function highlightPrimaryDefect(mainRow) {
             const tag = row.querySelector('.primary-tag');
             if (tag && row.dataset.timestamp === primaryDefect.timestamp) {
                 tag.classList.add('filled');
+                // Primary defect always sits right under the main row.
+                mainRow.parentNode.insertBefore(row, mainRow.nextSibling);
             }
         });
-        updateMainRowWithPrimary(mainRow, primaryDefect);
+        updateMainRow(mainRow);
     }
 }
 
@@ -1653,7 +1795,7 @@ if (typeof addDefectToTable === 'function') {
         if (defectData.isPrimary && result) {
             const tag = result.querySelector('.primary-tag');
             if (tag) tag.classList.add('filled');
-            updateMainRowWithPrimary(mainRow, defectData);
+            updateMainRow(mainRow);
         }
         return result;
     };

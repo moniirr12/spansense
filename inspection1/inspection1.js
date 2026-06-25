@@ -66,6 +66,20 @@ let inspectionData = {
     spans: [],
 };
 
+function inspectionTypeFullName(code) {
+    switch (code) {
+        case 'PI': return 'Principal';
+        case 'GI': return 'General';
+        case 'SI': return 'Superficial';
+        default: return '';
+    }
+}
+
+function buildBridgeHeaderText(structureName, typeCode) {
+    const typeName = inspectionTypeFullName(typeCode);
+    return typeName ? `${structureName} ${typeName} Inspection` : `${structureName} Inspection`;
+}
+
 // DOM Elements
 const progressBar = document.getElementById('progress');
 const spanTabs = document.getElementById('span-tabs');
@@ -251,13 +265,13 @@ async function date() {
                 dateUpdated = true;
                 const isoDate = dateStr;
                 sessionStorage.setItem('inspectionDate', isoDate);
-                inspectionDateCell.innerText = isoDate;
+                inspectionDateCell.innerText = formatDate(isoDate);
                 if (window.inspectionData) window.inspectionData.inspectionDate = isoDate;
                 if (typeof inspectionData !== 'undefined' && inspectionData !== window.inspectionData) {
                     inspectionData.inspectionDate = isoDate;
                 }
-                
-                showDraftToast(`Inspection date set to ${isoDate}`);
+
+                showDraftToast(`Inspection date set to ${formatDate(isoDate)}`);
             }
         },
         onClose: function() {
@@ -341,8 +355,8 @@ async function fetchBCIForInspection(bridgeId, inspectionDate) {
                 const bciAvElement = document.getElementById('bciAvResult');
                 const bciCritElement = document.getElementById('bciCritResult');
                 
-                if (bciAvElement) bciAvElement.innerText = avgAv.toFixed(2);
-                if (bciCritElement) bciCritElement.innerText = avgCrit.toFixed(2);
+                if (bciAvElement) setBciValue(bciAvElement, avgAv);
+                if (bciCritElement) setBciValue(bciCritElement, avgCrit);
                 
                 sessionStorage.setItem('bciAv', avgAv.toFixed(2));
                 sessionStorage.setItem('bciCrit', avgCrit.toFixed(2));
@@ -384,8 +398,8 @@ async function fetchLatestInspectionDate(bridgeId) {
 
                 const bciAvElement = document.getElementById('bciAvResult');
                 const bciCritElement = document.getElementById('bciCritResult');
-                if (bciAvElement) bciAvElement.innerText = '100.00';
-                if (bciCritElement) bciCritElement.innerText = '100.00';
+                if (bciAvElement) setBciValue(bciAvElement, 100);
+                if (bciCritElement) setBciValue(bciCritElement, 100);
             }
         } else {
             const lastInspEl = document.getElementById('sidebarLastInsp');
@@ -510,7 +524,7 @@ function populateInspectionForm(data) {
     if (inspectorInput) inspectorInput.value = inspectionData.inspectorName || '';
     
     const dateElement = document.getElementById('inspectionDate');
-    if (dateElement && inspectionData.inspectionDate) dateElement.innerText = inspectionData.inspectionDate;
+    if (dateElement && inspectionData.inspectionDate) dateElement.innerText = formatDate(inspectionData.inspectionDate);
     
     document.querySelectorAll('.inspection-type-btn').forEach(btn => {
         if (btn.dataset.type === inspectionData.inspectionType) {
@@ -778,6 +792,11 @@ document.addEventListener("DOMContentLoaded", function () {
             button.classList.add('selected');
             inspectionData.inspectionType = selectedType;
             console.log('inspectionType updated:', selectedType);
+
+            const headerEl = document.getElementById('bridgeHeader');
+            if (headerEl && inspectionData.structureName) {
+                headerEl.textContent = buildBridgeHeaderText(inspectionData.structureName, selectedType);
+            }
         });
     });
 
@@ -798,7 +817,7 @@ document.addEventListener("DOMContentLoaded", function () {
             }
             
             if (structureId && structureName) {
-                document.getElementById('bridgeHeader').textContent = `${structureName} Inspection`;
+                document.getElementById('bridgeHeader').textContent = buildBridgeHeaderText(structureName, inspectionData.inspectionType);
                 const sidebarBridgeName = document.getElementById('sidebarBridgeName');
                 const sidebarBridgeId = document.getElementById('sidebarBridgeId');
                 if (sidebarBridgeName) sidebarBridgeName.textContent = structureName;
@@ -823,12 +842,17 @@ document.addEventListener("DOMContentLoaded", function () {
                 .then(data => {
                     console.log('📊 Loaded existing inspection:', data);
                     populateInspectionForm(data);
+                    inspectionData.inspectionType = data.inspectionType;
+                    const headerEl = document.getElementById('bridgeHeader');
+                    if (headerEl && structureName) {
+                        headerEl.textContent = buildBridgeHeaderText(structureName, data.inspectionType);
+                    }
                 })
                 .catch(error => {
                     console.error('Failed to load inspection:', error);
                 });
         }
-        
+
         if (structureId) {
             loadBridgePhoto(structureId);
             fetchAndUpdateBridgeData(structureId);
@@ -876,7 +900,10 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             if (confirmed) {
+                // Preserve night mode preference across the clear (see accounts.html's confirmSignOut)
+                const nightMode = localStorage.getItem('nightMode');
                 localStorage.clear();
+                if (nightMode) localStorage.setItem('nightMode', nightMode);
                 sessionStorage.clear();
                 window.location.href = "../map/map.html";
             }

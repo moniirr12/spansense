@@ -276,20 +276,32 @@
                             comments: span.comments || ''
                         }))
                     },
-                    defects: defects.map(defect => ({
-                        spanNumber: Number(defect.spanNumber),
-                        elementNumber: Number(defect.elementNumber),
-                        defectType: defect.defectType,
-                        defectNumber: defect.defectNumber,
-                        severity: defect.severity,
-                        extent: defect.extent,
-                        worksRequired: defect.works || '',
-                        priority: defect.priority || 'M',
-                        cost: defect.cost || 0,
-                        comments: defect.comment || '',
-                        remedial_works: defect.remedialWorks || '',
-                        timestamp: defect.timestamp || new Date().toISOString()
-                    })),
+                    defects: defects.map(defect => {
+                        // 3D location (locate3d.js) lives in the separate
+                        // inspectionData.defects array, keyed by timestamp —
+                        // merge it in here rather than threading it through
+                        // this page's own defects store.
+                        const located = (inspectionData.defects || []).find(d => d.timestamp === defect.timestamp);
+                        const hasLocation = located && located.x != null && located.y != null && located.z != null;
+                        return {
+                            spanNumber: Number(defect.spanNumber),
+                            elementNumber: Number(defect.elementNumber),
+                            defectType: defect.defectType,
+                            defectNumber: defect.defectNumber,
+                            severity: defect.severity,
+                            extent: defect.extent,
+                            worksRequired: defect.works || '',
+                            priority: defect.priority || 'M',
+                            cost: defect.cost || 0,
+                            comments: defect.comment || '',
+                            remedial_works: defect.remedialWorks || '',
+                            timestamp: defect.timestamp || new Date().toISOString(),
+                            posX: hasLocation ? located.x : null,
+                            posY: hasLocation ? located.y : null,
+                            posZ: hasLocation ? located.z : null,
+                            isPrimary: defect.isPrimary === true
+                        };
+                    }),
                     photoData: photoData
                 };
 

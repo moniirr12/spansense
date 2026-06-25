@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpanSense — AI Draft Assistant (Concept Preview)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+:root{
+  --teal:#5b8c8a; --teal-dark:#2c5a57; --green-dark:#2c4a48;
+  --text:#2c3e44; --text-mute:#8a9ba8; --text-mute2:#6a7c8e;
+  --border:#e2e8f0; --border2:#e9edf2;
+  --bg-soft:#fafbfc; --bg-mint:#eef4f2;
+  --ok:#2d7a6e; --ok-bg:#e8f5f0; --ok-border:#b8dcc8;
+  --amber:#BA7517; --amber-bg:#fff8ee; --amber-border:#e8d4b8;
+  --red:#c0392b; --red-bg:#fdecea; --red-border:#f0c4be;
+  --ai:#6c5ce7; --ai-bg:#f1efff; --ai-border:#d9d3fb;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0; font-family:'Inter','Segoe UI',Tahoma,sans-serif; color:var(--text);
+  background:#f4f7f8; padding-top:96px; min-height:100vh;
+}
+a{color:inherit;}
+
+/* ===== NAVBAR ===== */
+.navbar{
+  position:fixed; top:20px; left:50%; transform:translateX(-50%);
+  width:min(1100px,90%); background:rgba(255,255,255,.85); backdrop-filter:blur(20px);
+  border-radius:60px; border:1px solid rgba(255,255,255,.4); box-shadow:0 8px 28px rgba(0,0,0,.08);
+  display:flex; align-items:center; justify-content:space-between; padding:14px 26px; z-index:200;
+}
+.navbar .logo{font-size:1.2rem; font-weight:700; background:linear-gradient(135deg,#5b8c8a,#7ba8a5); -webkit-background-clip:text; -webkit-text-fill-color:transparent;}
+.navbar .crumb{font-size:.78rem; color:var(--text-mute); margin-left:14px;}
+.navbar .crumb a{color:var(--teal); text-decoration:none; font-weight:600;}
+.navbar .right{display:flex; align-items:center; gap:14px;}
+.concept-tag{font-size:.68rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--ai); background:var(--ai-bg); border:1px solid var(--ai-border); padding:5px 12px; border-radius:30px;}
+
+/* ===== PAGE SHELL ===== */
+.page{max-width:1180px; margin:0 auto; padding:0 24px 80px;}
+
+.intro-panel{
+  background:linear-gradient(135deg,#ffffff,#f7fbfa); border:1px solid var(--border2); border-radius:24px;
+  padding:24px 28px; margin-bottom:28px; box-shadow:0 6px 20px rgba(0,0,0,.04);
+}
+.intro-panel h1{font-size:1.4rem; margin:0 0 6px; color:var(--green-dark);}
+.intro-panel p{margin:0 0 10px; color:var(--text-mute2); font-size:.92rem; line-height:1.55; max-width:760px;}
+.intro-bullets{display:flex; gap:14px; flex-wrap:wrap; margin-top:14px;}
+.intro-bullet{display:flex; align-items:center; gap:8px; font-size:.78rem; color:var(--text-mute2); background:var(--bg-soft); border:1px solid var(--border2); padding:7px 13px; border-radius:30px;}
+.intro-bullet i{color:var(--teal);}
+
+/* ===== STEPPER (wizard progress) ===== */
+.wizard-steps{display:flex; align-items:center; justify-content:center; gap:0; margin-bottom:28px; user-select:none;}
+.wizard-step{display:flex; align-items:center; gap:10px; padding:8px 18px; border-radius:30px; font-size:.8rem; font-weight:600; color:var(--text-mute); transition:.2s;}
+.wizard-step .num{width:24px; height:24px; border-radius:50%; background:#e9edf2; color:var(--text-mute); display:flex; align-items:center; justify-content:center; font-size:.74rem; font-weight:700;}
+.wizard-step.active{color:var(--green-dark); background:var(--bg-mint);}
+.wizard-step.active .num{background:var(--teal); color:#fff;}
+.wizard-step.done .num{background:var(--ok); color:#fff;}
+.wizard-step.done{color:var(--ok);}
+.wizard-connector{width:46px; height:2px; background:var(--border); margin:0 2px;}
+
+/* ===== SCREENS ===== */
+.screen{display:none;}
+.screen.active{display:block; animation:fadeIn .25s ease;}
+@keyframes fadeIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+.card{background:#fff; border:1px solid var(--border2); border-radius:24px; box-shadow:0 6px 20px rgba(0,0,0,.04); padding:26px 28px;}
+.card + .card{margin-top:20px;}
+.card-title{font-size:1.08rem; font-weight:700; color:var(--green-dark); margin:0 0 4px; display:flex; align-items:center; gap:8px;}
+.card-sub{font-size:.82rem; color:var(--text-mute); margin:0 0 20px;}
+
+/* ===== CAPTURE SCREEN ===== */
+.context-chip{display:inline-flex; align-items:center; gap:8px; background:var(--bg-mint); color:var(--teal-dark); border:1px solid #d6e6e3; padding:7px 14px; border-radius:30px; font-size:.78rem; font-weight:600; margin-bottom:22px;}
+
+.field-label{font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-mute); margin-bottom:10px; display:flex; align-items:center; justify-content:space-between;}
+
+.photo-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:12px; margin-bottom:26px;}
+.photo-thumb{position:relative; height:90px; border-radius:14px; overflow:hidden; display:flex; align-items:center; justify-content:center; color:#fff; font-size:1.3rem; box-shadow:inset 0 0 0 1px rgba(0,0,0,.04);}
+.photo-thumb img{width:100%; height:100%; object-fit:cover;}
+.photo-thumb .fname{position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,.45); backdrop-filter:blur(2px); color:#fff; font-size:.6rem; padding:4px 6px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.photo-add{border:2px dashed var(--border); border-radius:14px; height:90px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; color:var(--text-mute); cursor:pointer; transition:.2s; background:var(--bg-soft);}
+.photo-add:hover{border-color:var(--teal); color:var(--teal);}
+.photo-add i{font-size:1.2rem;}
+.photo-add span{font-size:.65rem; font-weight:600;}
+
+textarea.notes-input{width:100%; min-height:110px; resize:vertical; border:1px solid var(--border); border-radius:16px; padding:14px 16px; font-family:inherit; font-size:.88rem; color:var(--text); background:var(--bg-soft);}
+textarea.notes-input:focus{outline:none; border-color:var(--teal);}
+
+.voice-row{display:flex; align-items:center; gap:12px; margin-top:12px;}
+.btn-voice{display:flex; align-items:center; gap:8px; background:#fff; border:1px solid var(--border); border-radius:30px; padding:9px 16px; font-size:.8rem; font-weight:600; color:var(--text-mute2); cursor:pointer; transition:.2s;}
+.btn-voice:hover{border-color:var(--teal); color:var(--teal-dark);}
+.btn-voice.recording{background:var(--red-bg); border-color:var(--red-border); color:var(--red);}
+.rec-dot{width:8px; height:8px; border-radius:50%; background:var(--red); animation:pulseDot 1s infinite;}
+@keyframes pulseDot{0%,100%{opacity:1;}50%{opacity:.25;}}
+.voice-hint{font-size:.76rem; color:var(--text-mute); font-style:italic;}
+.toast{display:inline-flex; align-items:center; gap:6px; font-size:.76rem; color:var(--ok); font-weight:600; opacity:0; transition:opacity .3s;}
+.toast.show{opacity:1;}
+
+.generate-bar{margin-top:28px; display:flex; align-items:center; gap:18px; flex-wrap:wrap;}
+.btn-primary-lg{background:linear-gradient(135deg,var(--teal),var(--teal-dark)); color:#fff; border:none; padding:15px 28px; border-radius:30px; font-size:.95rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:10px; box-shadow:0 8px 22px rgba(91,140,138,.35); transition:.2s;}
+.btn-primary-lg:hover{transform:translateY(-1px); box-shadow:0 10px 26px rgba(91,140,138,.45);}
+.generate-hint{font-size:.78rem; color:var(--text-mute); max-width:320px; line-height:1.4;}
+
+/* ===== PROCESSING SCREEN ===== */
+.processing-wrap{display:flex; flex-direction:column; align-items:center; text-align:center; padding:50px 20px 30px;}
+.proc-icon{width:74px; height:74px; border-radius:50%; background:var(--ai-bg); color:var(--ai); display:flex; align-items:center; justify-content:center; font-size:1.8rem; margin-bottom:20px; animation:procPulse 1.4s infinite;}
+@keyframes procPulse{0%,100%{box-shadow:0 0 0 0 rgba(108,92,231,.25);}50%{box-shadow:0 0 0 16px rgba(108,92,231,0);}}
+.proc-title{font-size:1.15rem; font-weight:700; color:var(--green-dark); margin-bottom:6px;}
+.proc-sub{font-size:.82rem; color:var(--text-mute); margin-bottom:28px;}
+.proc-steps{list-style:none; padding:0; margin:0 0 26px; width:100%; max-width:420px; text-align:left;}
+.proc-steps li{display:flex; align-items:center; gap:12px; padding:9px 4px; font-size:.85rem; color:var(--border); color:#c7d0d6; transition:.25s;}
+.proc-steps li .chk{width:20px; height:20px; border-radius:50%; border:2px solid #e2e8f0; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:.6rem; transition:.25s;}
+.proc-steps li.done{color:var(--text);}
+.proc-steps li.done .chk{background:var(--ok); border-color:var(--ok); color:#fff;}
+.proc-steps li.active{color:var(--green-dark); font-weight:600;}
+.proc-steps li.active .chk{border-color:var(--ai);}
+.proc-progress-track{width:100%; max-width:420px; height:8px; background:#eef1f3; border-radius:10px; overflow:hidden; margin-bottom:10px;}
+.proc-progress-fill{height:100%; width:0%; background:linear-gradient(90deg,var(--ai),var(--teal)); transition:width .4s ease;}
+.proc-pct{font-size:.74rem; color:var(--text-mute); margin-bottom:26px;}
+.btn-continue{display:none; background:var(--teal); color:#fff; border:none; padding:12px 24px; border-radius:30px; font-size:.85rem; font-weight:700; cursor:pointer;}
+
+/* ===== REVIEW SCREEN ===== */
+.summary-banner{display:flex; align-items:center; gap:16px; background:var(--ai-bg); border:1px solid var(--ai-border); border-radius:20px; padding:16px 22px; margin-bottom:18px; flex-wrap:wrap;}
+.summary-banner .ic{width:42px; height:42px; border-radius:50%; background:var(--ai); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0;}
+.summary-banner .txt{flex:1; min-width:220px;}
+.summary-banner .txt b{color:var(--green-dark);}
+.summary-banner .txt .note{display:block; font-size:.74rem; color:var(--text-mute2); margin-top:2px;}
+.stat-chip{font-size:.74rem; font-weight:700; padding:6px 12px; border-radius:20px; white-space:nowrap;}
+.stat-chip.high{background:var(--ok-bg); color:var(--ok); border:1px solid var(--ok-border);}
+.stat-chip.low{background:var(--amber-bg); color:var(--amber); border:1px solid var(--amber-border);}
+
+.toolbar-row{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:18px;}
+.filter-pills{display:flex; gap:8px; flex-wrap:wrap;}
+.f-pill{font-size:.74rem; font-weight:600; color:var(--text-mute2); background:#fff; border:1px solid var(--border); padding:7px 14px; border-radius:30px; cursor:pointer; transition:.2s;}
+.f-pill:hover{border-color:var(--teal);}
+.f-pill.on{background:var(--bg-mint); border-color:var(--teal); color:var(--teal-dark);}
+.btn-accept-bulk{background:var(--ok); color:#fff; border:none; padding:9px 16px; border-radius:30px; font-size:.78rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px;}
+.btn-accept-bulk:hover{background:#236358;}
+
+.draft-card{background:#fff; border:1px solid var(--border2); border-radius:22px; padding:20px 22px; margin-bottom:16px; transition:.2s; position:relative;}
+.draft-card.conf-high{border-left:4px solid var(--ok);}
+.draft-card.conf-medium{border-left:4px solid var(--amber);}
+.draft-card.conf-low{border-left:4px solid var(--red);}
+.draft-card.conf-manual{border-left:4px solid var(--text-mute);}
+.draft-card.status-accepted{background:var(--ok-bg);}
+.draft-card.status-discarded{opacity:.45;}
+.draft-card.status-discarded .card-body{pointer-events:none;}
+
+.dc-top{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:14px;}
+.ai-badge{display:inline-flex; align-items:center; gap:7px; font-size:.72rem; font-weight:700; padding:5px 12px; border-radius:30px;}
+.ai-badge.high{background:var(--ok-bg); color:var(--ok);}
+.ai-badge.medium{background:var(--amber-bg); color:var(--amber);}
+.ai-badge.low{background:var(--red-bg); color:var(--red);}
+.ai-badge.manual{background:#eef0f2; color:var(--text-mute2);}
+.dc-actions{display:flex; gap:8px; align-items:center;}
+.status-pill{font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; padding:5px 10px; border-radius:20px; background:#eef0f2; color:var(--text-mute2);}
+.status-pill.accepted{background:var(--ok); color:#fff;}
+.status-pill.discarded{background:#cbd3d8; color:#fff;}
+.btn-mini{border:1px solid var(--border); background:#fff; color:var(--text-mute2); font-size:.74rem; font-weight:700; padding:7px 13px; border-radius:30px; cursor:pointer; display:flex; align-items:center; gap:6px; transition:.2s;}
+.btn-mini:hover{border-color:var(--teal); color:var(--teal-dark);}
+.btn-mini.accept-btn:hover{border-color:var(--ok); color:var(--ok); background:var(--ok-bg);}
+.btn-mini.discard-btn:hover{border-color:var(--red); color:var(--red); background:var(--red-bg);}
+
+.source-row{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:16px;}
+.src-photo{width:34px; height:34px; border-radius:8px; overflow:hidden; flex-shrink:0; box-shadow:0 0 0 1px rgba(0,0,0,.06);}
+.src-photo img{width:100%; height:100%; object-fit:cover;}
+.src-note-chip{display:flex; align-items:center; gap:7px; background:var(--bg-soft); border:1px solid var(--border2); border-radius:30px; padding:6px 13px; font-size:.74rem; color:var(--text-mute2); font-style:italic; max-width:460px;}
+.src-note-chip i{color:var(--text-mute); flex-shrink:0;}
+
+.dc-grid{display:grid; grid-template-columns:140px 1fr; gap:20px;}
+.dc-badges{display:flex; flex-direction:column; gap:12px;}
+.mini-badge{background:var(--bg-soft); border:1px solid var(--border2); border-radius:14px; padding:10px 12px; text-align:center;}
+.mini-badge .mb-label{font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-mute); margin-bottom:8px;}
+.mini-stepper{display:flex; gap:4px; justify-content:center;}
+.mini-step{width:24px; height:24px; border-radius:7px; border:1px solid var(--border); background:#fff; font-size:.66rem; font-weight:700; color:var(--text-mute2); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:.15s;}
+.mini-step:hover{border-color:var(--teal);}
+.mini-step.active{background:var(--teal); border-color:var(--teal); color:#fff;}
+.mini-toggle-row{display:flex; gap:4px; justify-content:center;}
+.mini-toggle{flex:1; padding:6px 4px; font-size:.66rem; font-weight:700; border:1px solid var(--border); background:#fff; color:var(--text-mute2); cursor:pointer; border-radius:7px;}
+.mini-toggle.active{background:var(--teal); border-color:var(--teal); color:#fff;}
+
+.dc-content .content-row{display:flex; align-items:flex-start; gap:12px; padding:9px 0; border-bottom:1px solid var(--border2);}
+.dc-content .content-row:last-child{border-bottom:none;}
+.row-label{width:78px; flex-shrink:0; font-size:.66rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-mute); padding-top:6px;}
+.row-input-wrap{flex:1; display:flex; gap:8px; flex-wrap:wrap;}
+.dc-select, .dc-input{border:1px solid var(--border); border-radius:9px; padding:7px 10px; font-size:.8rem; font-family:inherit; color:var(--text); background:#fff;}
+.dc-select.elem-type{flex:1.4; min-width:160px;}
+.dc-select.elem-num{flex:1.6; min-width:180px;}
+.dc-input.elem-free{flex:1; min-width:200px;}
+.dc-input.cost-input{width:110px;}
+textarea.dc-textarea{flex:1; min-width:220px; border:1px solid var(--border); border-radius:10px; padding:9px 11px; font-family:inherit; font-size:.82rem; resize:vertical; min-height:54px; color:var(--text);}
+.comment-wrap{display:flex; flex-direction:column; gap:6px; flex:1;}
+.regen-btn{align-self:flex-start; font-size:.7rem; font-weight:700; color:var(--ai); background:var(--ai-bg); border:1px solid var(--ai-border); padding:5px 11px; border-radius:20px; cursor:pointer; display:flex; align-items:center; gap:5px;}
+.regen-btn:hover{background:#e6e1fc;}
+
+.dc-needs-review{margin-top:14px; background:var(--red-bg); border:1px solid var(--red-border); color:var(--red); font-size:.75rem; font-weight:600; padding:9px 13px; border-radius:12px; display:flex; align-items:center; gap:8px;}
+
+/* unmatched photos */
+.unmatched-card{border:1px dashed var(--border); background:var(--bg-soft);}
+.unmatched-item{display:flex; align-items:center; gap:14px; padding:12px 0; border-bottom:1px solid var(--border2);}
+.unmatched-item:last-child{border-bottom:none;}
+.unmatched-thumb{width:54px; height:54px; border-radius:10px; overflow:hidden; flex-shrink:0;}
+.unmatched-thumb img{width:100%; height:100%; object-fit:cover;}
+.unmatched-info{flex:1; min-width:160px;}
+.unmatched-info .fn{font-size:.82rem; font-weight:600; color:var(--text);}
+.unmatched-info .reason{font-size:.74rem; color:var(--text-mute); font-style:italic;}
+.unmatched-actions{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+
+.bottom-continue{display:flex; align-items:center; justify-content:space-between; margin-top:24px; padding-top:18px; border-top:1px solid var(--border2); flex-wrap:wrap; gap:14px;}
+.progress-text{font-size:.8rem; color:var(--text-mute2);}
+.progress-text b{color:var(--green-dark);}
+
+/* ===== CONFIRM SCREEN ===== */
+.confirm-table{width:100%; border-collapse:collapse; font-size:.84rem;}
+.confirm-table th{text-align:left; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:var(--text-mute); padding:8px 10px; border-bottom:2px solid var(--border2);}
+.confirm-table td{padding:11px 10px; border-bottom:1px solid var(--border2); color:var(--text);}
+.sev-pill, .ext-pill{display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:6px; background:var(--bg-mint); color:var(--teal-dark); font-weight:700; font-size:.74rem;}
+.warn-banner{display:flex; align-items:center; gap:10px; background:var(--amber-bg); border:1px solid var(--amber-border); color:var(--amber); font-size:.82rem; font-weight:600; padding:12px 16px; border-radius:14px; margin-bottom:18px;}
+.warn-banner a{color:var(--amber); text-decoration:underline; cursor:pointer;}
+
+.bci-impact{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:18px;}
+.bci-box{background:var(--bg-soft); border:1px solid var(--border2); border-radius:16px; padding:16px 18px;}
+.bci-box .lbl{font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-mute); margin-bottom:8px;}
+.bci-flow{display:flex; align-items:center; gap:10px; font-size:1.3rem; font-weight:800; color:var(--green-dark);}
+.bci-flow .arrow{color:var(--red); font-size:1rem;}
+.bci-flow .after{color:var(--red);}
+
+details.json-details{margin-top:20px; background:var(--bg-soft); border:1px solid var(--border2); border-radius:14px; padding:12px 16px;}
+details.json-details summary{cursor:pointer; font-size:.82rem; font-weight:700; color:var(--teal-dark);}
+details.json-details pre{font-size:.74rem; line-height:1.5; overflow:auto; max-height:340px; background:#1e2a2f; color:#c5d3d9; padding:14px; border-radius:10px; margin-top:12px;}
+
+.save-bar{display:flex; align-items:center; justify-content:flex-end; gap:14px; margin-top:24px;}
+.btn-ghost{background:#fff; border:1px solid var(--border); color:var(--text-mute2); padding:12px 20px; border-radius:30px; font-size:.85rem; font-weight:700; cursor:pointer;}
+
+/* saving overlay + success */
+.save-overlay{position:fixed; inset:0; background:rgba(20,30,32,.55); display:none; align-items:center; justify-content:center; z-index:500;}
+.save-overlay.show{display:flex;}
+.save-box{background:#fff; border-radius:24px; padding:40px 46px; text-align:center; max-width:340px; box-shadow:0 20px 50px rgba(0,0,0,.25);}
+.save-box .ic{width:60px; height:60px; border-radius:50%; background:var(--bg-mint); color:var(--teal); display:flex; align-items:center; justify-content:center; font-size:1.5rem; margin:0 auto 16px;}
+.save-box.success .ic{background:var(--ok-bg); color:var(--ok);}
+.save-box h3{margin:0 0 6px; font-size:1.05rem; color:var(--green-dark);}
+.save-box p{margin:0; font-size:.82rem; color:var(--text-mute);}
+.save-actions{display:flex; gap:10px; margin-top:20px; justify-content:center;}
+
+@media (max-width:760px){
+  .dc-grid{grid-template-columns:1fr;}
+  .dc-badges{flex-direction:row;}
+  .wizard-steps{flex-wrap:wrap; row-gap:8px;}
+  .wizard-connector{width:20px;}
+}
+</style>
+</head>
+<body>
+
+<div class="navbar">
+  <div>
+    <span class="logo">spanSense</span>
+    <span class="crumb"><a href="inspection.html">← Inspection</a> / AI Draft Assistant</span>
+  </div>
+  <div class="right">
+    <span class="concept-tag"><i class="fas fa-flask"></i> Concept Preview — Mock Data Only</span>
+  </div>
+</div>
+
+<div class="page">
+
+  <div class="intro-panel">
+    <h1>AI Draft Assistant</h1>
+    <p>Right now, inspectors open the "Add Defect" modal once per finding and manually set the element, severity, extent,
+       works, priority, cost and comment. This concept flips the order: capture photos and notes quickly in the field,
+       then let AI propose a complete draft of defect entries for the inspector to review, correct and confirm.
+       Nothing below is saved or sent anywhere — it's a clickable mock of the workflow.</p>
+    <div class="intro-bullets">
+      <div class="intro-bullet"><i class="fas fa-bolt"></i> Minutes instead of one modal per defect</div>
+      <div class="intro-bullet"><i class="fas fa-user-check"></i> Inspector still reviews &amp; approves every field</div>
+      <div class="intro-bullet"><i class="fas fa-link"></i> Photos &amp; notes stay attached as evidence</div>
+    </div>
+  </div>
+
+  <div class="wizard-steps" id="wizardSteps">
+    <div class="wizard-step" data-step="capture"><span class="num">1</span>Capture</div>
+    <div class="wizard-connector"></div>
+    <div class="wizard-step" data-step="processing"><span class="num">2</span>AI Processing</div>
+    <div class="wizard-connector"></div>
+    <div class="wizard-step" data-step="review"><span class="num">3</span>Review Draft</div>
+    <div class="wizard-connector"></div>
+    <div class="wizard-step" data-step="confirm"><span class="num">4</span>Confirm &amp; Save</div>
+  </div>
+
+  <!-- ================= SCREEN 1: CAPTURE ================= -->
+  <div class="screen" id="screen-capture">
+    <div class="card">
+      <h2 class="card-title"><i class="fas fa-camera-retro" style="color:var(--teal);"></i> Quick Field Capture</h2>
+      <p class="card-sub">Capture what you see — let AI structure it afterward. No need to pick an element or score anything yet.</p>
+
+      <div class="context-chip"><i class="fas fa-road"></i> Span 2 · Pier 1 to Pier 2 · General Inspection</div>
+
+      <div class="field-label">Photos <span id="photoCount">6 added</span></div>
+      <div class="photo-grid" id="photoGrid"></div>
+      <input type="file" id="photoFileInput" accept="image/*" multiple hidden>
+
+      <div class="field-label">Field Notes</div>
+      <textarea class="notes-input" id="notesInput">Heavy rust on the north girder near joint 3, looks worse than last year — flaking, some section loss visible. Hairline crack along the deck soffit around mid-span 2, roughly 2m long, not through yet. Scour visible at the base of pier 1, maybe half a metre deep. Joint 3 elastomeric is leaking after rain.</textarea>
+      <div class="voice-row">
+        <button class="btn-voice" id="voiceBtn"><i class="fas fa-microphone"></i> <span id="voiceBtnLabel">Record voice note</span></button>
+        <span class="voice-hint" id="voiceHint">Tap to dictate a finding instead of typing it.</span>
+        <span class="toast" id="voiceToast"><i class="fas fa-check-circle"></i> Transcribed and added to notes</span>
+      </div>
+
+      <div class="generate-bar">
+        <button class="btn-primary-lg" id="generateBtn"><i class="fas fa-wand-magic-sparkles"></i> Generate Draft with AI</button>
+        <span class="generate-hint">AI will read your photos and notes, match them to inspection elements, and draft scored defect entries for you to review.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= SCREEN 2: PROCESSING ================= -->
+  <div class="screen" id="screen-processing">
+    <div class="card">
+      <div class="processing-wrap">
+        <div class="proc-icon"><i class="fas fa-wand-magic-sparkles"></i></div>
+        <div class="proc-title">Analysing your inspection notes…</div>
+        <div class="proc-sub">This usually takes 10–20 seconds in production.</div>
+        <ul class="proc-steps" id="procSteps">
+          <li data-step="0"><span class="chk"></span> Reading 6 photos</li>
+          <li data-step="1"><span class="chk"></span> Transcribing voice note</li>
+          <li data-step="2"><span class="chk"></span> Matching findings to inspection elements</li>
+          <li data-step="3"><span class="chk"></span> Scoring severity &amp; extent</li>
+          <li data-step="4"><span class="chk"></span> Drafting inspector comments</li>
+        </ul>
+        <div class="proc-progress-track"><div class="proc-progress-fill" id="procFill"></div></div>
+        <div class="proc-pct" id="procPct">0%</div>
+        <button class="btn-continue" id="procContinueBtn">Continue to Review <i class="fas fa-arrow-right"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= SCREEN 3: REVIEW ================= -->
+  <div class="screen" id="screen-review">
+    <div class="summary-banner">
+      <div class="ic"><i class="fas fa-sparkles"></i></div>
+      <div class="txt">
+        <span><b>AI drafted 4 defects</b> from 6 photos and 1 note.</span>
+        <span class="note">Nothing is saved yet — review, edit or discard each card below.</span>
+      </div>
+      <span class="stat-chip high" id="highCountChip">2 high confidence</span>
+      <span class="stat-chip low" id="lowCountChip">2 need review</span>
+    </div>
+
+    <div class="toolbar-row">
+      <div class="filter-pills" id="filterPills">
+        <div class="f-pill on" data-filter="all">All (4)</div>
+        <div class="f-pill" data-filter="high">High confidence</div>
+        <div class="f-pill" data-filter="review">Needs review</div>
+        <div class="f-pill" data-filter="discarded">Discarded</div>
+      </div>
+      <button class="btn-accept-bulk" id="acceptHighBtn"><i class="fas fa-check-double"></i> Accept all high-confidence</button>
+    </div>
+
+    <div id="draftCardsContainer"></div>
+
+    <div class="card unmatched-card">
+      <h2 class="card-title" style="font-size:.95rem;"><i class="fas fa-image" style="color:var(--text-mute);"></i> Unmatched Photos</h2>
+      <p class="card-sub">AI flagged these as possibly defect-relevant but couldn't confidently match them to an element. Assign one manually if needed.</p>
+      <div id="unmatchedContainer"></div>
+    </div>
+
+    <div class="bottom-continue">
+      <span class="progress-text"><b id="reviewedCount">0</b> of 4 reviewed (accepted or discarded)</span>
+      <button class="btn-primary-lg" id="toConfirmBtn">Continue to Confirm <i class="fas fa-arrow-right"></i></button>
+    </div>
+  </div>
+
+  <!-- ================= SCREEN 4: CONFIRM ================= -->
+  <div class="screen" id="screen-confirm">
+    <div class="card">
+      <h2 class="card-title"><i class="fas fa-clipboard-check" style="color:var(--teal);"></i> Confirm &amp; Save</h2>
+      <p class="card-sub">This is exactly what will be written to the inspection record for Span 2.</p>
+
+      <div id="confirmWarning"></div>
+
+      <table class="confirm-table" id="confirmTable">
+        <thead>
+          <tr><th>Element</th><th>Defect</th><th>Sev</th><th>Ext</th><th>Works</th><th>Priority</th><th>Cost</th></tr>
+        </thead>
+        <tbody id="confirmTbody"></tbody>
+      </table>
+
+      <div class="bci-impact">
+        <div class="bci-box">
+          <div class="lbl">BCI Average</div>
+          <div class="bci-flow">91.2 <span class="arrow"><i class="fas fa-arrow-right"></i></span> <span class="after" id="bciAvAfter">84.6</span></div>
+        </div>
+        <div class="bci-box">
+          <div class="lbl">BCI Critical</div>
+          <div class="bci-flow">100.0 <span class="arrow"><i class="fas fa-arrow-right"></i></span> <span class="after" id="bciCritAfter">78.3</span></div>
+        </div>
+      </div>
+
+      <details class="json-details">
+        <summary><i class="fas fa-code"></i> View generated JSON payload</summary>
+        <pre id="jsonPayload"></pre>
+      </details>
+
+      <div class="save-bar">
+        <button class="btn-ghost" id="backToReviewBtn"><i class="fas fa-arrow-left"></i> Back to Review</button>
+        <button class="btn-primary-lg" id="saveInspectionBtn"><i class="fas fa-save"></i> Save Inspection</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- SAVE / SUCCESS OVERLAY -->
+<div class="save-overlay" id="saveOverlay">
+  <div class="save-box" id="saveBox">
+    <div class="ic"><i class="fas fa-save"></i></div>
+    <h3>Saving inspection…</h3>
+    <p>Writing 4 defects to Span 2</p>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// REFERENCE DATA — mirrors the real defectType/defectNumber taxonomy
+// ============================================================
+const defectTypeNames = {
+  1:"Metalwork", 2:"RC & prestressed concrete", 3:"Masonry, brickwork & MC", 4:"Paintwork & coatings",
+  5:"Vegetation", 6:"Foundation", 7:"Invert, apron & riverbed", 8:"Drainage", 9:"Surfacing",
+  10:"Expansion joints", 11:"Embankments", 12:"Bearings", 13:"Impact damage", 14:"Waterproofing",
+  15:"Stone slab bridges", 16:"Timber"
+};
+const defectMapping = {1:[1,2,3,4],2:[2,3,4,5,6],3:[1,2,3,4,5,6,7],4:[1],5:[1,2],6:[1,2,3,4,5,6],7:[1,2],8:[1,2,3,4],9:[1,2,3,4,5,6],10:[1,2,3,4,5,6,7,8,9,10,11,12],11:[1],12:[1,2,3,4,5,6],13:[1],14:[1,2],15:[1],16:[1,2]};
+const defectNumberText = {
+  1:{1:"Rusting",2:"Section loss",3:"Rusting or damage to bolts",4:"Damage to weld"},
+  2:{2:"Spalling",3:"Cracking",4:"Prestressing damage",5:"Delamination",6:"Freeze thaw"},
+  3:{1:"Deformation",2:"Pointing",3:"Arch ring damage",4:"Arch barrel crack",5:"Cracking",6:"Section loss",7:"Bulging or leaning"},
+  4:{1:"Coating damage"},
+  5:{1:"Structural damage",2:"Inspection obstruction"},
+  6:{1:"Settlement",2:"Differential movement",3:"Sliding",4:"Rotation",5:"Scour",6:"Foundation faults"},
+  7:{1:"Scour",2:"Vegetation or silt"},
+  8:{1:"Blockage",2:"Causing stains",3:"Structural damage",4:"Weep hole blockage"},
+  9:{1:"Wear and weathering",2:"Crazing, tracking & fretting",3:"Poor texture",4:"Cracking",5:"Slippery",6:"Cracked flagged surfacing"},
+  10:{1:"Asphaltic plug debonding",2:"Asphaltic plug material loss",3:"Asphaltic plug tracking",4:"Cracking along nosing",5:"Elastomeric and others missing bolts",6:"Elastomeric and others sealant breached",7:"Elastomeric and others road breaking",8:"Elastomeric and others loose fixings",9:"Elastomeric and others component damage",10:"Buried joint cracking",11:"Buried joint sealant damage",12:"Joint leakage"},
+  11:{1:"Deformation or settlement"},
+  12:{1:"Rusting",2:"Offset or dislodged",3:"Sliding",4:"Crazing",5:"Sliding plate damage",6:"Bearing damage"},
+  13:{1:"Impact"},
+  14:{1:"Non structural damage",2:"Structural damage"},
+  15:{1:"Cracking or displacement"},
+  16:{1:"Damage",2:"Section loss"}
+};
+
+const photoGradients = [
+  "linear-gradient(135deg,#c79a6b,#a8744a)", // rust
+  "linear-gradient(135deg,#c79a6b,#a8744a)",
+  "linear-gradient(135deg,#9aa6ad,#6e7a82)", // crack/concrete
+  "linear-gradient(135deg,#6fa3c2,#3d6e8c)", // scour/water
+  "linear-gradient(135deg,#6fa3c2,#3d6e8c)",
+  "linear-gradient(135deg,#7ba8a5,#4a7876)"  // joint/teal
+];
+const photoIcons = ["fa-bolt","fa-bolt","fa-road","fa-water","fa-water","fa-grip-lines"];
+
+function mockPhoto(name, idx){
+  return {name, dataUrl:null, gradient:photoGradients[idx%photoGradients.length], icon:photoIcons[idx%photoIcons.length]};
+}
+
+let STATE = {
+  photos: [
+    mockPhoto("IMG_0231.jpg",0), mockPhoto("IMG_0235.jpg",0),
+    mockPhoto("IMG_0240.jpg",2),
+    mockPhoto("IMG_0248.jpg",3), mockPhoto("IMG_0249.jpg",3),
+    mockPhoto("IMG_0233.jpg",5)
+  ],
+  filter: "all",
+  defects: [
+    {
+      id:"d1", status:"pending", origin:"ai", confidence:0.94,
+      element:"North girder, near Joint 3", defectType:"1", defectNumber:"1",
+      severity:"4", extent:"C", works:"Y", priority:"H", cost:"1800",
+      remedialWorks:"Clean and treat corrosion; spot-prime and repaint; re-inspect at next cycle.",
+      comment:"Moderate-to-severe corrosion observed on the north girder near expansion joint 3, with flaking and early section loss. Consistent with long-term moisture ingress at the joint.",
+      commentAlt:1,
+      sourcePhotos:[0,1], sourceNote:"“Heavy rust on the north girder near joint 3, looks worse than last year — flaking, some section loss visible.”"
+    },
+    {
+      id:"d2", status:"pending", origin:"ai", confidence:0.71,
+      element:"Deck soffit, mid Span 2", defectType:"2", defectNumber:"3",
+      severity:"2", extent:"B", works:"M", priority:"", cost:"",
+      remedialWorks:"",
+      comment:"Hairline crack approximately 2m long along the deck soffit at mid-span. Not through-depth. Recommend monitoring at next inspection.",
+      commentAlt:1,
+      sourcePhotos:[2], sourceNote:"“Hairline crack along the deck soffit around mid-span 2, roughly 2m long, not through yet.”"
+    },
+    {
+      id:"d3", status:"pending", origin:"ai", confidence:0.58,
+      element:"Pier 1, foundation / base", defectType:"6", defectNumber:"5",
+      severity:"4", extent:"C", works:"Y", priority:"H", cost:"3500",
+      remedialWorks:"Place rock armour / scour protection at pier base; schedule diver or underwater survey to confirm extent.",
+      comment:"Scour observed at the base of Pier 1, estimated at approximately 0.5m depth. Foundation exposure risk if progression continues.",
+      commentAlt:1,
+      sourcePhotos:[3,4], sourceNote:"“Scour visible at the base of pier 1, maybe half a metre deep.”"
+    },
+    {
+      id:"d4", status:"pending", origin:"ai", confidence:0.88,
+      element:"Expansion joint 3", defectType:"10", defectNumber:"12",
+      severity:"3", extent:"B", works:"Y", priority:"M", cost:"600",
+      remedialWorks:"Inspect and replace sealant at joint 3; verify drainage path below joint.",
+      comment:"Joint 3 elastomeric seal is leaking following rainfall, indicating a breached or degraded seal.",
+      commentAlt:1,
+      sourcePhotos:[5], sourceNote:"“Joint 3 elastomeric is leaking after rain.”"
+    }
+  ],
+  unmatched: [
+    {id:"u1", name:"IMG_0256.jpg", icon:5, reason:"Possible vegetation growth near abutment — low confidence, no clear element match."},
+    {id:"u2", name:"IMG_0259.jpg", icon:5, reason:"Surface discolouration on parapet — could not confirm a defect type."}
+  ]
+};
+
+const commentVariants = {
+  d1: [
+    "Moderate-to-severe corrosion observed on the north girder near expansion joint 3, with flaking and early section loss. Consistent with long-term moisture ingress at the joint.",
+    "North girder shows advancing corrosion adjacent to joint 3 — flaking paint, surface rust and visible early-stage section loss. Likely driven by water ingress through the joint above."
+  ],
+  d2: [
+    "Hairline crack approximately 2m long along the deck soffit at mid-span. Not through-depth. Recommend monitoring at next inspection.",
+    "A ~2m hairline crack runs along the soffit near mid-span 2. Appears surface-level only; suggest re-measuring at the next cycle to confirm it is not progressing."
+  ],
+  d3: [
+    "Scour observed at the base of Pier 1, estimated at approximately 0.5m depth. Foundation exposure risk if progression continues.",
+    "Pier 1 base shows scour to roughly 0.5m depth. If this progresses further it may begin exposing the footing — worth a closer underwater check."
+  ],
+  d4: [
+    "Joint 3 elastomeric seal is leaking following rainfall, indicating a breached or degraded seal.",
+    "Leakage noted at joint 3's elastomeric seal after rain — points to a breach or general degradation of the sealant."
+  ]
+};
+
+// ============================================================
+// HELPERS
+// ============================================================
+function confLevel(conf){
+  if(conf == null) return "manual";
+  if(conf >= 0.85) return "high";
+  if(conf >= 0.6) return "medium";
+  return "low";
+}
+function confLabel(d){
+  if(d.origin === "manual") return '<i class="fas fa-hand-pointer"></i> Manually tagged';
+  const pct = Math.round(d.confidence*100);
+  return `<i class="fas fa-sparkles"></i> AI Draft · ${pct}% confidence`;
+}
+
+function goTo(screen){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById("screen-"+screen).classList.add("active");
+  const order = ["capture","processing","review","confirm"];
+  const idx = order.indexOf(screen);
+  document.querySelectorAll(".wizard-step").forEach(el=>{
+    const stepIdx = order.indexOf(el.dataset.step);
+    el.classList.remove("active","done");
+    if(stepIdx < idx) el.classList.add("done");
+    else if(stepIdx === idx) el.classList.add("active");
+  });
+}
+
+// ============================================================
+// SCREEN 1 — CAPTURE
+// ============================================================
+function renderPhotos(){
+  const grid = document.getElementById("photoGrid");
+  grid.innerHTML = "";
+  STATE.photos.forEach(p=>{
+    const div = document.createElement("div");
+    div.className = "photo-thumb";
+    if(p.dataUrl){
+      div.innerHTML = `<img src="${p.dataUrl}"><div class="fname">${p.name}</div>`;
+    } else {
+      div.style.background = p.gradient;
+      div.innerHTML = `<i class="fas ${p.icon}"></i><div class="fname">${p.name}</div>`;
+    }
+    grid.appendChild(div);
+  });
+  const addTile = document.createElement("div");
+  addTile.className = "photo-add";
+  addTile.innerHTML = `<i class="fas fa-plus"></i><span>Add Photos</span>`;
+  addTile.onclick = ()=>document.getElementById("photoFileInput").click();
+  grid.appendChild(addTile);
+  document.getElementById("photoCount").textContent = STATE.photos.length + " added";
+}
+
+document.getElementById("photoFileInput").addEventListener("change", function(e){
+  const files = Array.from(e.target.files || []);
+  let remaining = files.length;
+  if(!remaining) return;
+  files.forEach(file=>{
+    const reader = new FileReader();
+    reader.onload = function(ev){
+      STATE.photos.push({name:file.name, dataUrl: ev.target.result});
+      renderPhotos();
+    };
+    reader.readAsDataURL(file);
+  });
+  e.target.value = "";
+});
+
+// voice note mock
+let recording = false, recTimer = null, recSeconds = 0;
+document.getElementById("voiceBtn").addEventListener("click", function(){
+  const btn = this, label = document.getElementById("voiceBtnLabel"), hint = document.getElementById("voiceHint");
+  if(!recording){
+    recording = true; recSeconds = 0;
+    btn.classList.add("recording");
+    btn.innerHTML = '<span class="rec-dot"></span> <span id="voiceBtnLabel">Stop recording (0:00)</span>';
+    hint.textContent = "Listening… tap again to stop.";
+    recTimer = setInterval(()=>{
+      recSeconds++;
+      const m = Math.floor(recSeconds/60), s = String(recSeconds%60).padStart(2,"0");
+      const lbl = document.getElementById("voiceBtnLabel");
+      if(lbl) lbl.textContent = `Stop recording (${m}:${s})`;
+    },1000);
+  } else {
+    recording = false;
+    clearInterval(recTimer);
+    btn.classList.remove("recording");
+    btn.innerHTML = '<i class="fas fa-microphone"></i> <span id="voiceBtnLabel">Record voice note</span>';
+    hint.textContent = "Transcribing…";
+    setTimeout(()=>{
+      const notes = document.getElementById("notesInput");
+      notes.value += (notes.value.trim() ? " " : "") + "Also noticed light vegetation growth near the north abutment — not urgent, worth a photo next visit.";
+      hint.textContent = "Tap to dictate a finding instead of typing it.";
+      const toast = document.getElementById("voiceToast");
+      toast.classList.add("show");
+      setTimeout(()=>toast.classList.remove("show"), 2400);
+    }, 700);
+  }
+});
+
+document.getElementById("generateBtn").addEventListener("click", function(){
+  goTo("processing");
+  runProcessing();
+});
+
+// ============================================================
+// SCREEN 2 — PROCESSING
+// ============================================================
+function runProcessing(){
+  const steps = document.querySelectorAll("#procSteps li");
+  const fill = document.getElementById("procFill");
+  const pct = document.getElementById("procPct");
+  const continueBtn = document.getElementById("procContinueBtn");
+  steps.forEach(s=>s.classList.remove("done","active"));
+  fill.style.width = "0%";
+  pct.textContent = "0%";
+  continueBtn.style.display = "none";
+
+  let i = 0;
+  function nextStep(){
+    if(i > 0) steps[i-1].classList.remove("active"), steps[i-1].classList.add("done");
+    if(i < steps.length){
+      steps[i].classList.add("active");
+      const p = Math.round(((i+1)/steps.length)*100);
+      fill.style.width = p+"%";
+      pct.textContent = p+"%";
+      i++;
+      setTimeout(nextStep, 650);
+    } else {
+      pct.textContent = "Done — 4 draft defects ready for review";
+      continueBtn.style.display = "inline-flex";
+      setTimeout(()=>{ goTo("review"); renderReview(); }, 600);
+    }
+  }
+  setTimeout(nextStep, 400);
+}
+document.getElementById("procContinueBtn").addEventListener("click", ()=>{ goTo("review"); renderReview(); });
+
+// ============================================================
+// SCREEN 3 — REVIEW
+// ============================================================
+function steppperHTML(id, options, current, fieldName){
+  return `<div class="mini-stepper" data-card="${id}" data-field="${fieldName}">` +
+    options.map(o=>`<div class="mini-step ${String(o)===String(current)?'active':''}" data-val="${o}">${o}</div>`).join("") +
+    `</div>`;
+}
+function toggleRowHTML(id, options, labels, current, fieldName){
+  return `<div class="mini-toggle-row" data-card="${id}" data-field="${fieldName}">` +
+    options.map((o,idx)=>`<div class="mini-toggle ${o===current?'active':''}" data-val="${o}">${labels[idx]}</div>`).join("") +
+    `</div>`;
+}
+function defectTypeOptionsHTML(selected){
+  return Object.keys(defectTypeNames).map(k=>`<option value="${k}" ${k===selected?'selected':''}>${k} ${defectTypeNames[k]}</option>`).join("");
+}
+function defectNumberOptionsHTML(type, selected){
+  return (defectMapping[type]||[]).map(n=>`<option value="${n}" ${String(n)===String(selected)?'selected':''}>${n} ${defectNumberText[type][n]}</option>`).join("");
+}
+
+function cardHTML(d){
+  const lvl = confLevel(d.origin === "manual" ? null : d.confidence);
+  const photosHTML = (d.sourcePhotos||[]).map(idx=>{
+    const p = STATE.photos[idx]; if(!p) return "";
+    return p.dataUrl ? `<div class="src-photo"><img src="${p.dataUrl}"></div>`
+      : `<div class="src-photo" style="background:${p.gradient};display:flex;align-items:center;justify-content:center;color:#fff;"><i class="fas ${p.icon}" style="font-size:.7rem;"></i></div>`;
+  }).join("");
+  const noteHTML = d.sourceNote ? `<div class="src-note-chip"><i class="fas fa-quote-left"></i> ${d.sourceNote}</div>` : "";
+  const showWorksDetail = d.works === "Y";
+  const needsReview = lvl === "low" && d.status === "pending";
+
+  return `
+  <div class="draft-card conf-${lvl} status-${d.status}" data-id="${d.id}">
+    <div class="dc-top">
+      <div class="ai-badge ${lvl}">${confLabel(d)}</div>
+      <div class="dc-actions">
+        <span class="status-pill ${d.status}">${d.status}</span>
+        ${d.status==='pending' ? `
+          <button class="btn-mini accept-btn" data-action="accept"><i class="fas fa-check"></i> Accept</button>
+          <button class="btn-mini discard-btn" data-action="discard"><i class="fas fa-xmark"></i> Discard</button>
+        ` : `<button class="btn-mini" data-action="reset"><i class="fas fa-rotate-left"></i> Undo</button>`}
+      </div>
+    </div>
+    <div class="source-row">${photosHTML}${noteHTML}</div>
+    <div class="card-body">
+      <div class="dc-grid">
+        <div class="dc-badges">
+          <div class="mini-badge">
+            <div class="mb-label">Severity</div>
+            ${steppperHTML(d.id, [1,2,3,4,5], d.severity, "severity")}
+          </div>
+          <div class="mini-badge">
+            <div class="mb-label">Extent</div>
+            ${steppperHTML(d.id, ["A","B","C","D","E"], d.extent, "extent")}
+          </div>
+          <div class="mini-badge">
+            <div class="mb-label">Works</div>
+            ${toggleRowHTML(d.id, ["N","Y","M"], ["No","Yes","Mon"], d.works, "works")}
+          </div>
+        </div>
+        <div class="dc-content">
+          <div class="content-row">
+            <div class="row-label">Element</div>
+            <div class="row-input-wrap">
+              <input class="dc-input elem-free" data-card="${d.id}" data-field="element" value="${d.element}">
+            </div>
+          </div>
+          <div class="content-row">
+            <div class="row-label">Defect</div>
+            <div class="row-input-wrap">
+              <select class="dc-select elem-type" data-card="${d.id}" data-field="defectType">${defectTypeOptionsHTML(d.defectType)}</select>
+              <select class="dc-select elem-num" data-card="${d.id}" data-field="defectNumber">${defectNumberOptionsHTML(d.defectType, d.defectNumber)}</select>
+            </div>
+          </div>
+          ${showWorksDetail ? `
+          <div class="content-row">
+            <div class="row-label">Priority</div>
+            <div class="row-input-wrap">
+              <select class="dc-select" data-card="${d.id}" data-field="priority" style="min-width:110px;">
+                <option value="L" ${d.priority==='L'?'selected':''}>Low</option>
+                <option value="M" ${d.priority==='M'?'selected':''}>Medium</option>
+                <option value="H" ${d.priority==='H'?'selected':''}>High</option>
+              </select>
+              <input class="dc-input cost-input" data-card="${d.id}" data-field="cost" type="number" placeholder="Est. cost" value="${d.cost}">
+            </div>
+          </div>
+          <div class="content-row">
+            <div class="row-label">Remedial</div>
+            <div class="row-input-wrap">
+              <textarea class="dc-textarea" data-card="${d.id}" data-field="remedialWorks" rows="2">${d.remedialWorks}</textarea>
+            </div>
+          </div>` : ``}
+          <div class="content-row">
+            <div class="row-label">Comment</div>
+            <div class="row-input-wrap">
+              <div class="comment-wrap">
+                <textarea class="dc-textarea" data-card="${d.id}" data-field="comment" rows="3">${d.comment}</textarea>
+                <button class="regen-btn" data-action="regen"><i class="fas fa-rotate"></i> Regenerate with AI</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      ${needsReview ? `<div class="dc-needs-review"><i class="fas fa-triangle-exclamation"></i> Low confidence match — please confirm the element and scores before accepting.</div>` : ``}
+    </div>
+  </div>`;
+}
+
+function renderDraftCards(){
+  const container = document.getElementById("draftCardsContainer");
+  let list = STATE.defects;
+  if(STATE.filter === "high") list = list.filter(d=>d.origin!=="manual" && confLevel(d.confidence)==="high");
+  if(STATE.filter === "review") list = list.filter(d=>d.status==="pending" && (d.origin==="manual" || confLevel(d.confidence)!=="high"));
+  if(STATE.filter === "discarded") list = list.filter(d=>d.status==="discarded");
+  container.innerHTML = list.map(cardHTML).join("") || `<p style="color:var(--text-mute);font-size:.85rem;padding:10px 4px;">No cards match this filter.</p>`;
+}
+
+function renderUnmatched(){
+  const container = document.getElementById("unmatchedContainer");
+  if(!STATE.unmatched.length){
+    container.innerHTML = `<p style="color:var(--text-mute);font-size:.82rem;">All photos matched. Nothing left to tag.</p>`;
+    return;
+  }
+  container.innerHTML = STATE.unmatched.map(u=>`
+    <div class="unmatched-item" data-id="${u.id}">
+      <div class="unmatched-thumb" style="background:${photoGradients[u.icon%photoGradients.length]};display:flex;align-items:center;justify-content:center;color:#fff;">
+        <i class="fas ${photoIcons[u.icon%photoIcons.length]}"></i>
+      </div>
+      <div class="unmatched-info">
+        <div class="fn">${u.name}</div>
+        <div class="reason">${u.reason}</div>
+      </div>
+      <div class="unmatched-actions">
+        <button class="btn-mini" data-action="tag"><i class="fas fa-tag"></i> Tag &amp; add as defect</button>
+        <button class="btn-mini discard-btn" data-action="dismiss"><i class="fas fa-xmark"></i> Dismiss</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+function updateSummary(){
+  const total = STATE.defects.length;
+  const ai = STATE.defects.filter(d=>d.origin==="ai");
+  const high = ai.filter(d=>confLevel(d.confidence)==="high").length;
+  const low = ai.filter(d=>confLevel(d.confidence)!=="high").length;
+  document.getElementById("highCountChip").textContent = high + " high confidence";
+  document.getElementById("lowCountChip").textContent = low + " need review";
+  document.querySelector(".summary-banner .txt span").innerHTML =
+    `<b>AI drafted ${total} defects</b> from ${STATE.photos.length} photos and 1 note.`;
+  document.querySelector(".filter-pills [data-filter='all']").textContent = `All (${total})`;
+
+  const reviewed = STATE.defects.filter(d=>d.status!=="pending").length;
+  document.getElementById("reviewedCount").textContent = reviewed;
+}
+
+function renderReview(){
+  renderDraftCards();
+  renderUnmatched();
+  updateSummary();
+}
+
+// review screen event delegation
+document.getElementById("draftCardsContainer").addEventListener("click", function(e){
+  const card = e.target.closest(".draft-card");
+  if(!card) return;
+  const id = card.dataset.id;
+  const d = STATE.defects.find(x=>x.id===id);
+  if(!d) return;
+
+  const step = e.target.closest(".mini-step");
+  if(step){
+    const wrap = step.closest(".mini-stepper");
+    const field = wrap.dataset.field;
+    d[field] = step.dataset.val;
+    renderDraftCards(); updateSummary();
+    return;
+  }
+  const toggle = e.target.closest(".mini-toggle");
+  if(toggle){
+    const wrap = toggle.closest(".mini-toggle-row");
+    d[wrap.dataset.field] = toggle.dataset.val;
+    if(toggle.dataset.val !== "Y"){ d.priority=""; d.cost=""; }
+    else if(!d.priority){ d.priority="M"; }
+    renderDraftCards(); updateSummary();
+    return;
+  }
+  const actionBtn = e.target.closest("[data-action]");
+  if(actionBtn){
+    const action = actionBtn.dataset.action;
+    if(action === "accept"){ d.status = "accepted"; }
+    else if(action === "discard"){ d.status = "discarded"; }
+    else if(action === "reset"){ d.status = "pending"; }
+    else if(action === "regen"){
+      const variants = commentVariants[d.id];
+      if(variants){ d.commentAlt = (d.commentAlt+1) % variants.length; d.comment = variants[d.commentAlt]; }
+    }
+    renderDraftCards(); updateSummary();
+  }
+});
+
+document.getElementById("draftCardsContainer").addEventListener("change", function(e){
+  const card = e.target.closest(".draft-card");
+  if(!card) return;
+  const d = STATE.defects.find(x=>x.id===card.dataset.id);
+  if(!d) return;
+  const field = e.target.dataset.field;
+  if(!field) return;
+  d[field] = e.target.value;
+  if(field === "defectType"){
+    d.defectNumber = defectMapping[e.target.value][0];
+    renderDraftCards();
+  }
+});
+
+document.getElementById("filterPills").addEventListener("click", function(e){
+  const pill = e.target.closest(".f-pill");
+  if(!pill) return;
+  document.querySelectorAll(".f-pill").forEach(p=>p.classList.remove("on"));
+  pill.classList.add("on");
+  STATE.filter = pill.dataset.filter;
+  renderDraftCards();
+});
+
+document.getElementById("acceptHighBtn").addEventListener("click", function(){
+  STATE.defects.forEach(d=>{ if(d.status==="pending" && confLevel(d.confidence)==="high") d.status="accepted"; });
+  renderDraftCards(); updateSummary();
+});
+
+document.getElementById("unmatchedContainer").addEventListener("click", function(e){
+  const item = e.target.closest(".unmatched-item");
+  if(!item) return;
+  const action = e.target.closest("[data-action]")?.dataset.action;
+  const id = item.dataset.id;
+  const u = STATE.unmatched.find(x=>x.id===id);
+  if(!u) return;
+
+  if(action === "dismiss"){
+    STATE.unmatched = STATE.unmatched.filter(x=>x.id!==id);
+    renderUnmatched();
+  } else if(action === "tag"){
+    const newId = "d"+(STATE.defects.length+1)+"_"+id;
+    STATE.defects.push({
+      id:newId, status:"pending", origin:"manual", confidence:null,
+      element:"", defectType:"1", defectNumber:"1",
+      severity:"3", extent:"B", works:"N", priority:"", cost:"",
+      remedialWorks:"", comment:"",
+      sourcePhotos:[], sourceNote:""
+    });
+    STATE.unmatched = STATE.unmatched.filter(x=>x.id!==id);
+    renderUnmatched(); renderDraftCards(); updateSummary();
+  }
+});
+
+document.getElementById("toConfirmBtn").addEventListener("click", function(){
+  goTo("confirm");
+  renderConfirm();
+});
+
+// ============================================================
+// SCREEN 4 — CONFIRM
+// ============================================================
+function renderConfirm(){
+  const accepted = STATE.defects.filter(d=>d.status==="accepted");
+  const pending = STATE.defects.filter(d=>d.status==="pending");
+
+  const warnEl = document.getElementById("confirmWarning");
+  warnEl.innerHTML = pending.length
+    ? `<div class="warn-banner"><i class="fas fa-triangle-exclamation"></i> ${pending.length} draft${pending.length>1?'s':''} still pending review — only accepted defects below will be saved. <a id="goReviewLink">Go back to Review</a></div>`
+    : "";
+  const link = document.getElementById("goReviewLink");
+  if(link) link.addEventListener("click", ()=>{ goTo("review"); renderReview(); });
+
+  const tbody = document.getElementById("confirmTbody");
+  tbody.innerHTML = accepted.map(d=>`
+    <tr>
+      <td>${d.element || "—"}</td>
+      <td>${defectTypeNames[d.defectType]} — ${defectNumberText[d.defectType][d.defectNumber] || ""}</td>
+      <td><span class="sev-pill">${d.severity}</span></td>
+      <td><span class="ext-pill">${d.extent}</span></td>
+      <td>${d.works==='Y'?'Yes':d.works==='M'?'Monitor':'No'}</td>
+      <td>${d.priority || "—"}</td>
+      <td>${d.cost ? "$"+d.cost : "—"}</td>
+    </tr>
+  `).join("") || `<tr><td colspan="7" style="color:var(--text-mute);text-align:center;padding:20px;">No defects accepted yet.</td></tr>`;
+
+  // mock BCI impact: scales down with accepted severity sum, just for illustration
+  const sevSum = accepted.reduce((s,d)=>s+parseInt(d.severity||1,10),0);
+  const avAfter = Math.max(50, (91.2 - sevSum*1.6)).toFixed(1);
+  const critAfter = Math.max(40, (100 - sevSum*5.4)).toFixed(1);
+  document.getElementById("bciAvAfter").textContent = avAfter;
+  document.getElementById("bciCritAfter").textContent = critAfter;
+
+  const payload = accepted.map(d=>({
+    elementNumber: d.element,
+    defectCombined: `${d.defectType}.${d.defectNumber}`,
+    severity: d.severity,
+    extent: d.extent,
+    works: d.works,
+    priority: d.priority,
+    cost: d.cost,
+    remedialWorks: d.remedialWorks,
+    comment: d.comment,
+    aiGenerated: d.origin === "ai",
+    aiConfidence: d.origin === "ai" ? d.confidence : null,
+    source: { photos: (d.sourcePhotos||[]).map(i=>STATE.photos[i]?.name).filter(Boolean), note: d.sourceNote || null }
+  }));
+  document.getElementById("jsonPayload").textContent = JSON.stringify(payload, null, 2);
+
+  document.getElementById("saveInspectionBtn").disabled = accepted.length === 0;
+}
+
+document.getElementById("backToReviewBtn").addEventListener("click", ()=>{ goTo("review"); renderReview(); });
+
+document.getElementById("saveInspectionBtn").addEventListener("click", function(){
+  const accepted = STATE.defects.filter(d=>d.status==="accepted");
+  if(!accepted.length) return;
+  const overlay = document.getElementById("saveOverlay");
+  const box = document.getElementById("saveBox");
+  box.classList.remove("success");
+  box.innerHTML = `<div class="ic"><i class="fas fa-save"></i></div><h3>Saving inspection…</h3><p>Writing ${accepted.length} defect${accepted.length>1?'s':''} to Span 2</p>`;
+  overlay.classList.add("show");
+  setTimeout(()=>{
+    box.classList.add("success");
+    box.innerHTML = `<div class="ic"><i class="fas fa-check"></i></div><h3>Saved successfully</h3><p>${accepted.length} defect${accepted.length>1?'s':''} added to the inspection record.</p>
+      <div class="save-actions"><button class="btn-ghost" id="restartDemoBtn"><i class="fas fa-rotate-left"></i> Restart demo</button></div>`;
+    document.getElementById("restartDemoBtn").addEventListener("click", ()=>{
+      overlay.classList.remove("show");
+      location.reload();
+    });
+  }, 1400);
+});
+
+// ============================================================
+// INIT
+// ============================================================
+renderPhotos();
+goTo("capture");
+</script>
+</body>
+</html>

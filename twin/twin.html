@@ -607,6 +607,13 @@ body {
     border-radius: 50%; transform: translate(-50%,-50%);
     border: 2px solid white;
     box-shadow: 0 0 0 1px #e2e8f0;
+    cursor: pointer;
+    transition: width 0.15s, height 0.15s, box-shadow 0.15s;
+}
+.tl-node:hover { width: 14px; height: 14px; }
+.tl-node.selected {
+    width: 15px; height: 15px;
+    box-shadow: 0 0 0 3px rgba(91, 140, 138, 0.35);
 }
 .tl-node[data-type="GI"] { background:#5b8c8a; }
 .tl-node[data-type="PI"] { background:#4a90b8; }
@@ -914,6 +921,7 @@ html::-webkit-scrollbar { display: none; }
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="bridgeModels.js"></script>
+<script src="shapeBuilders.js"></script>
 <script src="twin.js"></script>
 </body>
 </html>

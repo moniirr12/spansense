@@ -377,9 +377,9 @@ async function loadInspectionDates() {
                         
                         let typeLabel = '';
                         switch(inspectionType) {
-                            case 'GI': typeLabel = 'GI'; break;
-                            case 'PI': typeLabel = 'PI'; break;
-                            case 'SI': typeLabel = 'SI'; break;
+                            case 'GI': typeLabel = 'General'; break;
+                            case 'PI': typeLabel = 'Principal'; break;
+                            case 'SI': typeLabel = 'Superficial'; break;
                             default: typeLabel = inspectionType || 'Inspection';
                         }
                         
@@ -401,9 +401,9 @@ async function loadInspectionDates() {
                     let typeLabel = '';
                     const type = inspection.type || inspection.inspection_type;
                     switch(type) {
-                        case 'GI': typeLabel = 'GI'; break;
-                        case 'PI': typeLabel = 'PI'; break;
-                        case 'SI': typeLabel = 'SI'; break;
+                        case 'GI': typeLabel = 'General'; break;
+                        case 'PI': typeLabel = 'Principal'; break;
+                        case 'SI': typeLabel = 'Superficial'; break;
                         default: typeLabel = type || 'Inspection';
                     }
                     
@@ -435,18 +435,16 @@ function renderCustomDateDropdown() {
 
     panel.innerHTML = '';
     Array.from(select.options).forEach((option) => {
-        // Skip the blank placeholder option — it's not a real choice, so it
-        // shouldn't take up a row in the list (informational disabled
-        // options like "No previous inspections found" still show).
-        if (option.value === '' && !option.disabled) return;
+        const isPlaceholder = option.value === '' && !option.disabled;
 
         const item = document.createElement('div');
-        item.className = 'ddt-item' + (option.disabled ? ' disabled' : '') + (option.selected ? ' active' : '');
+        item.className = 'ddt-item' + (option.disabled ? ' disabled' : '') + (option.selected ? ' active' : '') + (isPlaceholder ? ' placeholder' : '');
         item.textContent = option.textContent;
         if (!option.disabled) {
             item.addEventListener('click', () => {
                 select.value = option.value;
                 select.dispatchEvent(new Event('change'));
+                renderCustomDateDropdown();
                 closeCustomDateDropdown();
             });
         }
@@ -609,8 +607,10 @@ if (inspectionDatesElement) {
                     };
                     
                     populateField(".addDefect", defect.def);
-                    populateField(".addSeverity", defect.s);
-                    populateField(".addExtent", defect.ex);
+                    const sevEl = expandableRow.querySelector(".addSeverity");
+                    if (sevEl) sevEl.innerHTML = severityBadgeHTML(defect.s);
+                    const extEl = expandableRow.querySelector(".addExtent");
+                    if (extEl) extEl.innerHTML = extentBadgeHTML(defect.ex);
                     populateField(".addWorks", defect.w, 'No');
                     populateField(".addPriority", defect.p);
                     populateField(".addCost", defect.cost);

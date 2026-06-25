@@ -1009,9 +1009,7 @@
                 generateUpcomingInspections();
                 updateCalendarViews();
                 loadingSpinner.style.display = 'none';
-                document.getElementById('view-year').style.display = 'block';
-                document.getElementById('view-year').classList.add('active');
-                document.getElementById('view-title').textContent = currentDisplayYear;
+                switchView('year');
             } catch (error) {
                 console.error('Error fetching data:', error);
                 loadingSpinner.innerHTML = '<i class="fas fa-exclamation-triangle"></i>&nbsp; Error loading data. Please refresh.';
@@ -1125,9 +1123,9 @@
         function updateCalendarViews() {
             plannedInspectionsForCalendar = calculatePlannedInspectionsForYear(currentDisplayYear);
             generateYearView(currentDisplayYear);
-            if (document.getElementById('view-month').style.display !== 'none') generateMonthView(currentDisplayYear, new Date().getMonth());
+            if (document.getElementById('view-month').style.display !== 'none') generateMonthView(currentDisplayYear, currentMonth);
             if (document.getElementById('view-gantt').style.display !== 'none') generateGanttView();
-            document.getElementById('view-title').textContent = currentDisplayYear;
+            updateViewTitle();
             document.getElementById('ganttYear').textContent = currentDisplayYear;
         }
 
@@ -1304,15 +1302,8 @@
         function goToToday() {
             const today = new Date();
             currentDisplayYear = today.getFullYear();
-            const currentMonth = today.getMonth();
+            currentMonth = today.getMonth();
             updateCalendarViews();
-            
-            if (currentView === 'month') {
-                generateMonthView(currentDisplayYear, currentMonth);
-                document.getElementById('view-title').textContent = `${today.toLocaleString('default', { month: 'long' })} ${currentDisplayYear}`;
-            } else {
-                document.getElementById('view-title').textContent = currentDisplayYear;
-            }
             document.getElementById('ganttYear').textContent = currentDisplayYear;
             
             const toast = document.createElement('div');
@@ -1337,7 +1328,20 @@
 
         function changeYear(delta) { currentDisplayYear += delta; updateCalendarViews(); }
 
+        function changeMonth(delta) {
+            currentMonth += delta;
+            if (currentMonth < 0) { currentMonth = 11; currentDisplayYear--; }
+            else if (currentMonth > 11) { currentMonth = 0; currentDisplayYear++; }
+            updateCalendarViews();
+        }
+
         let currentView = 'year', currentMonth = new Date().getMonth();
+
+        function updateViewTitle() {
+            document.getElementById('view-title').textContent = currentView === 'month'
+                ? `${new Date(currentDisplayYear, currentMonth, 1).toLocaleString('default', { month: 'long' })} ${currentDisplayYear}`
+                : currentDisplayYear;
+        }
 
         function switchView(view) {
             currentView = view;
@@ -1347,6 +1351,7 @@
             document.querySelector(`.view-btn[data-view="${view}"]`).classList.add('active');
             if (view === 'month') generateMonthView(currentDisplayYear, currentMonth);
             else if (view === 'gantt') { generateGanttView(); setupGanttFilters(); }
+            updateViewTitle();
         }
 
         function switchToMonth(month) {
@@ -1357,10 +1362,11 @@
             document.getElementById('view-month').style.display = 'block';
             document.querySelector('.view-btn[data-view="month"]').classList.add('active');
             currentView = 'month';
+            updateViewTitle();
         }
 
-        document.getElementById('prevYearBtn').addEventListener('click', () => changeYear(-1));
-        document.getElementById('nextYearBtn').addEventListener('click', () => changeYear(1));
+        document.getElementById('prevYearBtn').addEventListener('click', () => currentView === 'month' ? changeMonth(-1) : changeYear(-1));
+        document.getElementById('nextYearBtn').addEventListener('click', () => currentView === 'month' ? changeMonth(1) : changeYear(1));
         document.getElementById('todayBtn').addEventListener('click', goToToday);
         document.getElementById('exportGanttBtn').addEventListener('click', exportGanttToPDF);
         document.querySelectorAll('.view-btn').forEach(btn => btn.addEventListener('click', () => switchView(btn.getAttribute('data-view'))));

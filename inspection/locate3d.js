@@ -76,6 +76,8 @@ function initLocate3DEngine() {
         matDeck: new THREE.MeshStandardMaterial({ color: 0x394645, metalness: 0.25, roughness: 0.6 }),
         matPier: new THREE.MeshStandardMaterial({ color: 0x435150, metalness: 0.15, roughness: 0.7 }),
         matSensor: new THREE.MeshStandardMaterial({ color: 0x6db3d8, emissive: 0x4a90b8, emissiveIntensity: 1.3 }),
+        matStone: new THREE.MeshStandardMaterial({ color: 0x8a8378, metalness: 0.0, roughness: 0.95 }),
+        matConcrete: new THREE.MeshStandardMaterial({ color: 0x9aa39c, metalness: 0.05, roughness: 0.85 }),
         camDistance: camDistance,
         camHeight: camHeight,
         rotY: 0.4,
@@ -183,68 +185,18 @@ function rebuildLocate3DModel(bridge) {
     l3d.glowMesh.position.y = -8.3;
     rig.add(l3d.glowMesh);
 
-    // Deck
-    var deckGeo = new THREE.BoxGeometry(TOTAL_LEN, 0.6, DECK_W);
-    var deck = new THREE.Mesh(deckGeo, l3d.matDeck);
-    deck.position.set(0, deckY, 0);
-    structureGroup.add(deck);
-
-    var edges = new THREE.LineSegments(new THREE.EdgesGeometry(deckGeo), new THREE.LineBasicMaterial({ color: 0x223230 }));
-    edges.position.copy(deck.position);
-    structureGroup.add(edges);
-
-    function addBeam(x1, y1, z1, x2, y2, z2, thickness, material) {
-        var dx = x2 - x1, dy = y2 - y1, dz = z2 - z1;
-        var len = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        var geo = new THREE.BoxGeometry(len, thickness, thickness);
-        var mesh = new THREE.Mesh(geo, material);
-        mesh.position.set((x1 + x2) / 2, (y1 + y2) / 2, (z1 + z2) / 2);
-        mesh.lookAt(x2, y2, z2);
-        mesh.rotateY(Math.PI / 2);
-        structureGroup.add(mesh);
-    }
-
-    // Truss sides
-    if (TRUSS_H > 0) {
-        [DECK_W / 2, -DECK_W / 2].forEach(function(z) {
-            var totalPanels = PANELS_PER_SPAN * NUM_SPANS;
-            var pw = TOTAL_LEN / totalPanels;
-            addBeam(X0, deckY + 0.3, z, X0 + TOTAL_LEN, deckY + 0.3, z, 0.5, l3d.matSteel);
-            addBeam(X0, deckY + TRUSS_H, z, X0 + TOTAL_LEN, deckY + TRUSS_H, z, 0.5, l3d.matSteel);
-            for (var i = 0; i <= totalPanels; i++) {
-                var x = X0 + i * pw;
-                addBeam(x, deckY + 0.3, z, x, deckY + TRUSS_H, z, 0.35, l3d.matSteel);
-                if (i < totalPanels) {
-                    var xNext = x + pw;
-                    if (i % 2 === 0) addBeam(x, deckY + 0.3, z, xNext, deckY + TRUSS_H, z, 0.32, l3d.matSteel);
-                    else addBeam(x, deckY + TRUSS_H, z, xNext, deckY + 0.3, z, 0.32, l3d.matSteel);
-                }
-            }
-        });
-
-        // Cross bracing
-        var totalPanels = PANELS_PER_SPAN * NUM_SPANS;
-        var pw = TOTAL_LEN / totalPanels;
-        for (var i = 0; i <= totalPanels; i += 2) {
-            var x = X0 + i * pw;
-            addBeam(x, deckY + TRUSS_H, -DECK_W / 2, x, deckY + TRUSS_H, DECK_W / 2, 0.3, l3d.matSteel);
-        }
-    }
-
-    // Piers
-    var pierPositions = [];
-    for (var p = 0; p <= NUM_SPANS; p++) {
-        pierPositions.push(X0 + SPAN_LEN * p);
-    }
-    pierPositions.forEach(function(x, idx) {
-        var isAbutment = (idx === 0 || idx === pierPositions.length - 1);
-        var w = isAbutment ? 6 : 2.6;
-        var h = 8.4;
-        var geo = new THREE.BoxGeometry(w, h, isAbutment ? DECK_W + 1 : 3.2);
-        var pier = new THREE.Mesh(geo, l3d.matPier);
-        pier.position.set(x, deckY - 0.3 - h / 2, 0);
-        structureGroup.add(pier);
-    });
+    // Structure - dispatch on the per-bridge model kind, same as twin.js's
+    // rebuildModel(), using the shared builders from twin/shapeBuilders.js.
+    var kind = (bridge.model && bridge.model.kind) || 'truss';
+    var builder = (typeof BUILDERS !== 'undefined' && BUILDERS[kind]) || buildTrussStructure;
+    var shapeCtx = {
+        SPAN_LEN: SPAN_LEN, NUM_SPANS: NUM_SPANS, DECK_W: DECK_W, TRUSS_H: TRUSS_H,
+        PANELS_PER_SPAN: PANELS_PER_SPAN, TOTAL_LEN: TOTAL_LEN, X0: X0, deckY: deckY,
+        structureGroup: structureGroup,
+        matSteel: l3d.matSteel, matDeck: l3d.matDeck, matPier: l3d.matPier,
+        matStone: l3d.matStone, matConcrete: l3d.matConcrete
+    };
+    var frame = builder(bridge, shapeCtx);
 
     // Sensors (procedural, same as twinView)
     generateSensorsLocate3D(bridge).forEach(function(pt) {
@@ -279,10 +231,22 @@ function rebuildLocate3DModel(bridge) {
         locateMarkerMeshes[d.index] = m;
     });
 
-    l3d.camDistance = Math.min(120, Math.max(40, TOTAL_LEN * 0.9));
-    l3d.camHeight = Math.min(20, Math.max(10, TRUSS_H + 6));
+    l3d.camDistance = frame.camDistance;
+    l3d.camHeight = frame.camHeight;
     l3d.rotY = 0.4;
     l3d.rotX = 0.18;
+
+    // Center the camera's look-at target on the model's actual bounding
+    // box, computed AFTER applying the default rig rotation (rotX/rotY
+    // tilt the whole structure, which shifts its apparent center in Y and
+    // Z — a flat Y-only midpoint computed in local space doesn't account
+    // for that, so the model still hugged the bottom/sides once rotated).
+    rig.rotation.set(l3d.rotX, l3d.rotY, 0);
+    var box = new THREE.Box3().setFromObject(rig);
+    var center = box.getCenter(new THREE.Vector3());
+    l3d.lookAtX = center.x;
+    l3d.lookAtY = center.y;
+    l3d.lookAtZ = center.z;
 
     // Defects/sensors/stress default ON here (unlike twinView) — seeing
     // context while placing points is the whole point of this modal.
@@ -503,8 +467,9 @@ function getLocate3DBridgeData() {
     var bciAv = parseFloat(bciEl ? bciEl.textContent : '');
     if (isNaN(bciAv)) bciAv = 100;
 
+    var structureType = sessionStorage.getItem('structureType') || '';
     var model = (typeof getBridgeModel === 'function')
-        ? getBridgeModel(structureId, '')
+        ? getBridgeModel(structureId, structureType)
         : { deckWidth: 9, trussHeight: 6, panelsPerSpan: 6 };
 
     var defects = [];
@@ -520,6 +485,7 @@ function getLocate3DBridgeData() {
         deckWidth: model.deckWidth,
         trussHeight: model.trussHeight,
         panelsPerSpan: model.panelsPerSpan,
+        model: model,
         bciAv: bciAv,
         defects: defects
     };
@@ -634,7 +600,11 @@ function animateLocate3D() {
     requestAnimationFrame(animateLocate3D);
     l3d.rig.rotation.set(l3d.rotX, l3d.rotY, 0);
     l3d.camera.position.set(0, l3d.camHeight, l3d.camDistance);
-    l3d.camera.lookAt(0, 1.5, 0);
+    l3d.camera.lookAt(
+        l3d.lookAtX != null ? l3d.lookAtX : 0,
+        l3d.lookAtY != null ? l3d.lookAtY : 1.5,
+        l3d.lookAtZ != null ? l3d.lookAtZ : 0
+    );
     l3d.renderer.render(l3d.scene, l3d.camera);
 }
 
@@ -681,3 +651,11 @@ function closeLocate3dModal() {
 
 window.openLocate3dModal = openLocate3dModal;
 window.closeLocate3dModal = closeLocate3dModal;
+
+// Close on backdrop click (clicking the dimmed area outside the panels).
+var locate3dModalEl = document.getElementById('locate3dModal');
+if (locate3dModalEl) {
+    locate3dModalEl.addEventListener('click', function(e) {
+        if (e.target === this) closeLocate3dModal();
+    });
+}

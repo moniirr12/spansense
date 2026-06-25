@@ -180,6 +180,10 @@ async function initDatabase() {
         await pool.query(`ALTER TABLE defects ADD COLUMN IF NOT EXISTS pos_y DECIMAL`);
         await pool.query(`ALTER TABLE defects ADD COLUMN IF NOT EXISTS pos_z DECIMAL`);
 
+        // Which defect counts for BCI scoring when an element has more than
+        // one (see setAsPrimaryDefect in inspection.js)
+        await pool.query(`ALTER TABLE defects ADD COLUMN IF NOT EXISTS is_primary BOOLEAN DEFAULT FALSE`);
+
         // Defect photos table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS defect_photos (
@@ -566,6 +570,7 @@ app.get('/api/defectsbci', async (req, res) => {
                 d.priority AS p,
                 d.cost,
                 d.comments AS comments_remarks,
+                d.is_primary,
                 i.inspection_date
             FROM defects d
             JOIN inspections i ON d.inspection_id = i.id
@@ -632,6 +637,7 @@ const PI_CYCLE_YEARS = 6;
 app.get('/api/twin/:structureId', async (req, res) => {
     try {
         const { structureId } = req.params;
+        const { inspectionId } = req.query;
 
         const bridge = await dbGet('SELECT * FROM bridges WHERE id = $1', [structureId]);
         if (!bridge) {
@@ -646,20 +652,25 @@ app.get('/api/twin/:structureId', async (req, res) => {
         const latestInspection = allInspections.length
             ? allInspections[allInspections.length - 1]
             : null;
+        // Which inspection's spans/defects/BCI to show - defaults to latest,
+        // but the timeline panel lets the user pick an earlier one to view.
+        const selectedInspection = inspectionId
+            ? (allInspections.find(i => String(i.id) === String(inspectionId)) || latestInspection)
+            : latestInspection;
 
         let spans = [];
         let defects = [];
-        if (latestInspection) {
+        if (selectedInspection) {
             spans = await dbAll(
                 `SELECT span_number, bci_crit, bci_av FROM inspection_spans
                  WHERE inspection_id = $1 ORDER BY span_number ASC`,
-                [latestInspection.id]
+                [selectedInspection.id]
             );
             const defectRows = await dbAll(
                 `SELECT span_number, element_no, severity, works_required, pos_x, pos_y, pos_z
                  FROM defects WHERE inspection_id = $1
                  ORDER BY span_number, element_no`,
-                [latestInspection.id]
+                [selectedInspection.id]
             );
             defects = defectRows.map(d => {
                 const sev = parseInt(d.severity, 10);
@@ -686,11 +697,11 @@ app.get('/api/twin/:structureId', async (req, res) => {
             return (!worst || parseFloat(s.bci_crit) < parseFloat(worst.bci_crit)) ? s : worst;
         }, null);
 
-        const bciAvg = latestInspection?.overall_bciave != null
-            ? parseFloat(latestInspection.overall_bciave)
+        const bciAvg = selectedInspection?.overall_bciave != null
+            ? parseFloat(selectedInspection.overall_bciave)
             : (avgSpanBCI != null ? avgSpanBCI : (bridge.bci_av != null ? parseFloat(bridge.bci_av) : null));
-        const bciCrit = latestInspection?.overall_bcicrit != null
-            ? parseFloat(latestInspection.overall_bcicrit)
+        const bciCrit = selectedInspection?.overall_bcicrit != null
+            ? parseFloat(selectedInspection.overall_bcicrit)
             : (critSpan ? parseFloat(critSpan.bci_crit) : null);
 
         const openDefects = defects.filter(d => d.worksRequired).length;
@@ -725,6 +736,7 @@ app.get('/api/twin/:structureId', async (req, res) => {
         const timelineRange = years.length ? `${Math.min(...years)} — ${Math.max(...years)}` : null;
 
         const inspections = allInspections.map(i => ({
+            id: i.id,
             type: i.inspection_type || 'GI',
             date: monthYearFmt(new Date(i.inspection_date)),
             timestamp: new Date(i.inspection_date).getTime()
@@ -752,7 +764,9 @@ app.get('/api/twin/:structureId', async (req, res) => {
             lastInspection: lastInspectionLabel,
             nextInspection: nextInspectionLabel,
             isOverdue,
-            openDefects
+            openDefects,
+            selectedInspectionId: selectedInspection ? selectedInspection.id : null,
+            latestInspectionId: latestInspection ? latestInspection.id : null
         });
     } catch (err) {
         console.error('Twin data error:', err);
@@ -1187,8 +1201,9 @@ app.post('/save-inspection', async (req, res) => {
                         inspection_id, span_number, element_no,
                         defect_no, defect_type, defect_number,
                         severity, extent, works_required,
-                        priority, cost, comments, remedial_works, timestamp
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id`,
+                        priority, cost, comments, remedial_works, timestamp,
+                        pos_x, pos_y, pos_z, is_primary
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) RETURNING id`,
                     [
                         inspectionId,
                         defect.spanNumber,
@@ -1203,7 +1218,11 @@ app.post('/save-inspection', async (req, res) => {
                         parseFloat(defect.cost) || 0,
                         defect.comments || '',
                         defect.remedial_works || '',
-                        defect.timestamp || new Date().toISOString()
+                        defect.timestamp || new Date().toISOString(),
+                        defect.posX ?? null,
+                        defect.posY ?? null,
+                        defect.posZ ?? null,
+                        defect.isPrimary === true
                     ]
                 );
 
@@ -1369,8 +1388,9 @@ app.put('/update-inspection', async (req, res) => {
                     inspection_id, span_number, element_no, defect_no,
                     defect_type, defect_number, severity,
                     extent, works_required, priority,
-                    cost, comments, remedial_works, timestamp
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+                    cost, comments, remedial_works, timestamp,
+                    pos_x, pos_y, pos_z, is_primary
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
                 [
                     inspectionId,
                     defect.spanNumber,
@@ -1385,7 +1405,11 @@ app.put('/update-inspection', async (req, res) => {
                     defect.cost || 0,
                     defect.comments || '',
                     defect.remedial_works || '',
-                    defect.timestamp || new Date().toISOString()
+                    defect.timestamp || new Date().toISOString(),
+                    defect.posX ?? null,
+                    defect.posY ?? null,
+                    defect.posZ ?? null,
+                    defect.isPrimary === true
                 ]
             );
         }
@@ -1469,7 +1493,11 @@ app.get('/api/inspection/full', async (req, res) => {
                 priority,
                 cost,
                 comments,
-                timestamp
+                timestamp,
+                pos_x,
+                pos_y,
+                pos_z,
+                is_primary
             FROM defects
             WHERE inspection_id = $1
             ORDER BY span_number, element_no, defect_no
@@ -1537,6 +1565,10 @@ app.get('/api/inspection/full', async (req, res) => {
                 cost: defect.cost,
                 comments: defect.comments,
                 timestamp: defect.timestamp,
+                x: defect.pos_x !== null ? parseFloat(defect.pos_x) : null,
+                y: defect.pos_y !== null ? parseFloat(defect.pos_y) : null,
+                z: defect.pos_z !== null ? parseFloat(defect.pos_z) : null,
+                isPrimary: defect.is_primary === true,
                 photos: photosByDefect[defect.id] || []
             }))
         };
@@ -1865,10 +1897,9 @@ app.get('/api/bci-distribution', async (req, res) => {
             bci_ranges AS (
                 SELECT 
                     structure_id,
-                    CASE 
+                    CASE
                         WHEN bci_av < 40 THEN '0-39'
-                        WHEN bci_av >= 40 AND bci_av < 50 THEN '40-49'
-                        WHEN bci_av >= 50 AND bci_av < 65 THEN '50-64'
+                        WHEN bci_av >= 40 AND bci_av < 65 THEN '40-64'
                         WHEN bci_av >= 65 AND bci_av < 80 THEN '65-79'
                         WHEN bci_av >= 80 AND bci_av < 90 THEN '80-89'
                         ELSE '90-100'
@@ -1880,18 +1911,17 @@ app.get('/api/bci-distribution', async (req, res) => {
                 COUNT(DISTINCT structure_id) as count
             FROM bci_ranges
             GROUP BY bci_range
-            ORDER BY 
+            ORDER BY
                 CASE bci_range
                     WHEN '0-39' THEN 1
-                    WHEN '40-49' THEN 2
-                    WHEN '50-64' THEN 3
-                    WHEN '65-79' THEN 4
-                    WHEN '80-89' THEN 5
-                    WHEN '90-100' THEN 6
+                    WHEN '40-64' THEN 2
+                    WHEN '65-79' THEN 3
+                    WHEN '80-89' THEN 4
+                    WHEN '90-100' THEN 5
                 END
         `);
 
-        const ranges = ['0-39', '40-49', '50-64', '65-79', '80-89', '90-100'];
+        const ranges = ['0-39', '40-64', '65-79', '80-89', '90-100'];
         const result = ranges.map(range => {
             const found = rows.find(r => r.bci_range === range);
             return { bci_range: range, count: found ? parseInt(found.count) : 0 };
@@ -1990,6 +2020,41 @@ app.get('/api/dashboard/critical-bridges', async (req, res) => {
         res.json({ success: true, data: rows });
     } catch (err) {
         console.error('Critical bridges error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Average BCI per structure type, using each structure's latest inspection
+app.get('/api/dashboard/avg-bci-by-type', async (req, res) => {
+    try {
+        const rows = await dbAll(`
+            WITH latest_inspections AS (
+                SELECT
+                    i.structure_id,
+                    s.bci_av
+                FROM inspections i
+                JOIN (
+                    SELECT structure_id, MAX(inspection_date) as latest_date
+                    FROM inspections
+                    GROUP BY structure_id
+                ) latest ON i.structure_id = latest.structure_id
+                         AND i.inspection_date = latest.latest_date
+                JOIN inspection_spans s ON i.id = s.inspection_id
+                WHERE s.bci_av IS NOT NULL
+            )
+            SELECT
+                b.type,
+                ROUND(AVG(li.bci_av)::numeric, 1) as avg_bci,
+                COUNT(DISTINCT li.structure_id) as count
+            FROM latest_inspections li
+            JOIN bridges b ON b.id = li.structure_id
+            GROUP BY b.type
+            ORDER BY avg_bci DESC
+        `);
+
+        res.json({ success: true, data: rows });
+    } catch (err) {
+        console.error('Average BCI by type error:', err);
         res.status(500).json({ success: false, error: err.message });
     }
 });

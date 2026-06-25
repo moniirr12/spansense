@@ -358,7 +358,7 @@
         }
         .left-floating-rail .conclusions-bar:hover,
         .left-floating-rail .twin-view-bar:hover {
-            transform: scale(1.02);
+            transform: none;
         }
         .twin-view-bar {
             background: white;
@@ -453,7 +453,7 @@
             background: rgba(255, 255, 255, 0.4);
             border: 1px solid rgba(91, 140, 138, 0.18);
             flex: 1;
-            min-height: 420px;
+            min-height: 280px;
             margin: 14px 24px 24px;
         }
         .night-mode .locate3d-stage { background: rgba(20,30,32,0.4); border-color: rgba(110,156,152,0.25); }
@@ -491,7 +491,7 @@
         .night-mode .defect-remove-btn:hover { color: #ef9a9a; }
 
         @media (max-width: 860px) {
-            .locate3d-stage { min-height: 320px; }
+            .locate3d-stage { min-height: 280px; }
         }
     </style>
 <base target="_blank">
@@ -598,7 +598,18 @@
                     <template id="templateButtonRow">
                         <tr class="button-row" style="display: none;">
                             <td colspan="5">
-                                <button class="btn-add-defect">Add Defect</button>
+                                <div class="button-row-actions">
+                                    <button class="btn-no-defects" data-quick="no-defects"><i class="fas fa-check"></i> No Defects</button>
+                                    <button class="btn-not-inspected" data-quick="not-inspected"><i class="fas fa-ban"></i> Not Inspected</button>
+                                    <button class="btn-add-defect">Add Defect</button>
+                                </div>
+                                <div class="quick-confirm-box" style="display:none;">
+                                    <textarea class="quick-confirm-comment" rows="1" placeholder="Optional comment..."></textarea>
+                                    <div class="quick-confirm-actions">
+                                        <button type="button" class="quick-confirm-cancel">Cancel</button>
+                                        <button type="button" class="quick-confirm-confirm">Confirm</button>
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                     </template>
@@ -1361,6 +1372,7 @@
     <!-- 3D defect locator -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="../twin/bridgeModels.js"></script>
+    <script src="../twin/shapeBuilders.js"></script>
     <script src="locate3d.js"></script>
 </body>
 </html>
