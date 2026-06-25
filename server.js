@@ -2090,8 +2090,19 @@ app.listen(PORT, () => {
 
 
 
-// Serve frontend static files (must be before error handler and listen)
-app.use(express.static(path.join(__dirname)));
+// Serve frontend static files (must be before error handler and listen).
+// HTML stays no-cache since pages here change often; CSS/JS/images get an
+// hour of caching so navigating between pages doesn't re-fetch the same
+// shared assets (map.css, inspection.js, etc.) on every single page load.
+app.use(express.static(path.join(__dirname), {
+    setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.html')) {
+            res.setHeader('Cache-Control', 'no-cache');
+        } else {
+            res.setHeader('Cache-Control', 'public, max-age=3600');
+        }
+    }
+}));
 
 // Fallback to index.html for SPA routes
 app.get('*', (req, res) => {
