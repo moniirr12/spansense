@@ -40,16 +40,12 @@ const getStructureIcon = (type) => {
                 box-shadow: 0 2px 8px rgba(0,0,0,0.2);
                 border: 2px solid white;
             ">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M2 20 L22 20" stroke="white" fill="none"/>
-                    <path d="M4 14 L20 14" stroke="white" fill="none"/>
-                    <path d="M6 8 L18 8" stroke="white" fill="none"/>
-                    <path d="M8 14 L8 20" stroke="white" fill="none"/>
-                    <path d="M12 14 L12 20" stroke="white" fill="none"/>
-                    <path d="M16 14 L16 20" stroke="white" fill="none"/>
-                    <path d="M4 20 L4 14" stroke="white" fill="none"/>
-                    <path d="M20 20 L20 14" stroke="white" fill="none"/>
-                    <rect x="2" y="5" width="20" height="3" rx="1" fill="white" stroke="none"/>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 13 H22"/>
+                    <path d="M5 13 C5 8 19 8 19 13"/>
+                    <path d="M7 13 V17"/>
+                    <path d="M17 13 V17"/>
+                    <path d="M2 17 H22" stroke-dasharray="2 2"/>
                 </svg>
             </div>`,
             iconSize: [36, 36],
@@ -65,17 +61,14 @@ const getStructureIcon = (type) => {
                 box-shadow: 0 2px 8px rgba(0,0,0,0.2);
                 border: 2px solid white;
             ">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1.5">
-                    <path d="M3 18 L21 18" stroke="white" fill="none"/>
-                    <path d="M6 12 L18 12" stroke="white" fill="none"/>
-                    <path d="M9 6 L15 6" stroke="white" fill="none"/>
-                    <path d="M6 18 L6 14" stroke="white" fill="none"/>
-                    <path d="M12 18 L12 14" stroke="white" fill="none"/>
-                    <path d="M18 18 L18 14" stroke="white" fill="none"/>
-                    <circle cx="12" cy="20" r="1.5" fill="white" stroke="none"/>
-                    <path d="M10 15 L12 17 L14 15" stroke="white" fill="none"/>
-                    <path d="M12 14 L10 11" stroke="white" fill="none"/>
-                    <path d="M12 14 L14 11" stroke="white" fill="none"/>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 16 Q12 6 21 16"/>
+                    <path d="M7 12.3 V10.3"/>
+                    <path d="M12 8.6 V6.6"/>
+                    <path d="M17 12.3 V10.3"/>
+                    <path d="M5 16 V18"/>
+                    <path d="M19 16 V18"/>
+                    <path d="M2 18 H22" stroke-dasharray="2 2"/>
                 </svg>
             </div>`,
             iconSize: [36, 36],
@@ -91,14 +84,11 @@ const getStructureIcon = (type) => {
                 box-shadow: 0 2px 8px rgba(0,0,0,0.2);
                 border: 2px solid white;
             ">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1.5">
-                    <circle cx="12" cy="12" r="8" fill="none" stroke="white"/>
-                    <path d="M12 4 L12 2" stroke="white" fill="none"/>
-                    <path d="M12 20 L12 22" stroke="white" fill="none"/>
-                    <path d="M4 12 L2 12" stroke="white" fill="none"/>
-                    <path d="M20 12 L22 12" stroke="white" fill="none"/>
-                    <path d="M8 12 Q10 10 12 12 Q14 14 16 12" stroke="white" fill="none"/>
-                    <path d="M10 14 L14 14" stroke="white" fill="none"/>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 8 L7 4 H17 L23 8"/>
+                    <path d="M1 8 H23"/>
+                    <circle cx="12" cy="16" r="5.2"/>
+                    <path d="M9 16 Q10.5 14.2 12 16 Q13.5 17.8 15 16"/>
                 </svg>
             </div>`,
             iconSize: [36, 36],
@@ -114,14 +104,13 @@ const getStructureIcon = (type) => {
                 box-shadow: 0 2px 8px rgba(0,0,0,0.2);
                 border: 2px solid white;
             ">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1.5">
-                    <rect x="3" y="6" width="18" height="12" rx="1" fill="none" stroke="white"/>
-                    <line x1="3" y1="10" x2="21" y2="10" stroke="white"/>
-                    <line x1="3" y1="14" x2="21" y2="14" stroke="white"/>
-                    <line x1="7" y1="6" x2="7" y2="18" stroke="white"/>
-                    <line x1="11" y1="6" x2="11" y2="18" stroke="white"/>
-                    <line x1="15" y1="6" x2="15" y2="18" stroke="white"/>
-                    <line x1="19" y1="6" x2="19" y2="18" stroke="white"/>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 20 H22"/>
+                    <path d="M6 20 V5" stroke-width="2.2"/>
+                    <path d="M6 9 H9"/>
+                    <path d="M6 13 H9"/>
+                    <path d="M6 17 H9"/>
+                    <path d="M9 20 L9 12 L20 5"/>
                 </svg>
             </div>`,
             iconSize: [36, 36],
