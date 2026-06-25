@@ -250,6 +250,7 @@ body {
 .custom-date-dropdown .ddt-item:hover, .custom-date-dropdown .ddt-item.active { background: #eef4f2; color: #5b8c8a; }
 .custom-date-dropdown .ddt-item.disabled { color: #b8c4cc; cursor: default; }
 .custom-date-dropdown .ddt-item.disabled:hover { background: none; color: #b8c4cc; }
+.custom-date-dropdown .ddt-item.placeholder { font-style: italic; border-bottom: 1px solid #d8e0e6; }
 
 .night-mode .custom-date-dropdown .ddt-trigger {
     background: #1e2a2f;

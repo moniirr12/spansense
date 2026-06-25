@@ -265,13 +265,13 @@ async function date() {
                 dateUpdated = true;
                 const isoDate = dateStr;
                 sessionStorage.setItem('inspectionDate', isoDate);
-                inspectionDateCell.innerText = isoDate;
+                inspectionDateCell.innerText = formatDate(isoDate);
                 if (window.inspectionData) window.inspectionData.inspectionDate = isoDate;
                 if (typeof inspectionData !== 'undefined' && inspectionData !== window.inspectionData) {
                     inspectionData.inspectionDate = isoDate;
                 }
-                
-                showDraftToast(`Inspection date set to ${isoDate}`);
+
+                showDraftToast(`Inspection date set to ${formatDate(isoDate)}`);
             }
         },
         onClose: function() {
@@ -524,7 +524,7 @@ function populateInspectionForm(data) {
     if (inspectorInput) inspectorInput.value = inspectionData.inspectorName || '';
     
     const dateElement = document.getElementById('inspectionDate');
-    if (dateElement && inspectionData.inspectionDate) dateElement.innerText = inspectionData.inspectionDate;
+    if (dateElement && inspectionData.inspectionDate) dateElement.innerText = formatDate(inspectionData.inspectionDate);
     
     document.querySelectorAll('.inspection-type-btn').forEach(btn => {
         if (btn.dataset.type === inspectionData.inspectionType) {
@@ -900,7 +900,10 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             if (confirmed) {
+                // Preserve night mode preference across the clear (see accounts.html's confirmSignOut)
+                const nightMode = localStorage.getItem('nightMode');
                 localStorage.clear();
+                if (nightMode) localStorage.setItem('nightMode', nightMode);
                 sessionStorage.clear();
                 window.location.href = "../map/map.html";
             }
