@@ -2695,8 +2695,16 @@ body.modal-open {
 }
 
 /* Leaflet popup night mode */
+.night-mode .leaflet-popup-content-wrapper {
+    background: #2f3e48;
+    color: #d4dfe3;
+    box-shadow: 0 3px 14px rgba(0,0,0,0.4);
+}
 .night-mode .leaflet-popup-content {
-    color: #2c3e44;
+    color: #d4dfe3;
+}
+.night-mode .leaflet-popup-tip {
+    background: #2f3e48;
 }
 
 /* ============================================

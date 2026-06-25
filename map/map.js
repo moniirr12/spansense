@@ -140,7 +140,7 @@ function createStructureMarker(bridge) {
         Span: ${bridge.span} meters<br>
         Length: ${bridge.length} meters<br>
         Built: ${bridge.built_year}
-    `);
+    `, { closeButton: false });
 
     marker.on('mouseover', function(e) { this.openPopup(); });
     marker.on('mouseout', function(e) { this.closePopup(); });
