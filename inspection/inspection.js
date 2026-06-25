@@ -410,6 +410,28 @@ function refreshBCIScores() {
 
 window.refreshBCIScores = refreshBCIScores;
 
+// Headless equivalent of opening the modal, selecting the "No Defects" /
+// "Not Inspected" segment, and clicking Save — reuses saveChanges() so the
+// sessionStorage/BCI/row-update bookkeeping stays in exactly one place.
+function quickRecordElement(buttonRow, status, comment) {
+  const mainRow = findMainRow(buttonRow);
+  if (!mainRow) return;
+  currentRow = mainRow;
+  currentExpandableRow = null;
+  document.getElementById("severity").value = "1";
+  document.getElementById("extent").value = "A";
+  document.getElementById("works").value = "N";
+  document.getElementById("priority").value = "";
+  document.getElementById("cost").value = "";
+  document.getElementById("remedialWorks").value = "";
+  const commentFieldId = status === 'no-defects' ? 'of-no-defects-comment' : 'of-not-inspected-comment';
+  document.getElementById(commentFieldId).value = comment || '';
+  const modal = document.getElementById('modal');
+  modal.dataset.modalState = status;
+  modal.dataset.ofState = status;
+  saveChanges();
+}
+
 function saveChanges() {
   console.group("===== SAVING DEFECT DATA =====");
   const structureId = sessionStorage.getItem('structureId');
@@ -1199,6 +1221,49 @@ document.addEventListener("DOMContentLoaded", function () {
         openModal();
       }
     }
+  });
+  // Quick actions: "No Defects" / "Not Inspected" skip the full modal and
+  // just ask for an optional comment inline, then save via the same
+  // saveChanges() path the modal uses (see quickRecordElement below).
+  document.getElementById('inspectionElementsTable').addEventListener('click', function (event) {
+    const quickBtn = event.target.closest('.btn-no-defects, .btn-not-inspected');
+    if (quickBtn) {
+      const buttonRow = quickBtn.closest('tr.button-row');
+      const box = buttonRow?.querySelector('.quick-confirm-box');
+      if (!box) return;
+      const status = quickBtn.classList.contains('btn-no-defects') ? 'no-defects' : 'not-inspected';
+      box.dataset.pendingStatus = status;
+      const textarea = box.querySelector('.quick-confirm-comment');
+      textarea.value = '';
+      textarea.style.height = '';
+      const confirmBtn = box.querySelector('.quick-confirm-confirm');
+      confirmBtn.classList.remove('confirm-green', 'confirm-orange');
+      confirmBtn.classList.add(status === 'no-defects' ? 'confirm-green' : 'confirm-orange');
+      box.style.display = 'block';
+      textarea.focus();
+      return;
+    }
+    const cancelBtn = event.target.closest('.quick-confirm-cancel');
+    if (cancelBtn) {
+      const box = cancelBtn.closest('.quick-confirm-box');
+      if (box) box.style.display = 'none';
+      return;
+    }
+    const confirmBtn = event.target.closest('.quick-confirm-confirm');
+    if (confirmBtn) {
+      const box = confirmBtn.closest('.quick-confirm-box');
+      const buttonRow = confirmBtn.closest('tr.button-row');
+      if (!box || !buttonRow) return;
+      const comment = box.querySelector('.quick-confirm-comment').value.trim();
+      quickRecordElement(buttonRow, box.dataset.pendingStatus, comment);
+      box.style.display = 'none';
+    }
+  });
+  // Auto-grow the quick-confirm textarea: slim by default, taller as needed.
+  document.getElementById('inspectionElementsTable').addEventListener('input', function (event) {
+    if (!event.target.classList.contains('quick-confirm-comment')) return;
+    event.target.style.height = 'auto';
+    event.target.style.height = event.target.scrollHeight + 'px';
   });
   document.getElementById('inspectionElementsTable').addEventListener('click', function (event) {
       const target = event.target;

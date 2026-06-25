@@ -598,7 +598,18 @@
                     <template id="templateButtonRow">
                         <tr class="button-row" style="display: none;">
                             <td colspan="5">
-                                <button class="btn-add-defect">Add Defect</button>
+                                <div class="button-row-actions">
+                                    <button class="btn-no-defects" data-quick="no-defects"><i class="fas fa-check"></i> No Defects</button>
+                                    <button class="btn-not-inspected" data-quick="not-inspected"><i class="fas fa-ban"></i> Not Inspected</button>
+                                    <button class="btn-add-defect">Add Defect</button>
+                                </div>
+                                <div class="quick-confirm-box" style="display:none;">
+                                    <textarea class="quick-confirm-comment" rows="1" placeholder="Optional comment..."></textarea>
+                                    <div class="quick-confirm-actions">
+                                        <button type="button" class="quick-confirm-cancel">Cancel</button>
+                                        <button type="button" class="quick-confirm-confirm">Confirm</button>
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                     </template>

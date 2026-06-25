@@ -718,6 +718,7 @@ function injectRetrievedRibbon(row) {
       const dst = document.getElementById(dstId);
       if (src && dst && src.textContent !== dst.textContent) {
         dst.textContent = src.textContent;
+        dst.style.color = src.style.color;
       }
     });
   }

@@ -561,6 +561,85 @@ body {
     transform: translateY(-1px);
 }
 
+/* 9b. QUICK ACTIONS — one-click "No Defects" / "Not Inspected", skipping the
+   full modal for the common case. Same shape as .btn-add-defect. */
+.button-row-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+#inspectionElementsTable tr.button-row .btn-no-defects,
+#inspectionElementsTable tr.button-row .btn-not-inspected {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 30px;
+    color: white;
+    font-weight: 500;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+#inspectionElementsTable tr.button-row .btn-no-defects { background: #2d7a6e; }
+#inspectionElementsTable tr.button-row .btn-no-defects:hover { background: #246359; transform: translateY(-1px); }
+#inspectionElementsTable tr.button-row .btn-not-inspected { background: #BA7517; }
+#inspectionElementsTable tr.button-row .btn-not-inspected:hover { background: #9c6212; transform: translateY(-1px); }
+
+/* Inline confirm box — slim by default, grows with content (JS-driven),
+   replaces opening the full modal for these two quick actions. */
+.quick-confirm-box {
+    margin-top: 10px;
+    text-align: left;
+    background: white;
+    border-radius: 14px;
+    padding: 10px 14px;
+    border: 1px solid #e9edf2;
+    animation: quickConfirmIn 0.15s ease;
+}
+@keyframes quickConfirmIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+.quick-confirm-box textarea {
+    display: block;
+    width: 100%;
+    min-height: 32px;
+    max-height: 160px;
+    resize: none;
+    overflow: hidden;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.82rem;
+    color: #4a5b6e;
+    line-height: 1.5;
+    outline: none;
+}
+.quick-confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 6px;
+}
+.quick-confirm-actions button {
+    padding: 6px 16px;
+    border: none;
+    border-radius: 30px;
+    font-size: 0.76rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+.quick-confirm-cancel { background: #eef1f4; color: #6a7c8e; }
+.quick-confirm-cancel:hover { background: #e3e8ec; }
+.quick-confirm-confirm { background: #5b8c8a; color: white; }
+.quick-confirm-confirm.confirm-green { background: #2d7a6e; }
+.quick-confirm-confirm.confirm-orange { background: #BA7517; }
+
+.night-mode #inspectionElementsTable tr.button-row .btn-no-defects { background: #2a5a50; }
+.night-mode #inspectionElementsTable tr.button-row .btn-not-inspected { background: #7a4d10; }
+.night-mode .quick-confirm-box { background: #1e2a2f; border-color: #2f3e45; }
+.night-mode .quick-confirm-box textarea { color: #c5d3d9; }
+.night-mode .quick-confirm-cancel { background: #2a3a40; color: #9ab0b8; }
+.night-mode .quick-confirm-cancel:hover { background: #324650; }
+.night-mode .quick-confirm-confirm.confirm-green { background: #2a5a50; }
+.night-mode .quick-confirm-confirm.confirm-orange { background: #7a4d10; }
+
 /* 10. EXPANDABLE ROWS — transparent shell, card inside has its own style */
 #inspectionElementsTable tr.expandable-row {
     display: none;

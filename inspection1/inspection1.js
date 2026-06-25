@@ -355,8 +355,8 @@ async function fetchBCIForInspection(bridgeId, inspectionDate) {
                 const bciAvElement = document.getElementById('bciAvResult');
                 const bciCritElement = document.getElementById('bciCritResult');
                 
-                if (bciAvElement) bciAvElement.innerText = avgAv.toFixed(2);
-                if (bciCritElement) bciCritElement.innerText = avgCrit.toFixed(2);
+                if (bciAvElement) setBciValue(bciAvElement, avgAv);
+                if (bciCritElement) setBciValue(bciCritElement, avgCrit);
                 
                 sessionStorage.setItem('bciAv', avgAv.toFixed(2));
                 sessionStorage.setItem('bciCrit', avgCrit.toFixed(2));
@@ -398,8 +398,8 @@ async function fetchLatestInspectionDate(bridgeId) {
 
                 const bciAvElement = document.getElementById('bciAvResult');
                 const bciCritElement = document.getElementById('bciCritResult');
-                if (bciAvElement) bciAvElement.innerText = '100.00';
-                if (bciCritElement) bciCritElement.innerText = '100.00';
+                if (bciAvElement) setBciValue(bciAvElement, 100);
+                if (bciCritElement) setBciValue(bciCritElement, 100);
             }
         } else {
             const lastInspEl = document.getElementById('sidebarLastInsp');

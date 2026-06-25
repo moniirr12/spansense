@@ -342,12 +342,24 @@ function getStructureConfig(structureType) {
 
 
 
+// Colour bands matching the severity/status palette used elsewhere in the
+// app (sev-1..4 and the no-defects/not-inspected greens/ambers), with
+// brighter night-mode variants for contrast against the dark card background.
+function getBciColor(value) {
+    const isDark = document.body.classList.contains('night-mode');
+    if (value >= 85) return isDark ? '#8ab4b0' : '#2d7a6e';   // good
+    if (value >= 65) return isDark ? '#d4a84a' : '#BA7517';   // fair
+    if (value >= 40) return isDark ? '#e8a0a0' : '#c47070';   // poor
+    return isDark ? '#e07070' : '#c0392b';                    // critical
+}
+
 // Tweens a BCI score element's displayed number instead of snapping straight
 // to the new value, so edits to defects don't make the score jump abruptly.
 const bciTweenFrames = new WeakMap();
 function setBciValue(el, value) {
     if (!el) return;
     const target = parseFloat(value);
+    el.style.color = getBciColor(target);
     const current = parseFloat(el.textContent);
     if (isNaN(current) || Math.abs(target - current) < 0.005) {
         el.textContent = target.toFixed(2);
