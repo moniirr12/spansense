@@ -632,6 +632,7 @@ const PI_CYCLE_YEARS = 6;
 app.get('/api/twin/:structureId', async (req, res) => {
     try {
         const { structureId } = req.params;
+        const { inspectionId } = req.query;
 
         const bridge = await dbGet('SELECT * FROM bridges WHERE id = $1', [structureId]);
         if (!bridge) {
@@ -646,20 +647,25 @@ app.get('/api/twin/:structureId', async (req, res) => {
         const latestInspection = allInspections.length
             ? allInspections[allInspections.length - 1]
             : null;
+        // Which inspection's spans/defects/BCI to show - defaults to latest,
+        // but the timeline panel lets the user pick an earlier one to view.
+        const selectedInspection = inspectionId
+            ? (allInspections.find(i => String(i.id) === String(inspectionId)) || latestInspection)
+            : latestInspection;
 
         let spans = [];
         let defects = [];
-        if (latestInspection) {
+        if (selectedInspection) {
             spans = await dbAll(
                 `SELECT span_number, bci_crit, bci_av FROM inspection_spans
                  WHERE inspection_id = $1 ORDER BY span_number ASC`,
-                [latestInspection.id]
+                [selectedInspection.id]
             );
             const defectRows = await dbAll(
                 `SELECT span_number, element_no, severity, works_required, pos_x, pos_y, pos_z
                  FROM defects WHERE inspection_id = $1
                  ORDER BY span_number, element_no`,
-                [latestInspection.id]
+                [selectedInspection.id]
             );
             defects = defectRows.map(d => {
                 const sev = parseInt(d.severity, 10);
@@ -686,11 +692,11 @@ app.get('/api/twin/:structureId', async (req, res) => {
             return (!worst || parseFloat(s.bci_crit) < parseFloat(worst.bci_crit)) ? s : worst;
         }, null);
 
-        const bciAvg = latestInspection?.overall_bciave != null
-            ? parseFloat(latestInspection.overall_bciave)
+        const bciAvg = selectedInspection?.overall_bciave != null
+            ? parseFloat(selectedInspection.overall_bciave)
             : (avgSpanBCI != null ? avgSpanBCI : (bridge.bci_av != null ? parseFloat(bridge.bci_av) : null));
-        const bciCrit = latestInspection?.overall_bcicrit != null
-            ? parseFloat(latestInspection.overall_bcicrit)
+        const bciCrit = selectedInspection?.overall_bcicrit != null
+            ? parseFloat(selectedInspection.overall_bcicrit)
             : (critSpan ? parseFloat(critSpan.bci_crit) : null);
 
         const openDefects = defects.filter(d => d.worksRequired).length;
@@ -725,6 +731,7 @@ app.get('/api/twin/:structureId', async (req, res) => {
         const timelineRange = years.length ? `${Math.min(...years)} — ${Math.max(...years)}` : null;
 
         const inspections = allInspections.map(i => ({
+            id: i.id,
             type: i.inspection_type || 'GI',
             date: monthYearFmt(new Date(i.inspection_date)),
             timestamp: new Date(i.inspection_date).getTime()
@@ -752,7 +759,9 @@ app.get('/api/twin/:structureId', async (req, res) => {
             lastInspection: lastInspectionLabel,
             nextInspection: nextInspectionLabel,
             isOverdue,
-            openDefects
+            openDefects,
+            selectedInspectionId: selectedInspection ? selectedInspection.id : null,
+            latestInspectionId: latestInspection ? latestInspection.id : null
         });
     } catch (err) {
         console.error('Twin data error:', err);
@@ -1477,7 +1486,10 @@ app.get('/api/inspection/full', async (req, res) => {
                 priority,
                 cost,
                 comments,
-                timestamp
+                timestamp,
+                pos_x,
+                pos_y,
+                pos_z
             FROM defects
             WHERE inspection_id = $1
             ORDER BY span_number, element_no, defect_no
@@ -1545,6 +1557,9 @@ app.get('/api/inspection/full', async (req, res) => {
                 cost: defect.cost,
                 comments: defect.comments,
                 timestamp: defect.timestamp,
+                x: defect.pos_x !== null ? parseFloat(defect.pos_x) : null,
+                y: defect.pos_y !== null ? parseFloat(defect.pos_y) : null,
+                z: defect.pos_z !== null ? parseFloat(defect.pos_z) : null,
                 photos: photosByDefect[defect.id] || []
             }))
         };

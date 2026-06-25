@@ -115,13 +115,15 @@ document.addEventListener('click', function(e) {
 /* ============================================================
    BRIDGE SELECTION & UI UPDATE
    ============================================================ */
-async function selectBridge(bridgeId) {
+async function selectBridge(bridgeId, inspectionId) {
     var listEntry = bridgeList.find(function(b) { return String(b.id) === String(bridgeId); });
     if (!listEntry) return;
 
     var res;
     try {
-        res = await fetch(API_BASE + '/api/twin/' + bridgeId);
+        var url = API_BASE + '/api/twin/' + bridgeId;
+        if (inspectionId) url += '?inspectionId=' + encodeURIComponent(inspectionId);
+        res = await fetch(url);
         if (!res.ok) throw new Error('Failed to load twin data');
     } catch (err) {
         showToast('Load failed', 'Could not load ' + listEntry.name, 'error');
@@ -171,7 +173,7 @@ async function selectBridge(bridgeId) {
         defectsEl.className = 'status-badge ' + (bridge.openDefects > 0 ? 'error' : 'completed');
 
         document.getElementById('timelineRange').textContent = bridge.timelineRange || '—';
-        renderTimeline(bridge.inspections || []);
+        renderTimeline(bridge.inspections || [], bridge.selectedInspectionId, bridge.id);
 
         infoCol.style.opacity = '1';
     }, 150);
@@ -181,7 +183,7 @@ async function selectBridge(bridgeId) {
     showToast('Bridge loaded', bridge.name + ' · ' + bridge.id, 'success');
 }
 
-function renderTimeline(inspections) {
+function renderTimeline(inspections, selectedId, bridgeId) {
     var track = document.getElementById('timelineTrack');
     if (!inspections.length) {
         track.innerHTML = '<div class="dd-empty" style="padding:14px 0;"><i class="fa-solid fa-calendar-xmark"></i>No inspections recorded</div>';
@@ -195,8 +197,16 @@ function renderTimeline(inspections) {
         var left = ((insp.timestamp - minT) / span) * 84 + 6; // 6%-90% inset
         var style = 'left:' + left.toFixed(1) + '%';
         var label = '<div class="tl-label" style="left:' + left.toFixed(1) + '%">' + insp.date + '</div>';
-        return '<div class="tl-node" data-type="' + insp.type + '" style="' + style + '"></div>' + label;
+        var isSelected = selectedId != null && String(insp.id) === String(selectedId);
+        return '<div class="tl-node' + (isSelected ? ' selected' : '') + '" data-type="' + insp.type + '" ' +
+            'data-id="' + insp.id + '" title="View ' + insp.type + ' · ' + insp.date + '" style="' + style + '"></div>' + label;
     }).join('');
+
+    track.querySelectorAll('.tl-node').forEach(function(node) {
+        node.addEventListener('click', function() {
+            selectBridge(bridgeId, node.dataset.id);
+        });
+    });
 }
 
 /* ============================================================
