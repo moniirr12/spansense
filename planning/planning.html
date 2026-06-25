@@ -1328,6 +1328,13 @@
 
         function changeYear(delta) { currentDisplayYear += delta; updateCalendarViews(); }
 
+        function changeMonth(delta) {
+            currentMonth += delta;
+            if (currentMonth < 0) { currentMonth = 11; currentDisplayYear--; }
+            else if (currentMonth > 11) { currentMonth = 0; currentDisplayYear++; }
+            updateCalendarViews();
+        }
+
         let currentView = 'year', currentMonth = new Date().getMonth();
 
         function updateViewTitle() {
@@ -1358,8 +1365,8 @@
             updateViewTitle();
         }
 
-        document.getElementById('prevYearBtn').addEventListener('click', () => changeYear(-1));
-        document.getElementById('nextYearBtn').addEventListener('click', () => changeYear(1));
+        document.getElementById('prevYearBtn').addEventListener('click', () => currentView === 'month' ? changeMonth(-1) : changeYear(-1));
+        document.getElementById('nextYearBtn').addEventListener('click', () => currentView === 'month' ? changeMonth(1) : changeYear(1));
         document.getElementById('todayBtn').addEventListener('click', goToToday);
         document.getElementById('exportGanttBtn').addEventListener('click', exportGanttToPDF);
         document.querySelectorAll('.view-btn').forEach(btn => btn.addEventListener('click', () => switchView(btn.getAttribute('data-view'))));
