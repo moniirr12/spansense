@@ -196,8 +196,14 @@ function buildBCIProformaContent(bciFormData) {
         var spanNum  = spanIdx + 1;
         var spanData = (spansData || []).find(function(s) { return Number(s.span_number) === spanNum; }) || {};
         var defects  = spanData.defects || [];
+        // Only the primary defect counts toward the main table when an
+        // element has more than one (see setAsPrimaryDefect in inspection.js)
+        // — fall back to whichever came first if none is flagged primary.
         var defByEl  = {};
-        defects.forEach(function(d) { defByEl[d.element_no != null ? d.element_no : d.elementNumber] = d; });
+        defects.forEach(function(d) {
+            var k = d.element_no != null ? d.element_no : d.elementNumber;
+            if (!defByEl[k] || d.is_primary) defByEl[k] = d;
+        });
 
         var inspector  = spanData.inspector_name  || '';
         var date       = spanData.inspection_date || '';
@@ -505,6 +511,11 @@ function buildBCIPage2Content(bciFormData) {
             var k = d.element_no != null ? d.element_no : d.elementNumber;
             if (!defByEl[k]) defByEl[k] = [];
             defByEl[k].push(d);
+        });
+        // Primary defect always shown first (Defect 1) among the up to 3
+        // listed per element.
+        Object.keys(defByEl).forEach(function(k) {
+            defByEl[k].sort(function(a, b) { return (b.is_primary ? 1 : 0) - (a.is_primary ? 1 : 0); });
         });
         var multiEls = Object.keys(defByEl)
             .filter(function(k) { return defByEl[k].length > 1; })

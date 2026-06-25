@@ -308,7 +308,9 @@ function updateMainRow(potentialRow) {
   }
   const expandableRows = findAllExpandableRows(mainRow);
   if (expandableRows.length > 0) {
-    const firstDefect = expandableRows[0];
+    // The primary defect (see setAsPrimaryDefect) drives what the collapsed
+    // row shows, not just whichever defect happens to be first in the DOM.
+    const firstDefect = expandableRows.find(row => row.querySelector('.primary-tag')?.classList.contains('filled')) || expandableRows[0];
     const mainCells = mainRow.querySelectorAll("td");
     const severityValue = firstDefect.querySelector(".addSeverity")?.textContent || "";
     if (severityValue) {
@@ -369,7 +371,16 @@ function refreshBCIScores() {
     }
     if (spanDefects.length > 0) {
         const validDefects = spanDefects.filter(d => d.defectCombined !== '0.1');
-        const bciDefects = validDefects.map(d => {
+        // An element can carry several defects, but only the primary one
+        // (see setAsPrimaryDefect) counts toward BCI scoring. Falls back to
+        // whichever came first if none is marked primary yet.
+        const primaryByElement = new Map();
+        validDefects.forEach(d => {
+            const existing = primaryByElement.get(d.elementNumber);
+            if (!existing || d.isPrimary === true) primaryByElement.set(d.elementNumber, d);
+        });
+        const scoredDefects = Array.from(primaryByElement.values());
+        const bciDefects = scoredDefects.map(d => {
           if (d.defectCombined === '0.0') {
             return { severity: 1, extent: 'A', elementNumber: d.elementNumber };
           }
@@ -535,6 +546,19 @@ function saveChanges() {
     finalWorks = works;
   }
 
+  let defects = JSON.parse(sessionStorage.getItem('defects')) || [];
+  const isEditing = !!currentExpandableRow?.dataset.timestamp;
+
+  // First defect entered for an element is primary by default (drives BCI
+  // scoring when there are several); later ones default to non-primary
+  // until the user explicitly switches via the .primary-tag toggle.
+  const isFirstForElement = !isEditing && !defects.some(d =>
+    d.elementNumber == elementNumber && d.spanNumber == selectedSpan
+  );
+  const isPrimary = isEditing
+    ? (currentExpandableRow?.querySelector('.primary-tag')?.classList.contains('filled') || false)
+    : isFirstForElement;
+
   const defectData = {
     defectCombined: finalDefectCombined,
     defectType: finalDefectType,
@@ -550,11 +574,8 @@ function saveChanges() {
     elementNumber: elementNumber,
     timestamp: currentExpandableRow?.dataset.timestamp || new Date().toISOString(),
     defectId: `${structureId}_${inspectionDate}_${selectedSpan}_${elementNumber}_${defectCombined}`,
-    isPrimary: currentExpandableRow?.querySelector('.primary-tag')?.classList.contains('filled') || false
+    isPrimary: isPrimary
   };
-
-  let defects = JSON.parse(sessionStorage.getItem('defects')) || [];
-  const isEditing = !!currentExpandableRow?.dataset.timestamp;
 
   if (isEditing) {
     const index = defects.findIndex(d => d.timestamp === currentExpandableRow.dataset.timestamp);
@@ -1339,12 +1360,41 @@ document.addEventListener("DOMContentLoaded", function () {
       const defectTimestamp = expandableRow.dataset.timestamp;
       if (defectTimestamp) {
         let defects = JSON.parse(sessionStorage.getItem('defects')) || [];
+        const deleted = defects.find(defect => defect.timestamp === defectTimestamp);
         defects = defects.filter(defect => defect.timestamp !== defectTimestamp);
+
+        // If the primary defect was just deleted, promote whichever
+        // remaining defect on this element is worst (highest ECS) so the
+        // element always has a primary as long as it still has defects.
+        if (deleted?.isPrimary) {
+          const siblings = defects.filter(d =>
+            d.elementNumber == deleted.elementNumber && d.spanNumber == deleted.spanNumber
+          );
+          if (siblings.length > 0) {
+            const worst = siblings.reduce((worst, d) => {
+              const ecs = calculateECS(`${d.severity}${d.extent}`);
+              const worstEcs = calculateECS(`${worst.severity}${worst.extent}`);
+              return ecs > worstEcs ? d : worst;
+            });
+            worst.isPrimary = true;
+          }
+        }
         sessionStorage.setItem('defects', JSON.stringify(defects));
+
+        let inspectionData = JSON.parse(sessionStorage.getItem('inspectionData') || '{}');
+        if (inspectionData.defects) {
+          inspectionData.defects = inspectionData.defects.filter(d => d.timestamp !== defectTimestamp);
+          inspectionData.defects.forEach(d => {
+            const match = defects.find(def => def.timestamp === d.timestamp);
+            if (match) d.isPrimary = match.isPrimary === true;
+          });
+          sessionStorage.setItem('inspectionData', JSON.stringify(inspectionData));
+        }
       }
       const mainRow = findMainRow(expandableRow);
       expandableRow.remove();
       if (mainRow) {
+        highlightPrimaryDefect(mainRow);
         updateMainRow(mainRow);
         const remainingRows = findAllExpandableRows(mainRow);
         if (remainingRows.length === 0) {
@@ -1678,7 +1728,7 @@ window.setAsPrimaryDefect = function(primaryTagElement) {
         if (tag) tag.classList.remove('filled');
     });
     primaryTagElement.classList.add('filled');
-    updateMainRowWithPrimary(mainRow, currentDefect);
+    updateMainRow(mainRow);
     console.log(`Primary defect set for element ${elementNumber}: ${currentDefect.defectCombined}`);
     showPrimaryFeedback(primaryTagElement);
 };
@@ -1689,13 +1739,6 @@ function showPrimaryFeedback(element) {
     setTimeout(() => {
         element.style.transform = 'scale(1)';
     }, 200);
-}
-
-function updateMainRowWithPrimary(mainRow, primaryDefect) {
-    const mainCells = mainRow.querySelectorAll("td");
-    if (mainCells.length >= 5 && primaryDefect) {
-        mainCells[4].textContent = primaryDefect.defectCombined || '';
-    }
 }
 
 function highlightPrimaryDefect(mainRow) {
@@ -1715,7 +1758,7 @@ function highlightPrimaryDefect(mainRow) {
                 tag.classList.add('filled');
             }
         });
-        updateMainRowWithPrimary(mainRow, primaryDefect);
+        updateMainRow(mainRow);
     }
 }
 
@@ -1726,7 +1769,7 @@ if (typeof addDefectToTable === 'function') {
         if (defectData.isPrimary && result) {
             const tag = result.querySelector('.primary-tag');
             if (tag) tag.classList.add('filled');
-            updateMainRowWithPrimary(mainRow, defectData);
+            updateMainRow(mainRow);
         }
         return result;
     };

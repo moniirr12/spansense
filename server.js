@@ -180,6 +180,10 @@ async function initDatabase() {
         await pool.query(`ALTER TABLE defects ADD COLUMN IF NOT EXISTS pos_y DECIMAL`);
         await pool.query(`ALTER TABLE defects ADD COLUMN IF NOT EXISTS pos_z DECIMAL`);
 
+        // Which defect counts for BCI scoring when an element has more than
+        // one (see setAsPrimaryDefect in inspection.js)
+        await pool.query(`ALTER TABLE defects ADD COLUMN IF NOT EXISTS is_primary BOOLEAN DEFAULT FALSE`);
+
         // Defect photos table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS defect_photos (
@@ -566,6 +570,7 @@ app.get('/api/defectsbci', async (req, res) => {
                 d.priority AS p,
                 d.cost,
                 d.comments AS comments_remarks,
+                d.is_primary,
                 i.inspection_date
             FROM defects d
             JOIN inspections i ON d.inspection_id = i.id
@@ -1197,8 +1202,8 @@ app.post('/save-inspection', async (req, res) => {
                         defect_no, defect_type, defect_number,
                         severity, extent, works_required,
                         priority, cost, comments, remedial_works, timestamp,
-                        pos_x, pos_y, pos_z
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING id`,
+                        pos_x, pos_y, pos_z, is_primary
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) RETURNING id`,
                     [
                         inspectionId,
                         defect.spanNumber,
@@ -1216,7 +1221,8 @@ app.post('/save-inspection', async (req, res) => {
                         defect.timestamp || new Date().toISOString(),
                         defect.posX ?? null,
                         defect.posY ?? null,
-                        defect.posZ ?? null
+                        defect.posZ ?? null,
+                        defect.isPrimary === true
                     ]
                 );
 
@@ -1383,8 +1389,8 @@ app.put('/update-inspection', async (req, res) => {
                     defect_type, defect_number, severity,
                     extent, works_required, priority,
                     cost, comments, remedial_works, timestamp,
-                    pos_x, pos_y, pos_z
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
+                    pos_x, pos_y, pos_z, is_primary
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
                 [
                     inspectionId,
                     defect.spanNumber,
@@ -1402,7 +1408,8 @@ app.put('/update-inspection', async (req, res) => {
                     defect.timestamp || new Date().toISOString(),
                     defect.posX ?? null,
                     defect.posY ?? null,
-                    defect.posZ ?? null
+                    defect.posZ ?? null,
+                    defect.isPrimary === true
                 ]
             );
         }
@@ -1489,7 +1496,8 @@ app.get('/api/inspection/full', async (req, res) => {
                 timestamp,
                 pos_x,
                 pos_y,
-                pos_z
+                pos_z,
+                is_primary
             FROM defects
             WHERE inspection_id = $1
             ORDER BY span_number, element_no, defect_no
@@ -1560,6 +1568,7 @@ app.get('/api/inspection/full', async (req, res) => {
                 x: defect.pos_x !== null ? parseFloat(defect.pos_x) : null,
                 y: defect.pos_y !== null ? parseFloat(defect.pos_y) : null,
                 z: defect.pos_z !== null ? parseFloat(defect.pos_z) : null,
+                isPrimary: defect.is_primary === true,
                 photos: photosByDefect[defect.id] || []
             }))
         };

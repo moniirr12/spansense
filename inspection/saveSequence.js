@@ -298,7 +298,8 @@
                             timestamp: defect.timestamp || new Date().toISOString(),
                             posX: hasLocation ? located.x : null,
                             posY: hasLocation ? located.y : null,
-                            posZ: hasLocation ? located.z : null
+                            posZ: hasLocation ? located.z : null,
+                            isPrimary: defect.isPrimary === true
                         };
                     }),
                     photoData: photoData
