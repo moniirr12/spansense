@@ -1682,19 +1682,53 @@ app.post('/api/bridges/:structureId/inspection-photos',
 
             const descriptions = req.body.descriptions || [];
             const displayOrders = req.body.displayOrders || [];
+            const defectId = req.body.defectId;
 
-            const uploadedFiles = req.files.map((file, index) => ({
-                originalName: file.originalname,
-                filename: file.filename,
-                path: file.path,
-                size: file.size,
-                mimetype: file.mimetype,
-                url: `/uploads/${path.relative(path.join(__dirname, 'uploads'), file.path).split(path.sep).join('/')}`,
-                photo_description: descriptions[index] || '',
-                display_order: displayOrders[index] || index,
-                file_name: file.originalname,
-                file_type: file.mimetype,
-            }));
+            // A brand-new defect (not saved yet) is identified by a temporary
+            // composite key, not a real id — its photos can only be linked up
+            // once the whole inspection is saved (see /save-inspection). An
+            // existing defect already has a real numeric id, so its photos
+            // can be persisted immediately instead of waiting.
+            let realDefectId = null;
+            if (defectId && /^\d+$/.test(defectId)) {
+                const existing = await dbGet('SELECT id FROM defects WHERE id = $1', [defectId]);
+                if (existing) realDefectId = existing.id;
+            }
+
+            const uploadedFiles = [];
+            for (let index = 0; index < req.files.length; index++) {
+                const file = req.files[index];
+                const url = `/uploads/${path.relative(path.join(__dirname, 'uploads'), file.path).split(path.sep).join('/')}`;
+                const photo_description = descriptions[index] || '';
+                const display_order = displayOrders[index] || index;
+                let photoId = null;
+
+                if (realDefectId) {
+                    const inserted = await dbGet(
+                        `INSERT INTO defect_photos (
+                            defect_id, photo_url, photo_description, display_order,
+                            file_name, file_size, file_type
+                        ) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+                        [realDefectId, url, photo_description, display_order, file.originalname, file.size, file.mimetype]
+                    );
+                    photoId = inserted.id;
+                }
+
+                uploadedFiles.push({
+                    id: photoId,
+                    originalName: file.originalname,
+                    filename: file.filename,
+                    path: file.path,
+                    size: file.size,
+                    mimetype: file.mimetype,
+                    url,
+                    photo_description,
+                    display_order,
+                    file_name: file.originalname,
+                    file_type: file.mimetype,
+                    saved: !!realDefectId
+                });
+            }
 
             res.status(200).json({
                 success: true,
@@ -1756,10 +1790,52 @@ app.get('/api/bridges/:structureId/inspection-photos', async (req, res) => {
         });
     } catch (err) {
         console.error('Database error:', err);
-        res.status(500).json({ 
+        res.status(500).json({
             success: false,
-            error: 'Database error' 
+            error: 'Database error'
         });
+    }
+});
+
+// Delete a single already-uploaded inspection photo (DB row + file on disk)
+app.delete('/api/inspection-photos/:photoId', async (req, res) => {
+    try {
+        const { photoId } = req.params;
+        const photo = await dbGet('SELECT photo_url FROM defect_photos WHERE id = $1', [photoId]);
+        if (!photo) {
+            return res.status(404).json({ success: false, error: 'Photo not found' });
+        }
+
+        await pool.query('DELETE FROM defect_photos WHERE id = $1', [photoId]);
+
+        const filePath = path.join(__dirname, photo.photo_url.replace(/^\//, ''));
+        fs.unlink(filePath, (err) => {
+            if (err) console.warn('Could not delete photo file:', filePath, err.message);
+        });
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Delete photo error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Update an already-uploaded photo's description
+app.patch('/api/inspection-photos/:photoId', async (req, res) => {
+    try {
+        const { photoId } = req.params;
+        const { photo_description } = req.body;
+        const result = await pool.query(
+            'UPDATE defect_photos SET photo_description = $1 WHERE id = $2',
+            [photo_description || '', photoId]
+        );
+        if (result.rowCount === 0) {
+            return res.status(404).json({ success: false, error: 'Photo not found' });
+        }
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Update photo description error:', err);
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 

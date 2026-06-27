@@ -762,12 +762,10 @@
                 <button class="close-btn-photo" onclick="closePhotoModal()">&times;</button>
             </div>
             <div id="previewContainer-photo" class="preview-container-photo">
-                <label class="add-photo-photo" for="photoInput-photo">+</label>
-                <input type="file" id="photoInput-photo" accept="image/*" onchange="previewImages()" multiple />
+                <!-- populated by loadDefectPhotos() in photo.js -->
             </div>
             <div class="modal-footer-photo">
-                <button class="btn-photo btn-cancel" onclick="closePhotoModal()">CANCEL</button>
-                <button type="button" class="btn-photo btn-upload" id="savePhotosBtn">SAVE</button>
+                <button type="button" class="btn-photo btn-upload" onclick="closePhotoModal()">DONE</button>
             </div>
         </div>
     </div>

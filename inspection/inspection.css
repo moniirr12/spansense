@@ -1595,6 +1595,38 @@ body {
     color: #bbb;
 }
 
+/* Auto-upload status banner (uploading spinner / failed-tap-to-retry) */
+.photo-status {
+    padding: 6px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+.photo-status.uploading {
+    background: rgba(91, 140, 138, 0.12);
+    color: #5b8c8a;
+}
+.photo-status.failed {
+    background: rgba(220, 38, 38, 0.1);
+    color: #c0392b;
+    cursor: pointer;
+}
+.photo-status.failed:hover {
+    background: rgba(220, 38, 38, 0.18);
+}
+.night-mode .photo-status.uploading {
+    background: rgba(138, 180, 176, 0.15);
+    color: #8ab4b0;
+}
+.night-mode .photo-status.failed {
+    background: rgba(224, 112, 112, 0.15);
+    color: #e07070;
+}
+
 .photo-description-input:focus {
     background: white;
 }
