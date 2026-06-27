@@ -806,15 +806,13 @@ body.modal-open {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.6);
+    background: none;
     color: #8a9ba8;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    transition: all 0.2s;
+    transition: color 0.2s, background 0.2s;
 }
 #bridgeModal .card-header .close:hover {
     background: #fdf2f2;
     color: #c47070;
-    transform: rotate(90deg);
 }
 
 /* Photo, with location badge embedded in the image area */
@@ -1005,10 +1003,6 @@ body.modal-open {
     border-color: rgba(47, 62, 69, 0.6);
 }
 .night-mode #bridgeModal .header-text .bridge-name { color: #d4dfe3; }
-.night-mode #bridgeModal .card-header .close {
-    background: rgba(47, 62, 72, 0.6);
-    color: #8aa4ac;
-}
 .night-mode #bridgeModal .photo-section {
     background: #1e2a2f;
     border-color: rgba(47, 62, 69, 0.6);
@@ -3929,11 +3923,11 @@ body.modal-open {
 
 .ss-close-btn {
   width: 36px; height: 36px; border-radius: 50%; border: none;
-  background: white; color: #8a9ba8; font-size: 1.1rem; cursor: pointer;
+  background: none; color: #8a9ba8; font-size: 1.5rem; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  transition: all 0.2s; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  transition: color 0.2s, background 0.2s; flex-shrink: 0;
 }
-.ss-close-btn:hover { background: #fdf2f2; color: #c47070; transform: rotate(90deg); }
+.ss-close-btn:hover { background: #fdf2f2; color: #c47070; }
 
 /* Stats bar */
 .ss-stats-bar {
@@ -4134,7 +4128,6 @@ body.modal-open {
 .night-mode .ss-hdr-title { color: #d4dfe3; }
 .night-mode .ss-hdr-sub { color: #8aa4ac; }
 .night-mode .ss-hdr-sub span { color: #8ab4b0; }
-.night-mode .ss-close-btn { background: #2f3e48; color: #8aa4ac; }
 .night-mode .ss-stats-bar { background: #232e34; border-bottom-color: #2f3e45; }
 .night-mode .ss-stat-pill { background: #1e2a2f; border-color: #2f3e45; }
 .night-mode .ss-stat-icon { background: #2f3e48; border-color: #3e525e; color: #8ab4b0; }
