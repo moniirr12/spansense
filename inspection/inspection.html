@@ -552,12 +552,6 @@
                         <div class="stat-value critical" id="bciCritResult">100.00</div>
                     </div>
 
-                    <!-- Span Progress Card -->
-                    <div class="stat-card">
-                        <div class="stat-label">REVIEWED</div>
-                        <div class="stat-value" id="spanProgressResult">0/0</div>
-                    </div>
-
                     <!-- Date Card -->
                     <div class="stat-card date-card">
                         <div class="stat-label">INSPECTION DATE</div>
@@ -774,6 +768,20 @@
             <div class="modal-footer-photo">
                 <button class="btn-photo btn-cancel" onclick="closePhotoModal()">CANCEL</button>
                 <button type="button" class="btn-photo btn-upload" id="savePhotosBtn">SAVE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lightweight styled confirm dialog (replaces native confirm()/alert() — see showConfirmModal in photo.js) -->
+    <div class="modal-overlay" id="confirmModalOverlay">
+        <div class="modal-card">
+            <div class="modal-icon" id="confirmModalIcon">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <h3 class="modal-title" id="confirmModalTitle">Are you sure?</h3>
+            <p class="modal-message" id="confirmModalMessage">Message goes here</p>
+            <div class="modal-actions" id="confirmModalActions">
+                <button class="modal-btn primary" id="confirmModalConfirmBtn">OK</button>
             </div>
         </div>
     </div>

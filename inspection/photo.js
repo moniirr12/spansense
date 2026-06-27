@@ -2,6 +2,57 @@
 // PHOTO MANAGEMENT SYSTEM - COMPLETE WORKING VERSION
 // ============================================
 
+// Styled stand-in for confirm() — same look/API as inspection1.html's
+// showModal, scoped under #confirmModalOverlay so it doesn't collide with
+// the existing #modal (defect-entry) open/close functions on this page.
+function showConfirmModal(opts) {
+    const overlay = document.getElementById('confirmModalOverlay');
+    if (!overlay) return Promise.resolve(true);
+
+    const iconBox = document.getElementById('confirmModalIcon');
+    const titleBox = document.getElementById('confirmModalTitle');
+    const msgBox = document.getElementById('confirmModalMessage');
+    const actionsBox = document.getElementById('confirmModalActions');
+
+    const type = opts.type || 'error';
+    const confirmText = opts.confirmText || 'OK';
+    const cancelText = opts.cancelText || 'Cancel';
+    const showCancel = opts.showCancel || false;
+
+    return new Promise((resolve) => {
+        iconBox.className = 'modal-icon';
+        if (type === 'warning' || type === 'success' || type === 'error') iconBox.classList.add(type);
+        const iconMap = { error: 'fa-exclamation-circle', warning: 'fa-exclamation-triangle', success: 'fa-check-circle' };
+        iconBox.innerHTML = `<i class="fas ${iconMap[type] || iconMap.error}"></i>`;
+
+        titleBox.textContent = opts.title || '';
+        msgBox.textContent = opts.message || '';
+
+        let buttonsHTML = '';
+        if (showCancel) buttonsHTML += `<button class="modal-btn secondary" id="confirmModalCancelBtn">${cancelText}</button>`;
+        buttonsHTML += `<button class="modal-btn ${type === 'error' ? 'danger' : 'primary'}" id="confirmModalConfirmBtn">${confirmText}</button>`;
+        actionsBox.innerHTML = buttonsHTML;
+
+        const close = (result) => {
+            overlay.classList.remove('active');
+            document.removeEventListener('keydown', escHandler);
+            resolve(result);
+        };
+        const escHandler = (e) => { if (e.key === 'Escape') close(false); };
+
+        document.getElementById('confirmModalConfirmBtn').onclick = () => close(true);
+        const cancelBtn = document.getElementById('confirmModalCancelBtn');
+        if (cancelBtn) cancelBtn.onclick = () => close(false);
+
+        overlay.classList.add('active');
+        document.addEventListener('keydown', escHandler);
+    });
+}
+window.showConfirmModal = showConfirmModal;
+document.getElementById('confirmModalOverlay')?.addEventListener('click', (e) => {
+    if (e.target.id === 'confirmModalOverlay') e.target.classList.remove('active');
+});
+
 // Global photoData object
 let photoData = JSON.parse(sessionStorage.getItem('photoData')) || {};
 
@@ -205,13 +256,19 @@ function updateLocalPhotoDescription(defectId, index, description) {
 // ============================================
 // REMOVE LOCAL PHOTO
 // ============================================
-function removeLocalPhoto(defectId, index) {
-    if (confirm('Remove this photo?')) {
-        if (photoData[defectId] && photoData[defectId][index]) {
-            photoData[defectId].splice(index, 1);
-            sessionStorage.setItem('photoData', JSON.stringify(photoData));
-            loadDefectPhotos(defectId);
-        }
+async function removeLocalPhoto(defectId, index) {
+    const confirmed = await showConfirmModal({
+        title: 'Remove Photo',
+        message: 'Remove this photo?',
+        type: 'warning',
+        confirmText: 'Remove',
+        cancelText: 'Keep',
+        showCancel: true
+    });
+    if (confirmed && photoData[defectId] && photoData[defectId][index]) {
+        photoData[defectId].splice(index, 1);
+        sessionStorage.setItem('photoData', JSON.stringify(photoData));
+        loadDefectPhotos(defectId);
     }
 }
 
@@ -224,19 +281,19 @@ async function savePhotos() {
     const inspectionDate = sessionStorage.getItem('inspectionDate');
 
     if (!defectId || !bridgeId || !inspectionDate) {
-        alert('Missing required information');
+        showToast('Missing required information');
         return;
     }
 
     if (!photoData[defectId] || !photoData[defectId].length) {
-        alert('No photos to upload');
+        showToast('No photos to upload');
         return;
     }
 
     const photosToUpload = photoData[defectId].filter(photo => !photo.photo_url);
-    
+
     if (!photosToUpload.length) {
-        alert('All photos are already uploaded');
+        showToast('All photos are already uploaded');
         return;
     }
 
@@ -278,12 +335,12 @@ async function savePhotos() {
             });
             
             sessionStorage.setItem('photoData', JSON.stringify(photoData));
-            alert('Photos uploaded successfully!');
+            showToast('Photos uploaded successfully!');
             loadDefectPhotos(defectId);
         }
     } catch (error) {
         console.error('Upload error:', error);
-        alert('Upload failed: ' + error.message);
+        showToast('Upload failed: ' + error.message);
     }
 }
 
@@ -330,16 +387,30 @@ async function getAllPhotosForCurrentInspection() {
 // ============================================
 // CLOSE PHOTO MODAL
 // ============================================
-function closePhotoModal() {
-    const shouldProceed = confirm("If you proceed to cancel, all progress will be lost. Continue?");
-    if (shouldProceed) {
-        const modal = document.getElementById('uploadModal-photo');
-        if (modal) modal.style.display = 'none';
-        const container = document.getElementById('previewContainer-photo');
-        if (container) container.innerHTML = '';
-        const fileInput = document.getElementById('photoInput-photo');
-        if (fileInput) fileInput.value = '';
+async function closePhotoModal() {
+    const defectId = sessionStorage.getItem('currentDefectId');
+    const hasUnsavedPhotos = (photoData[defectId] || []).some(photo => !photo.photo_url);
+
+    // Only ask if there's actually something to lose — just browsing
+    // already-saved photos shouldn't need a confirmation to close.
+    if (hasUnsavedPhotos) {
+        const shouldProceed = await showConfirmModal({
+            title: 'Discard Unsaved Photos?',
+            message: 'You have photos that haven\'t been uploaded yet. If you close now, they\'ll be lost.',
+            type: 'warning',
+            confirmText: 'Discard',
+            cancelText: 'Keep Editing',
+            showCancel: true
+        });
+        if (!shouldProceed) return;
     }
+
+    const modal = document.getElementById('uploadModal-photo');
+    if (modal) modal.style.display = 'none';
+    const container = document.getElementById('previewContainer-photo');
+    if (container) container.innerHTML = '';
+    const fileInput = document.getElementById('photoInput-photo');
+    if (fileInput) fileInput.value = '';
 }
 
 // ============================================
