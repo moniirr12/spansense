@@ -298,7 +298,20 @@ function addLocalPhotoCard(grid, photo, defectId, index) {
         ${!photo.uploading ? `<span class="remove-photo" onclick="removeLocalPhoto('${defectId}', ${index})">×</span>` : ''}
         <img src="${photo.preview_url}" alt="Preview">
         ${statusHtml}
+        <textarea class="photo-description-input"
+                  placeholder="Add description...">${escapeHtml(photo.photo_description || '')}</textarea>
     `;
+
+    // This defect doesn't have a real database id yet (brand-new, not-yet-saved
+    // defect) — there's no row to PATCH, so the caption just lives in
+    // sessionStorage and gets sent along when the whole inspection is saved.
+    const textarea = photoElement.querySelector('.photo-description-input');
+    textarea.addEventListener('input', function() {
+        if (photoData[defectId] && photoData[defectId][index]) {
+            photoData[defectId][index].photo_description = this.value;
+            sessionStorage.setItem('photoData', JSON.stringify(photoData));
+        }
+    });
 
     grid.appendChild(photoElement);
 }
