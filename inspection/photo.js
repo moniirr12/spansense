@@ -54,8 +54,11 @@ async function loadDefectPhotos(defectId) {
         
         // Get fresh photos from server
         const allServerPhotos = await getAllPhotosForCurrentInspection();
-        const serverPhotosForDefect = allServerPhotos.filter(photo => 
-            photo.defect_id === defectId || photo.front_defectid === defectId
+        const serverPhotosForDefect = allServerPhotos.filter(photo =>
+            // defect_id comes back from Postgres as a number; defectId here is
+            // always a string (read from the row's .defectId textContent) —
+            // compare as strings so a real defect id still matches.
+            String(photo.defect_id) === String(defectId) || String(photo.front_defectid) === String(defectId)
         );
         
         // Merge: Keep local photos that aren't yet uploaded

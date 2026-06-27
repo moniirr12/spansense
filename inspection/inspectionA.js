@@ -607,6 +607,9 @@ if (inspectionDatesElement) {
                     };
                     
                     populateField(".addDefect", defect.def);
+                    // Real DB defect id — without this, openPhotoModal() in photo.js
+                    // has nothing to look the defect's photos up by.
+                    populateField(".defectId", defect.defectDbId);
                     const sevEl = expandableRow.querySelector(".addSeverity");
                     if (sevEl) sevEl.innerHTML = severityBadgeHTML(defect.s);
                     const extEl = expandableRow.querySelector(".addExtent");

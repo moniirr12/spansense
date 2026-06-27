@@ -372,7 +372,8 @@ app.get("/api/defects-by-date", async (req, res) => {
     try {
         const { structure_number, date } = req.query;
         const rows = await dbAll(`
-            SELECT 
+            SELECT
+                d.id,
                 d.span_number,
                 d.element_no,
                 d.element_description,
@@ -392,12 +393,13 @@ app.get("/api/defects-by-date", async (req, res) => {
             FROM defects d
             JOIN inspections i ON d.inspection_id = i.id
             JOIN inspection_spans s ON d.inspection_id = s.inspection_id AND d.span_number = s.span_number
-            WHERE i.structure_id = $1 
+            WHERE i.structure_id = $1
             AND i.inspection_date = $2
             ORDER BY d.span_number, d.element_no, d.defect_no
         `, [structure_number, date]);
 
         const transformed = rows.map(row => ({
+            defectDbId: row.id,
             span_number: row.span_number,
             element_no: row.element_no,
             def: `${row.defect_type}.${row.defect_number}`,
