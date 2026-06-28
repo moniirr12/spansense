@@ -123,8 +123,8 @@ var GRID_LAYOUT = {
     vLineColor:    () => '#000000',
     paddingTop:    () => 1.5,
     paddingBottom: () => 1.5,
-    paddingLeft:   () => 2,
-    paddingRight:  () => 2,
+    paddingLeft:   () => 0.5,
+    paddingRight:  () => 0.5,
 };
 
 // Shared so page 1 and page 2's tables stretch to the exact same total
@@ -251,7 +251,9 @@ function buildBCIProformaContent(bciFormData) {
         });
 
         var inspector  = spanData.inspector_name  || '';
-        var date       = spanData.inspection_date || '';
+        var date       = spanData.inspection_date
+            ? new Date(spanData.inspection_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+            : '';
         var nextInsp   = spanData.next_inspection || '';
         var roadRef    = bridgeData.road_ref || bridgeData.location || '';
         var mapRef     = bridgeData.grid_reference || (bridgeData.latitude && bridgeData.longitude ? '' + Number(bridgeData.latitude).toFixed(3) + ', ' + Number(bridgeData.longitude).toFixed(3) : '');
@@ -307,7 +309,7 @@ function buildBCIProformaContent(bciFormData) {
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
             { text: [{ text: 'Bridge\ncode\n', bold: true }, { text: String(bridgeCode) }],
               rowSpan: 4, fontSize: 6.5, alignment: 'center', fillColor: BCI_COLORS.sectionBg },
-            lv('Primary deck form (Table G.4): ', primForm, { colSpan: 3, alignment: 'right' }),
+            lv('Primary deck form (Table G.4): ', primForm, { colSpan: 3 }),
             { text: '' }, { text: '' }
         ]);
 
@@ -320,7 +322,7 @@ function buildBCIProformaContent(bciFormData) {
             lv('OSN: ', osN, { colSpan: 6 }),
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
             { text: '' },
-            lv('Primary deck material (Table G.6): ', primMat, { colSpan: 3, alignment: 'right' }),
+            lv('Primary deck material (Table G.6): ', primMat, { colSpan: 3 }),
             { text: '' }, { text: '' }
         ]);
 
@@ -333,7 +335,7 @@ function buildBCIProformaContent(bciFormData) {
             lv('Span Length (m): ', spanL, { colSpan: 6 }),
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
             { text: '' },
-            lv('Secondary deck form (Table G.5): ', secForm, { colSpan: 3, alignment: 'right' }),
+            lv('Secondary deck form (Table G.5): ', secForm, { colSpan: 3 }),
             { text: '' }, { text: '' }
         ]);
 
@@ -344,7 +346,7 @@ function buildBCIProformaContent(bciFormData) {
             lv('Photographs: ', photos, { colSpan: 6 }),
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
             { text: '' },
-            lv('Secondary deck material (Table G.6): ', secMat, { colSpan: 3, alignment: 'right' }),
+            lv('Secondary deck material (Table G.6): ', secMat, { colSpan: 3 }),
             { text: '' }, { text: '' }
         ]);
 
@@ -480,8 +482,15 @@ function buildBCIProformaContent(bciFormData) {
             vLineWidth:    function() { return 0.5; },
             hLineColor:    function() { return '#000000'; },
             vLineColor:    function() { return '#000000'; },
-            paddingLeft:   function() { return 2; },
-            paddingRight:  function() { return 2; },
+            // pdfmake (0.2.7) accumulates paddingLeft+paddingRight into the
+            // x-offset of every column after the first, per preceding
+            // column - with 17 narrow columns before the wide label columns
+            // (17-19), normal 2pt padding compounds into ~70-90pt of drift,
+            // pushing "Primary deck form..."-style text well past the
+            // table's right edge. Zero padding on the narrow columns keeps
+            // that drift to a few pt; the wide columns keep normal padding.
+            paddingLeft:   function(i) { return i < 17 ? 0 : 2; },
+            paddingRight:  function(i) { return i < 17 ? 0 : 2; },
             paddingTop:    function(i) { return (i >= dataRowFirstIdx && i <= dataRowLastIdx) ? dataRowPad : 1.5; },
             paddingBottom: function(i) { return (i >= dataRowFirstIdx && i <= dataRowLastIdx) ? dataRowPad : 1.5; },
         };
@@ -635,9 +644,9 @@ function buildBCIPage2Content(bciFormData) {
             { text: 'Signed:', colSpan: 2,  bold: true, fontSize: 7 }, { text: '' },
             { text: '',        colSpan: 6,  fontSize: 7 },
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
-            { text: 'Date:',   colSpan: 1,  bold: true, fontSize: 7 },
-            { text: date,      colSpan: 4,  fontSize: 7 },
-            { text: '' }, { text: '' }, { text: '' }
+            { text: 'Date:',   colSpan: 2,  bold: true, fontSize: 7 }, { text: '' },
+            { text: date, colSpan: 3, fontSize: 7 },
+            { text: '' }, { text: '' }
         ]);
 
         // SECTION 3: ENGINEER'S COMMENTS
@@ -659,9 +668,9 @@ function buildBCIPage2Content(bciFormData) {
             { text: 'Signed:',       colSpan: 2,  bold: true, fontSize: 7 }, { text: '' },
             { text: '',              colSpan: 6,  fontSize: 7 },
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
-            { text: 'Date:',         colSpan: 1,  bold: true, fontSize: 7 },
-            { text: date,            colSpan: 4,  fontSize: 7 },
-            { text: '' }, { text: '' }, { text: '' }
+            { text: 'Date:',         colSpan: 2,  bold: true, fontSize: 7 }, { text: '' },
+            { text: date, colSpan: 3, fontSize: 7 },
+            { text: '' }, { text: '' }
         ]);
 
         // SECTION 4: WORK REQUIRED
@@ -718,9 +727,9 @@ function buildBCIPage2Content(bciFormData) {
             { text: 'Signed:', colSpan: 2,  bold: true, fontSize: 7 }, { text: '' },
             { text: '',        colSpan: 6,  fontSize: 7 },
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
-            { text: 'Date:',   colSpan: 1,  bold: true, fontSize: 7 },
-            { text: date,      colSpan: 4,  fontSize: 7 },
-            { text: '' }, { text: '' }, { text: '' }
+            { text: 'Date:',   colSpan: 2,  bold: true, fontSize: 7 }, { text: '' },
+            { text: date, colSpan: 3, fontSize: 7 },
+            { text: '' }, { text: '' }
         ]);
 
         var page2Layout = {
@@ -728,8 +737,10 @@ function buildBCIPage2Content(bciFormData) {
             vLineWidth:    function() { return 0.5; },
             hLineColor:    function() { return '#000000'; },
             vLineColor:    function() { return '#000000'; },
-            paddingLeft:   function() { return 2; },
-            paddingRight:  function() { return 2; },
+            // See page1Layout's comment - same pdfmake column-offset quirk,
+            // same fix.
+            paddingLeft:   function(i) { return i < 17 ? 0 : 2; },
+            paddingRight:  function(i) { return i < 17 ? 0 : 2; },
             paddingTop:    function(rowIndex) { return COMMENT_ROW_INDICES.has(rowIndex) ? commentPad : dataPad; },
             paddingBottom: function(rowIndex) { return COMMENT_ROW_INDICES.has(rowIndex) ? commentPad : dataPad; },
         };

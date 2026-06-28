@@ -539,7 +539,7 @@ app.get('/api/defectsbci', async (req, res) => {
         const { structureId, date } = req.query;
 
         const inspectionQuery = `
-            SELECT id, inspection_date, inspector_name FROM inspections 
+            SELECT id, inspection_date, inspector_name, inspection_type FROM inspections
             WHERE structure_id = $1
             ${date ? 'AND inspection_date = $2' : ''}
         `;
@@ -550,6 +550,35 @@ app.get('/api/defectsbci', async (req, res) => {
         if (!inspections || inspections.length === 0) {
             return res.json([]);
         }
+
+        // Next inspection due, following the GI/PI cycle: GI every 2 years,
+        // PI every 6 years - since 6 = 3*2, a PI lands on what would
+        // otherwise be a GI date and supersedes it, giving the repeating
+        // GI, GI, PI pattern used in planning.html and /api/twin. Computed
+        // relative to *this* inspection's date (using only history up to
+        // and including it) so reprinting an older form still shows what
+        // was next due at that point, not relative to today.
+        const allInspections = await dbAll(
+            `SELECT inspection_date, inspection_type FROM inspections
+             WHERE structure_id = $1 ORDER BY inspection_date ASC`,
+            [structureId]
+        );
+        const thisInspectionDate = new Date(inspections[0].inspection_date);
+        const priorInspections = allInspections.filter(i => new Date(i.inspection_date) <= thisInspectionDate);
+        function lastDateOf(type) {
+            const matches = priorInspections.filter(i => i.inspection_type === type);
+            return matches.length ? new Date(matches[matches.length - 1].inspection_date) : null;
+        }
+        const lastGI = lastDateOf('GI');
+        const lastPI = lastDateOf('PI');
+        const dueDates = [];
+        if (lastGI) dueDates.push({ type: 'GI', date: new Date(lastGI.getFullYear() + GI_CYCLE_YEARS, lastGI.getMonth(), lastGI.getDate()) });
+        if (lastPI) dueDates.push({ type: 'PI', date: new Date(lastPI.getFullYear() + PI_CYCLE_YEARS, lastPI.getMonth(), lastPI.getDate()) });
+        dueDates.sort((a, b) => a.date - b.date);
+        const nextDue = dueDates[0] || null;
+        const nextInspection = nextDue
+            ? `${nextDue.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} ${nextDue.type}`
+            : null;
 
         const inspectionIds = inspections.map(i => i.id);
         const placeholders = inspectionIds.map((_, i) => `$${i + 1}`).join(',');
@@ -593,11 +622,11 @@ app.get('/api/defectsbci', async (req, res) => {
         `, inspectionIds);
 
         const result = spans.map(span => {
-            const spanDefects = defects.filter(d => 
-                d.inspection_id === span.inspection_id && 
+            const spanDefects = defects.filter(d =>
+                d.inspection_id === span.inspection_id &&
                 d.span_number === span.span_number
             );
-            return { ...span, defects: spanDefects };
+            return { ...span, defects: spanDefects, next_inspection: nextInspection };
         });
 
         res.json(result);

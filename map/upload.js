@@ -61,6 +61,8 @@ function initializeFileExplorer() {
             initFileExplorer(structureId);
             modal.style.display = 'flex';
             document.body.style.overflow = 'hidden';
+            const bridgeModal = document.getElementById('bridgeModal');
+            if (bridgeModal) bridgeModal.style.display = 'none';
         } else {
             showToast('No structure selected');
         }
@@ -69,12 +71,16 @@ function initializeFileExplorer() {
     closeModalBtn.addEventListener('click', () => {
         modal.style.display = 'none';
         document.body.style.overflow = 'auto';
+        const bridgeModal = document.getElementById('bridgeModal');
+        if (bridgeModal) bridgeModal.style.display = 'flex';
     });
 
     window.addEventListener('click', (e) => {
         if (e.target === modal) {
             modal.style.display = 'none';
             document.body.style.overflow = 'auto';
+            const bridgeModal = document.getElementById('bridgeModal');
+            if (bridgeModal) bridgeModal.style.display = 'flex';
         }
     });
 }
@@ -462,39 +468,6 @@ async function deleteSelectedItem() {
 function updateDocModalTitle() {
     const structureName = sessionStorage.getItem('structureName') || 'Untitled Structure';
     const structureId = sessionStorage.getItem('structureId') || '';
-    document.getElementById('explorerTitle').textContent = 
+    document.getElementById('explorerTitle').textContent =
         `Documents - ${structureName} (#${structureId})`;
 }
-
-
-
-// Modal control
-docsBtn.addEventListener('click', () => {
-    const structureId = sessionStorage.getItem('structureId');
-    if (structureId) {
-        initFileExplorer(structureId);
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-        const bridgeModal = document.getElementById('bridgeModal');
-        if (bridgeModal) bridgeModal.style.display = 'none';
-    } else {
-        showToast('No structure selected');
-    }
-});
-
-// REPLACE WITH (both occurrences — there are two, at top and bottom):
-closeModalBtn.addEventListener('click', () => {
-    modal.style.display = 'none';
-    document.body.style.overflow = 'auto';
-    const bridgeModal = document.getElementById('bridgeModal');
-    if (bridgeModal) bridgeModal.style.display = 'flex';
-});
-
-window.addEventListener('click', (e) => {
-    if (e.target === modal) {
-        modal.style.display = 'none';
-        document.body.style.overflow = 'auto';
-        const bridgeModal = document.getElementById('bridgeModal');
-        if (bridgeModal) bridgeModal.style.display = 'flex';
-    }
-});
