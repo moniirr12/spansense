@@ -213,7 +213,11 @@ function renderCustomSelect(selectId, labelId, panelId, wrapperId) {
         item.textContent = option.textContent;
         item.addEventListener('click', () => {
             select.value = option.value;
-            select.dispatchEvent(new Event('change'));
+            // bubbles:true is required here — updateDefectNumbers() and the
+            // severity guidance panel are wired via a delegated listener on
+            // document, which a non-bubbling dispatched event never reaches
+            // (only direct-on-element listeners would still fire).
+            select.dispatchEvent(new Event('change', { bubbles: true }));
             const wrapper = document.getElementById(wrapperId);
             if (wrapper) wrapper.classList.remove('open');
         });
