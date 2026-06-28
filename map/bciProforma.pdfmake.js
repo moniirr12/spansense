@@ -661,7 +661,7 @@ function buildBCIPage2Content(bciFormData) {
         ]);
 
         tableBody.push([
-            lv('Name: ', '[Insert name]', { colSpan: 7 }),
+            lv('Name: ', '', { colSpan: 7 }),
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
             { text: 'Signed: ', bold: true, colSpan: 8, fontSize: 7 },
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
