@@ -127,6 +127,22 @@ var GRID_LAYOUT = {
     paddingRight:  () => 2,
 };
 
+// Shared so page 1 and page 2's tables stretch to the exact same total
+// height regardless of how many rows each one naturally has (otherwise
+// whichever has fewer/shorter rows - e.g. a Retaining Wall's element list
+// vs a Bridge's - ends up visibly shorter). The 0.967 factor was tuned by
+// actually rendering and measuring the PDF, not derived analytically -
+// pdfmake's real row heights don't quite match a simple text+padding model.
+var PAGE_TARGET_HEIGHT = (841 - 80) * 0.967;
+
+// Page 1's 8 header/info rows + 1 footer row, at their natural (unstretched)
+// 1.5pt padding, and the natural height of one data row's text alone with
+// padding removed - both measured the same way as PAGE_TARGET_HEIGHT above
+// (render + measure), used to size the *data* rows (elements + spare) so
+// the whole table reaches PAGE_TARGET_HEIGHT regardless of element count.
+var PAGE1_FIXED_ROWS_HEIGHT = 164;
+var PAGE1_DATA_TEXT_HEIGHT = 10.627;
+
 // A4 usable width with 40pt margins = 515pt
 var PW = 375;
 
@@ -137,6 +153,21 @@ var COL_WIDTHS = [
     PW * 0.04, PW * 0.04, PW * 0.04, PW * 0.04, PW * 0.04,
     PW * 0.04, PW * 0.04, PW * 0.14,  PW * 0.14,  PW * 0.04
 ];
+var TABLE_WIDTH = COL_WIDTHS.reduce(function(a, b) { return a + b; }, 0);
+
+// Tables are narrower than the usable page width (515pt) by design, so
+// pdfmake's default left-alignment leaves them sitting off-centre - flank
+// with two equal auto-stretching columns to centre the fixed-width table.
+function centeredTable(tableDef) {
+    return {
+        margin: [0, 8, 0, 0],
+        columns: [
+            { width: '*', text: '' },
+            { width: TABLE_WIDTH, table: tableDef.table, layout: tableDef.layout },
+            { width: '*', text: '' }
+        ]
+    };
+}
 
 // ─── Helper function to create a row ─────────────────────────────────────────
 function createRow(cells) {
@@ -162,6 +193,20 @@ function hdr(text, extra) {
 function cell(text, extra) {
     extra = extra || {};
     return { text: text != null ? text : '', fontSize: 7, ...extra };
+}
+
+// "Label: value" cell with only the label bold - the retrieved value
+// (inspector name, date, etc.) renders at normal weight.
+function lv(label, value, extra) {
+    extra = extra || {};
+    return {
+        text: [
+            { text: label, bold: true },
+            { text: value != null ? String(value) : '' }
+        ],
+        fontSize: 7,
+        ...extra
+    };
 }
 
 function setCell(label, rowSpan) {
@@ -210,8 +255,8 @@ function buildBCIProformaContent(bciFormData) {
         var nextInsp   = spanData.next_inspection || '';
         var roadRef    = bridgeData.road_ref || bridgeData.location || '';
         var mapRef     = bridgeData.grid_reference || (bridgeData.latitude && bridgeData.longitude ? '' + Number(bridgeData.latitude).toFixed(3) + ', ' + Number(bridgeData.longitude).toFixed(3) : '');
-        var osE        = bridgeData.easting  || bridgeData.OSE || '';
-        var osN        = bridgeData.northing || bridgeData.OSN || '';
+        var osE        = bridgeData.easting  || bridgeData.ose || '';
+        var osN        = bridgeData.northing || bridgeData.osn || '';
         var primForm   = bridgeData.primary_form || bridgeData.primaryForm || '';
         var primMat    = bridgeData.primary_material || bridgeData.primaryMaterial || '';
         var secForm    = bridgeData.secondary_form || bridgeData.secondaryForm || '';
@@ -244,67 +289,74 @@ function buildBCIProformaContent(bciFormData) {
 
         // ROW 2: Inspector(5) | Date(5) | Next(5) | Road(5) = 20
         tableBody.push([
-            { text: 'Inspector: ' + inspector, colSpan: 5, fontSize: 7, bold: true },
+            lv('Inspector: ', inspector, { colSpan: 5 }),
             { text: '' }, { text: '' }, { text: '' }, { text: '' },
-            { text: 'Date: ' + date, colSpan: 5, fontSize: 7, bold: true },
+            lv('Date: ', date, { colSpan: 5 }),
             { text: '' }, { text: '' }, { text: '' }, { text: '' },
-            { text: 'Next inspection: ' + nextInsp, colSpan: 5, fontSize: 7, bold: true },
+            lv('Next inspection: ', nextInsp, { colSpan: 5 }),
             { text: '' }, { text: '' }, { text: '' }, { text: '' },
-            { text: 'Road Ref: ' + roadRef, colSpan: 5, fontSize: 7, bold: true },
+            lv('Road Ref: ', roadRef, { colSpan: 5 }),
             { text: '' }, { text: '' }, { text: '' }, { text: '' }
         ]);
 
         // ROW 3: BridgeName(10) | BridgeRef(6) | BridgeCode(1) | PrimaryForm(3) = 20
         tableBody.push([
-            { text: 'Bridge name: ' + structureName, colSpan: 10, fontSize: 7, bold: true },
+            lv('Bridge name: ', structureName, { colSpan: 10 }),
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
-            { text: 'Bridge Ref: ' + structureId, colSpan: 6, fontSize: 7, bold: true },
+            lv('Bridge Ref: ', structureId, { colSpan: 6 }),
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
-            { text: 'Bridge\ncode\n' + bridgeCode, rowSpan: 4, bold: true, fontSize: 6.5, alignment: 'center', fillColor: BCI_COLORS.sectionBg },
-            { text: 'Primary deck form (Table G.4): ' + primForm, colSpan: 3, fontSize: 7, bold: true, alignment: 'right' },
+            { text: [{ text: 'Bridge\ncode\n', bold: true }, { text: String(bridgeCode) }],
+              rowSpan: 4, fontSize: 6.5, alignment: 'center', fillColor: BCI_COLORS.sectionBg },
+            lv('Primary deck form (Table G.4): ', primForm, { colSpan: 3, alignment: 'right' }),
             { text: '' }, { text: '' }
         ]);
 
         // ROW 4: MapRef(5) | OSE(5) | OSN(6) | BLANK(1) | PrimaryMat(3) = 20
         tableBody.push([
-            { text: 'Map Ref: ' + mapRef, colSpan: 5, fontSize: 7, bold: true },
+            lv('Map Ref: ', mapRef, { colSpan: 5 }),
             { text: '' }, { text: '' }, { text: '' }, { text: '' },
-            { text: 'OSE: ' + osE, colSpan: 5, fontSize: 7, bold: true },
+            lv('OSE: ', osE, { colSpan: 5 }),
             { text: '' }, { text: '' }, { text: '' }, { text: '' },
-            { text: 'OSN: ' + osN, colSpan: 6, fontSize: 7, bold: true },
+            lv('OSN: ', osN, { colSpan: 6 }),
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
             { text: '' },
-            { text: 'Primary deck material (Table G.6): ' + primMat, colSpan: 3, fontSize: 7, bold: true, alignment: 'right' },
+            lv('Primary deck material (Table G.6): ', primMat, { colSpan: 3, alignment: 'right' }),
             { text: '' }, { text: '' }
         ]);
 
         // ROW 5: Span(4) | SpanW(6) | SpanL(6) | BLANK(1) | SecForm(3) = 20
         tableBody.push([
-            { text: 'Span: ' + spanNum + ' of ' + totalSpans, colSpan: 4, fontSize: 7, bold: true },
+            lv('Span: ', spanNum + ' of ' + totalSpans, { colSpan: 4 }),
             { text: '' }, { text: '' }, { text: '' },
-            { text: 'Span Width (m): ' + spanW, colSpan: 6, fontSize: 7, bold: true },
+            lv('Span Width (m): ', spanW, { colSpan: 6 }),
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
-            { text: 'Span Length (m): ' + spanL, colSpan: 6, fontSize: 7, bold: true },
+            lv('Span Length (m): ', spanL, { colSpan: 6 }),
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
             { text: '' },
-            { text: 'Secondary deck form (Table G.5): ' + secForm, colSpan: 3, fontSize: 7, bold: true, alignment: 'right' },
+            lv('Secondary deck form (Table G.5): ', secForm, { colSpan: 3, alignment: 'right' }),
             { text: '' }, { text: '' }
         ]);
 
         // ROW 6: AllInspected(10) | Photos(6) | BLANK(1) | SecMat(3) = 20
         tableBody.push([
-            { text: 'All above ground elements inspected: ' + inspected, colSpan: 10, fontSize: 7, bold: true },
+            lv('All above ground elements inspected: ', inspected, { colSpan: 10 }),
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
-            { text: 'Photographs: ' + photos, colSpan: 6, fontSize: 7, bold: true },
+            lv('Photographs: ', photos, { colSpan: 6 }),
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
             { text: '' },
-            { text: 'Secondary deck material (Table G.6): ' + secMat, colSpan: 3, fontSize: 7, bold: true, alignment: 'right' },
+            lv('Secondary deck material (Table G.6): ', secMat, { colSpan: 3, alignment: 'right' }),
             { text: '' }, { text: '' }
         ]);
 
         // ROW 7: BCI Scores
         tableBody.push([
-            { text: 'BCI crit: ' + bciCrit + '    |    BCI ave: ' + bciAv, colSpan: 20, bold: true, fontSize: 8, alignment: 'center' },
+            {
+                text: [
+                    { text: 'BCI crit: ', bold: true }, { text: bciCrit },
+                    { text: '    |    BCI ave: ', bold: true }, { text: bciAv }
+                ],
+                colSpan: 20, fontSize: 8, alignment: 'center'
+            },
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }
         ]);
@@ -415,14 +467,29 @@ function buildBCIProformaContent(bciFormData) {
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }
         ]);
 
-        content.push({
-            margin: [0, 8, 0, 0],
-            table: {
-                widths: COL_WIDTHS,
-                body: tableBody,
-            },
-            layout: GRID_LAYOUT,
-        });
+        // Stretch the data rows (elements + spare - rows 8 through the row
+        // before the footer) so the table reaches the same total height as
+        // page 2's, regardless of how many elements this structure type has.
+        var dataRowCount = BCI_ELEMENTS.length + BCI_SPARE.length;
+        var dataRowFirstIdx = 8;
+        var dataRowLastIdx = dataRowFirstIdx + dataRowCount - 1;
+        var dataRowHeightTarget = (PAGE_TARGET_HEIGHT - PAGE1_FIXED_ROWS_HEIGHT) / dataRowCount;
+        var dataRowPad = Math.max(1.5, (dataRowHeightTarget - PAGE1_DATA_TEXT_HEIGHT) / 2);
+        var page1Layout = {
+            hLineWidth:    function() { return 0.5; },
+            vLineWidth:    function() { return 0.5; },
+            hLineColor:    function() { return '#000000'; },
+            vLineColor:    function() { return '#000000'; },
+            paddingLeft:   function() { return 2; },
+            paddingRight:  function() { return 2; },
+            paddingTop:    function(i) { return (i >= dataRowFirstIdx && i <= dataRowLastIdx) ? dataRowPad : 1.5; },
+            paddingBottom: function(i) { return (i >= dataRowFirstIdx && i <= dataRowLastIdx) ? dataRowPad : 1.5; },
+        };
+
+        content.push(centeredTable({
+            table: { widths: COL_WIDTHS, body: tableBody },
+            layout: page1Layout,
+        }));
     }
 
     return content;
@@ -440,7 +507,7 @@ function buildBCIPage2Content(bciFormData) {
     var spansData = bciFormData.spansData || [];
     var worksRequired = bciFormData.worksRequired || {};
 
-    var USABLE_PT       = (841 - 80) * 0.90;
+    var USABLE_PT       = PAGE_TARGET_HEIGHT;
     var MULTI_ROW_COUNT = 5;
     var WORK_ROW_COUNT  = 6;
     var TOTAL_ROWS      = 23;
@@ -667,11 +734,10 @@ function buildBCIPage2Content(bciFormData) {
             paddingBottom: function(rowIndex) { return COMMENT_ROW_INDICES.has(rowIndex) ? commentPad : dataPad; },
         };
 
-        content.push({
-            margin: [0, 8, 0, 0],
+        content.push(centeredTable({
             table: { widths: COL_WIDTHS, body: tableBody },
             layout: page2Layout,
-        });
+        }));
     }
 
     return content;

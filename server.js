@@ -6,11 +6,24 @@ const cors = require("cors");
 
 const multer = require('multer');
 const path = require('path');
+const proj4 = require('proj4');
 
 const router = express.Router();
 const fs = require('fs');
 
 const app = express();
+
+// WGS84 (lat/long) -> OSGB36 / British National Grid (easting/northing).
+// Standard EPSG:27700 definition with the published 7-parameter Helmert
+// approximation - accurate to within a few metres across Great Britain,
+// which is plenty for a proforma reference field (not survey-grade, which
+// would need the OSTN15 grid shift instead).
+proj4.defs('EPSG:27700', '+proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs +towgs84=446.448,-125.157,542.060,0.1502,0.2470,0.8421,-20.4894');
+function latLonToOSGB(lat, lon) {
+    if (lat == null || lon == null || isNaN(lat) || isNaN(lon)) return null;
+    var en = proj4('EPSG:4326', 'EPSG:27700', [Number(lon), Number(lat)]);
+    return { easting: Math.round(en[0]), northing: Math.round(en[1]) };
+}
 
 
 app.get('/api/routes', (req, res) => {
@@ -621,6 +634,14 @@ app.get('/api/bridges/:id', async (req, res) => {
         const row = await dbGet('SELECT * FROM bridges WHERE id = $1', [req.params.id]);
         if (!row) {
             return res.status(404).json({ error: 'Bridge not found' });
+        }
+        // Fill in OSE/OSN from lat/long when not already recorded.
+        if ((row.ose == null || row.osn == null) && row.latitude != null && row.longitude != null) {
+            const osgb = latLonToOSGB(row.latitude, row.longitude);
+            if (osgb) {
+                if (row.ose == null) row.ose = osgb.easting;
+                if (row.osn == null) row.osn = osgb.northing;
+            }
         }
         res.json(row);
     } catch (err) {
