@@ -1089,23 +1089,26 @@ app.get('/api/bridges/:structureId/folders/:folderId/path', async (req, res) => 
     try {
         const { structureId, folderId } = req.params;
 
-        // PostgreSQL recursive CTE
+        // PostgreSQL recursive CTE - depth tracks distance from the target
+        // folder (0 = itself, 1 = parent, ...) so the result can be ordered
+        // by actual hierarchy position. created_at isn't reliable for this:
+        // it doesn't reflect nesting depth, and is null on existing rows.
         const path = await dbAll(`
             WITH RECURSIVE folder_path AS (
-                SELECT id, name, parent_id, bridge_id, created_at 
-                FROM folders 
+                SELECT id, name, parent_id, bridge_id, 0 AS depth
+                FROM folders
                 WHERE id = $1 AND bridge_id = $2
 
                 UNION ALL
 
-                SELECT f.id, f.name, f.parent_id, f.bridge_id, f.created_at
+                SELECT f.id, f.name, f.parent_id, f.bridge_id, fp.depth + 1
                 FROM folders f
                 INNER JOIN folder_path fp ON f.id = fp.parent_id
                 WHERE f.bridge_id = $2 AND fp.parent_id IS NOT NULL
             )
             SELECT id, name, parent_id FROM folder_path
-            ORDER BY created_at ASC
-        `, [folderId, structureId, structureId]);
+            ORDER BY depth ASC
+        `, [folderId, structureId]);
 
         res.json(path);
     } catch (err) {

@@ -1889,6 +1889,15 @@ body.modal-open {
     color: #c5d3d9;
 }
 
+.breadcrumb-current {
+    color: #2c4a48;
+    cursor: default;
+}
+.breadcrumb-current:hover {
+    background: none;
+    color: #2c4a48;
+}
+
 .file-list {
     list-style: none;
     padding: 10px 12px;
@@ -2562,6 +2571,14 @@ body.modal-open {
 .night-mode .breadcrumb:hover {
     background: #3a6b62;
     color: white;
+}
+
+.night-mode .breadcrumb-current {
+    color: #d4dfe3;
+}
+.night-mode .breadcrumb-current:hover {
+    background: none;
+    color: #d4dfe3;
 }
 
 .night-mode .file-list li {

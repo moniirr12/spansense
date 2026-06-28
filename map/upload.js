@@ -176,36 +176,33 @@ async function fetchFolderPath(folderId) {
     }
 }
 
-// Render breadcrumbs
+// Render breadcrumbs. Separators are pure CSS (.breadcrumb::after) - no
+// separate separator element is inserted here, since that previously
+// doubled up with the CSS one as soon as a path actually had segments.
+// The current (last) crumb is shown but not clickable - navigating to the
+// folder you're already in would just reload the same view.
 async function renderBreadcrumbs(folderId) {
     breadcrumbs.innerHTML = '';
-    
-    // Home breadcrumb (always shown)
+
     const homeCrumb = document.createElement('span');
-    homeCrumb.className = 'breadcrumb';
+    homeCrumb.className = 'breadcrumb' + (!folderId ? ' breadcrumb-current' : '');
     homeCrumb.textContent = 'Home';
-    homeCrumb.addEventListener('click', () => loadFolderContents(null));
+    if (folderId) homeCrumb.addEventListener('click', () => loadFolderContents(null));
     breadcrumbs.appendChild(homeCrumb);
-    
+
     if (folderId) {
         try {
             const path = await fetchFolderPath(folderId);
-            
+
             // Reverse the array to get proper hierarchy
             const properOrder = [...path].reverse();
-            
-            properOrder.forEach(folder => {
-                // Add separator
-                const separator = document.createElement('span');
-                separator.textContent = ' › ';
-                separator.className = 'breadcrumb-separator';
-                breadcrumbs.appendChild(separator);
-                
-                // Add folder crumb
+
+            properOrder.forEach((folder, i) => {
+                const isCurrent = i === properOrder.length - 1;
                 const crumb = document.createElement('span');
-                crumb.className = 'breadcrumb';
+                crumb.className = 'breadcrumb' + (isCurrent ? ' breadcrumb-current' : '');
                 crumb.textContent = folder.name;
-                crumb.addEventListener('click', () => loadFolderContents(folder.id));
+                if (!isCurrent) crumb.addEventListener('click', () => loadFolderContents(folder.id));
                 breadcrumbs.appendChild(crumb);
             });
         } catch (error) {
