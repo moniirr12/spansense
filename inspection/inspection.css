@@ -1330,10 +1330,17 @@ body {
    the pair still reads as centered when the panel is showing. */
 #modal .modal-content {
     position: fixed;
-    left: calc(50% - 138px);
+    left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
     margin: 0;
+    transition: left 0.3s ease;
+}
+/* Only the Add Defect segment needs room for the guidance panel on the
+   right — No Defects/Not Inspected have nothing beside them, so they stay
+   genuinely centered instead of carrying the same offset for no reason. */
+#modal[data-modal-state="defect"] .modal-content {
+    left: calc(50% - 138px);
 }
 
 /* Severity guidance panel — sits beside the Add Defect modal, condensed
@@ -1434,7 +1441,7 @@ body {
    state, so there's nothing to jump when re-centering here). */
 @media (max-width: 860px) {
     .defect-guidance-panel { display: none !important; }
-    #modal .modal-content { left: 50%; }
+    #modal[data-modal-state="defect"] .modal-content { left: 50%; }
 }
 
 .night-mode .defect-guidance-panel {
