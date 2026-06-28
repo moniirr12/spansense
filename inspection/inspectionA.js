@@ -1182,25 +1182,6 @@ window.setModalSegment = function(btn, state) {
     }
 };
 
-// ===== HOOK INTO openModal =====
-var originalOpenModal = window.openModal;
-window.openModal = function(isEditMode, preferredState) {
-    // Call original first
-    if (originalOpenModal) originalOpenModal.apply(this, arguments);
-
-    var guidancePanel = document.getElementById('defectGuidancePanel');
-    var isDefectState = !isEditMode || preferredState === 'defect';
-
-    // Only auto-init steppers for NEW defects (not edit) and only for defect state
-    if (isDefectState) {
-        requestAnimationFrame(function() {
-            initSteppers();
-            if (typeof updateDefectGuidancePanel === 'function') updateDefectGuidancePanel();
-        });
-    }
-    if (guidancePanel) guidancePanel.style.display = isDefectState ? 'flex' : 'none';
-};
-
 // Hook saveChanges to handle the two special states
 (function() {
     var _origSave = window.saveChanges;

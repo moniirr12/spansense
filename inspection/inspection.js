@@ -45,6 +45,17 @@ function openModal(isEditMode = false, preferredState = null) {
         const segBtn = document.querySelector(`.of-segment[data-state="${targetState}"]`);
         if (segBtn) segBtn.classList.add('of-active');
 
+        // Severity guidance only makes sense while picking a defect type/number
+        // (mirrors setModalSegment, which handles this same toggle when the
+        // user switches segments from inside an already-open modal).
+        const guidancePanel = document.getElementById('defectGuidancePanel');
+        if (guidancePanel) {
+            guidancePanel.style.display = targetState === 'defect' ? 'flex' : 'none';
+            if (targetState === 'defect' && typeof updateDefectGuidancePanel === 'function') {
+                updateDefectGuidancePanel();
+            }
+        }
+
         modal.dataset.modalState = targetState;
         modal.dataset.ofState = targetState;
     } else if (!isEditMode) {
