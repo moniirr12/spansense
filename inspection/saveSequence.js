@@ -339,7 +339,7 @@
                 
             } catch (error) {
                 console.error("Save error:", error);
-                alert(`Save failed: ${error.message}`);
+                await showAlertModal(`Save failed: ${error.message}`);
                 reset();
             }
         });

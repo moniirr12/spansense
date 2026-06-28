@@ -944,6 +944,14 @@ body {
 #inspectionElementsTable tr.retrieved-defect .btn-delete {
     display: none;
 }
+/* Edit doesn't apply to retrieved (historical) rows — copy first to get an
+   editable version. Copy, in turn, only makes sense on retrieved rows. */
+#inspectionElementsTable tr.retrieved-defect button[title='Edit'] {
+    display: none;
+}
+#inspectionElementsTable tr.expandable-row:not(.retrieved-defect) button[title='Copy'] {
+    display: none;
+}
 
 /* Primary tag */
 #inspectionElementsTable tr.expandable-row .primary-tag {

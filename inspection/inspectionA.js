@@ -805,13 +805,13 @@ async function fetchPhotos() {
                     });
                     if (deleteResponse.ok) {
                         imgContainer.remove();
-                        alert('Photo deleted successfully!');
+                        showAlertModal('Photo deleted successfully!', 'success');
                     } else {
-                        alert('Failed to delete photo.');
+                        showAlertModal('Failed to delete photo.');
                     }
                 } catch (error) {
                     console.error('Error deleting photo:', error);
-                    alert('An error occurred while deleting the photo.');
+                    showAlertModal('An error occurred while deleting the photo.');
                 }
             });
 
@@ -843,15 +843,15 @@ if (photoUploadForm) {
                 body: formData,
             });
             if (response.ok) {
-                alert('Photo uploaded successfully!');
+                showAlertModal('Photo uploaded successfully!', 'success');
                 fetchPhotos();
                 photoUploadForm.reset();
             } else {
-                alert('Failed to upload photo.');
+                showAlertModal('Failed to upload photo.');
             }
         } catch (error) {
             console.error('Error uploading photo:', error);
-            alert('An error occurred while uploading the photo.');
+            showAlertModal('An error occurred while uploading the photo.');
         }
     });
 }

@@ -465,7 +465,7 @@ function saveChanges() {
   const selectedSpan = sessionStorage.getItem('selectedSpan');
   if (!selectedSpan) {
     console.error("No span selected - aborting save");
-    alert("No span selected! Please select a span first.");
+    showAlertModal("No span selected! Please select a span first.");
     console.groupEnd();
     return;
   }
@@ -473,7 +473,7 @@ function saveChanges() {
   const extVal = document.getElementById('extent')?.value;
   const isValidCombo = (sevVal === '1' && extVal === 'A') || (parseInt(sevVal) >= 2 && extVal !== 'A');
   if (!isValidCombo) {
-    alert('Invalid Severity/Extent combination. Only 1A or 2-5 with B-E are valid.');
+    showAlertModal('Invalid Severity/Extent combination. Only 1A or 2-5 with B-E are valid.');
     console.groupEnd();
     return;
   }
@@ -496,7 +496,7 @@ function saveChanges() {
   }
   if (!mainRow?.classList?.contains("main-row")) {
     console.error("CRITICAL: No valid main row found");
-    alert("System error: Could not determine element location.\nPlease refresh the page and try again.");
+    showAlertModal("System error: Could not determine element location. Please refresh the page and try again.");
     console.groupEnd();
     return;
   }
@@ -600,7 +600,7 @@ function saveChanges() {
       console.log("Updated existing defect at index:", index);
     } else {
       console.error("Original defect not found in storage");
-      alert("Error: Could not find original defect data.");
+      showAlertModal("Error: Could not find original defect data.");
       console.groupEnd();
       return;
     }
@@ -1337,7 +1337,7 @@ document.addEventListener("DOMContentLoaded", function () {
       if (target.closest("button[title='Edit']")) {
           const expandableRow = target.closest("tr.expandable-row");
           if (expandableRow && expandableRow.classList.contains("retrieved-defect")) {
-              alert("Retrieved defects cannot be edited. Please copy the defect to create a new editable version.");
+              showAlertModal("Retrieved defects cannot be edited. Please copy the defect to create a new editable version.");
               return;
           }
           if (expandableRow) {
@@ -1488,7 +1488,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const remedialWorks = expandableRow.querySelector(".addRemedialWorks")?.textContent || '';
         const selectedSpan = sessionStorage.getItem('selectedSpan');
         if (!selectedSpan) {
-          alert("No span selected! Please select a span first.");
+          showAlertModal("No span selected! Please select a span first.");
           return;
         }
         let mainRow = expandableRow;
@@ -1528,9 +1528,9 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         updateMainRow(mainRow);
         refreshBCIScores();
-        alert("Defect copied successfully. You can now edit the new defect.");
+        showAlertModal("Defect copied successfully. You can now edit the new defect.", 'success');
       } else {
-        alert("Copying is only allowed for retrieved defects.");
+        showAlertModal("Copying is only allowed for retrieved defects.");
       }
     }
   });

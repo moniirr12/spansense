@@ -53,6 +53,19 @@ document.getElementById('confirmModalOverlay')?.addEventListener('click', (e) =>
     if (e.target.id === 'confirmModalOverlay') e.target.classList.remove('active');
 });
 
+// Styled stand-in for native alert() — single OK button, no cancel.
+function showAlertModal(message, type, title) {
+    const defaultTitles = { error: 'Error', warning: 'Warning', success: 'Success' };
+    type = type || 'error';
+    return showConfirmModal({
+        title: title || defaultTitles[type] || 'Notice',
+        message: message,
+        type: type,
+        confirmText: 'OK'
+    });
+}
+window.showAlertModal = showAlertModal;
+
 // Global photoData object
 let photoData = JSON.parse(sessionStorage.getItem('photoData')) || {};
 

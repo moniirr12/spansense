@@ -179,7 +179,7 @@ function viewReport(e) {
             previewWindow.document.write(previewContent);
             previewWindow.document.close();
         } else {
-            alert("Popup blocked. Please allow popups for this site.");
+            showAlertModal("Popup blocked. Please allow popups for this site.");
         }
     }
 }
@@ -590,7 +590,7 @@ function activateDefaultSpan(inspectionData) {
 }
 
 function showError(message) {
-    alert(message);
+    showAlertModal(message);
 }
 
 // Preview Inspection — a readable report (grouped by span, with element
