@@ -236,8 +236,27 @@ body {
     z-index: 1001;
     box-shadow: 0 12px 28px rgba(0,0,0,0.1);
     display: none;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(91, 140, 138, 0.3) transparent;
 }
 .custom-date-dropdown.open .ddt-panel { display: block; }
+.custom-date-dropdown .ddt-panel::-webkit-scrollbar { width: 5px; }
+.custom-date-dropdown .ddt-panel::-webkit-scrollbar-thumb {
+    background: rgba(91, 140, 138, 0.3);
+    border-radius: 10px;
+}
+.custom-date-dropdown .ddt-panel::-webkit-scrollbar-thumb:hover {
+    background: rgba(91, 140, 138, 0.5);
+}
+.night-mode .custom-date-dropdown .ddt-panel {
+    scrollbar-color: rgba(138, 180, 176, 0.35) transparent;
+}
+.night-mode .custom-date-dropdown .ddt-panel::-webkit-scrollbar-thumb {
+    background: rgba(138, 180, 176, 0.35);
+}
+.night-mode .custom-date-dropdown .ddt-panel::-webkit-scrollbar-thumb:hover {
+    background: rgba(138, 180, 176, 0.55);
+}
 .custom-date-dropdown .ddt-item {
     padding: 12px 16px;
     cursor: pointer;
@@ -564,6 +583,16 @@ body {
     color: #4a5b6e;
 }
 
+/* Marks a collapsed row's defect as coming from a previous inspection,
+   without needing to expand it to see the "Retrieved" ribbon. */
+.retrieved-indicator {
+    color: #8ab4b0;
+    font-size: 0.7rem;
+}
+.night-mode .retrieved-indicator {
+    color: #6e9c98;
+}
+
 /* 9. BUTTON ROW — transparent, no borders, gap shows body bg */
 #inspectionElementsTable tr.button-row td {
     background: transparent;
@@ -870,7 +899,9 @@ body {
     background: linear-gradient(135deg, #8ab4b0, #6e9c98);
     color: white;
     padding: 5px 14px 5px 10px;
-    border-radius: 0 0 12px 0;
+    /* Top-left matches the card's own radius so the ribbon's corner doesn't
+       sit as a sharp square on top of the card's rounded one. */
+    border-radius: 20px 0 12px 0;
     font-size: 0.6rem;
     font-weight: 700;
     text-transform: uppercase;
@@ -3468,7 +3499,7 @@ body.contracted-rows #inspectionElementsTable tr.retrieved-defect .aligned-grid 
 body.contracted-rows #inspectionElementsTable tr.retrieved-defect .retrieved-ribbon {
     padding: 3px 10px 3px 7px;
     font-size: 0.5rem;
-    border-radius: 0 0 10px 0;
+    border-radius: 16px 0 10px 0;
 }
 
 /* 8. Works/priority/cost inline collapse */

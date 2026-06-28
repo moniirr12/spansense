@@ -579,14 +579,21 @@ if (inspectionDatesElement) {
                 console.log(`Adding ${defects.length} historical defects for element ${element_no}`);
                 
                 defects.forEach((defect) => {
-                    // Check if this defect already exists in session (avoid duplicates)
-                    const alreadyExists = existingDefects.some(existing => 
-                        existing.elementNumber == element_no && 
-                        existing.defectCombined === defect.def &&
-                        existing.severity === defect.s?.toString() &&
-                        existing.extent === defect.ex
+                    // Check if this defect already exists in session (avoid duplicates).
+                    // Prefer matching on the real database id — it's the only thing
+                    // that's reliable regardless of which load path got there first
+                    // (e.g. loadDefectsFromAPI, which runs automatically on page load
+                    // and is the only one that carries photos). Fall back to the
+                    // loose field match for defects that don't have a db id yet.
+                    const alreadyExists = existingDefects.some(existing =>
+                        (defect.defectDbId != null && existing.defectDbId != null
+                            ? String(existing.defectDbId) === String(defect.defectDbId)
+                            : existing.elementNumber == element_no &&
+                              existing.defectCombined === defect.def &&
+                              existing.severity === defect.s?.toString() &&
+                              existing.extent === defect.ex)
                     );
-                    
+
                     if (alreadyExists) {
                         console.log(`Skipping duplicate defect`);
                         return;

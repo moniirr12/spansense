@@ -321,12 +321,17 @@ function updateMainRow(potentialRow) {
     mainCells[3].textContent = firstDefect.querySelector(".addExtent")?.textContent || "";
     const defectDisplay = firstDefect.querySelector(".addDefect")?.textContent || "";
     const defectCode = firstDefect.querySelector(".defectId")?.textContent || "";
+    // Flag at a glance, without expanding, whether this row's defect came
+    // from a previous inspection (.retrieved-defect) or was added now.
+    const retrievedBadge = firstDefect.classList.contains('retrieved-defect')
+      ? '<i class="fas fa-history retrieved-indicator" title="From a previous inspection"></i> '
+      : '';
     if (defectCode.includes('0.0') || defectDisplay.includes('No Defects')) {
-      mainCells[4].innerHTML = '<span style="color:#2d7a6e;font-size:0.75rem;"><i class="fas fa-check"></i></span>';
+      mainCells[4].innerHTML = `${retrievedBadge}<span style="color:#2d7a6e;font-size:0.75rem;"><i class="fas fa-check"></i></span>`;
     } else if (defectCode.includes('0.1') || defectDisplay.includes('Not Inspected')) {
-      mainCells[4].innerHTML = '<span style="color:#BA7517;font-size:0.75rem;"><i class="fas fa-ban"></i></span>';
+      mainCells[4].innerHTML = `${retrievedBadge}<span style="color:#BA7517;font-size:0.75rem;"><i class="fas fa-ban"></i></span>`;
     } else {
-      mainCells[4].textContent = defectDisplay;
+      mainCells[4].innerHTML = `${retrievedBadge}${defectDisplay}`;
     }
   } else {
     const mainCells = mainRow.querySelectorAll("td");
@@ -774,6 +779,7 @@ async function loadDefectsFromAPI(structureId, inspectionDate, currentSpan) {
             const isNoDefects = defect.defectId === '0.0';
             const isNotInspected = defect.defectId === '0.1';
             return {
+                defectDbId: defect.defectDbId,
                 defectCombined: defect.defectId,
                 defectType: isNoDefects || isNotInspected ? '0' : defect.defectId.split('.')[0],
                 defectNumber: isNoDefects ? '0' : (isNotInspected ? '1' : defect.defectId.split('.')[1]),
@@ -1183,11 +1189,10 @@ function addDefectToTable(mainRow, defectData, isRetrieved, isEditable = false) 
   }
   const defectIdElement = expandableRow.querySelector('.defectId');
   if (defectIdElement) {
-    if (isRetrieved) {
-      defectIdElement.textContent = defectData.frontDefectId || defectData.defectId || '';
-    } else {
-      defectIdElement.textContent = defectData.defectId || '';
-    }
+    // Real database id (when this defect already exists) is the only thing
+    // that reliably matches photos and dedupes against other load paths —
+    // prefer it over the temporary front-end key or the legacy field name.
+    defectIdElement.textContent = defectData.defectDbId || defectData.frontDefectId || defectData.defectId || '';
   }
   const addDefectEl = expandableRow.querySelector('.addDefect');
   if (addDefectEl) addDefectEl.dataset.code = defectData.defectCombined || '';
