@@ -406,6 +406,9 @@ function buildCableStayLowStructure(bridge, ctx) {
 // reaching cantilever arms toward its neighbours, with a suspended truss
 // span filling the gap between arm tips.
 function buildCantileverStructure(bridge, ctx) {
+    // ctx.TOTAL_LEN/X0 already reflect the stylised scale rebuildModel()
+    // substitutes for this 'kind' (see the comment there) - every system
+    // that depends on scale (grid/glow, sensors, works overlay) shares it.
     var DECK_W = ctx.DECK_W, TOTAL_LEN = ctx.TOTAL_LEN, X0 = ctx.X0, deckY = ctx.deckY;
     var model = bridge.model || {};
     var towerHeight = model.towerHeight || 22;
@@ -442,9 +445,18 @@ function buildCantileverStructure(bridge, ctx) {
         });
     }
 
+    // Real cantilever railway bridges (this builder's only user, the Forth
+    // Bridge) run to 2000+ m total length - the 130-unit cap every other
+    // builder uses (tuned for ~100-300m road/footbridges) put the camera
+    // inside a single tower instead of framing the whole bridge.
+    var camDist = Math.max(55, TOTAL_LEN * 0.95);
     return {
-        camDistance: Math.min(Math.max(55, TOTAL_LEN * 0.95), 130),
-        camHeight: Math.min(Math.max(16, towerHeight * 0.65), 30)
+        camDistance: camDist,
+        // A fixed height (~16, sized for towerHeight) reads fine at the
+        // usual ~55-130 camDistance, but at 2000+ it puts the camera
+        // almost perfectly horizontal (angle ~0.4°) - scale with distance
+        // so the viewing angle, and the towers, stay roughly the same.
+        camHeight: Math.max(towerHeight * 0.65, camDist * 0.27)
     };
 }
 

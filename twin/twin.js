@@ -27,8 +27,11 @@ var API_BASE = window.location.hostname === 'localhost'
    PROCEDURAL SENSORS (no real telemetry exists yet - these are
    plausible monitoring points derived from real span/pier geometry)
    ============================================================ */
-function generateSensors(bridge) {
-    var spanLen = bridge.spanLength, numSpans = bridge.spans, deckW = bridge.deckWidth;
+function generateSensors(bridge, spanLenOverride) {
+    // spanLenOverride lets rebuildModel() pass its stylised-scale span
+    // length (cantilever bridges) without mutating bridge.spanLength itself
+    // - the info panel reads that field straight off bridge, separately.
+    var spanLen = spanLenOverride || bridge.spanLength, numSpans = bridge.spans, deckW = bridge.deckWidth;
     var totalLen = spanLen * numSpans;
     var x0 = -totalLen / 2;
     var sensors = [];
@@ -151,7 +154,7 @@ async function selectBridge(bridgeId, inspectionId) {
     // 3D geometry isn't in the DB - look it up from the hand-authored model file
     var model = getBridgeModel(bridge.id, bridge.type);
     bridge.model = model;                 // full per-kind param bag, incl. model.kind
-    bridge.deckWidth = model.deckWidth;   // kept flat: generateSensors() + stress overlay read these directly
+    bridge.deckWidth = model.deckWidth;   // kept flat: generateSensors() + works overlay read these directly
     bridge.trussHeight = model.trussHeight;
     bridge.panelsPerSpan = model.panelsPerSpan;
     if (!bridge.spans) bridge.spans = 1;
@@ -281,7 +284,9 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 const scene = new THREE.Scene();
 scene.fog = new THREE.FogExp2(0x7a9490, 0.009);
 
-const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 1000);
+// Far plane needs real headroom past the 130-200 unit cap most builders use
+// for camDistance - the cantilever builder (Forth Bridge) can need ~2300+.
+const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 5000);
 let camDistance = 58, camHeight = 13;
 camera.position.set(0, camHeight, camDistance);
 camera.lookAt(0, 1.5, 0);
@@ -305,20 +310,21 @@ const matDefect = new THREE.MeshStandardMaterial({color: 0xe06a5a, emissive: 0xc
 const matStone    = new THREE.MeshStandardMaterial({color: 0x8a8378, metalness: 0.0, roughness: 0.95});
 const matConcrete = new THREE.MeshStandardMaterial({color: 0x9aa39c, metalness: 0.05, roughness: 0.85});
 
-function spanColor(bci) {
-    if (bci == null) return 0x8a9ba8;
-    if (bci < 50) return 0xc0392b;
-    if (bci < 65) return 0xc28b5a;
-    return 0x5b8c8a;
+// Used for the Works Required overlay - colours a span by how many of its
+// defects have works_required = 'Y', not by BCI.
+function worksColor(count) {
+    if (!count) return 0x5b8c8a;
+    if (count <= 2) return 0xc28b5a;
+    return 0xc0392b;
 }
 
 const rig = new THREE.Group();
 scene.add(rig);
 const structureGroup = new THREE.Group();
 const sensorGroup = new THREE.Group();
-const stressGroup = new THREE.Group();
+const worksGroup = new THREE.Group();
 const defectGroup = new THREE.Group();
-rig.add(structureGroup, sensorGroup, stressGroup, defectGroup);
+rig.add(structureGroup, sensorGroup, worksGroup, defectGroup);
 
 let gridHelper, glowMesh;
 
@@ -330,7 +336,7 @@ function rebuildModel(bridge) {
     // Clear existing
     while(structureGroup.children.length > 0) structureGroup.remove(structureGroup.children[0]);
     while(sensorGroup.children.length > 0) sensorGroup.remove(sensorGroup.children[0]);
-    while(stressGroup.children.length > 0) stressGroup.remove(stressGroup.children[0]);
+    while(worksGroup.children.length > 0) worksGroup.remove(worksGroup.children[0]);
     while(defectGroup.children.length > 0) defectGroup.remove(defectGroup.children[0]);
     if (gridHelper) rig.remove(gridHelper);
     if (glowMesh) rig.remove(glowMesh);
@@ -341,11 +347,29 @@ function rebuildModel(bridge) {
     var TRUSS_H = bridge.trussHeight || 0;
     var PANELS_PER_SPAN = bridge.panelsPerSpan || 4;
     var TOTAL_LEN = SPAN_LEN * NUM_SPANS;
+
+    // Cantilever bridges (Forth Bridge) record length across wildly
+    // non-uniform real spans - 2 ~520m main cantilever spans plus much
+    // shorter approach viaducts. Averaging that by span count (the
+    // TOTAL_LEN above) inflates the model to ~2500 units, shrinking the
+    // iconic ~22-unit towers to an invisible bump on a vast flat deck.
+    // Every other bridge model here is already a stylised representation,
+    // not a literal scale model - use the same fixed sensible scale as
+    // similarly grand bridges instead. Overridden here (not just inside the
+    // builder) so sensors/grid/works-overlay below stay in proportion too.
+    var kind = (bridge.model && bridge.model.kind) || 'truss';
+    if (kind === 'cantilever') {
+        TOTAL_LEN = (bridge.model && bridge.model.totalLen) || 220;
+        SPAN_LEN = TOTAL_LEN / NUM_SPANS;
+    }
     var X0 = -TOTAL_LEN / 2;
     var deckY = 0;
 
-    // Grid
-    var gridSize = Math.max(140, TOTAL_LEN + 40);
+    // Grid - capped, since some builders (cantilever) use a fixed stylised
+    // scale well under the bridge's literal recorded length (see there for
+    // why), and an uncapped ground plane sized off the raw figure would
+    // dwarf the structure actually rendered.
+    var gridSize = Math.min(Math.max(140, TOTAL_LEN + 40), 400);
     gridHelper = new THREE.GridHelper(gridSize, Math.floor(gridSize / 2.5), 0x2a3a38, 0x1a2625);
     gridHelper.position.y = -8.4;
     gridHelper.material.transparent = true;
@@ -353,7 +377,7 @@ function rebuildModel(bridge) {
     rig.add(gridHelper);
 
     // Glow
-    var glowRadius = Math.max(34, TOTAL_LEN / 2 + 6);
+    var glowRadius = Math.min(Math.max(34, TOTAL_LEN / 2 + 6), 200);
     glowMesh = new THREE.Mesh(
         new THREE.CircleGeometry(glowRadius, 48),
         new THREE.MeshBasicMaterial({color: 0x5b8c8a, transparent: true, opacity: 0.07})
@@ -362,8 +386,7 @@ function rebuildModel(bridge) {
     glowMesh.position.y = -8.3;
     rig.add(glowMesh);
 
-    // Structure - dispatch on the per-bridge model kind
-    var kind = (bridge.model && bridge.model.kind) || 'truss';
+    // Structure - dispatch on the per-bridge model kind (computed above)
     var builder = BUILDERS[kind] || buildTrussStructure;
     var ctx = {
         SPAN_LEN, NUM_SPANS, DECK_W, TRUSS_H, PANELS_PER_SPAN, TOTAL_LEN, X0, deckY,
@@ -372,7 +395,7 @@ function rebuildModel(bridge) {
     var frame = builder(bridge, ctx);
 
     // Sensors (procedural - no real telemetry source yet)
-    generateSensors(bridge).forEach(function(p) {
+    generateSensors(bridge, SPAN_LEN).forEach(function(p) {
         var s = new THREE.Mesh(new THREE.SphereGeometry(0.42, 16, 16), matSensor);
         s.position.set(p.x, p.y, p.z);
         sensorGroup.add(s);
@@ -384,16 +407,20 @@ function rebuildModel(bridge) {
         sensorGroup.add(ring);
     });
 
-    // Stress overlay (per span BCI)
-    var spanBCI = bridge.spanBCI && bridge.spanBCI.length ? bridge.spanBCI : [bridge.bciAvg];
+    // Works Required overlay (per span count of defects with works_required = 'Y')
+    var worksCounts = new Array(NUM_SPANS).fill(0);
+    (bridge.defects || []).forEach(function(d) {
+        if (!d.worksRequired) return;
+        var idx = (d.spanNumber || 1) - 1;
+        if (idx >= 0 && idx < NUM_SPANS) worksCounts[idx]++;
+    });
     for (var i = 0; i < NUM_SPANS; i++) {
         var x = X0 + SPAN_LEN * i + SPAN_LEN / 2;
-        var bci = spanBCI[i] !== undefined ? spanBCI[i] : bridge.bciAvg;
         var geo = new THREE.BoxGeometry(SPAN_LEN - 1, 0.08, DECK_W + 0.4);
-        var mat = new THREE.MeshBasicMaterial({color: spanColor(bci), transparent: true, opacity: 0.55});
+        var mat = new THREE.MeshBasicMaterial({color: worksColor(worksCounts[i]), transparent: true, opacity: 0.55});
         var slab = new THREE.Mesh(geo, mat);
         slab.position.set(x, deckY + 0.42, 0);
-        stressGroup.add(slab);
+        worksGroup.add(slab);
     }
 
     // Defects: only ones with real coordinates set are rendered. There's no
@@ -410,14 +437,20 @@ function rebuildModel(bridge) {
     camDistance = frame.camDistance;
     camHeight = frame.camHeight;
 
+    // Fog density was tuned for camDistance ~130 (most builders' cap) -
+    // scale it down for anything framed further out (the cantilever
+    // builder's Forth Bridge can need ~2300+), or the bridge renders as a
+    // wall of solid fog. Smaller/typical bridges are unaffected.
+    scene.fog.density = 0.009 * Math.min(1, 130 / Math.max(130, camDistance));
+
     // Reset rotation
     rotY = 0.4;
     rotX = 0.18;
 
-    // Reset layer toggles - stress and defects off by default
-    stressGroup.visible = false;
+    // Reset layer toggles - works required and defects off by default
+    worksGroup.visible = false;
     defectGroup.visible = false;
-    document.querySelectorAll('.vc-pill[data-layer="stress"]').forEach(function(el) { el.classList.remove('on'); });
+    document.querySelectorAll('.vc-pill[data-layer="works"]').forEach(function(el) { el.classList.remove('on'); });
     document.querySelectorAll('.vc-pill[data-layer="defects"]').forEach(function(el) { el.classList.remove('on'); });
     document.querySelectorAll('.vc-pill[data-layer="structure"]').forEach(function(el) { el.classList.add('on'); });
     document.querySelectorAll('.vc-pill[data-layer="sensors"]').forEach(function(el) { el.classList.add('on'); });
@@ -468,7 +501,7 @@ function bindLayerPills(selector) {
             var on = pill.classList.contains('on');
             if (layer === 'structure') structureGroup.visible = on;
             if (layer === 'sensors') sensorGroup.visible = on;
-            if (layer === 'stress') stressGroup.visible = on;
+            if (layer === 'works') worksGroup.visible = on;
             if (layer === 'defects') defectGroup.visible = on;
         });
     });

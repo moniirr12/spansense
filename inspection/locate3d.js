@@ -38,7 +38,9 @@ function initLocate3DEngine() {
     var scene = new THREE.Scene();
     scene.fog = new THREE.FogExp2(0x7a9490, 0.009);
 
-    var camera = new THREE.PerspectiveCamera(38, 1, 0.1, 1000);
+    // Far plane needs real headroom past the 130-200 unit cap most builders
+    // use for camDistance - the cantilever builder (Forth Bridge) can need ~2300+.
+    var camera = new THREE.PerspectiveCamera(38, 1, 0.1, 5000);
     var camDistance = 58, camHeight = 13;
     camera.position.set(0, camHeight, camDistance);
     camera.lookAt(0, 1.5, 0);
@@ -58,9 +60,9 @@ function initLocate3DEngine() {
     scene.add(rig);
     var structureGroup = new THREE.Group();
     var sensorGroup = new THREE.Group();
-    var stressGroup = new THREE.Group();
+    var worksGroup = new THREE.Group();
     var defectGroup = new THREE.Group();
-    rig.add(structureGroup, sensorGroup, stressGroup, defectGroup);
+    rig.add(structureGroup, sensorGroup, worksGroup, defectGroup);
 
     l3d = {
         canvas: canvas,
@@ -70,7 +72,7 @@ function initLocate3DEngine() {
         rig: rig,
         structureGroup: structureGroup,
         sensorGroup: sensorGroup,
-        stressGroup: stressGroup,
+        worksGroup: worksGroup,
         defectGroup: defectGroup,
         matSteel: new THREE.MeshStandardMaterial({ color: 0x5a6b6a, metalness: 0.6, roughness: 0.4 }),
         matDeck: new THREE.MeshStandardMaterial({ color: 0x394645, metalness: 0.25, roughness: 0.6 }),
@@ -94,8 +96,10 @@ function initLocate3DEngine() {
     locate3dReady = true;
 }
 
-function generateSensorsLocate3D(bridge) {
-    var spanLen = bridge.spanLength, numSpans = bridge.spans, deckW = bridge.deckWidth;
+function generateSensorsLocate3D(bridge, spanLenOverride) {
+    // spanLenOverride lets rebuildLocate3DModel() pass its stylised-scale
+    // span length (cantilever bridges) without mutating bridge.spanLength.
+    var spanLen = spanLenOverride || bridge.spanLength, numSpans = bridge.spans, deckW = bridge.deckWidth;
     var totalLen = spanLen * numSpans;
     var x0 = -totalLen / 2;
     var sensors = [];
@@ -144,15 +148,15 @@ function createDefectMarker(severity) {
 }
 
 /* ============================================================
-   MODEL BUILD (structure + sensors + stress + already-placed defects)
+   MODEL BUILD (structure + sensors + works required + already-placed defects)
    ============================================================ */
 function rebuildLocate3DModel(bridge) {
     var structureGroup = l3d.structureGroup, sensorGroup = l3d.sensorGroup,
-        stressGroup = l3d.stressGroup, defectGroup = l3d.defectGroup, rig = l3d.rig;
+        worksGroup = l3d.worksGroup, defectGroup = l3d.defectGroup, rig = l3d.rig;
 
     while (structureGroup.children.length > 0) structureGroup.remove(structureGroup.children[0]);
     while (sensorGroup.children.length > 0) sensorGroup.remove(sensorGroup.children[0]);
-    while (stressGroup.children.length > 0) stressGroup.remove(stressGroup.children[0]);
+    while (worksGroup.children.length > 0) worksGroup.remove(worksGroup.children[0]);
     while (defectGroup.children.length > 0) defectGroup.remove(defectGroup.children[0]);
     if (l3d.gridHelper) rig.remove(l3d.gridHelper);
     if (l3d.glowMesh) rig.remove(l3d.glowMesh);
@@ -164,11 +168,29 @@ function rebuildLocate3DModel(bridge) {
     var TRUSS_H = bridge.trussHeight || 0;
     var PANELS_PER_SPAN = bridge.panelsPerSpan || 4;
     var TOTAL_LEN = SPAN_LEN * NUM_SPANS;
+
+    // Cantilever bridges (Forth Bridge) record length across wildly
+    // non-uniform real spans - 2 ~520m main cantilever spans plus much
+    // shorter approach viaducts. Averaging that by span count (the
+    // TOTAL_LEN above) inflates the model to ~2500 units, shrinking the
+    // iconic ~22-unit towers to an invisible bump on a vast flat deck.
+    // Every other bridge model here is already a stylised representation,
+    // not a literal scale model - use the same fixed sensible scale as
+    // similarly grand bridges instead. Overridden here (not just inside the
+    // builder) so sensors/grid/works-overlay below stay in proportion too.
+    var kind = (bridge.model && bridge.model.kind) || 'truss';
+    if (kind === 'cantilever') {
+        TOTAL_LEN = (bridge.model && bridge.model.totalLen) || 220;
+        SPAN_LEN = TOTAL_LEN / NUM_SPANS;
+    }
     var X0 = -TOTAL_LEN / 2;
     var deckY = 0;
 
-    // Grid
-    var gridSize = Math.max(140, TOTAL_LEN + 40);
+    // Grid - capped, since some builders (cantilever) use a fixed stylised
+    // scale well under the bridge's literal recorded length (see there for
+    // why), and an uncapped ground plane sized off the raw figure would
+    // dwarf the structure actually rendered.
+    var gridSize = Math.min(Math.max(140, TOTAL_LEN + 40), 400);
     l3d.gridHelper = new THREE.GridHelper(gridSize, Math.floor(gridSize / 2.5), 0x2a3a38, 0x1a2625);
     l3d.gridHelper.position.y = -8.4;
     l3d.gridHelper.material.transparent = true;
@@ -176,7 +198,7 @@ function rebuildLocate3DModel(bridge) {
     rig.add(l3d.gridHelper);
 
     // Glow
-    var glowRadius = Math.max(34, TOTAL_LEN / 2 + 6);
+    var glowRadius = Math.min(Math.max(34, TOTAL_LEN / 2 + 6), 200);
     l3d.glowMesh = new THREE.Mesh(
         new THREE.CircleGeometry(glowRadius, 48),
         new THREE.MeshBasicMaterial({ color: 0x5b8c8a, transparent: true, opacity: 0.07 })
@@ -185,9 +207,9 @@ function rebuildLocate3DModel(bridge) {
     l3d.glowMesh.position.y = -8.3;
     rig.add(l3d.glowMesh);
 
-    // Structure - dispatch on the per-bridge model kind, same as twin.js's
-    // rebuildModel(), using the shared builders from twin/shapeBuilders.js.
-    var kind = (bridge.model && bridge.model.kind) || 'truss';
+    // Structure - dispatch on the per-bridge model kind (computed above),
+    // same as twin.js's rebuildModel(), using the shared builders from
+    // twin/shapeBuilders.js.
     var builder = (typeof BUILDERS !== 'undefined' && BUILDERS[kind]) || buildTrussStructure;
     var shapeCtx = {
         SPAN_LEN: SPAN_LEN, NUM_SPANS: NUM_SPANS, DECK_W: DECK_W, TRUSS_H: TRUSS_H,
@@ -199,7 +221,7 @@ function rebuildLocate3DModel(bridge) {
     var frame = builder(bridge, shapeCtx);
 
     // Sensors (procedural, same as twinView)
-    generateSensorsLocate3D(bridge).forEach(function(pt) {
+    generateSensorsLocate3D(bridge, SPAN_LEN).forEach(function(pt) {
         var s = new THREE.Mesh(new THREE.SphereGeometry(0.42, 16, 16), l3d.matSensor);
         s.position.set(pt.x, pt.y, pt.z);
         sensorGroup.add(s);
@@ -211,16 +233,17 @@ function rebuildLocate3DModel(bridge) {
         sensorGroup.add(ring);
     });
 
-    // Stress overlay (flat BCI average across all spans — this mock has no per-span score)
-    var bciAv = bridge.bciAv != null ? bridge.bciAv : 100;
-    var stressColor = bciAv < 50 ? 0xc0392b : (bciAv < 65 ? 0xc28b5a : 0x5b8c8a);
+    // Works Required overlay (per span count of this session's defects with works = 'Y')
+    var worksCounts = bridge.worksCounts || [];
     for (var sIdx = 0; sIdx < NUM_SPANS; sIdx++) {
         var sx = X0 + SPAN_LEN * sIdx + SPAN_LEN / 2;
+        var count = worksCounts[sIdx] || 0;
+        var worksColor = !count ? 0x5b8c8a : (count <= 2 ? 0xc28b5a : 0xc0392b);
         var geo2 = new THREE.BoxGeometry(SPAN_LEN - 1, 0.08, DECK_W + 0.4);
-        var mat2 = new THREE.MeshBasicMaterial({ color: stressColor, transparent: true, opacity: 0.55 });
+        var mat2 = new THREE.MeshBasicMaterial({ color: worksColor, transparent: true, opacity: 0.55 });
         var slab = new THREE.Mesh(geo2, mat2);
         slab.position.set(sx, deckY + 0.42, 0);
-        stressGroup.add(slab);
+        worksGroup.add(slab);
     }
 
     // Defects already placed in a previous session render as markers immediately
@@ -236,6 +259,12 @@ function rebuildLocate3DModel(bridge) {
     l3d.rotY = 0.4;
     l3d.rotX = 0.18;
 
+    // Fog density was tuned for camDistance ~130 (most builders' cap) -
+    // scale it down for anything framed further out (the cantilever
+    // builder's Forth Bridge can need ~2300+), or the bridge renders as a
+    // wall of solid fog. Smaller/typical bridges are unaffected.
+    l3d.scene.fog.density = 0.009 * Math.min(1, 130 / Math.max(130, l3d.camDistance));
+
     // Center the camera's look-at target on the model's actual bounding
     // box, computed AFTER applying the default rig rotation (rotX/rotY
     // tilt the whole structure, which shifts its apparent center in Y and
@@ -248,11 +277,11 @@ function rebuildLocate3DModel(bridge) {
     l3d.lookAtY = center.y;
     l3d.lookAtZ = center.z;
 
-    // Defects/sensors/stress default ON here (unlike twinView) — seeing
-    // context while placing points is the whole point of this modal.
+    // Defects/sensors/works required default ON here (unlike twinView) —
+    // seeing context while placing points is the whole point of this modal.
     structureGroup.visible = true;
     sensorGroup.visible = true;
-    stressGroup.visible = true;
+    worksGroup.visible = true;
     defectGroup.visible = true;
     document.querySelectorAll('#locate3dModal .vc-pill').forEach(function(el) { el.classList.add('on'); });
 }
@@ -344,7 +373,7 @@ function bindLocate3DInteraction() {
             var on = pill.classList.contains('on');
             if (layer === 'structure') l3d.structureGroup.visible = on;
             if (layer === 'sensors') l3d.sensorGroup.visible = on;
-            if (layer === 'stress') l3d.stressGroup.visible = on;
+            if (layer === 'works') l3d.worksGroup.visible = on;
             if (layer === 'defects') l3d.defectGroup.visible = on;
         });
     });
@@ -367,7 +396,7 @@ function handleLocate3DPick(e) {
     var raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(ndc, l3d.camera);
     // Only the structure (deck/truss/piers) is a valid placement surface —
-    // sensors/stress/defect markers are overlays, not something to place a defect "on".
+    // sensors/works/defect markers are overlays, not something to place a defect "on".
     var hits = raycaster.intersectObjects(l3d.structureGroup.children, true);
     if (!hits.length) return;
 
@@ -479,6 +508,19 @@ function getLocate3DBridgeData() {
         }
     });
 
+    // Real per-span works-required counts, from every defect entered this
+    // session (not just the ones placed on the 3D model above) - reuses
+    // spans.js's getAllDefects()/isRealDefect(), already loaded on this page.
+    var worksCounts = new Array(spans).fill(0);
+    if (typeof getAllDefects === 'function') {
+        getAllDefects().forEach(function(d) {
+            if (d.works !== 'Y') return;
+            if (typeof isRealDefect === 'function' && !isRealDefect(d)) return;
+            var idx = (parseInt(d.span, 10) || 1) - 1;
+            if (idx >= 0 && idx < spans) worksCounts[idx]++;
+        });
+    }
+
     return {
         spans: spans,
         spanLength: spanLength,
@@ -487,7 +529,8 @@ function getLocate3DBridgeData() {
         panelsPerSpan: model.panelsPerSpan,
         model: model,
         bciAv: bciAv,
-        defects: defects
+        defects: defects,
+        worksCounts: worksCounts
     };
 }
 
