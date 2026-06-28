@@ -309,29 +309,39 @@ function updateMainRow(potentialRow) {
   const expandableRows = findAllExpandableRows(mainRow);
   if (expandableRows.length > 0) {
     // The primary defect (see setAsPrimaryDefect) drives what the collapsed
-    // row shows, not just whichever defect happens to be first in the DOM.
-    const firstDefect = expandableRows.find(row => row.querySelector('.primary-tag')?.classList.contains('filled')) || expandableRows[0];
+    // row shows. A defect actually in this inspection always wins over a
+    // .retrieved-defect row (date-dropdown comparison data, not part of this
+    // inspection at all) — only fall back to showing the comparison row if
+    // nothing else exists for this element yet.
+    const filledPrimary = expandableRows.find(row => row.querySelector('.primary-tag')?.classList.contains('filled'));
+    const firstRealDefect = expandableRows.find(row => !row.classList.contains('retrieved-defect'));
+    const firstDefect = filledPrimary || firstRealDefect || expandableRows[0];
     const mainCells = mainRow.querySelectorAll("td");
-    const severityValue = firstDefect.querySelector(".addSeverity")?.textContent || "";
-    if (severityValue) {
-        mainCells[2].innerHTML = `<span class="sev-${severityValue}">${severityValue}</span>`;
+
+    if (firstDefect.classList.contains('retrieved-defect')) {
+      // Comparison data pulled in via the date dropdown isn't part of this
+      // inspection's score — show just an indicator, not a score, so it's
+      // never mistaken for one.
+      mainCells[2].textContent = "";
+      mainCells[3].textContent = "";
+      mainCells[4].innerHTML = '<i class="fas fa-history retrieved-indicator" title="From a previous inspection — not part of this inspection\'s score"></i>';
     } else {
-        mainCells[2].textContent = "";
-    }
-    mainCells[3].textContent = firstDefect.querySelector(".addExtent")?.textContent || "";
-    const defectDisplay = firstDefect.querySelector(".addDefect")?.textContent || "";
-    const defectCode = firstDefect.querySelector(".defectId")?.textContent || "";
-    // Flag at a glance, without expanding, whether this row's defect came
-    // from a previous inspection (.retrieved-defect) or was added now.
-    const retrievedBadge = firstDefect.classList.contains('retrieved-defect')
-      ? '<i class="fas fa-history retrieved-indicator" title="From a previous inspection"></i> '
-      : '';
-    if (defectCode.includes('0.0') || defectDisplay.includes('No Defects')) {
-      mainCells[4].innerHTML = `${retrievedBadge}<span style="color:#2d7a6e;font-size:0.75rem;"><i class="fas fa-check"></i></span>`;
-    } else if (defectCode.includes('0.1') || defectDisplay.includes('Not Inspected')) {
-      mainCells[4].innerHTML = `${retrievedBadge}<span style="color:#BA7517;font-size:0.75rem;"><i class="fas fa-ban"></i></span>`;
-    } else {
-      mainCells[4].innerHTML = `${retrievedBadge}${defectDisplay}`;
+      const severityValue = firstDefect.querySelector(".addSeverity")?.textContent || "";
+      if (severityValue) {
+          mainCells[2].innerHTML = `<span class="sev-${severityValue}">${severityValue}</span>`;
+      } else {
+          mainCells[2].textContent = "";
+      }
+      mainCells[3].textContent = firstDefect.querySelector(".addExtent")?.textContent || "";
+      const defectDisplay = firstDefect.querySelector(".addDefect")?.textContent || "";
+      const defectCode = firstDefect.querySelector(".defectId")?.textContent || "";
+      if (defectCode.includes('0.0') || defectDisplay.includes('No Defects')) {
+        mainCells[4].innerHTML = '<span style="color:#2d7a6e;font-size:0.75rem;"><i class="fas fa-check"></i></span>';
+      } else if (defectCode.includes('0.1') || defectDisplay.includes('Not Inspected')) {
+        mainCells[4].innerHTML = '<span style="color:#BA7517;font-size:0.75rem;"><i class="fas fa-ban"></i></span>';
+      } else {
+        mainCells[4].textContent = defectDisplay;
+      }
     }
   } else {
     const mainCells = mainRow.querySelectorAll("td");
@@ -1486,6 +1496,12 @@ document.addEventListener("DOMContentLoaded", function () {
           mainRow = mainRow.previousElementSibling;
         }
         const elementNumber = mainRow ? mainRow.dataset.rowId : null;
+        let defects = JSON.parse(sessionStorage.getItem('defects')) || [];
+        // Same rule as a brand-new defect: the first one entered for this
+        // element is primary by default (see saveChanges).
+        const isFirstForElement = !defects.some(d =>
+          d.elementNumber == elementNumber && d.spanNumber == selectedSpan
+        );
         const defectData = {
           defectCombined: defectCombined,
           defectType: defectType,
@@ -1499,9 +1515,9 @@ document.addEventListener("DOMContentLoaded", function () {
           spanNumber: selectedSpan,
           elementNumber: elementNumber,
           timestamp: new Date().toISOString(),
-          remedialWorks: remedialWorks
+          remedialWorks: remedialWorks,
+          isPrimary: isFirstForElement
         };
-        let defects = JSON.parse(sessionStorage.getItem('defects')) || [];
         defects.push(defectData);
         sessionStorage.setItem('defects', JSON.stringify(defects));
         const newRow = addDefectToTable(mainRow, defectData, false, true);

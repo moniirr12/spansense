@@ -607,7 +607,13 @@ if (inspectionDatesElement) {
                     if (!expandableRow) return;
 
                     expandableRow.classList.add("retrieved-defect");
-                    
+
+                    // This is comparison data from a different inspection date,
+                    // not part of this inspection — it should never be selectable
+                    // as the primary defect driving this element's score.
+                    const comparisonPrimaryTag = expandableRow.querySelector('.primary-tag');
+                    if (comparisonPrimaryTag) comparisonPrimaryTag.remove();
+
                     const populateField = (selector, value, defaultValue = '') => {
                         const el = expandableRow.querySelector(selector);
                         if (el) el.textContent = value || defaultValue;
