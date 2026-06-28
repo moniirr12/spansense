@@ -114,6 +114,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.severity-stepper .stepper-step').forEach(function(btn) {
             btn.classList.toggle('active', parseInt(btn.dataset.val) === val);
         });
+        if (typeof updateDefectGuidancePanel === 'function') updateDefectGuidancePanel();
         if (!skipValidation && !isAutoCorrecting) {
             var currentExtent = document.getElementById('extent');
             var extVal = currentExtent ? currentExtent.value : 'A';

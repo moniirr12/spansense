@@ -1297,6 +1297,7 @@ body {
     backdrop-filter: blur(4px);
     justify-content: center;
     align-items: center;
+    gap: 16px;
     padding-top: 60px;
     box-sizing: border-box;
 
@@ -1317,6 +1318,106 @@ body {
     overflow: hidden;
 }
 .modal-photo { max-width: 750px; animation: modalSlideIn 0.3s ease; }
+
+/* Severity guidance panel — sits beside the Add Defect modal, condensed
+   prompts from the Inspection codes - Revision 2 severity tables. */
+.defect-guidance-panel {
+    display: none;
+    flex-direction: column;
+    width: 260px;
+    max-height: calc(80vh - 60px);
+    background: white;
+    border-radius: 24px;
+    border: 1px solid #e9edf2;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+.dgp-header {
+    padding: 16px 20px 10px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #2c5a57;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.dgp-header i { color: #8ab4b0; }
+.dgp-subtitle {
+    padding: 0 20px 12px;
+    font-size: 0.72rem;
+    color: #8a9ba8;
+    border-bottom: 1px solid #e9edf2;
+    padding-bottom: 14px;
+    margin-bottom: 4px;
+}
+.dgp-levels {
+    padding: 10px 14px 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.dgp-level {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    transition: background 0.15s;
+}
+.dgp-level-active {
+    background: #eef6f4;
+}
+.dgp-level-num {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1.5px solid currentColor;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.68rem;
+    font-weight: 700;
+}
+.dgp-level-num.sev-1 { color: #2d7a6e; }
+.dgp-level-num.sev-2 { color: #BA7517; }
+.dgp-level-num.sev-3 { color: #c47070; }
+.dgp-level-num.sev-4,
+.dgp-level-num.sev-5 { color: #c0392b; }
+.night-mode .dgp-level-num.sev-1 { color: #8ab4b0; }
+.night-mode .dgp-level-num.sev-2 { color: #d4a84a; }
+.night-mode .dgp-level-num.sev-3 { color: #e8a0a0; }
+.night-mode .dgp-level-num.sev-4,
+.night-mode .dgp-level-num.sev-5 { color: #e07070; }
+.dgp-level-text {
+    font-size: 0.78rem;
+    color: #4a5b6e;
+    line-height: 1.4;
+    padding-top: 1px;
+}
+.dgp-level-active .dgp-level-text { color: #2c4a48; font-weight: 600; }
+.dgp-empty {
+    padding: 10px 14px;
+    font-size: 0.78rem;
+    color: #8a9ba8;
+    font-style: italic;
+}
+
+@media (max-width: 900px) {
+    .defect-guidance-panel { display: none !important; }
+}
+
+.night-mode .defect-guidance-panel {
+    background: #1e2a2f;
+    border-color: #2f3e45;
+}
+.night-mode .dgp-header { color: #8ab4b0; }
+.night-mode .dgp-subtitle { color: #6a8682; border-color: #2f3e45; }
+.night-mode .dgp-level-active { background: #243a3e; }
+.night-mode .dgp-level-text { color: #a8c0bc; }
+.night-mode .dgp-level-active .dgp-level-text { color: #d4e8e4; }
 
 @keyframes modalSlideIn {
     from { opacity: 0; transform: translateY(20px) scale(0.98); }

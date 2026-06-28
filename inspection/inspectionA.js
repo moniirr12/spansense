@@ -170,6 +170,8 @@ function updateDefectNumbers() {
       option.textContent = `${number} ${defectNumberText[defectType][number]}`;
       defectNumberSelect.appendChild(option);
   });
+
+  if (typeof updateDefectGuidancePanel === 'function') updateDefectGuidancePanel();
 }
 
 // Add event listener to defectType dropdown
@@ -177,10 +179,157 @@ document.addEventListener('change', function(e) {
     if (e.target && e.target.id === 'defectType') {
         updateDefectNumbers();
     }
+    if (e.target && e.target.id === 'defectNumber') {
+        if (typeof updateDefectGuidancePanel === 'function') updateDefectGuidancePanel();
+    }
 });
 
 // Initialize defectNumber options on page load
 document.addEventListener('DOMContentLoaded', updateDefectNumbers);
+
+// Condensed, per-severity guidance — short prompts (not the full Inspection
+// codes - Revision 2 wording) to help an inspector pick a severity while
+// filling in the Add Defect modal. Keyed the same way as defectNumberText.
+const SEVERITY_GUIDANCE = {
+  1: {
+    1: ["No rust", "Minor surface rust", "Moderate pitting", "Deep pits/perforations", "Disintegrated by corrosion"],
+    2: ["No section loss", "Minor loss (<5%)", "Moderate loss (5-20%)", "Major loss (>20%)", "Collapsed/collapsing"],
+    3: ["No damage", "Bolts loose, minor corrosion", "Bolts missing, moderate corrosion", "Structural bolts/rivets missing", "Failure from missing bolts/rivets"],
+    4: ["No corrosion", "Slight weld corrosion", "Crack at weld toe", "Cracked weld, major corrosion", "Weld connection failure"],
+  },
+  2: {
+    2: ["No spalls", "Minor spalls, links exposed", "Major spalls, bars exposed", "Deep spalls, pitting corrosion", "Collapsed"],
+    3: ["Hairline cracks", "Cracks <0.3mm", "Cracks ~1mm, visible", "Wide/deep cracks >2mm", "Unable to function"],
+    4: ["No damage", "Substandard duct grouting", "Cracks along duct", "Exposed prestressing cable", "Failed prestressing cables"],
+    5: ["No delamination", "Early signs, rust staining", "Delamination, low flexure areas", "Delamination, high flexure areas", "Failure, delaminated bars"],
+    6: ["No attack", "Slight cracking", "Moderate thaumasite/freeze-thaw", "Major thaumasite/freeze-thaw", "Failure from attack"],
+  },
+  3: {
+    1: ["No deformation", "Minor deformation", "Moderate deformation", "Major deformation", "Collapsed"],
+    2: ["Sound", "Minor deterioration", "Moderate-significant loss", "Poor, crumbling, loose bricks", "Collapsed"],
+    3: ["No cracking", "Cracks hard to see", "Separation <25mm", "Separation >25mm", "Disintegrated"],
+    4: ["No cracks", "Minor cracks <3mm", "Diagonal cracks >3mm", "Cracks breaking barrel <1m", "Barrel failure"],
+    5: ["No cracks", "Minor hairline/shallow spalls", "Moderate cracks/crazing, deep spalls", "Major cracks/spalling", "Failure, structural cracks"],
+    6: ["None missing", "Few missing, weathering", "Moderate loss", "Severe loss", "Failure, missing bricks"],
+    7: ["None", "Minor bulging/leaning", "Moderate bulging/leaning", "Severe bulging/leaning", "Collapsed/non-functional"],
+  },
+  4: {
+    1: ["Sound, slight weathering", "Normal weathering", "Spot chips, undercoat exposed", "Finish failed, substrate exposed", "All coats failed"],
+  },
+  5: {
+    1: ["None", "Minor, no damage", "Causing structural damage", "Causing major damage", "Failure from vegetation"],
+    2: ["None", "Low density, easily removed", "Significant, obscures inspection", "Inspection impossible", "Critical elements can't be inspected"],
+  },
+  6: {
+    1: ["No settlement", "None visible, possible cracks", "Minor settlement", "Major settlement", "Collapse from settlement"],
+    2: ["None", "None visible, possible cracks", "Minor movement", "Major movement", "Collapsed"],
+    3: ["None", "None visible, possible cracks", "Minor sliding", "Major sliding", "Collapsed from sliding"],
+    4: ["None", "None visible, possible cracks", "Minor rotation", "Major rotation", "Collapsed from rotation"],
+    5: ["No scour", "Minor scour", "Moderate scour", "Major scour", "Dangerous scour/failure"],
+    6: ["Unaffected", "Minor cracks", "Moderate cracks", "Major cracks/deformation", "Failure from faults"],
+  },
+  7: {
+    1: ["No scour", "Minor scour", "Moderate scour", "Major scour", "Dangerous scour/failure"],
+    2: ["None", "Slight flow disruption", "Significant disruption", "Severe disruption", "Failure from silting"],
+  },
+  8: {
+    1: ["Fully functional", "<25% blocked", "25-50% blocked", ">50% blocked", "Totally blocked/broken"],
+    2: ["No staining", "Minor staining", "Cleaning required", "Urgent cleaning required", "Urgent/frequent cleaning"],
+    3: ["None", "Minor damage", "Structural damage", "Major damage", "Severe damage to elements"],
+    4: ["No blockage", "Minor blockage", "Moderate blockage", "Major blockage", "Non-functioning"],
+  },
+  9: {
+    1: ["Little/no wear", "Minor wear", "Moderate wear", "Major wear", "Dangerous"],
+    2: ["None", "Minor crazing/tracking", "Moderate crazing/tracking", "Major crazing/tracking", "Complete break up"],
+    3: ["Dense", "Poor texture", "Open texture", "Very open texture", "Dangerous"],
+    4: ["Sound", "Cracks in top layer", "Top layer breached", "Deep cracks/potholes", "Top layer missing"],
+    5: ["Not slippery", "Starting to slip", "Becoming slippery", "Slippery", "Dangerous"],
+    6: ["No defects", "Trips <5mm", "Trips 5-10mm", "Trips 10-20mm", "Trips >20mm"],
+  },
+  10: {
+    1: ["Sound", "Minor debonding", "Moderate debonding", "Major debonding", "Dangerous"],
+    2: ["Sound", "Slight binder loss", "Aggregate loss 20-50mm", "Material loss, holes >50mm", "Missing"],
+    3: ["Sound", "Minor tracking/flow", "Moderate tracking/flow", "Major tracking/flow", "Disintegrated"],
+    4: ["Sound", "Minor cracking along nosing", "Moderate cracking, breakup", "Breakup of nosing", "Disintegrated"],
+    5: ["Minor wear", "One bolt missing", "Numerous bolts missing", "Majority of bolts missing", "Failure, missing bolts"],
+    6: ["Sound", "Loose/poor, seal dropped", "Sealant breached", "Sealant/strip missing", "Failure"],
+    7: ["Sound", "Minor breakup", "Moderate breakup, debris", "Major breakup, debris", "Joint failure"],
+    8: ["Sound", "Bolt sealer missing", "Fixings loose", "Fixings missing", "Failure, missing fixtures"],
+    9: ["Sound", "Initiation of cracking/tearing", "Crack/tear <20% width", "Crack/tear 20-50% width", "Component failure"],
+    10: ["Sound", "Minor surface cracking", "Moderate surface cracking", "Major surface cracking", "Failure"],
+    11: ["Sound", "Minor cracking/breakup", "Moderate cracking/breakup", "Major cracking/breakup", "Disintegrated/missing"],
+    12: ["No leakage", "Minor leakage", "Moderate leakage", "Major leakage, damage", "Open joint, major damage"],
+  },
+  11: {
+    1: ["Sound, no deformation", "Minor subsidence/deformation", "Minor slip, slight cracking", "Major slip, major cracking", "Critical slip/settlement"],
+  },
+  12: {
+    1: ["Negligible rusting", "Minor rusting", "Moderate rusting", "Major rusting", "Failed/seized by rust"],
+    2: ["Correct position", "Minor offset", "Moderate offset/tilt", "Dislodged", "Off bearing/missing"],
+    3: ["Correct position", "Slightly skewed", "At end of travel", "Beyond designed travel", "Sliding bearing failed"],
+    4: ["No crazing", "External crazing", "External breakdown", "Major breakdown", "Complete breakdown"],
+    5: ["Sound", "Minor deformation", "Moderate deformation", "Major deformation", "Seized by deformation"],
+    6: ["Sound", "Minor cracks", "Moderate cracks/loose", "Splitting/deformation", "Disintegrated"],
+  },
+  13: {
+    1: ["No damage", "Slight scoring/displacement", "Moderate displacement", "Severe displacement", "Knocked down/collapsing"],
+  },
+  14: {
+    1: ["No seepage", "Minor seepage (dripping)", "Moderate seepage", "Major seepage, structural damage", "Non-functional, critical damage"],
+    2: ["No seepage", "Damp, slight staining", "Wet surface, dripping", "Stalactites, structural damage", "Major damage from waterproofing"],
+  },
+  15: {
+    1: ["Sound, no defects", "Minor cracking", "Moderate cracking, no displacement", "Major cracking/displacement", "Collapsed"],
+  },
+  16: {
+    1: ["No damage", "Minor signs", "Moderate signs", "Major signs", "Disintegrated"],
+    2: ["No section loss", "Minor loss (<5%)", "Moderate loss (5-20%)", "Major loss (>20%)", "Collapsed/collapsing"],
+  },
+};
+
+// Refreshes the severity guidance panel next to the Add Defect modal so it
+// always reflects the currently selected defect type/number, with the
+// currently selected severity highlighted.
+function updateDefectGuidancePanel() {
+    const panel = document.getElementById('defectGuidancePanel');
+    if (!panel) return;
+
+    const typeEl = document.getElementById('defectType');
+    const numberEl = document.getElementById('defectNumber');
+    const severityEl = document.getElementById('severity');
+    const type = typeEl ? typeEl.value : null;
+    const number = numberEl ? numberEl.value : null;
+    const currentSeverity = severityEl ? parseInt(severityEl.value) || 1 : 1;
+
+    const guidance = (SEVERITY_GUIDANCE[type] || {})[number];
+    const subtitleEl = document.getElementById('dgpSubtitle');
+    const levelsEl = document.getElementById('dgpLevels');
+    if (!levelsEl) return;
+
+    if (subtitleEl) {
+        const typeName = (defectNumberText[type] && defectNumberText[type][number])
+            ? `${type}.${number} ${defectNumberText[type][number]}`
+            : 'Select a defect type and number';
+        subtitleEl.textContent = typeName;
+    }
+
+    if (!guidance) {
+        levelsEl.innerHTML = '<div class="dgp-empty">No guidance available for this selection.</div>';
+        return;
+    }
+
+    levelsEl.innerHTML = guidance.map((text, idx) => {
+        const level = idx + 1;
+        const activeClass = level === currentSeverity ? ' dgp-level-active' : '';
+        return `
+            <div class="dgp-level${activeClass}" data-level="${level}">
+                <div class="dgp-level-num sev-${level}">${level}</div>
+                <div class="dgp-level-text">${text}</div>
+            </div>
+        `;
+    }).join('');
+}
+window.updateDefectGuidancePanel = updateDefectGuidancePanel;
 
 // Function to update extent options based on selected severity
 function updateExtentOptions() {
@@ -954,6 +1103,15 @@ window.setModalSegment = function(btn, state) {
         notInspectedPanel.style.display = 'block';
     }
 
+    // Severity guidance only makes sense while picking a defect type/number.
+    var guidancePanel = document.getElementById('defectGuidancePanel');
+    if (guidancePanel) {
+        guidancePanel.style.display = state === 'defect' ? 'flex' : 'none';
+        if (state === 'defect' && typeof updateDefectGuidancePanel === 'function') {
+            updateDefectGuidancePanel();
+        }
+    }
+
     // Write to BOTH keys so nothing gets out of sync
     var modal = document.getElementById('modal');
     if (modal) {
@@ -968,12 +1126,17 @@ window.openModal = function(isEditMode, preferredState) {
     // Call original first
     if (originalOpenModal) originalOpenModal.apply(this, arguments);
 
+    var guidancePanel = document.getElementById('defectGuidancePanel');
+    var isDefectState = !isEditMode || preferredState === 'defect';
+
     // Only auto-init steppers for NEW defects (not edit) and only for defect state
-    if (!isEditMode || preferredState === 'defect') {
+    if (isDefectState) {
         requestAnimationFrame(function() {
             initSteppers();
+            if (typeof updateDefectGuidancePanel === 'function') updateDefectGuidancePanel();
         });
     }
+    if (guidancePanel) guidancePanel.style.display = isDefectState ? 'flex' : 'none';
 };
 
 // Hook saveChanges to handle the two special states
