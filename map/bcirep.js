@@ -439,7 +439,7 @@ async function generateBCIForm(doc) {
                             </tr>
                             <tr>
                                 <td colspan="2" style="border: 1px solid black;">Name:</td>
-                                <td colspan="5" style="border: 1px solid black;">[Insert name]</td>
+                                <td colspan="5" style="border: 1px solid black;"> </td>
                                 <td colspan="2" style="border: 1px solid black;">Signed:</td>
                                 <td colspan="6" style="border: 1px solid black;">[Insert sign]</td>
                                 <td colspan="1" style="border: 1px solid black;">Date:</td>

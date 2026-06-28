@@ -358,6 +358,7 @@ function getBciColor(value) {
 const bciTweenFrames = new WeakMap();
 function setBciValue(el, value) {
     if (!el) return;
+    el.classList.remove('stat-loading');
     const target = parseFloat(value);
     el.style.color = getBciColor(target);
     const current = parseFloat(el.textContent);

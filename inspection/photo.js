@@ -2,17 +2,72 @@
 // PHOTO MANAGEMENT SYSTEM - COMPLETE WORKING VERSION
 // ============================================
 
-// Global photoData object
-let photoData = JSON.parse(sessionStorage.getItem('photoData')) || {};
+// Styled stand-in for confirm() — same look/API as inspection1.html's
+// showModal, scoped under #confirmModalOverlay so it doesn't collide with
+// the existing #modal (defect-entry) open/close functions on this page.
+function showConfirmModal(opts) {
+    const overlay = document.getElementById('confirmModalOverlay');
+    if (!overlay) return Promise.resolve(true);
 
-// Save Photos button listener
-const savePhotosBtn = document.getElementById('savePhotosBtn');
-if (savePhotosBtn) {
-    savePhotosBtn.addEventListener('click', async function(e) {
-        e.preventDefault();
-        await savePhotos();
+    const iconBox = document.getElementById('confirmModalIcon');
+    const titleBox = document.getElementById('confirmModalTitle');
+    const msgBox = document.getElementById('confirmModalMessage');
+    const actionsBox = document.getElementById('confirmModalActions');
+
+    const type = opts.type || 'error';
+    const confirmText = opts.confirmText || 'OK';
+    const cancelText = opts.cancelText || 'Cancel';
+    const showCancel = opts.showCancel || false;
+
+    return new Promise((resolve) => {
+        iconBox.className = 'modal-icon';
+        if (type === 'warning' || type === 'success' || type === 'error') iconBox.classList.add(type);
+        const iconMap = { error: 'fa-exclamation-circle', warning: 'fa-exclamation-triangle', success: 'fa-check-circle' };
+        iconBox.innerHTML = `<i class="fas ${iconMap[type] || iconMap.error}"></i>`;
+
+        titleBox.textContent = opts.title || '';
+        msgBox.textContent = opts.message || '';
+
+        let buttonsHTML = '';
+        if (showCancel) buttonsHTML += `<button class="modal-btn secondary" id="confirmModalCancelBtn">${cancelText}</button>`;
+        buttonsHTML += `<button class="modal-btn ${type === 'error' ? 'danger' : 'primary'}" id="confirmModalConfirmBtn">${confirmText}</button>`;
+        actionsBox.innerHTML = buttonsHTML;
+
+        const close = (result) => {
+            overlay.classList.remove('active');
+            document.removeEventListener('keydown', escHandler);
+            resolve(result);
+        };
+        const escHandler = (e) => { if (e.key === 'Escape') close(false); };
+
+        document.getElementById('confirmModalConfirmBtn').onclick = () => close(true);
+        const cancelBtn = document.getElementById('confirmModalCancelBtn');
+        if (cancelBtn) cancelBtn.onclick = () => close(false);
+
+        overlay.classList.add('active');
+        document.addEventListener('keydown', escHandler);
     });
 }
+window.showConfirmModal = showConfirmModal;
+document.getElementById('confirmModalOverlay')?.addEventListener('click', (e) => {
+    if (e.target.id === 'confirmModalOverlay') e.target.classList.remove('active');
+});
+
+// Styled stand-in for native alert() — single OK button, no cancel.
+function showAlertModal(message, type, title) {
+    const defaultTitles = { error: 'Error', warning: 'Warning', success: 'Success' };
+    type = type || 'error';
+    return showConfirmModal({
+        title: title || defaultTitles[type] || 'Notice',
+        message: message,
+        type: type,
+        confirmText: 'OK'
+    });
+}
+window.showAlertModal = showAlertModal;
+
+// Global photoData object
+let photoData = JSON.parse(sessionStorage.getItem('photoData')) || {};
 
 // ============================================
 // OPEN PHOTO MODAL
@@ -54,8 +109,11 @@ async function loadDefectPhotos(defectId) {
         
         // Get fresh photos from server
         const allServerPhotos = await getAllPhotosForCurrentInspection();
-        const serverPhotosForDefect = allServerPhotos.filter(photo => 
-            photo.defect_id === defectId || photo.front_defectid === defectId
+        const serverPhotosForDefect = allServerPhotos.filter(photo =>
+            // defect_id comes back from Postgres as a number; defectId here is
+            // always a string (read from the row's .defectId textContent) —
+            // compare as strings so a real defect id still matches.
+            String(photo.defect_id) === String(defectId) || String(photo.front_defectid) === String(defectId)
         );
         
         // Merge: Keep local photos that aren't yet uploaded
@@ -127,17 +185,33 @@ async function loadDefectPhotos(defectId) {
 }
 
 // ============================================
-// HANDLE NEW PHOTOS
+// HANDLE NEW PHOTOS — auto-uploads immediately, no separate Save step
 // ============================================
+const MAX_PHOTO_SIZE = 15 * 1024 * 1024; // matches the server's multer limit
+
 function handleNewPhotos(fileInput, defectId) {
-    if (!fileInput.files.length) return;
-    
-    Array.from(fileInput.files).forEach((file) => {
-        if (!file.type.startsWith('image/')) return;
-        
+    const picked = Array.from(fileInput.files);
+    fileInput.value = '';
+
+    const oversized = picked.filter(f => f.type.startsWith('image/') && f.size > MAX_PHOTO_SIZE);
+    const files = picked.filter(f => f.type.startsWith('image/') && f.size <= MAX_PHOTO_SIZE);
+
+    if (oversized.length) {
+        const names = oversized.map(f => `${f.name} (${(f.size / (1024 * 1024)).toFixed(1)}MB)`).join(', ');
+        showAlertModal(
+            `${oversized.length > 1 ? 'These photos are' : 'This photo is'} over the 15MB limit and ${oversized.length > 1 ? "weren't" : "wasn't"} added: ${names}`,
+            'warning',
+            'Photo Too Large'
+        );
+    }
+
+    if (!files.length) return;
+
+    files.forEach((file) => {
         const reader = new FileReader();
         reader.onload = function(e) {
             const newPhoto = {
+                clientId: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
                 defect_id: defectId,
                 preview_url: e.target.result,
                 photo_description: "",
@@ -146,141 +220,210 @@ function handleNewPhotos(fileInput, defectId) {
                 file_type: file.type,
                 file_object: file,
                 source: 'local',
+                uploading: true,
                 display_order: photoData[defectId]?.length || 0
             };
-            
+
             if (!photoData[defectId]) photoData[defectId] = [];
             photoData[defectId].push(newPhoto);
             sessionStorage.setItem('photoData', JSON.stringify(photoData));
-            
             loadDefectPhotos(defectId);
+
+            uploadPhotoNow(defectId, newPhoto.clientId);
         };
         reader.readAsDataURL(file);
     });
-    
-    fileInput.value = '';
 }
 
 // ============================================
-// ADD LOCAL PHOTO CARD (Editable)
+// AUTO-UPLOAD ONE PHOTO (fires as soon as it's added — no Save button)
 // ============================================
-function addLocalPhotoCard(grid, photo, defectId, index) {
-    const photoElement = document.createElement('div');
-    photoElement.className = 'preview-item-photo';
-    photoElement.setAttribute('data-index', index);
-    photoElement.innerHTML = `
-        <span class="remove-photo" onclick="removeLocalPhoto('${defectId}', ${index})">×</span>
-        <img src="${photo.preview_url}" alt="Preview">
-        <textarea class="photo-description-input" 
-                  placeholder="Add description...">${escapeHtml(photo.photo_description || '')}</textarea>
-    `;
-    
-    // Add event listener to the textarea
-    const textarea = photoElement.querySelector('.photo-description-input');
-    textarea.addEventListener('input', function() {
-        updateLocalPhotoDescription(defectId, index, this.value);
-    });
-    
-    grid.appendChild(photoElement);
-}
-
-// ============================================
-// UPDATE LOCAL PHOTO DESCRIPTION
-// ============================================
-function updateLocalPhotoDescription(defectId, index, description) {
-    console.log(`Updating photo ${index} description:`, description);
-    
-    if (photoData[defectId] && photoData[defectId][index]) {
-        photoData[defectId][index].photo_description = description;
-        sessionStorage.setItem('photoData', JSON.stringify(photoData));
-        console.log(`✅ Updated photo ${index} description saved to sessionStorage`);
-    } else {
-        console.error(`Photo not found at index ${index} for defect ${defectId}`);
-    }
-}
-
-// ============================================
-// REMOVE LOCAL PHOTO
-// ============================================
-function removeLocalPhoto(defectId, index) {
-    if (confirm('Remove this photo?')) {
-        if (photoData[defectId] && photoData[defectId][index]) {
-            photoData[defectId].splice(index, 1);
-            sessionStorage.setItem('photoData', JSON.stringify(photoData));
-            loadDefectPhotos(defectId);
-        }
-    }
-}
-
-// ============================================
-// SAVE PHOTOS TO SERVER
-// ============================================
-async function savePhotos() {
-    const defectId = sessionStorage.getItem('currentDefectId');
+async function uploadPhotoNow(defectId, clientId) {
     const bridgeId = sessionStorage.getItem('structureId');
     const inspectionDate = sessionStorage.getItem('inspectionDate');
+    // Re-read from photoData (not a captured object reference) since
+    // loadDefectPhotos() rebuilds the array on every render.
+    const photo = (photoData[defectId] || []).find(p => p.clientId === clientId);
+    if (!photo) return;
 
-    if (!defectId || !bridgeId || !inspectionDate) {
-        alert('Missing required information');
-        return;
-    }
-
-    if (!photoData[defectId] || !photoData[defectId].length) {
-        alert('No photos to upload');
-        return;
-    }
-
-    const photosToUpload = photoData[defectId].filter(photo => !photo.photo_url);
-    
-    if (!photosToUpload.length) {
-        alert('All photos are already uploaded');
+    // file_object doesn't survive a sessionStorage round-trip (e.g. a retry
+    // after a page reload), so fall back to rebuilding it from the base64
+    // preview, which does.
+    const file = photo.file_object || (photo.preview_url && dataURLtoFile(photo.preview_url, photo.file_name, photo.file_type));
+    if (!bridgeId || !inspectionDate || !file) {
+        setPhotoUploadState(defectId, clientId, { uploading: false, failed: true });
+        showToast('Missing required information — photo not saved');
         return;
     }
 
     const formData = new FormData();
     formData.append('defectId', defectId);
     formData.append('inspectionDate', inspectionDate);
-
-    photosToUpload.forEach((photo, index) => {
-        const file = photo.file_object || dataURLtoFile(photo.preview_url, photo.file_name, photo.file_type);
-        formData.append('photos', file);
-        formData.append(`descriptions[${index}]`, photo.photo_description || '');
-        formData.append(`displayOrders[${index}]`, photo.display_order ?? index);
-    });
+    formData.append('photos', file);
+    formData.append('descriptions[0]', photo.photo_description || '');
+    formData.append('displayOrders[0]', photo.display_order ?? 0);
 
     try {
         const response = await fetch(`/api/bridges/${bridgeId}/inspection-photos`, {
             method: 'POST',
             body: formData
         });
-
         if (!response.ok) throw new Error('Upload failed');
-
         const result = await response.json();
+        const uploaded = result.success && result.photos && result.photos[0];
+        if (!uploaded) throw new Error('Upload failed');
 
-        if (result.success && result.photos) {
-            let uploadIndex = 0;
-            photoData[defectId].forEach((photo, i) => {
-                if (!photo.photo_url && uploadIndex < result.photos.length) {
-                    photoData[defectId][i] = {
-                        ...photo,
-                        photo_url: result.photos[uploadIndex].url,
-                        preview_url: photo.preview_url,
-                        server_url: result.photos[uploadIndex].url,
-                        id: result.photos[uploadIndex].id,
-                        file_object: undefined
-                    };
-                    uploadIndex++;
-                }
-            });
-            
-            sessionStorage.setItem('photoData', JSON.stringify(photoData));
-            alert('Photos uploaded successfully!');
-            loadDefectPhotos(defectId);
-        }
+        setPhotoUploadState(defectId, clientId, {
+            photo_url: uploaded.url,
+            server_url: uploaded.url,
+            photoId: uploaded.id,
+            id: uploaded.id,
+            uploading: false,
+            failed: false,
+            file_object: undefined
+        });
     } catch (error) {
         console.error('Upload error:', error);
-        alert('Upload failed: ' + error.message);
+        setPhotoUploadState(defectId, clientId, { uploading: false, failed: true });
+        showToast('Upload failed — tap the photo to retry');
+    }
+}
+
+// Patches the photoData entry matching clientId (wherever it currently sits
+// in the array) and re-renders.
+function setPhotoUploadState(defectId, clientId, patch) {
+    const list = photoData[defectId] || [];
+    const idx = list.findIndex(p => p.clientId === clientId);
+    if (idx === -1) return;
+    list[idx] = { ...list[idx], ...patch };
+    sessionStorage.setItem('photoData', JSON.stringify(photoData));
+    loadDefectPhotos(defectId);
+}
+
+function retryUpload(defectId, index) {
+    const photo = (photoData[defectId] || [])[index];
+    if (!photo || !photo.clientId) return;
+    setPhotoUploadState(defectId, photo.clientId, { uploading: true, failed: false });
+    uploadPhotoNow(defectId, photo.clientId);
+}
+
+// ============================================
+// LOCAL PHOTO CARD — only ever in an "uploading" or "failed" state, since
+// a successful upload immediately becomes a server card instead.
+// ============================================
+function addLocalPhotoCard(grid, photo, defectId, index) {
+    const photoElement = document.createElement('div');
+    photoElement.className = 'preview-item-photo';
+    photoElement.setAttribute('data-index', index);
+
+    const statusHtml = photo.uploading
+        ? `<div class="photo-status uploading"><i class="fas fa-spinner fa-spin"></i> Saving...</div>`
+        : photo.failed
+            ? `<div class="photo-status failed" onclick="retryUpload('${defectId}', ${index})"><i class="fas fa-rotate-right"></i> Failed — tap to retry</div>`
+            : '';
+
+    photoElement.innerHTML = `
+        ${!photo.uploading ? `<span class="remove-photo" onclick="removeLocalPhoto('${defectId}', ${index})">×</span>` : ''}
+        <img src="${photo.preview_url}" alt="Preview">
+        ${statusHtml}
+        <textarea class="photo-description-input"
+                  placeholder="Add description...">${escapeHtml(photo.photo_description || '')}</textarea>
+    `;
+
+    // This defect doesn't have a real database id yet (brand-new, not-yet-saved
+    // defect) — there's no row to PATCH, so the caption just lives in
+    // sessionStorage and gets sent along when the whole inspection is saved.
+    const textarea = photoElement.querySelector('.photo-description-input');
+    textarea.addEventListener('input', function() {
+        if (photoData[defectId] && photoData[defectId][index]) {
+            photoData[defectId][index].photo_description = this.value;
+            sessionStorage.setItem('photoData', JSON.stringify(photoData));
+        }
+    });
+
+    grid.appendChild(photoElement);
+}
+
+// ============================================
+// REMOVE A LOCAL (NOT YET SAVED, OR FAILED) PHOTO — nothing's persisted
+// yet, so no confirmation needed here.
+// ============================================
+function removeLocalPhoto(defectId, index) {
+    if (photoData[defectId] && photoData[defectId][index]) {
+        photoData[defectId].splice(index, 1);
+        sessionStorage.setItem('photoData', JSON.stringify(photoData));
+        loadDefectPhotos(defectId);
+    }
+}
+
+// ============================================
+// SERVER PHOTO CARD — already saved; description edits autosave (debounced
+// PATCH) and removal asks for confirmation since it deletes a saved record.
+// ============================================
+function addServerPhotoCard(grid, photo, defectId, index) {
+    const photoElement = document.createElement('div');
+    photoElement.className = 'preview-item-photo';
+    photoElement.setAttribute('data-index', index);
+    photoElement.innerHTML = `
+        <span class="remove-photo" onclick="removeServerPhoto('${defectId}', ${index})">×</span>
+        <img src="${photo.preview_url}" alt="Photo">
+        <textarea class="photo-description-input"
+                  placeholder="Add description...">${escapeHtml(photo.photo_description || '')}</textarea>
+    `;
+
+    const textarea = photoElement.querySelector('.photo-description-input');
+    let debounceTimer = null;
+    textarea.addEventListener('input', function() {
+        const value = this.value;
+        if (photoData[defectId] && photoData[defectId][index]) {
+            photoData[defectId][index].photo_description = value;
+            sessionStorage.setItem('photoData', JSON.stringify(photoData));
+        }
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => updateServerPhotoDescription(photo.photoId, value), 600);
+    });
+
+    grid.appendChild(photoElement);
+}
+
+async function updateServerPhotoDescription(photoId, description) {
+    if (!photoId) return;
+    try {
+        const response = await fetch(`/api/inspection-photos/${photoId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ photo_description: description })
+        });
+        if (!response.ok) throw new Error('Failed to save description');
+    } catch (error) {
+        console.error('Failed to update photo description:', error);
+        showToast('Could not save description');
+    }
+}
+
+async function removeServerPhoto(defectId, index) {
+    const photo = (photoData[defectId] || [])[index];
+    if (!photo) return;
+
+    const confirmed = await showConfirmModal({
+        title: 'Remove Photo',
+        message: 'This photo has already been saved. Remove it permanently?',
+        type: 'warning',
+        confirmText: 'Remove',
+        cancelText: 'Keep',
+        showCancel: true
+    });
+    if (!confirmed) return;
+
+    try {
+        const response = await fetch(`/api/inspection-photos/${photo.photoId}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error('Delete failed');
+        photoData[defectId].splice(index, 1);
+        sessionStorage.setItem('photoData', JSON.stringify(photoData));
+        loadDefectPhotos(defectId);
+    } catch (error) {
+        console.error('Failed to remove photo:', error);
+        showToast('Could not remove photo: ' + error.message);
     }
 }
 
@@ -328,15 +471,14 @@ async function getAllPhotosForCurrentInspection() {
 // CLOSE PHOTO MODAL
 // ============================================
 function closePhotoModal() {
-    const shouldProceed = confirm("If you proceed to cancel, all progress will be lost. Continue?");
-    if (shouldProceed) {
-        const modal = document.getElementById('uploadModal-photo');
-        if (modal) modal.style.display = 'none';
-        const container = document.getElementById('previewContainer-photo');
-        if (container) container.innerHTML = '';
-        const fileInput = document.getElementById('photoInput-photo');
-        if (fileInput) fileInput.value = '';
-    }
+    // Photos auto-upload as soon as they're added (see uploadPhotoNow), so
+    // there's never anything unsaved sitting around to warn about here.
+    const modal = document.getElementById('uploadModal-photo');
+    if (modal) modal.style.display = 'none';
+    const container = document.getElementById('previewContainer-photo');
+    if (container) container.innerHTML = '';
+    const fileInput = document.getElementById('photoInput-photo');
+    if (fileInput) fileInput.value = '';
 }
 
 // ============================================
@@ -469,8 +611,8 @@ function renderDefectPhotos(container, photos, defectId) {
 // ============================================
 window.openPhotoModal = openPhotoModal;
 window.closePhotoModal = closePhotoModal;
-window.savePhotos = savePhotos;
 window.removeLocalPhoto = removeLocalPhoto;
-window.updateLocalPhotoDescription = updateLocalPhotoDescription;
+window.removeServerPhoto = removeServerPhoto;
+window.retryUpload = retryUpload;
 window.loadDefectPhotos = loadDefectPhotos;
 window.openGalleryModal = openGalleryModal;

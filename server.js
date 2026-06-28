@@ -6,11 +6,24 @@ const cors = require("cors");
 
 const multer = require('multer');
 const path = require('path');
+const proj4 = require('proj4');
 
 const router = express.Router();
 const fs = require('fs');
 
 const app = express();
+
+// WGS84 (lat/long) -> OSGB36 / British National Grid (easting/northing).
+// Standard EPSG:27700 definition with the published 7-parameter Helmert
+// approximation - accurate to within a few metres across Great Britain,
+// which is plenty for a proforma reference field (not survey-grade, which
+// would need the OSTN15 grid shift instead).
+proj4.defs('EPSG:27700', '+proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +units=m +no_defs +towgs84=446.448,-125.157,542.060,0.1502,0.2470,0.8421,-20.4894');
+function latLonToOSGB(lat, lon) {
+    if (lat == null || lon == null || isNaN(lat) || isNaN(lon)) return null;
+    var en = proj4('EPSG:4326', 'EPSG:27700', [Number(lon), Number(lat)]);
+    return { easting: Math.round(en[0]), northing: Math.round(en[1]) };
+}
 
 
 app.get('/api/routes', (req, res) => {
@@ -372,7 +385,8 @@ app.get("/api/defects-by-date", async (req, res) => {
     try {
         const { structure_number, date } = req.query;
         const rows = await dbAll(`
-            SELECT 
+            SELECT
+                d.id,
                 d.span_number,
                 d.element_no,
                 d.element_description,
@@ -392,12 +406,13 @@ app.get("/api/defects-by-date", async (req, res) => {
             FROM defects d
             JOIN inspections i ON d.inspection_id = i.id
             JOIN inspection_spans s ON d.inspection_id = s.inspection_id AND d.span_number = s.span_number
-            WHERE i.structure_id = $1 
+            WHERE i.structure_id = $1
             AND i.inspection_date = $2
             ORDER BY d.span_number, d.element_no, d.defect_no
         `, [structure_number, date]);
 
         const transformed = rows.map(row => ({
+            defectDbId: row.id,
             span_number: row.span_number,
             element_no: row.element_no,
             def: `${row.defect_type}.${row.defect_number}`,
@@ -524,7 +539,7 @@ app.get('/api/defectsbci', async (req, res) => {
         const { structureId, date } = req.query;
 
         const inspectionQuery = `
-            SELECT id, inspection_date, inspector_name FROM inspections 
+            SELECT id, inspection_date, inspector_name, inspection_type FROM inspections
             WHERE structure_id = $1
             ${date ? 'AND inspection_date = $2' : ''}
         `;
@@ -535,6 +550,35 @@ app.get('/api/defectsbci', async (req, res) => {
         if (!inspections || inspections.length === 0) {
             return res.json([]);
         }
+
+        // Next inspection due, following the GI/PI cycle: GI every 2 years,
+        // PI every 6 years - since 6 = 3*2, a PI lands on what would
+        // otherwise be a GI date and supersedes it, giving the repeating
+        // GI, GI, PI pattern used in planning.html and /api/twin. Computed
+        // relative to *this* inspection's date (using only history up to
+        // and including it) so reprinting an older form still shows what
+        // was next due at that point, not relative to today.
+        const allInspections = await dbAll(
+            `SELECT inspection_date, inspection_type FROM inspections
+             WHERE structure_id = $1 ORDER BY inspection_date ASC`,
+            [structureId]
+        );
+        const thisInspectionDate = new Date(inspections[0].inspection_date);
+        const priorInspections = allInspections.filter(i => new Date(i.inspection_date) <= thisInspectionDate);
+        function lastDateOf(type) {
+            const matches = priorInspections.filter(i => i.inspection_type === type);
+            return matches.length ? new Date(matches[matches.length - 1].inspection_date) : null;
+        }
+        const lastGI = lastDateOf('GI');
+        const lastPI = lastDateOf('PI');
+        const dueDates = [];
+        if (lastGI) dueDates.push({ type: 'GI', date: new Date(lastGI.getFullYear() + GI_CYCLE_YEARS, lastGI.getMonth(), lastGI.getDate()) });
+        if (lastPI) dueDates.push({ type: 'PI', date: new Date(lastPI.getFullYear() + PI_CYCLE_YEARS, lastPI.getMonth(), lastPI.getDate()) });
+        dueDates.sort((a, b) => a.date - b.date);
+        const nextDue = dueDates[0] || null;
+        const nextInspection = nextDue
+            ? `${nextDue.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} ${nextDue.type}`
+            : null;
 
         const inspectionIds = inspections.map(i => i.id);
         const placeholders = inspectionIds.map((_, i) => `$${i + 1}`).join(',');
@@ -578,11 +622,11 @@ app.get('/api/defectsbci', async (req, res) => {
         `, inspectionIds);
 
         const result = spans.map(span => {
-            const spanDefects = defects.filter(d => 
-                d.inspection_id === span.inspection_id && 
+            const spanDefects = defects.filter(d =>
+                d.inspection_id === span.inspection_id &&
                 d.span_number === span.span_number
             );
-            return { ...span, defects: spanDefects };
+            return { ...span, defects: spanDefects, next_inspection: nextInspection };
         });
 
         res.json(result);
@@ -619,6 +663,14 @@ app.get('/api/bridges/:id', async (req, res) => {
         const row = await dbGet('SELECT * FROM bridges WHERE id = $1', [req.params.id]);
         if (!row) {
             return res.status(404).json({ error: 'Bridge not found' });
+        }
+        // Fill in OSE/OSN from lat/long when not already recorded.
+        if ((row.ose == null || row.osn == null) && row.latitude != null && row.longitude != null) {
+            const osgb = latLonToOSGB(row.latitude, row.longitude);
+            if (osgb) {
+                if (row.ose == null) row.ose = osgb.easting;
+                if (row.osn == null) row.osn = osgb.northing;
+            }
         }
         res.json(row);
     } catch (err) {
@@ -832,8 +884,8 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // Then your existing Multer config:
 const upload = multer({
     storage: photoStorage,
-    limits: { 
-        fileSize: 50 * 1024 * 1024,
+    limits: {
+        fileSize: 15 * 1024 * 1024,
         files: 20
     },
     fileFilter: fileFilter
@@ -923,7 +975,17 @@ app.get('/api/bridges/:structureId/files', async (req, res) => {
 });
 
 // Upload file to a bridge
-app.post('/api/bridges/:structureId/files', upload.single('file'), async (req, res) => {
+app.post('/api/bridges/:structureId/files',
+    (req, res, next) => {
+        upload.single('file')(req, res, (err) => {
+            if (!err) return next();
+            if (err.code === 'LIMIT_FILE_SIZE') {
+                return res.status(413).json({ error: 'File exceeds the 15MB limit.' });
+            }
+            return res.status(400).json({ error: err.message });
+        });
+    },
+    async (req, res) => {
     try {
         const { structureId } = req.params;
         const { folderId } = req.body;
@@ -1077,23 +1139,26 @@ app.get('/api/bridges/:structureId/folders/:folderId/path', async (req, res) => 
     try {
         const { structureId, folderId } = req.params;
 
-        // PostgreSQL recursive CTE
+        // PostgreSQL recursive CTE - depth tracks distance from the target
+        // folder (0 = itself, 1 = parent, ...) so the result can be ordered
+        // by actual hierarchy position. created_at isn't reliable for this:
+        // it doesn't reflect nesting depth, and is null on existing rows.
         const path = await dbAll(`
             WITH RECURSIVE folder_path AS (
-                SELECT id, name, parent_id, bridge_id, created_at 
-                FROM folders 
+                SELECT id, name, parent_id, bridge_id, 0 AS depth
+                FROM folders
                 WHERE id = $1 AND bridge_id = $2
 
                 UNION ALL
 
-                SELECT f.id, f.name, f.parent_id, f.bridge_id, f.created_at
+                SELECT f.id, f.name, f.parent_id, f.bridge_id, fp.depth + 1
                 FROM folders f
                 INNER JOIN folder_path fp ON f.id = fp.parent_id
                 WHERE f.bridge_id = $2 AND fp.parent_id IS NOT NULL
             )
             SELECT id, name, parent_id FROM folder_path
-            ORDER BY created_at ASC
-        `, [folderId, structureId, structureId]);
+            ORDER BY depth ASC
+        `, [folderId, structureId]);
 
         res.json(path);
     } catch (err) {
@@ -1656,7 +1721,7 @@ const inspectionPhotoStorage = multer.diskStorage({
 
 const uploadInspectionPhotos = multer({
     storage: inspectionPhotoStorage,
-    limits: { fileSize: 50 * 1024 * 1024 },
+    limits: { fileSize: 15 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
         if (file.mimetype.startsWith('image/')) {
             cb(null, true);
@@ -1667,8 +1732,16 @@ const uploadInspectionPhotos = multer({
 });
 
 // Photo upload endpoint
-app.post('/api/bridges/:structureId/inspection-photos', 
-    uploadInspectionPhotos.array('photos', 20),
+app.post('/api/bridges/:structureId/inspection-photos',
+    (req, res, next) => {
+        uploadInspectionPhotos.array('photos', 20)(req, res, (err) => {
+            if (!err) return next();
+            if (err.code === 'LIMIT_FILE_SIZE') {
+                return res.status(413).json({ success: false, error: 'Photo exceeds the 15MB limit.' });
+            }
+            return res.status(400).json({ success: false, error: err.message });
+        });
+    },
     async (req, res) => {
         try {
             if (!req.files || req.files.length === 0) {
@@ -1680,19 +1753,53 @@ app.post('/api/bridges/:structureId/inspection-photos',
 
             const descriptions = req.body.descriptions || [];
             const displayOrders = req.body.displayOrders || [];
+            const defectId = req.body.defectId;
 
-            const uploadedFiles = req.files.map((file, index) => ({
-                originalName: file.originalname,
-                filename: file.filename,
-                path: file.path,
-                size: file.size,
-                mimetype: file.mimetype,
-                url: `/uploads/${path.relative(path.join(__dirname, 'uploads'), file.path).split(path.sep).join('/')}`,
-                photo_description: descriptions[index] || '',
-                display_order: displayOrders[index] || index,
-                file_name: file.originalname,
-                file_type: file.mimetype,
-            }));
+            // A brand-new defect (not saved yet) is identified by a temporary
+            // composite key, not a real id — its photos can only be linked up
+            // once the whole inspection is saved (see /save-inspection). An
+            // existing defect already has a real numeric id, so its photos
+            // can be persisted immediately instead of waiting.
+            let realDefectId = null;
+            if (defectId && /^\d+$/.test(defectId)) {
+                const existing = await dbGet('SELECT id FROM defects WHERE id = $1', [defectId]);
+                if (existing) realDefectId = existing.id;
+            }
+
+            const uploadedFiles = [];
+            for (let index = 0; index < req.files.length; index++) {
+                const file = req.files[index];
+                const url = `/uploads/${path.relative(path.join(__dirname, 'uploads'), file.path).split(path.sep).join('/')}`;
+                const photo_description = descriptions[index] || '';
+                const display_order = displayOrders[index] || index;
+                let photoId = null;
+
+                if (realDefectId) {
+                    const inserted = await dbGet(
+                        `INSERT INTO defect_photos (
+                            defect_id, photo_url, photo_description, display_order,
+                            file_name, file_size, file_type
+                        ) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+                        [realDefectId, url, photo_description, display_order, file.originalname, file.size, file.mimetype]
+                    );
+                    photoId = inserted.id;
+                }
+
+                uploadedFiles.push({
+                    id: photoId,
+                    originalName: file.originalname,
+                    filename: file.filename,
+                    path: file.path,
+                    size: file.size,
+                    mimetype: file.mimetype,
+                    url,
+                    photo_description,
+                    display_order,
+                    file_name: file.originalname,
+                    file_type: file.mimetype,
+                    saved: !!realDefectId
+                });
+            }
 
             res.status(200).json({
                 success: true,
@@ -1754,10 +1861,52 @@ app.get('/api/bridges/:structureId/inspection-photos', async (req, res) => {
         });
     } catch (err) {
         console.error('Database error:', err);
-        res.status(500).json({ 
+        res.status(500).json({
             success: false,
-            error: 'Database error' 
+            error: 'Database error'
         });
+    }
+});
+
+// Delete a single already-uploaded inspection photo (DB row + file on disk)
+app.delete('/api/inspection-photos/:photoId', async (req, res) => {
+    try {
+        const { photoId } = req.params;
+        const photo = await dbGet('SELECT photo_url FROM defect_photos WHERE id = $1', [photoId]);
+        if (!photo) {
+            return res.status(404).json({ success: false, error: 'Photo not found' });
+        }
+
+        await pool.query('DELETE FROM defect_photos WHERE id = $1', [photoId]);
+
+        const filePath = path.join(__dirname, photo.photo_url.replace(/^\//, ''));
+        fs.unlink(filePath, (err) => {
+            if (err) console.warn('Could not delete photo file:', filePath, err.message);
+        });
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Delete photo error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Update an already-uploaded photo's description
+app.patch('/api/inspection-photos/:photoId', async (req, res) => {
+    try {
+        const { photoId } = req.params;
+        const { photo_description } = req.body;
+        const result = await pool.query(
+            'UPDATE defect_photos SET photo_description = $1 WHERE id = $2',
+            [photo_description || '', photoId]
+        );
+        if (result.rowCount === 0) {
+            return res.status(404).json({ success: false, error: 'Photo not found' });
+        }
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Update photo description error:', err);
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 
@@ -2090,8 +2239,17 @@ app.listen(PORT, () => {
 
 
 
-// Serve frontend static files (must be before error handler and listen)
-app.use(express.static(path.join(__dirname)));
+// Serve frontend static files (must be before error handler and listen).
+// no-cache (not "don't cache") — the browser still keeps the file and
+// reuses it via a cheap 304 if the ETag matches, it just always asks first.
+// A time-based max-age previously caused edited JS/CSS to keep being served
+// stale for up to an hour after every deploy, which repeatedly looked like
+// new features "not working" during active development.
+app.use(express.static(path.join(__dirname), {
+    setHeaders: (res) => {
+        res.setHeader('Cache-Control', 'no-cache');
+    }
+}));
 
 // Fallback to index.html for SPA routes
 app.get('*', (req, res) => {

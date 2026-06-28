@@ -2,6 +2,23 @@
    SPANSENSE - TWINVIEW PAGE SCRIPTS
    ============================================================ */
 
+// Glass Scrollbar
+(function(){
+    const sb=document.getElementById('glassScrollbar'), th=document.getElementById('glassThumb');
+    if(!sb||!th)return;
+    let drag=false, sy=0, sty=0;
+    function m(){const st=window.scrollY||0,th=document.documentElement.scrollHeight,vh=window.innerHeight,dh=Math.max(1,th-vh),tr=sb.offsetHeight||1,r=vh/Math.max(1,th),h=Math.max(40,r*tr),mx=Math.max(0,tr-h);return{st,p:st/dh,tr,h,mx,dh}}
+    function u(){const x=m();th.style.setProperty('height',x.h+'px','important');th.style.setProperty('top',(x.p*x.mx)+'px','important')}
+    window.addEventListener('scroll',u,{passive:true});window.addEventListener('resize',u);
+    th.addEventListener('mousedown',e=>{drag=true;sy=e.clientY;sty=m().p*m().mx;e.preventDefault()});
+    sb.addEventListener('mousedown',e=>{if(e.target===th||th.contains(e.target))return;const r=sb.getBoundingClientRect(),y=e.clientY-r.top,x=m();window.scrollTo({top:Math.max(0,Math.min(1,y/x.tr))*x.dh,behavior:'smooth'})});
+    window.addEventListener('mousemove',e=>{if(!drag)return;const x=m(),ny=sty+(e.clientY-sy),c=Math.max(0,Math.min(x.mx,ny));window.scrollTo(0,(c/Math.max(1,x.mx))*x.dh)});
+    window.addEventListener('mouseup',()=>drag=false);
+    new MutationObserver(()=>{clearTimeout(window._t);window._t=setTimeout(u,50)}).observe(document.body,{childList:true,subtree:true});
+    u();[50,100,250,500,1000,2000].forEach(d=>setTimeout(u,d));
+    window.updateGlassScrollbar=u;
+})();
+
 var API_BASE = window.location.hostname === 'localhost'
     ? 'http://localhost:3000'
     : 'https://spansense.onrender.com';
@@ -10,8 +27,11 @@ var API_BASE = window.location.hostname === 'localhost'
    PROCEDURAL SENSORS (no real telemetry exists yet - these are
    plausible monitoring points derived from real span/pier geometry)
    ============================================================ */
-function generateSensors(bridge) {
-    var spanLen = bridge.spanLength, numSpans = bridge.spans, deckW = bridge.deckWidth;
+function generateSensors(bridge, spanLenOverride) {
+    // spanLenOverride lets rebuildModel() pass its stylised-scale span
+    // length (cantilever bridges) without mutating bridge.spanLength itself
+    // - the info panel reads that field straight off bridge, separately.
+    var spanLen = spanLenOverride || bridge.spanLength, numSpans = bridge.spans, deckW = bridge.deckWidth;
     var totalLen = spanLen * numSpans;
     var x0 = -totalLen / 2;
     var sensors = [];
@@ -134,7 +154,7 @@ async function selectBridge(bridgeId, inspectionId) {
     // 3D geometry isn't in the DB - look it up from the hand-authored model file
     var model = getBridgeModel(bridge.id, bridge.type);
     bridge.model = model;                 // full per-kind param bag, incl. model.kind
-    bridge.deckWidth = model.deckWidth;   // kept flat: generateSensors() + stress overlay read these directly
+    bridge.deckWidth = model.deckWidth;   // kept flat: generateSensors() + works overlay read these directly
     bridge.trussHeight = model.trussHeight;
     bridge.panelsPerSpan = model.panelsPerSpan;
     if (!bridge.spans) bridge.spans = 1;
@@ -264,7 +284,9 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 const scene = new THREE.Scene();
 scene.fog = new THREE.FogExp2(0x7a9490, 0.009);
 
-const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 1000);
+// Far plane needs real headroom past the 130-200 unit cap most builders use
+// for camDistance - the cantilever builder (Forth Bridge) can need ~2300+.
+const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 5000);
 let camDistance = 58, camHeight = 13;
 camera.position.set(0, camHeight, camDistance);
 camera.lookAt(0, 1.5, 0);
@@ -288,20 +310,40 @@ const matDefect = new THREE.MeshStandardMaterial({color: 0xe06a5a, emissive: 0xc
 const matStone    = new THREE.MeshStandardMaterial({color: 0x8a8378, metalness: 0.0, roughness: 0.95});
 const matConcrete = new THREE.MeshStandardMaterial({color: 0x9aa39c, metalness: 0.05, roughness: 0.85});
 
-function spanColor(bci) {
-    if (bci == null) return 0x8a9ba8;
-    if (bci < 50) return 0xc0392b;
-    if (bci < 65) return 0xc28b5a;
-    return 0x5b8c8a;
+// Cone marker (distinct from the octahedron defect markers) for the Works
+// Required layer. exact=false (no placed x/y/z) renders semi-transparent so
+// it reads as an estimate rather than a precise location.
+function createWorksMarker(exact) {
+    var color = 0xc28b5a;
+    var mat = new THREE.MeshStandardMaterial({
+        color: color, emissive: color, emissiveIntensity: 1.1,
+        transparent: !exact, opacity: exact ? 1 : 0.55
+    });
+    return new THREE.Mesh(new THREE.ConeGeometry(0.7, 1.6, 8), mat);
+}
+
+// Real placed position if this defect has one, otherwise a position spread
+// across its span/element so multiple unlocated works-required defects in
+// the same span don't all stack on one spot.
+function worksMarkerPosition(d, X0, SPAN_LEN, NUM_SPANS, DECK_W, deckY) {
+    if (d.x != null && d.y != null && d.z != null) {
+        return { x: d.x, y: d.y, z: d.z, exact: true };
+    }
+    var spanIdx = Math.min(Math.max((d.spanNumber || 1) - 1, 0), Math.max(NUM_SPANS - 1, 0));
+    var x = X0 + SPAN_LEN * spanIdx + SPAN_LEN / 2;
+    var seed = ((d.elementNo || 0) * 37) % 100 / 100;
+    x += (seed - 0.5) * SPAN_LEN * 0.6;
+    var z = ((d.elementNo || 0) % 2 === 0 ? 1 : -1) * (DECK_W * 0.25);
+    return { x: x, y: deckY + 1.6, z: z, exact: false };
 }
 
 const rig = new THREE.Group();
 scene.add(rig);
 const structureGroup = new THREE.Group();
 const sensorGroup = new THREE.Group();
-const stressGroup = new THREE.Group();
+const worksGroup = new THREE.Group();
 const defectGroup = new THREE.Group();
-rig.add(structureGroup, sensorGroup, stressGroup, defectGroup);
+rig.add(structureGroup, sensorGroup, worksGroup, defectGroup);
 
 let gridHelper, glowMesh;
 
@@ -313,7 +355,7 @@ function rebuildModel(bridge) {
     // Clear existing
     while(structureGroup.children.length > 0) structureGroup.remove(structureGroup.children[0]);
     while(sensorGroup.children.length > 0) sensorGroup.remove(sensorGroup.children[0]);
-    while(stressGroup.children.length > 0) stressGroup.remove(stressGroup.children[0]);
+    while(worksGroup.children.length > 0) worksGroup.remove(worksGroup.children[0]);
     while(defectGroup.children.length > 0) defectGroup.remove(defectGroup.children[0]);
     if (gridHelper) rig.remove(gridHelper);
     if (glowMesh) rig.remove(glowMesh);
@@ -324,11 +366,29 @@ function rebuildModel(bridge) {
     var TRUSS_H = bridge.trussHeight || 0;
     var PANELS_PER_SPAN = bridge.panelsPerSpan || 4;
     var TOTAL_LEN = SPAN_LEN * NUM_SPANS;
+
+    // Cantilever bridges (Forth Bridge) record length across wildly
+    // non-uniform real spans - 2 ~520m main cantilever spans plus much
+    // shorter approach viaducts. Averaging that by span count (the
+    // TOTAL_LEN above) inflates the model to ~2500 units, shrinking the
+    // iconic ~22-unit towers to an invisible bump on a vast flat deck.
+    // Every other bridge model here is already a stylised representation,
+    // not a literal scale model - use the same fixed sensible scale as
+    // similarly grand bridges instead. Overridden here (not just inside the
+    // builder) so sensors/grid/works-overlay below stay in proportion too.
+    var kind = (bridge.model && bridge.model.kind) || 'truss';
+    if (kind === 'cantilever') {
+        TOTAL_LEN = (bridge.model && bridge.model.totalLen) || 220;
+        SPAN_LEN = TOTAL_LEN / NUM_SPANS;
+    }
     var X0 = -TOTAL_LEN / 2;
     var deckY = 0;
 
-    // Grid
-    var gridSize = Math.max(140, TOTAL_LEN + 40);
+    // Grid - capped, since some builders (cantilever) use a fixed stylised
+    // scale well under the bridge's literal recorded length (see there for
+    // why), and an uncapped ground plane sized off the raw figure would
+    // dwarf the structure actually rendered.
+    var gridSize = Math.min(Math.max(140, TOTAL_LEN + 40), 400);
     gridHelper = new THREE.GridHelper(gridSize, Math.floor(gridSize / 2.5), 0x2a3a38, 0x1a2625);
     gridHelper.position.y = -8.4;
     gridHelper.material.transparent = true;
@@ -336,7 +396,7 @@ function rebuildModel(bridge) {
     rig.add(gridHelper);
 
     // Glow
-    var glowRadius = Math.max(34, TOTAL_LEN / 2 + 6);
+    var glowRadius = Math.min(Math.max(34, TOTAL_LEN / 2 + 6), 200);
     glowMesh = new THREE.Mesh(
         new THREE.CircleGeometry(glowRadius, 48),
         new THREE.MeshBasicMaterial({color: 0x5b8c8a, transparent: true, opacity: 0.07})
@@ -345,8 +405,7 @@ function rebuildModel(bridge) {
     glowMesh.position.y = -8.3;
     rig.add(glowMesh);
 
-    // Structure - dispatch on the per-bridge model kind
-    var kind = (bridge.model && bridge.model.kind) || 'truss';
+    // Structure - dispatch on the per-bridge model kind (computed above)
     var builder = BUILDERS[kind] || buildTrussStructure;
     var ctx = {
         SPAN_LEN, NUM_SPANS, DECK_W, TRUSS_H, PANELS_PER_SPAN, TOTAL_LEN, X0, deckY,
@@ -355,7 +414,7 @@ function rebuildModel(bridge) {
     var frame = builder(bridge, ctx);
 
     // Sensors (procedural - no real telemetry source yet)
-    generateSensors(bridge).forEach(function(p) {
+    generateSensors(bridge, SPAN_LEN).forEach(function(p) {
         var s = new THREE.Mesh(new THREE.SphereGeometry(0.42, 16, 16), matSensor);
         s.position.set(p.x, p.y, p.z);
         sensorGroup.add(s);
@@ -367,17 +426,16 @@ function rebuildModel(bridge) {
         sensorGroup.add(ring);
     });
 
-    // Stress overlay (per span BCI)
-    var spanBCI = bridge.spanBCI && bridge.spanBCI.length ? bridge.spanBCI : [bridge.bciAvg];
-    for (var i = 0; i < NUM_SPANS; i++) {
-        var x = X0 + SPAN_LEN * i + SPAN_LEN / 2;
-        var bci = spanBCI[i] !== undefined ? spanBCI[i] : bridge.bciAvg;
-        var geo = new THREE.BoxGeometry(SPAN_LEN - 1, 0.08, DECK_W + 0.4);
-        var mat = new THREE.MeshBasicMaterial({color: spanColor(bci), transparent: true, opacity: 0.55});
-        var slab = new THREE.Mesh(geo, mat);
-        slab.position.set(x, deckY + 0.42, 0);
-        stressGroup.add(slab);
-    }
+    // Works Required markers — one per defect flagged works_required='Y',
+    // at its real placed position if it has one, otherwise an approximate
+    // spot within its span so the layer isn't empty just because most
+    // defects haven't been located on the model yet.
+    (bridge.defects || []).filter(function(d) { return d.worksRequired; }).forEach(function(d) {
+        var pos = worksMarkerPosition(d, X0, SPAN_LEN, NUM_SPANS, DECK_W, deckY);
+        var m = createWorksMarker(pos.exact);
+        m.position.set(pos.x, pos.y, pos.z);
+        worksGroup.add(m);
+    });
 
     // Defects: only ones with real coordinates set are rendered. There's no
     // interface to place them yet, so this layer is sparse/empty until then.
@@ -393,14 +451,20 @@ function rebuildModel(bridge) {
     camDistance = frame.camDistance;
     camHeight = frame.camHeight;
 
+    // Fog density was tuned for camDistance ~130 (most builders' cap) -
+    // scale it down for anything framed further out (the cantilever
+    // builder's Forth Bridge can need ~2300+), or the bridge renders as a
+    // wall of solid fog. Smaller/typical bridges are unaffected.
+    scene.fog.density = 0.009 * Math.min(1, 130 / Math.max(130, camDistance));
+
     // Reset rotation
     rotY = 0.4;
     rotX = 0.18;
 
-    // Reset layer toggles - stress and defects off by default
-    stressGroup.visible = false;
+    // Reset layer toggles - works required and defects off by default
+    worksGroup.visible = false;
     defectGroup.visible = false;
-    document.querySelectorAll('.vc-pill[data-layer="stress"]').forEach(function(el) { el.classList.remove('on'); });
+    document.querySelectorAll('.vc-pill[data-layer="works"]').forEach(function(el) { el.classList.remove('on'); });
     document.querySelectorAll('.vc-pill[data-layer="defects"]').forEach(function(el) { el.classList.remove('on'); });
     document.querySelectorAll('.vc-pill[data-layer="structure"]').forEach(function(el) { el.classList.add('on'); });
     document.querySelectorAll('.vc-pill[data-layer="sensors"]').forEach(function(el) { el.classList.add('on'); });
@@ -451,7 +515,7 @@ function bindLayerPills(selector) {
             var on = pill.classList.contains('on');
             if (layer === 'structure') structureGroup.visible = on;
             if (layer === 'sensors') sensorGroup.visible = on;
-            if (layer === 'stress') stressGroup.visible = on;
+            if (layer === 'works') worksGroup.visible = on;
             if (layer === 'defects') defectGroup.visible = on;
         });
     });

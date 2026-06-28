@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <script>if(localStorage.getItem('nightMode')==='on')document.documentElement.classList.add('nm-preload');</script>
+    <style>html.nm-preload,html.nm-preload body{background-color:#1a2428!important;}</style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>spanSense — Contact Us</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -551,6 +553,56 @@
         .night-mode .faq-question { color: #d4dfe3; }
         .night-mode .faq-question:hover { color: #8ab4b0; }
         .night-mode .faq-answer { color: #8aa4ac; }
+
+        /* ========== HIDE NATIVE SCROLLBAR ========== */
+        html { scrollbar-width: none; -ms-overflow-style: none; }
+        html::-webkit-scrollbar { display: none; }
+
+        /* ========== GLASS SCROLLBAR ========== */
+        .glass-scrollbar {
+            position: fixed;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 10px;
+            height: 55vh;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+            z-index: 1000;
+            overflow: hidden;
+            cursor: default;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .glass-scrollbar .thumb {
+            width: 100%;
+            background: linear-gradient(180deg, #a0c8c4, #5b8c8a);
+            border-radius: 20px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.3), 0 0 12px rgba(91, 140, 138, 0.35), 0 0 24px rgba(91, 140, 138, 0.15);
+            cursor: grab;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .glass-scrollbar .thumb:active { cursor: grabbing; }
+        .night-mode .glass-scrollbar {
+            background: rgba(35, 46, 52, 0.7) !important;
+            border-color: rgba(58, 75, 83, 0.5) !important;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255,255,255,0.03) !important;
+        }
+        .night-mode .glass-scrollbar .thumb {
+            background: linear-gradient(180deg, #ff6b6b, #c0392b) !important;
+            box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.1), 0 0 14px rgba(138, 180, 176, 0.45), 0 0 28px rgba(138, 180, 176, 0.2) !important;
+        }
+        @media (max-width: 860px) {
+            .glass-scrollbar { display: none !important; }
+        }
     </style>
     <base target="_self">
 </head>
@@ -730,7 +782,26 @@
     <!-- TOAST CONTAINER -->
     <div class="toast-container" id="toastContainer"></div>
 
+    <div class="glass-scrollbar" id="glassScrollbar"><div class="thumb" id="glassThumb"></div></div>
+
     <script>
+
+        // Glass Scrollbar
+        (function(){
+            const sb=document.getElementById('glassScrollbar'), th=document.getElementById('glassThumb');
+            if(!sb||!th)return;
+            let drag=false, sy=0, sty=0;
+            function m(){const st=window.scrollY||0,th=document.documentElement.scrollHeight,vh=window.innerHeight,dh=Math.max(1,th-vh),tr=sb.offsetHeight||1,r=vh/Math.max(1,th),h=Math.max(40,r*tr),mx=Math.max(0,tr-h);return{st,p:st/dh,tr,h,mx,dh}}
+            function u(){const x=m();th.style.setProperty('height',x.h+'px','important');th.style.setProperty('top',(x.p*x.mx)+'px','important')}
+            window.addEventListener('scroll',u,{passive:true});window.addEventListener('resize',u);
+            th.addEventListener('mousedown',e=>{drag=true;sy=e.clientY;sty=m().p*m().mx;e.preventDefault()});
+            sb.addEventListener('mousedown',e=>{if(e.target===th||th.contains(e.target))return;const r=sb.getBoundingClientRect(),y=e.clientY-r.top,x=m();window.scrollTo({top:Math.max(0,Math.min(1,y/x.tr))*x.dh,behavior:'smooth'})});
+            window.addEventListener('mousemove',e=>{if(!drag)return;const x=m(),ny=sty+(e.clientY-sy),c=Math.max(0,Math.min(x.mx,ny));window.scrollTo(0,(c/Math.max(1,x.mx))*x.dh)});
+            window.addEventListener('mouseup',()=>drag=false);
+            new MutationObserver(()=>{clearTimeout(window._t);window._t=setTimeout(u,50)}).observe(document.body,{childList:true,subtree:true});
+            u();[50,100,250,500,1000,2000].forEach(d=>setTimeout(u,d));
+            window.updateGlassScrollbar=u;
+        })();
 
         // ============================================
         // NIGHT MODE

@@ -167,6 +167,10 @@ body {
 }
 .stat-card .stat-value { font-size: 2rem; font-weight: 700; color: #2c4a48; line-height: 1.2; }
 .stat-card.critical .stat-value { color: #e8a87c; }
+/* Shown only until the real score is computed on load — deliberately
+   doesn't look like "100.00" so it can't be mistaken for a real score. */
+.stat-value.stat-loading { color: #c5d3d9 !important; font-weight: 400; letter-spacing: 0.1em; }
+.night-mode .stat-value.stat-loading { color: #4a5b62 !important; }
 
 /* Date card inner layout */
 .date-card-content {
@@ -236,8 +240,27 @@ body {
     z-index: 1001;
     box-shadow: 0 12px 28px rgba(0,0,0,0.1);
     display: none;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(91, 140, 138, 0.3) transparent;
 }
 .custom-date-dropdown.open .ddt-panel { display: block; }
+.custom-date-dropdown .ddt-panel::-webkit-scrollbar { width: 5px; }
+.custom-date-dropdown .ddt-panel::-webkit-scrollbar-thumb {
+    background: rgba(91, 140, 138, 0.3);
+    border-radius: 10px;
+}
+.custom-date-dropdown .ddt-panel::-webkit-scrollbar-thumb:hover {
+    background: rgba(91, 140, 138, 0.5);
+}
+.night-mode .custom-date-dropdown .ddt-panel {
+    scrollbar-color: rgba(138, 180, 176, 0.35) transparent;
+}
+.night-mode .custom-date-dropdown .ddt-panel::-webkit-scrollbar-thumb {
+    background: rgba(138, 180, 176, 0.35);
+}
+.night-mode .custom-date-dropdown .ddt-panel::-webkit-scrollbar-thumb:hover {
+    background: rgba(138, 180, 176, 0.55);
+}
 .custom-date-dropdown .ddt-item {
     padding: 12px 16px;
     cursor: pointer;
@@ -564,6 +587,16 @@ body {
     color: #4a5b6e;
 }
 
+/* Marks a collapsed row's defect as coming from a previous inspection,
+   without needing to expand it to see the "Retrieved" ribbon. */
+.retrieved-indicator {
+    color: #8ab4b0;
+    font-size: 0.7rem;
+}
+.night-mode .retrieved-indicator {
+    color: #6e9c98;
+}
+
 /* 9. BUTTON ROW — transparent, no borders, gap shows body bg */
 #inspectionElementsTable tr.button-row td {
     background: transparent;
@@ -870,7 +903,9 @@ body {
     background: linear-gradient(135deg, #8ab4b0, #6e9c98);
     color: white;
     padding: 5px 14px 5px 10px;
-    border-radius: 0 0 12px 0;
+    /* Top-left matches the card's own radius so the ribbon's corner doesn't
+       sit as a sharp square on top of the card's rounded one. */
+    border-radius: 20px 0 12px 0;
     font-size: 0.6rem;
     font-weight: 700;
     text-transform: uppercase;
@@ -911,6 +946,14 @@ body {
     background: #5b8c8a;
 }
 #inspectionElementsTable tr.retrieved-defect .btn-delete {
+    display: none;
+}
+/* Edit doesn't apply to retrieved (historical) rows — copy first to get an
+   editable version. Copy, in turn, only makes sense on retrieved rows. */
+#inspectionElementsTable tr.retrieved-defect button[title='Edit'] {
+    display: none;
+}
+#inspectionElementsTable tr.expandable-row:not(.retrieved-defect) button[title='Copy'] {
     display: none;
 }
 
@@ -1254,6 +1297,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
+    overflow-y: auto;
     background-color: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
     justify-content: center;
@@ -1278,6 +1322,137 @@ body {
     overflow: hidden;
 }
 .modal-photo { max-width: 750px; animation: modalSlideIn 0.3s ease; }
+
+/* #modal's defect-entry .modal-content is fixed in place (rather than flex-
+   centered with the guidance panel as a pair) so toggling the guidance
+   panel never shifts it — it sits a fixed amount left of true-center, which
+   is exactly the room a visible guidance panel + gap needs on its right, so
+   the pair still reads as centered when the panel is showing. */
+#modal .modal-content {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+    transition: left 0.3s ease;
+}
+/* Only the Add Defect segment needs room for the guidance panel on the
+   right — No Defects/Not Inspected have nothing beside them, so they stay
+   genuinely centered instead of carrying the same offset for no reason. */
+#modal[data-modal-state="defect"] .modal-content {
+    left: calc(50% - 138px);
+}
+
+/* Severity guidance panel — sits beside the Add Defect modal, condensed
+   prompts from the Inspection codes - Revision 2 severity tables. Anchored
+   to the viewport at a fixed offset from #modal's centerline (not flex-
+   paired with .modal-content) so it never causes .modal-content to move. */
+.defect-guidance-panel {
+    display: none;
+    position: fixed;
+    left: calc(50% + 153px);
+    top: 50%;
+    transform: translateY(-50%);
+    flex-direction: column;
+    width: min(260px, 90vw);
+    max-height: calc(80vh - 60px);
+    background: white;
+    border-radius: 24px;
+    border: 1px solid #e9edf2;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+.dgp-header {
+    padding: 16px 20px 10px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #2c5a57;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.dgp-header i { color: #8ab4b0; }
+.dgp-subtitle {
+    padding: 0 20px 12px;
+    font-size: 0.72rem;
+    color: #8a9ba8;
+    border-bottom: 1px solid #e9edf2;
+    padding-bottom: 14px;
+    margin-bottom: 4px;
+}
+.dgp-levels {
+    padding: 10px 14px 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.dgp-level {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    transition: background 0.15s;
+}
+.dgp-level-active {
+    background: #eef6f4;
+}
+.dgp-level-num {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1.5px solid currentColor;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.68rem;
+    font-weight: 700;
+}
+.dgp-level-num.sev-1 { color: #2d7a6e; }
+.dgp-level-num.sev-2 { color: #BA7517; }
+.dgp-level-num.sev-3 { color: #c47070; }
+.dgp-level-num.sev-4,
+.dgp-level-num.sev-5 { color: #c0392b; }
+.night-mode .dgp-level-num.sev-1 { color: #8ab4b0; }
+.night-mode .dgp-level-num.sev-2 { color: #d4a84a; }
+.night-mode .dgp-level-num.sev-3 { color: #e8a0a0; }
+.night-mode .dgp-level-num.sev-4,
+.night-mode .dgp-level-num.sev-5 { color: #e07070; }
+.dgp-level-text {
+    font-size: 0.78rem;
+    color: #4a5b6e;
+    line-height: 1.4;
+    padding-top: 1px;
+}
+.dgp-level-active .dgp-level-text { color: #2c4a48; font-weight: 600; }
+.dgp-empty {
+    padding: 10px 14px;
+    font-size: 0.78rem;
+    color: #8a9ba8;
+    font-style: italic;
+}
+
+/* Below ~826px there isn't room for the panel beside a centered, fixed-
+   width modal without overflowing the viewport — hide it and let
+   .modal-content fall back to true center (it never shows up in this
+   state, so there's nothing to jump when re-centering here). */
+@media (max-width: 860px) {
+    .defect-guidance-panel { display: none !important; }
+    #modal[data-modal-state="defect"] .modal-content { left: 50%; }
+}
+
+.night-mode .defect-guidance-panel {
+    background: #1e2a2f;
+    border-color: #2f3e45;
+}
+.night-mode .dgp-header { color: #8ab4b0; }
+.night-mode .dgp-subtitle { color: #6a8682; border-color: #2f3e45; }
+.night-mode .dgp-level-active { background: #243a3e; }
+.night-mode .dgp-level-text { color: #a8c0bc; }
+.night-mode .dgp-level-active .dgp-level-text { color: #d4e8e4; }
 
 @keyframes modalSlideIn {
     from { opacity: 0; transform: translateY(20px) scale(0.98); }
@@ -1380,6 +1555,20 @@ body {
     transition: all 0.2s;
 }
 .btn-save:hover, .btn-save-conclusions:hover, .btn-upload:hover { background: #5b8c8a; transform: translateY(-1px); }
+.btn-suggest-draft {
+    background: transparent;
+    color: #5b8c8a;
+    border: 1px solid #c5dbd8;
+    padding: 10px 22px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+.btn-suggest-draft:hover { background: #eef4f2; border-color: #8ab4b0; }
+.night-mode .btn-suggest-draft { color: #8ab4b0; border-color: #3a4b53; }
+.night-mode .btn-suggest-draft:hover { background: #1e2a2f; border-color: #8ab4b0; }
 .btn-back, .btn-cancel {
     background: #f1f3f5;
     color: #6a7c8e;
@@ -1593,6 +1782,38 @@ body {
 
 .photo-description-input::placeholder {
     color: #bbb;
+}
+
+/* Auto-upload status banner (uploading spinner / failed-tap-to-retry) */
+.photo-status {
+    padding: 6px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+.photo-status.uploading {
+    background: rgba(91, 140, 138, 0.12);
+    color: #5b8c8a;
+}
+.photo-status.failed {
+    background: rgba(220, 38, 38, 0.1);
+    color: #c0392b;
+    cursor: pointer;
+}
+.photo-status.failed:hover {
+    background: rgba(220, 38, 38, 0.18);
+}
+.night-mode .photo-status.uploading {
+    background: rgba(138, 180, 176, 0.15);
+    color: #8ab4b0;
+}
+.night-mode .photo-status.failed {
+    background: rgba(224, 112, 112, 0.15);
+    color: #e07070;
 }
 
 .photo-description-input:focus {
@@ -1987,9 +2208,34 @@ body {
 .night-mode .modal-body::-webkit-scrollbar-thumb:hover,
 .night-mode .preview-container-photo::-webkit-scrollbar-thumb:hover { background: #3a5c5a; }
 
-/* Defects list panels (split modal + locate3d modal) scroll without a visible scrollbar */
+/* Conclusions panel's defects list scrolls without a visible scrollbar */
 .defects-list-container { scrollbar-width: none; -ms-overflow-style: none; }
 .defects-list-container::-webkit-scrollbar { display: none; }
+
+/* Locate-on-3D-model's defects list gets the same thin "spansense style"
+   scrollbar used elsewhere (date dropdown, etc.) instead of hiding it
+   entirely — there's no other affordance that it scrolls. */
+#locate3dDefectsList {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(91, 140, 138, 0.3) transparent;
+}
+#locate3dDefectsList::-webkit-scrollbar { display: block; width: 5px; }
+#locate3dDefectsList::-webkit-scrollbar-thumb {
+    background: rgba(91, 140, 138, 0.3);
+    border-radius: 10px;
+}
+#locate3dDefectsList::-webkit-scrollbar-thumb:hover {
+    background: rgba(91, 140, 138, 0.5);
+}
+.night-mode #locate3dDefectsList {
+    scrollbar-color: rgba(138, 180, 176, 0.35) transparent;
+}
+.night-mode #locate3dDefectsList::-webkit-scrollbar-thumb {
+    background: rgba(138, 180, 176, 0.35);
+}
+.night-mode #locate3dDefectsList::-webkit-scrollbar-thumb:hover {
+    background: rgba(138, 180, 176, 0.55);
+}
 
 /* Hidden elements */
 #inspectionDetails, #historicalDefects { display: none; }
@@ -2662,6 +2908,86 @@ body.modal-photo-open .glass-scrollbar {
     -webkit-appearance: none;
     outline: none;
 }
+
+/* ---- Custom Element/No. dropdowns (replace the native select's unstyled
+   OS option list) — trigger stays borderless to blend into the existing
+   .defect-split-half card; only the floating panel gets its own chrome. ---- */
+.defect-dropdown { position: relative; width: 100%; }
+.defect-dropdown .dd-trigger {
+    width: 100%;
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #2c3e44;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    text-align: left;
+}
+.defect-dropdown .dd-trigger span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.defect-dropdown .dd-chevron {
+    font-size: 0.65rem;
+    color: #8a9ba8;
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+}
+.defect-dropdown.open .dd-chevron { transform: rotate(180deg); }
+.defect-dropdown .dd-panel {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: -14px;
+    right: -14px;
+    background: white;
+    border: 1px solid #e9edf2;
+    border-radius: 12px;
+    max-height: 220px;
+    overflow-y: auto;
+    z-index: 1001;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.12);
+    display: none;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(91, 140, 138, 0.3) transparent;
+}
+.defect-dropdown.open .dd-panel { display: block; }
+.defect-dropdown .dd-panel::-webkit-scrollbar { width: 5px; }
+.defect-dropdown .dd-panel::-webkit-scrollbar-thumb {
+    background: rgba(91, 140, 138, 0.3);
+    border-radius: 10px;
+}
+.defect-dropdown .dd-panel::-webkit-scrollbar-thumb:hover {
+    background: rgba(91, 140, 138, 0.5);
+}
+.defect-dropdown .dd-item {
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    line-height: 1.35;
+    color: #4a5b6e;
+    border-bottom: 1px solid #eef1f4;
+    transition: all 0.15s;
+}
+.defect-dropdown .dd-item:last-child { border-bottom: none; }
+.defect-dropdown .dd-item:hover, .defect-dropdown .dd-item.active { background: #eef4f2; color: #5b8c8a; }
+.night-mode .defect-dropdown .dd-trigger { color: #d4dfe3; }
+.night-mode .defect-dropdown .dd-panel {
+    background: #2f3e48;
+    border-color: #3e525e;
+    scrollbar-color: rgba(138, 180, 176, 0.35) transparent;
+}
+.night-mode .defect-dropdown .dd-panel::-webkit-scrollbar-thumb { background: rgba(138, 180, 176, 0.35); }
+.night-mode .defect-dropdown .dd-panel::-webkit-scrollbar-thumb:hover { background: rgba(138, 180, 176, 0.55); }
+.night-mode .defect-dropdown .dd-item { color: #a8c4cc; border-bottom-color: #3e525e; }
+.night-mode .defect-dropdown .dd-item:hover, .night-mode .defect-dropdown .dd-item.active { background: #3a6b62; color: white; }
 
 /* ---- Scores row with stepper cards ---- */
 .scores-row-steppers {
@@ -3436,7 +3762,7 @@ body.contracted-rows #inspectionElementsTable tr.retrieved-defect .aligned-grid 
 body.contracted-rows #inspectionElementsTable tr.retrieved-defect .retrieved-ribbon {
     padding: 3px 10px 3px 7px;
     font-size: 0.5rem;
-    border-radius: 0 0 10px 0;
+    border-radius: 16px 0 10px 0;
 }
 
 /* 8. Works/priority/cost inline collapse */
@@ -3544,4 +3870,160 @@ body.night-mode.contracted-rows #inspectionElementsTable tr.expandable-row .grid
     body.contracted-rows #inspectionElementsTable tr.expandable-row .grid-buttons {
         justify-content: flex-end;
     }
+}
+
+/* ============================================
+   LIGHTWEIGHT STYLED CONFIRM DIALOG
+   Replaces native confirm()/alert() — see showConfirmModal in photo.js
+   ============================================ */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(30, 46, 52, 0.25);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+}
+.modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+.modal-card {
+    background: #ffffff;
+    border-radius: 32px;
+    padding: 44px 40px 36px;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    border: 1px solid #e4ebe9;
+    box-shadow:
+        0 2px 4px rgba(91, 140, 138, 0.03),
+        0 8px 24px rgba(91, 140, 138, 0.06),
+        0 24px 48px rgba(0, 0, 0, 0.04);
+    transform: scale(0.96) translateY(16px);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.modal-overlay.active .modal-card {
+    transform: scale(1) translateY(0);
+}
+.modal-icon {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+    font-size: 1.6rem;
+    background: linear-gradient(135deg, #e8f5f2 0%, #d4ede8 100%);
+    color: #5b8c8a;
+    box-shadow: 0 4px 16px rgba(91, 140, 138, 0.12);
+}
+.modal-icon.warning {
+    background: linear-gradient(135deg, #fef9e8 0%, #fdf2d0 100%);
+    color: #c9a227;
+    box-shadow: 0 4px 16px rgba(201, 162, 39, 0.12);
+}
+.modal-icon.success {
+    background: linear-gradient(135deg, #d4ede8 0%, #b8ddd6 100%);
+    color: #3a6b62;
+    box-shadow: 0 4px 16px rgba(91, 140, 138, 0.15);
+}
+.modal-icon.error {
+    background: linear-gradient(135deg, #fdf2f2 0%, #f5dcdc 100%);
+    color: #c07070;
+    box-shadow: 0 4px 16px rgba(192, 112, 112, 0.1);
+}
+.modal-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #2c4a48;
+    margin-bottom: 14px;
+    letter-spacing: -0.3px;
+}
+.modal-message {
+    font-size: 0.9rem;
+    color: #8a9ba8;
+    line-height: 1.7;
+    margin-bottom: 32px;
+    white-space: pre-line;
+}
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+.modal-btn {
+    padding: 13px 28px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    letter-spacing: 0.2px;
+    min-width: 120px;
+    border: none;
+}
+.modal-btn.primary {
+    background: linear-gradient(135deg, #5b8c8a 0%, #7ba8a5 100%);
+    color: white;
+    box-shadow: 0 4px 16px rgba(91, 140, 138, 0.25);
+}
+.modal-btn.primary:hover {
+    background: linear-gradient(135deg, #4a7876 0%, #6a9a97 100%);
+    box-shadow: 0 6px 20px rgba(91, 140, 138, 0.35);
+    transform: translateY(-2px);
+}
+.modal-btn.secondary {
+    background: transparent;
+    border: 1px solid #e2e8f0;
+    color: #6a7c8e;
+}
+.modal-btn.secondary:hover {
+    background: #f1f5f4;
+    border-color: #c5dbd8;
+    color: #5b8c8a;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(91, 140, 138, 0.08);
+}
+.modal-btn.danger {
+    background: linear-gradient(135deg, #c07070 0%, #a85a5a 100%);
+    color: white;
+    box-shadow: 0 4px 16px rgba(192, 112, 112, 0.2);
+}
+.modal-btn.danger:hover {
+    background: linear-gradient(135deg, #a85a5a 0%, #944848 100%);
+    box-shadow: 0 6px 20px rgba(192, 112, 112, 0.3);
+    transform: translateY(-2px);
+}
+.night-mode .modal-overlay { background: rgba(15, 24, 28, 0.5); }
+.night-mode .modal-card {
+    background: #232e34;
+    border-color: #2f3e45;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 24px 48px rgba(0, 0, 0, 0.15);
+}
+.night-mode .modal-title { color: #d4dfe3; }
+.night-mode .modal-message { color: #8aa4ac; }
+.night-mode .modal-icon {
+    background: linear-gradient(135deg, #1e3a36 0%, #162e2a 100%);
+    color: #8ab4b0;
+    box-shadow: 0 4px 16px rgba(138, 180, 176, 0.1);
+}
+.night-mode .modal-icon.warning {
+    background: linear-gradient(135deg, #3a2f1a 0%, #2a2515 100%);
+    color: #d4b86a;
+}
+.night-mode .modal-icon.success {
+    background: linear-gradient(135deg, #1e3a36 0%, #162e2a 100%);
+    color: #8ab4b0;
+}
+.night-mode .modal-icon.error {
+    background: linear-gradient(135deg, #3a2020 0%, #2a1818 100%);
+    color: #c07070;
 }

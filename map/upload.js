@@ -38,8 +38,13 @@ const viewToggleBtn = document.getElementById('viewToggleBtn');
 
 // Initialize the explorer
 function initializeFileExplorer() {
-    loadFolderContents();
-    
+    // No loadFolderContents() here - the modal is hidden at this point and
+    // currentStructureId isn't set yet, so it would hit /api/bridges/null/...
+    // and fail. That stale failure could land *after* the real load
+    // triggered by opening the modal (initFileExplorer below) and overwrite
+    // its correct render with "Error loading contents". Loading only
+    // happens once a structure is actually selected, via the docs button.
+
     // Event listeners
     newFolderBtn.addEventListener('click', showFolderForm);
     uploadBtn.addEventListener('click', () => fileInput.click());
@@ -56,6 +61,8 @@ function initializeFileExplorer() {
             initFileExplorer(structureId);
             modal.style.display = 'flex';
             document.body.style.overflow = 'hidden';
+            const bridgeModal = document.getElementById('bridgeModal');
+            if (bridgeModal) bridgeModal.style.display = 'none';
         } else {
             showToast('No structure selected');
         }
@@ -64,12 +71,16 @@ function initializeFileExplorer() {
     closeModalBtn.addEventListener('click', () => {
         modal.style.display = 'none';
         document.body.style.overflow = 'auto';
+        const bridgeModal = document.getElementById('bridgeModal');
+        if (bridgeModal) bridgeModal.style.display = 'flex';
     });
 
     window.addEventListener('click', (e) => {
         if (e.target === modal) {
             modal.style.display = 'none';
             document.body.style.overflow = 'auto';
+            const bridgeModal = document.getElementById('bridgeModal');
+            if (bridgeModal) bridgeModal.style.display = 'flex';
         }
     });
 }
@@ -104,20 +115,25 @@ function refreshView() {
 }
 
 // Load folder contents
+let loadFolderSeq = 0; // guards against a slower, older call overwriting a
+                        // newer one's result (e.g. switching folders quickly)
 async function loadFolderContents(folderId = null) {
+    const seq = ++loadFolderSeq;
     try {
         currentFolderId = folderId;
-        
+
         // Fetch both folders and files in parallel
         const [folders, files] = await Promise.all([
             fetchFolders(folderId),
             fetchFiles(folderId)
         ]);
-        
+        if (seq !== loadFolderSeq) return; // a newer load has since started
+
         renderBreadcrumbs(folderId);
         renderContents(folders, files);
-        
+
     } catch (error) {
+        if (seq !== loadFolderSeq) return;
         console.error('Error loading contents:', error);
         fileList.innerHTML = '<li>Error loading contents</li>';
     }
@@ -128,8 +144,8 @@ async function loadFolderContents(folderId = null) {
 async function fetchFolders(parentId = null) {
     try {
         const url = parentId 
-            ? `http://localhost:3000/api/bridges/${currentStructureId}/folders?parentId=${parentId}`
-            : `http://localhost:3000/api/bridges/${currentStructureId}/folders`;
+            ? `${API_BASE}/api/bridges/${currentStructureId}/folders?parentId=${parentId}`
+            : `${API_BASE}/api/bridges/${currentStructureId}/folders`;
         
         const response = await fetch(url);
         if (!response.ok) {
@@ -147,8 +163,8 @@ async function fetchFolders(parentId = null) {
 async function fetchFiles(folderId = null) {
     try {
         const url = folderId 
-            ? `http://localhost:3000/api/bridges/${currentStructureId}/files?folderId=${folderId}`
-            : `http://localhost:3000/api/bridges/${currentStructureId}/files`;
+            ? `${API_BASE}/api/bridges/${currentStructureId}/files?folderId=${folderId}`
+            : `${API_BASE}/api/bridges/${currentStructureId}/files`;
         
         const response = await fetch(url);
         if (!response.ok) {
@@ -165,7 +181,7 @@ async function fetchFiles(folderId = null) {
 // Get folder path hierarchy
 async function fetchFolderPath(folderId) {
     try {
-        const response = await fetch(`http://localhost:3000/api/bridges/${currentStructureId}/folders/${folderId}/path`);
+        const response = await fetch(`${API_BASE}/api/bridges/${currentStructureId}/folders/${folderId}/path`);
         if (!response.ok) {
             throw new Error(`Server returned ${response.status}: ${response.statusText}`);
         }
@@ -176,36 +192,33 @@ async function fetchFolderPath(folderId) {
     }
 }
 
-// Render breadcrumbs
+// Render breadcrumbs. Separators are pure CSS (.breadcrumb::after) - no
+// separate separator element is inserted here, since that previously
+// doubled up with the CSS one as soon as a path actually had segments.
+// The current (last) crumb is shown but not clickable - navigating to the
+// folder you're already in would just reload the same view.
 async function renderBreadcrumbs(folderId) {
     breadcrumbs.innerHTML = '';
-    
-    // Home breadcrumb (always shown)
+
     const homeCrumb = document.createElement('span');
-    homeCrumb.className = 'breadcrumb';
+    homeCrumb.className = 'breadcrumb' + (!folderId ? ' breadcrumb-current' : '');
     homeCrumb.textContent = 'Home';
-    homeCrumb.addEventListener('click', () => loadFolderContents(null));
+    if (folderId) homeCrumb.addEventListener('click', () => loadFolderContents(null));
     breadcrumbs.appendChild(homeCrumb);
-    
+
     if (folderId) {
         try {
             const path = await fetchFolderPath(folderId);
-            
+
             // Reverse the array to get proper hierarchy
             const properOrder = [...path].reverse();
-            
-            properOrder.forEach(folder => {
-                // Add separator
-                const separator = document.createElement('span');
-                separator.textContent = ' › ';
-                separator.className = 'breadcrumb-separator';
-                breadcrumbs.appendChild(separator);
-                
-                // Add folder crumb
+
+            properOrder.forEach((folder, i) => {
+                const isCurrent = i === properOrder.length - 1;
                 const crumb = document.createElement('span');
-                crumb.className = 'breadcrumb';
+                crumb.className = 'breadcrumb' + (isCurrent ? ' breadcrumb-current' : '');
                 crumb.textContent = folder.name;
-                crumb.addEventListener('click', () => loadFolderContents(folder.id));
+                if (!isCurrent) crumb.addEventListener('click', () => loadFolderContents(folder.id));
                 breadcrumbs.appendChild(crumb);
             });
         } catch (error) {
@@ -334,7 +347,7 @@ async function createFolder() {
     if (!name) return;
 
     try {
-        const response = await fetch(`http://localhost:3000/api/bridges/${currentStructureId}/folders`, {
+        const response = await fetch(`${API_BASE}/api/bridges/${currentStructureId}/folders`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -357,9 +370,17 @@ async function createFolder() {
 }
 
 // Upload a file
+const MAX_DOC_SIZE = 15 * 1024 * 1024; // matches the server's multer limit
+
 async function uploadFile() {
   const file = fileInput.files[0];
   if (!file) return;
+
+  if (file.size > MAX_DOC_SIZE) {
+    alert(`"${file.name}" is ${(file.size / (1024 * 1024)).toFixed(1)}MB, which is over the 15MB limit.`);
+    fileInput.value = '';
+    return;
+  }
 
   const formData = new FormData();
   formData.append('file', file);
@@ -368,7 +389,7 @@ async function uploadFile() {
   }
 
   try {
-    const response = await fetch(`http://localhost:3000/api/bridges/${currentStructureId}/files`, {
+    const response = await fetch(`${API_BASE}/api/bridges/${currentStructureId}/files`, {
       method: 'POST',
       body: formData,
       // Don't set Content-Type manually - let browser set it with boundary
@@ -402,8 +423,8 @@ async function deleteSelectedItem() {
 
     try {
         const endpoint = selectedItem.type === 'folder'
-            ? `http://localhost:3000/api/bridges/${currentStructureId}/folders/${selectedItem.id}`
-            : `http://localhost:3000/api/bridges/${currentStructureId}/files/${selectedItem.id}`;
+            ? `${API_BASE}/api/bridges/${currentStructureId}/folders/${selectedItem.id}`
+            : `${API_BASE}/api/bridges/${currentStructureId}/files/${selectedItem.id}`;
 
         const response = await fetch(endpoint, {
             method: 'DELETE',
@@ -447,39 +468,6 @@ async function deleteSelectedItem() {
 function updateDocModalTitle() {
     const structureName = sessionStorage.getItem('structureName') || 'Untitled Structure';
     const structureId = sessionStorage.getItem('structureId') || '';
-    document.getElementById('explorerTitle').textContent = 
+    document.getElementById('explorerTitle').textContent =
         `Documents - ${structureName} (#${structureId})`;
 }
-
-
-
-// Modal control
-docsBtn.addEventListener('click', () => {
-    const structureId = sessionStorage.getItem('structureId');
-    if (structureId) {
-        initFileExplorer(structureId);
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-        const bridgeModal = document.getElementById('bridgeModal');
-        if (bridgeModal) bridgeModal.style.display = 'none';
-    } else {
-        showToast('No structure selected');
-    }
-});
-
-// REPLACE WITH (both occurrences — there are two, at top and bottom):
-closeModalBtn.addEventListener('click', () => {
-    modal.style.display = 'none';
-    document.body.style.overflow = 'auto';
-    const bridgeModal = document.getElementById('bridgeModal');
-    if (bridgeModal) bridgeModal.style.display = 'flex';
-});
-
-window.addEventListener('click', (e) => {
-    if (e.target === modal) {
-        modal.style.display = 'none';
-        document.body.style.overflow = 'auto';
-        const bridgeModal = document.getElementById('bridgeModal');
-        if (bridgeModal) bridgeModal.style.display = 'flex';
-    }
-});

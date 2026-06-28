@@ -516,7 +516,7 @@ body {
 .vc-pill:hover { border-color: #8ab4b0; color: #5b8c8a; }
 .vc-pill.on { background: #eef4f2; border-color: #8ab4b0; color: #2c5a57; }
 .vc-pill.on .sw { background: #5b8c8a; box-shadow: 0 0 6px rgba(91,140,138,0.5); }
-.vc-pill[data-layer="stress"].on .sw { background: #c28b5a; box-shadow: 0 0 6px rgba(194,139,90,0.5); }
+.vc-pill[data-layer="works"].on .sw { background: #c28b5a; box-shadow: 0 0 6px rgba(194,139,90,0.5); }
 .vc-pill[data-layer="defects"].on .sw { background: #c0392b; box-shadow: 0 0 6px rgba(192,57,43,0.5); }
 .vc-pill[data-layer="sensors"].on .sw { background: #4a90b8; box-shadow: 0 0 6px rgba(74,144,184,0.5); }
 
@@ -649,11 +649,23 @@ html::-webkit-scrollbar { display: none; }
     border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.3);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
     z-index: 1000; overflow: hidden;
+    cursor: default; user-select: none; -webkit-user-select: none;
 }
 .glass-scrollbar .thumb {
     width: 100%; background: linear-gradient(180deg, #a0c8c4, #5b8c8a);
     border-radius: 20px; position: absolute; top: 0; left: 0;
     box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.3), 0 0 12px rgba(91, 140, 138, 0.35);
+    cursor: grab; user-select: none; -webkit-user-select: none;
+}
+.glass-scrollbar .thumb:active { cursor: grabbing; }
+body.night-mode .glass-scrollbar {
+    background: rgba(35, 46, 52, 0.7) !important;
+    border-color: rgba(58, 75, 83, 0.5) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255,255,255,0.03) !important;
+}
+body.night-mode .glass-scrollbar .thumb {
+    background: linear-gradient(180deg, #ff6b6b, #c0392b) !important;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.1), 0 0 14px rgba(138, 180, 176, 0.45), 0 0 28px rgba(138, 180, 176, 0.2) !important;
 }
 @media (max-width: 860px) { .glass-scrollbar { display: none !important; } }
 
@@ -779,7 +791,7 @@ html::-webkit-scrollbar { display: none; }
     </div>
 </nav>
 
-<div class="glass-scrollbar"><div class="thumb" style="height:38%;"></div></div>
+<div class="glass-scrollbar" id="glassScrollbar"><div class="thumb" id="glassThumb"></div></div>
 
 <div class="page-wrapper">
 
@@ -872,7 +884,7 @@ html::-webkit-scrollbar { display: none; }
                         <div class="vc-pill on" data-layer="structure"><span class="sw"></span>Structure</div>
                         <div class="vc-pill on" data-layer="sensors"><span class="sw"></span>Sensors</div>
                         <div class="vc-pill" data-layer="defects"><span class="sw"></span>Defects</div>
-                        <div class="vc-pill" data-layer="stress"><span class="sw"></span>Stress</div>
+                        <div class="vc-pill" data-layer="works"><span class="sw"></span>Works Required</div>
                     </div>
                 </div>
 

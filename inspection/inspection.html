@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <script>if(localStorage.getItem('nightMode')==='on')document.documentElement.classList.add('nm-preload');</script>
+    <style>html.nm-preload,html.nm-preload body{background-color:#1a2428!important;}</style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>SpanSense — Bridge Inspection | Defect Management</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -440,7 +442,7 @@
         .vc-pill:hover { border-color: #8ab4b0; color: #5b8c8a; }
         .vc-pill.on { background: #eef4f2; border-color: #8ab4b0; color: #2c5a57; }
         .vc-pill.on .sw { background: #5b8c8a; box-shadow: 0 0 6px rgba(91,140,138,0.5); }
-        .vc-pill[data-layer="stress"].on .sw { background: #c28b5a; box-shadow: 0 0 6px rgba(194,139,90,0.5); }
+        .vc-pill[data-layer="works"].on .sw { background: #c28b5a; box-shadow: 0 0 6px rgba(194,139,90,0.5); }
         .vc-pill[data-layer="defects"].on .sw { background: #c0392b; box-shadow: 0 0 6px rgba(192,57,43,0.5); }
         .vc-pill[data-layer="sensors"].on .sw { background: #4a90b8; box-shadow: 0 0 6px rgba(74,144,184,0.5); }
         .night-mode .vc-pill { background:#1e2a2f; border-color:#3a4b53; color:#9ab0b8; }
@@ -541,15 +543,15 @@
                     <!-- BCI Average Card -->
                     <div class="stat-card average">
                         <div class="stat-label">BCI AVERAGE</div>
-                        <div class="stat-value" id="bciAvResult">100.00</div>
+                        <div class="stat-value stat-loading" id="bciAvResult">···</div>
                     </div>
-                    
+
                     <!-- BCI Critical Card -->
                     <div class="stat-card critical">
                         <div class="stat-label">BCI CRITICAL</div>
-                        <div class="stat-value critical" id="bciCritResult">100.00</div>
+                        <div class="stat-value critical stat-loading" id="bciCritResult">···</div>
                     </div>
-                    
+
                     <!-- Date Card -->
                     <div class="stat-card date-card">
                         <div class="stat-label">INSPECTION DATE</div>
@@ -760,12 +762,24 @@
                 <button class="close-btn-photo" onclick="closePhotoModal()">&times;</button>
             </div>
             <div id="previewContainer-photo" class="preview-container-photo">
-                <label class="add-photo-photo" for="photoInput-photo">+</label>
-                <input type="file" id="photoInput-photo" accept="image/*" onchange="previewImages()" multiple />
+                <!-- populated by loadDefectPhotos() in photo.js -->
             </div>
             <div class="modal-footer-photo">
-                <button class="btn-photo btn-cancel" onclick="closePhotoModal()">CANCEL</button>
-                <button type="button" class="btn-photo btn-upload" id="savePhotosBtn">SAVE</button>
+                <button type="button" class="btn-photo btn-upload" onclick="closePhotoModal()">DONE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lightweight styled confirm dialog (replaces native confirm()/alert() — see showConfirmModal in photo.js) -->
+    <div class="modal-overlay" id="confirmModalOverlay">
+        <div class="modal-card">
+            <div class="modal-icon" id="confirmModalIcon">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <h3 class="modal-title" id="confirmModalTitle">Are you sure?</h3>
+            <p class="modal-message" id="confirmModalMessage">Message goes here</p>
+            <div class="modal-actions" id="confirmModalActions">
+                <button class="modal-btn primary" id="confirmModalConfirmBtn">OK</button>
             </div>
         </div>
     </div>
@@ -803,7 +817,7 @@
                             <div class="defect-split-half">
                                 <div class="v-label">Element</div>
                                 <div class="form-group" style="margin-bottom:0;">
-                                    <select id="defectType">
+                                    <select id="defectType" style="display:none;">
                                         <option value="1">1 Metalwork</option>
                                         <option value="2">2 RC & prestressed concrete</option>
                                         <option value="3">3 Masonry, brickwork & MC</option>
@@ -821,12 +835,26 @@
                                         <option value="15">15 Stone slab bridges</option>
                                         <option value="16">16 Timber</option>
                                     </select>
+                                    <div class="defect-dropdown" id="defectTypeDropdown">
+                                        <button type="button" class="dd-trigger" id="defectTypeTrigger">
+                                            <span id="defectTypeLabel">1 Metalwork</span>
+                                            <i class="fas fa-chevron-down dd-chevron"></i>
+                                        </button>
+                                        <div class="dd-panel" id="defectTypePanel"></div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="defect-split-half">
                                 <div class="v-label">No.</div>
                                 <div class="form-group" style="margin-bottom:0;">
-                                    <select id="defectNumber"></select>
+                                    <select id="defectNumber" style="display:none;"></select>
+                                    <div class="defect-dropdown" id="defectNumberDropdown">
+                                        <button type="button" class="dd-trigger" id="defectNumberTrigger">
+                                            <span id="defectNumberLabel"></span>
+                                            <i class="fas fa-chevron-down dd-chevron"></i>
+                                        </button>
+                                        <div class="dd-panel" id="defectNumberPanel"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -999,6 +1027,13 @@
                 <button class="btn btn-back" id="modalBackBtn" onclick="closeModal()">Back</button>
             </div>
         </div>
+
+        <!-- Condensed severity guidance for the currently selected defect type/number -->
+        <div class="defect-guidance-panel" id="defectGuidancePanel">
+            <div class="dgp-header"><i class="fas fa-circle-info"></i> Severity Guide</div>
+            <div class="dgp-subtitle" id="dgpSubtitle">Select a defect type and number</div>
+            <div class="dgp-levels" id="dgpLevels"></div>
+        </div>
     </div>
 
 
@@ -1013,7 +1048,8 @@
                     <button class="close-btn" onclick="closeSplitModal()">&times;</button>
                 </div>
                 <textarea id="conclusionsText" placeholder="Summarise overall bridge condition."></textarea>
-                <div class="modal-footer" style="padding: 16px 24px; text-align: right;">
+                <div class="modal-footer" style="padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;">
+                    <button class="btn-suggest-draft" onclick="suggestDraftConclusions()"><i class="fas fa-wand-magic-sparkles"></i> Suggest Draft</button>
                     <button class="btn-save-conclusions" onclick="saveConclusions()">Save Conclusions</button>
                 </div>
             </div>
@@ -1040,7 +1076,7 @@
                         <div class="vc-pill on" data-layer="structure"><span class="sw"></span>Structure</div>
                         <div class="vc-pill on" data-layer="sensors"><span class="sw"></span>Sensors</div>
                         <div class="vc-pill on" data-layer="defects"><span class="sw"></span>Defects</div>
-                        <div class="vc-pill on" data-layer="stress"><span class="sw"></span>Stress</div>
+                        <div class="vc-pill on" data-layer="works"><span class="sw"></span>Works Required</div>
                     </div>
                     <div class="locate3d-hint" id="locate3dHint">Select a defect on the right, then click the model to place it.</div>
                 </div>

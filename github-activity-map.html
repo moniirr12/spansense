@@ -74,17 +74,17 @@
 
 <header>
   <h1>📍 spansense — GitHub Activity Map</h1>
-  <p>Repository <a class="repo-link" href="https://github.com/moniirr12/spansense" target="_blank">moniirr12/spansense</a> · generated from live GitHub API data (commits, push events, pull requests)</p>
+  <p>Repository <a class="repo-link" href="https://github.com/moniirr12/spansense" target="_blank">moniirr12/spansense</a> · generated from local git history (commits, merge-PR messages, branches) — a manual snapshot, not auto-updating</p>
 </header>
 
 <div class="stats">
-  <div class="stat"><div class="num">113</div><div class="label">Commits</div></div>
-  <div class="stat"><div class="num">107</div><div class="label">Pushes</div></div>
-  <div class="stat"><div class="num">21</div><div class="label">Pull Requests</div></div>
-  <div class="stat"><div class="num">20</div><div class="label">Merged</div></div>
-  <div class="stat"><div class="num">4</div><div class="label">Branches</div></div>
-  <div class="stat"><div class="num">10</div><div class="label">Days Active</div></div>
-  <div class="stat"><div class="num">Jun 14 → Jun 24</div><div class="label">Date Range</div></div>
+  <div class="stat"><div class="num">139</div><div class="label">Commits</div></div>
+  <div class="stat"><div class="num">6</div><div class="label">Pending on chief</div></div>
+  <div class="stat"><div class="num">22</div><div class="label">Pull Requests</div></div>
+  <div class="stat"><div class="num">21</div><div class="label">Merged</div></div>
+  <div class="stat"><div class="num">5</div><div class="label">Branches</div></div>
+  <div class="stat"><div class="num">12</div><div class="label">Days Active</div></div>
+  <div class="stat"><div class="num">Jun 14 → Jun 27</div><div class="label">Date Range</div></div>
 </div>
 
 <section>
@@ -96,6 +96,7 @@
       <span><i style="background:#3fb950"></i>testing-defect-on-3d-model</span>
       <span><i style="background:#d29922"></i>testing-II</span>
       <span><i style="background:#f85149"></i>chief</span>
+      <span><i style="background:#39c5cf"></i>major</span>
     </div>
     <pre class="mermaid">
 %%{init: {'theme':'dark', 'gitGraph': {'showCommitLabel': true, 'mainBranchName': 'main'}}}%%
@@ -202,7 +203,41 @@ gitGraph
   commit id: "BCI label fix (Very Good)"
   checkout main
   merge chief id: "PR #21 ✅ 6/24 14:38"
+  checkout chief
+  commit id: "BCI histogram dark mode + bar chart"
+  commit id: "BCI histogram colour/border polish"
+  commit id: "BCI-by-type endpoint + chart toggle"
+  commit id: "BCI histogram legend + axis labels"
+  commit id: "Inspection header shows full type name"
+  commit id: "Inspection type labels + table scroll + 3D location save"
+  commit id: "Inspection table layout refactor"
+  commit id: "Date card/conclusions hover + 3D camera fixes"
+  commit id: "3D model unification + structure length check"
+  commit id: "Consistent navbar width across pages"
+  commit id: "Twin API inspection selection + timeline"
+  commit id: "Code structure refactor"
+  commit id: "Map structure icon refactor"
+  commit id: "Leaflet popup dark mode + no close button"
+  commit id: "Calendar view title/switch refactor"
+  commit id: "Calendar month navigation"
+  commit id: "Row quick actions: No Defects / Not Inspected"
+  commit id: "Primary-defect logic across BCI scoring"
+  commit id: "Colour-coded severity/extent badges"
+  checkout main
+  merge chief id: "PR #22 ✅ 6/25 23:38"
+  checkout chief
+  commit id: "Caching strategy for static files"
+  commit id: "Night mode support via localStorage"
+  commit id: "Night mode refactor to class-based styling"
+  commit id: "Span progress card + inspection date defaults"
+  branch major
+  checkout chief
+  commit id: "Remove span progress card"
+  commit id: "Close button style refactor"
     </pre>
+    <div class="note">
+      <strong>6 commits since PR #22</strong> (<span class="branch-tag">chief</span>, 6/25 23:48 → 6/27 09:42) aren't in a merged PR yet — static-asset cache headers, the dark-mode flash-on-navigation fix, a short-lived span progress indicator (added then removed), and matching the map.html modal close buttons to inspection.html's style. <span class="branch-tag">major</span> branches off mid-way through this batch for separate work from that point.
+    </div>
     <div class="note">
       <strong>PR #21</strong> (<span class="branch-tag">chief</span> → <span class="branch-tag">main</span>) opened 6/24 10:02, merged 6/24 14:38 — carried everything committed to <span class="branch-tag">chief</span> since PR&nbsp;#20 (retaining-wall BCI scoring, multi-type element handling, the redesigned bridge/documents modals, and the dashboard's live activity feed).
     </div>
@@ -216,7 +251,7 @@ gitGraph
 </section>
 
 <section>
-  <h2><span class="dot"></span>Daily Activity (commits vs. pushes)</h2>
+  <h2><span class="dot"></span>Daily Commit Activity</h2>
   <div class="panel">
     <canvas id="activityChart"></canvas>
   </div>
@@ -234,12 +269,13 @@ gitGraph
   </div>
 </section>
 
-<footer>Generated by Claude Code from the GitHub REST API (commits, events, pulls endpoints) for moniirr12/spansense.</footer>
+<footer>Generated by Claude Code from local git history (git log, merge-PR commit messages, branch refs) for moniirr12/spansense. Manually refreshed — last updated 2026-06-27.</footer>
 
 <script>
 mermaid.initialize({ startOnLoad: true, theme: 'dark' });
 
 const prData = [
+  [22,"Refactor code structure, improve BCI charts, and enhance UI consistency","chief → main","2026-06-25 23:38","2026-06-25 23:38","merged"],
   [21,"Chief","chief → main","2026-06-24 10:02","2026-06-24 14:38","merged"],
   [20,"Implement code changes to enhance functionality and improve performance","chief → main","2026-06-23 17:31","2026-06-23 17:32","merged"],
   [19,"Enhance bridge model definitions with per-kind parameters and improve structure rendering logic","chief → main","2026-06-22 19:44","2026-06-22 19:44","merged"],
@@ -278,9 +314,8 @@ for (const [num, title, flow, opened, closed, status] of prData) {
   tbody.appendChild(tr);
 }
 
-const days = ['Jun 14','Jun 15','Jun 16','Jun 17','Jun 18','Jun 19','Jun 20','Jun 21','Jun 22','Jun 23','Jun 24'];
-const commits = [48,1,6,0,1,6,14,15,10,3,9];
-const pushes  = [48,1,6,0,1,3,12,14,10,3,9];
+const days = ['Jun 14','Jun 15','Jun 16','Jun 17','Jun 18','Jun 19','Jun 20','Jun 21','Jun 22','Jun 23','Jun 24','Jun 25','Jun 26','Jun 27'];
+const commits = [48,0,7,0,1,6,14,13,12,3,19,12,2,2];
 
 new Chart(document.getElementById('activityChart'), {
   type: 'bar',
@@ -288,7 +323,6 @@ new Chart(document.getElementById('activityChart'), {
     labels: days,
     datasets: [
       { label: 'Commits', data: commits, backgroundColor: '#58a6ff' },
-      { label: 'Pushes', data: pushes, backgroundColor: '#3fb950' },
     ]
   },
   options: {

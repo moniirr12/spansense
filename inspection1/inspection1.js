@@ -865,7 +865,40 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // SCENARIO 3: New inspection
     console.log('🆕 Starting NEW inspection');
-    
+
+    // Most inspections are recorded the day they happen, so default the
+    // date to today instead of making every inspection start with a click
+    // into the calendar just to pick the obvious value.
+    const todayDate = new Date();
+    const todayISO = `${todayDate.getFullYear()}-${String(todayDate.getMonth() + 1).padStart(2, '0')}-${String(todayDate.getDate()).padStart(2, '0')}`;
+    sessionStorage.setItem('inspectionDate', todayISO);
+    inspectionData.inspectionDate = todayISO;
+    const inspectionDateCell = document.getElementById('inspectionDate');
+    if (inspectionDateCell) inspectionDateCell.innerText = formatDate(todayISO);
+
+    // The default still needs the same duplicate check the manual date
+    // picker runs — otherwise a second inspection started today for the
+    // same structure would silently slip through uncaught.
+    if (structureId) {
+        (async () => {
+            const isDuplicate = await checkDuplicateInspectionDate(structureId, todayISO);
+            if (!isDuplicate) return;
+            const confirmed = await showModal({
+                title: "Duplicate Inspection Date",
+                message: `An inspection already exists on ${todayISO}.\n\nDo you want to edit the existing inspection instead?`,
+                type: "warning",
+                confirmText: "Yes, Edit It",
+                cancelText: "No, Choose Another",
+                showCancel: true
+            });
+            if (confirmed) {
+                sessionStorage.setItem('inspectionMode', 'edit');
+                sessionStorage.setItem('inspectionStructureNumber', structureId);
+                window.location.reload();
+            }
+        })();
+    }
+
     if (structureId) {
         loadBridgePhoto(structureId);
         fetchAndUpdateBridgeData(structureId);

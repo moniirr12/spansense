@@ -45,6 +45,17 @@ function openModal(isEditMode = false, preferredState = null) {
         const segBtn = document.querySelector(`.of-segment[data-state="${targetState}"]`);
         if (segBtn) segBtn.classList.add('of-active');
 
+        // Severity guidance only makes sense while picking a defect type/number
+        // (mirrors setModalSegment, which handles this same toggle when the
+        // user switches segments from inside an already-open modal).
+        const guidancePanel = document.getElementById('defectGuidancePanel');
+        if (guidancePanel) {
+            guidancePanel.style.display = targetState === 'defect' ? 'flex' : 'none';
+            if (targetState === 'defect' && typeof updateDefectGuidancePanel === 'function') {
+                updateDefectGuidancePanel();
+            }
+        }
+
         modal.dataset.modalState = targetState;
         modal.dataset.ofState = targetState;
     } else if (!isEditMode) {
@@ -114,6 +125,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.severity-stepper .stepper-step').forEach(function(btn) {
             btn.classList.toggle('active', parseInt(btn.dataset.val) === val);
         });
+        if (typeof updateDefectGuidancePanel === 'function') updateDefectGuidancePanel();
         if (!skipValidation && !isAutoCorrecting) {
             var currentExtent = document.getElementById('extent');
             var extVal = currentExtent ? currentExtent.value : 'A';
@@ -309,24 +321,39 @@ function updateMainRow(potentialRow) {
   const expandableRows = findAllExpandableRows(mainRow);
   if (expandableRows.length > 0) {
     // The primary defect (see setAsPrimaryDefect) drives what the collapsed
-    // row shows, not just whichever defect happens to be first in the DOM.
-    const firstDefect = expandableRows.find(row => row.querySelector('.primary-tag')?.classList.contains('filled')) || expandableRows[0];
+    // row shows. A defect actually in this inspection always wins over a
+    // .retrieved-defect row (date-dropdown comparison data, not part of this
+    // inspection at all) — only fall back to showing the comparison row if
+    // nothing else exists for this element yet.
+    const filledPrimary = expandableRows.find(row => row.querySelector('.primary-tag')?.classList.contains('filled'));
+    const firstRealDefect = expandableRows.find(row => !row.classList.contains('retrieved-defect'));
+    const firstDefect = filledPrimary || firstRealDefect || expandableRows[0];
     const mainCells = mainRow.querySelectorAll("td");
-    const severityValue = firstDefect.querySelector(".addSeverity")?.textContent || "";
-    if (severityValue) {
-        mainCells[2].innerHTML = `<span class="sev-${severityValue}">${severityValue}</span>`;
+
+    if (firstDefect.classList.contains('retrieved-defect')) {
+      // Comparison data pulled in via the date dropdown isn't part of this
+      // inspection's score — show just an indicator, not a score, so it's
+      // never mistaken for one.
+      mainCells[2].textContent = "";
+      mainCells[3].textContent = "";
+      mainCells[4].innerHTML = '<i class="fas fa-history retrieved-indicator" title="From a previous inspection — not part of this inspection\'s score"></i>';
     } else {
-        mainCells[2].textContent = "";
-    }
-    mainCells[3].textContent = firstDefect.querySelector(".addExtent")?.textContent || "";
-    const defectDisplay = firstDefect.querySelector(".addDefect")?.textContent || "";
-    const defectCode = firstDefect.querySelector(".defectId")?.textContent || "";
-    if (defectCode.includes('0.0') || defectDisplay.includes('No Defects')) {
-      mainCells[4].innerHTML = '<span style="color:#2d7a6e;font-size:0.75rem;"><i class="fas fa-check"></i></span>';
-    } else if (defectCode.includes('0.1') || defectDisplay.includes('Not Inspected')) {
-      mainCells[4].innerHTML = '<span style="color:#BA7517;font-size:0.75rem;"><i class="fas fa-ban"></i></span>';
-    } else {
-      mainCells[4].textContent = defectDisplay;
+      const severityValue = firstDefect.querySelector(".addSeverity")?.textContent || "";
+      if (severityValue) {
+          mainCells[2].innerHTML = `<span class="sev-${severityValue}">${severityValue}</span>`;
+      } else {
+          mainCells[2].textContent = "";
+      }
+      mainCells[3].textContent = firstDefect.querySelector(".addExtent")?.textContent || "";
+      const defectDisplay = firstDefect.querySelector(".addDefect")?.textContent || "";
+      const defectCode = firstDefect.querySelector(".defectId")?.textContent || "";
+      if (defectCode.includes('0.0') || defectDisplay.includes('No Defects')) {
+        mainCells[4].innerHTML = '<span style="color:#2d7a6e;font-size:0.75rem;"><i class="fas fa-check"></i></span>';
+      } else if (defectCode.includes('0.1') || defectDisplay.includes('Not Inspected')) {
+        mainCells[4].innerHTML = '<span style="color:#BA7517;font-size:0.75rem;"><i class="fas fa-ban"></i></span>';
+      } else {
+        mainCells[4].textContent = defectDisplay;
+      }
     }
   } else {
     const mainCells = mainRow.querySelectorAll("td");
@@ -424,11 +451,11 @@ window.refreshBCIScores = refreshBCIScores;
 // Headless equivalent of opening the modal, selecting the "No Defects" /
 // "Not Inspected" segment, and clicking Save — reuses saveChanges() so the
 // sessionStorage/BCI/row-update bookkeeping stays in exactly one place.
-function quickRecordElement(buttonRow, status, comment) {
+function quickRecordElement(buttonRow, status, comment, existingRow) {
   const mainRow = findMainRow(buttonRow);
   if (!mainRow) return;
   currentRow = mainRow;
-  currentExpandableRow = null;
+  currentExpandableRow = existingRow || null;
   document.getElementById("severity").value = "1";
   document.getElementById("extent").value = "A";
   document.getElementById("works").value = "N";
@@ -450,7 +477,7 @@ function saveChanges() {
   const selectedSpan = sessionStorage.getItem('selectedSpan');
   if (!selectedSpan) {
     console.error("No span selected - aborting save");
-    alert("No span selected! Please select a span first.");
+    showAlertModal("No span selected! Please select a span first.");
     console.groupEnd();
     return;
   }
@@ -458,7 +485,7 @@ function saveChanges() {
   const extVal = document.getElementById('extent')?.value;
   const isValidCombo = (sevVal === '1' && extVal === 'A') || (parseInt(sevVal) >= 2 && extVal !== 'A');
   if (!isValidCombo) {
-    alert('Invalid Severity/Extent combination. Only 1A or 2-5 with B-E are valid.');
+    showAlertModal('Invalid Severity/Extent combination. Only 1A or 2-5 with B-E are valid.');
     console.groupEnd();
     return;
   }
@@ -481,7 +508,7 @@ function saveChanges() {
   }
   if (!mainRow?.classList?.contains("main-row")) {
     console.error("CRITICAL: No valid main row found");
-    alert("System error: Could not determine element location.\nPlease refresh the page and try again.");
+    showAlertModal("System error: Could not determine element location. Please refresh the page and try again.");
     console.groupEnd();
     return;
   }
@@ -585,7 +612,7 @@ function saveChanges() {
       console.log("Updated existing defect at index:", index);
     } else {
       console.error("Original defect not found in storage");
-      alert("Error: Could not find original defect data.");
+      showAlertModal("Error: Could not find original defect data.");
       console.groupEnd();
       return;
     }
@@ -774,6 +801,7 @@ async function loadDefectsFromAPI(structureId, inspectionDate, currentSpan) {
             const isNoDefects = defect.defectId === '0.0';
             const isNotInspected = defect.defectId === '0.1';
             return {
+                defectDbId: defect.defectDbId,
                 defectCombined: defect.defectId,
                 defectType: isNoDefects || isNotInspected ? '0' : defect.defectId.split('.')[0],
                 defectNumber: isNoDefects ? '0' : (isNotInspected ? '1' : defect.defectId.split('.')[1]),
@@ -1183,11 +1211,10 @@ function addDefectToTable(mainRow, defectData, isRetrieved, isEditable = false) 
   }
   const defectIdElement = expandableRow.querySelector('.defectId');
   if (defectIdElement) {
-    if (isRetrieved) {
-      defectIdElement.textContent = defectData.frontDefectId || defectData.defectId || '';
-    } else {
-      defectIdElement.textContent = defectData.defectId || '';
-    }
+    // Real database id (when this defect already exists) is the only thing
+    // that reliably matches photos and dedupes against other load paths —
+    // prefer it over the temporary front-end key or the legacy field name.
+    defectIdElement.textContent = defectData.defectDbId || defectData.frontDefectId || defectData.defectId || '';
   }
   const addDefectEl = expandableRow.querySelector('.addDefect');
   if (addDefectEl) addDefectEl.dataset.code = defectData.defectCombined || '';
@@ -1276,6 +1303,7 @@ document.addEventListener("DOMContentLoaded", function () {
       if (!box) return;
       const status = quickBtn.classList.contains('btn-no-defects') ? 'no-defects' : 'not-inspected';
       box.dataset.pendingStatus = status;
+      delete box.dataset.editingTimestamp;
       const textarea = box.querySelector('.quick-confirm-comment');
       textarea.value = '';
       textarea.style.height = '';
@@ -1289,7 +1317,10 @@ document.addEventListener("DOMContentLoaded", function () {
     const cancelBtn = event.target.closest('.quick-confirm-cancel');
     if (cancelBtn) {
       const box = cancelBtn.closest('.quick-confirm-box');
-      if (box) box.style.display = 'none';
+      if (box) {
+        box.style.display = 'none';
+        delete box.dataset.editingTimestamp;
+      }
       return;
     }
     const confirmBtn = event.target.closest('.quick-confirm-confirm');
@@ -1298,7 +1329,12 @@ document.addEventListener("DOMContentLoaded", function () {
       const buttonRow = confirmBtn.closest('tr.button-row');
       if (!box || !buttonRow) return;
       const comment = box.querySelector('.quick-confirm-comment').value.trim();
-      quickRecordElement(buttonRow, box.dataset.pendingStatus, comment);
+      const editingTimestamp = box.dataset.editingTimestamp;
+      const existingRow = editingTimestamp
+        ? findAllExpandableRows(findMainRow(buttonRow)).find(r => r.dataset.timestamp === editingTimestamp)
+        : null;
+      quickRecordElement(buttonRow, box.dataset.pendingStatus, comment, existingRow);
+      delete box.dataset.editingTimestamp;
       box.style.display = 'none';
     }
   });
@@ -1313,7 +1349,7 @@ document.addEventListener("DOMContentLoaded", function () {
       if (target.closest("button[title='Edit']")) {
           const expandableRow = target.closest("tr.expandable-row");
           if (expandableRow && expandableRow.classList.contains("retrieved-defect")) {
-              alert("Retrieved defects cannot be edited. Please copy the defect to create a new editable version.");
+              showAlertModal("Retrieved defects cannot be edited. Please copy the defect to create a new editable version.");
               return;
           }
           if (expandableRow) {
@@ -1348,6 +1384,14 @@ document.addEventListener("DOMContentLoaded", function () {
                   document.getElementById("defectType").value = defectType;
                   document.getElementById("defectType").dispatchEvent(new Event('change', { bubbles: true }));
                   document.getElementById("defectNumber").value = defectNumber;
+                  // updateDefectNumbers() (run by the change event just above)
+                  // rebuilds the number options for the new type and renders
+                  // its dropdown against whatever was selected at that point
+                  // (the first option) — re-render now that the real number
+                  // for this defect has been set directly.
+                  if (typeof renderCustomSelect === 'function') {
+                      renderCustomSelect('defectNumber', 'defectNumberLabel', 'defectNumberPanel', 'defectNumberDropdown');
+                  }
                   document.getElementById("severity").value = expandableRow.querySelector(".addSeverity").textContent;
                   document.getElementById("extent").value = expandableRow.querySelector(".addExtent").textContent;
                   document.getElementById("works").value = worksValue;
@@ -1365,6 +1409,27 @@ document.addEventListener("DOMContentLoaded", function () {
                   document.getElementById("remedialWorks").value = '';
               }
               document.getElementById("modalTitle").textContent = "Edit Defect";
+              // No Defects / Not Inspected only ever need a comment, so editing
+              // one reuses the same inline quick-confirm box as creating one,
+              // instead of opening the full modal just to tweak a comment.
+              if (editSegmentState === 'no-defects' || editSegmentState === 'not-inspected') {
+                  const buttonRow = addButtonRowForMainRow(currentRow);
+                  const box = buttonRow?.querySelector('.quick-confirm-box');
+                  if (box) {
+                      box.dataset.pendingStatus = editSegmentState;
+                      box.dataset.editingTimestamp = expandableRow.dataset.timestamp;
+                      const textarea = box.querySelector('.quick-confirm-comment');
+                      textarea.value = editSegmentComment;
+                      textarea.style.height = '';
+                      textarea.style.height = textarea.scrollHeight + 'px';
+                      const confirmBtn = box.querySelector('.quick-confirm-confirm');
+                      confirmBtn.classList.remove('confirm-green', 'confirm-orange');
+                      confirmBtn.classList.add(editSegmentState === 'no-defects' ? 'confirm-green' : 'confirm-orange');
+                      box.style.display = 'block';
+                      textarea.focus();
+                      return;
+                  }
+              }
               if (editSegmentState === 'no-defects') {
                   document.getElementById("of-no-defects-comment").value = editSegmentComment;
               } else if (editSegmentState === 'not-inspected') {
@@ -1443,7 +1508,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const remedialWorks = expandableRow.querySelector(".addRemedialWorks")?.textContent || '';
         const selectedSpan = sessionStorage.getItem('selectedSpan');
         if (!selectedSpan) {
-          alert("No span selected! Please select a span first.");
+          showAlertModal("No span selected! Please select a span first.");
           return;
         }
         let mainRow = expandableRow;
@@ -1451,6 +1516,12 @@ document.addEventListener("DOMContentLoaded", function () {
           mainRow = mainRow.previousElementSibling;
         }
         const elementNumber = mainRow ? mainRow.dataset.rowId : null;
+        let defects = JSON.parse(sessionStorage.getItem('defects')) || [];
+        // Same rule as a brand-new defect: the first one entered for this
+        // element is primary by default (see saveChanges).
+        const isFirstForElement = !defects.some(d =>
+          d.elementNumber == elementNumber && d.spanNumber == selectedSpan
+        );
         const defectData = {
           defectCombined: defectCombined,
           defectType: defectType,
@@ -1464,9 +1535,9 @@ document.addEventListener("DOMContentLoaded", function () {
           spanNumber: selectedSpan,
           elementNumber: elementNumber,
           timestamp: new Date().toISOString(),
-          remedialWorks: remedialWorks
+          remedialWorks: remedialWorks,
+          isPrimary: isFirstForElement
         };
-        let defects = JSON.parse(sessionStorage.getItem('defects')) || [];
         defects.push(defectData);
         sessionStorage.setItem('defects', JSON.stringify(defects));
         const newRow = addDefectToTable(mainRow, defectData, false, true);
@@ -1477,9 +1548,9 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         updateMainRow(mainRow);
         refreshBCIScores();
-        alert("Defect copied successfully. You can now edit the new defect.");
+        showAlertModal("Defect copied successfully. You can now edit the new defect.", 'success');
       } else {
-        alert("Copying is only allowed for retrieved defects.");
+        showAlertModal("Copying is only allowed for retrieved defects.");
       }
     }
   });
