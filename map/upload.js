@@ -38,8 +38,13 @@ const viewToggleBtn = document.getElementById('viewToggleBtn');
 
 // Initialize the explorer
 function initializeFileExplorer() {
-    loadFolderContents();
-    
+    // No loadFolderContents() here - the modal is hidden at this point and
+    // currentStructureId isn't set yet, so it would hit /api/bridges/null/...
+    // and fail. That stale failure could land *after* the real load
+    // triggered by opening the modal (initFileExplorer below) and overwrite
+    // its correct render with "Error loading contents". Loading only
+    // happens once a structure is actually selected, via the docs button.
+
     // Event listeners
     newFolderBtn.addEventListener('click', showFolderForm);
     uploadBtn.addEventListener('click', () => fileInput.click());
@@ -104,20 +109,25 @@ function refreshView() {
 }
 
 // Load folder contents
+let loadFolderSeq = 0; // guards against a slower, older call overwriting a
+                        // newer one's result (e.g. switching folders quickly)
 async function loadFolderContents(folderId = null) {
+    const seq = ++loadFolderSeq;
     try {
         currentFolderId = folderId;
-        
+
         // Fetch both folders and files in parallel
         const [folders, files] = await Promise.all([
             fetchFolders(folderId),
             fetchFiles(folderId)
         ]);
-        
+        if (seq !== loadFolderSeq) return; // a newer load has since started
+
         renderBreadcrumbs(folderId);
         renderContents(folders, files);
-        
+
     } catch (error) {
+        if (seq !== loadFolderSeq) return;
         console.error('Error loading contents:', error);
         fileList.innerHTML = '<li>Error loading contents</li>';
     }
