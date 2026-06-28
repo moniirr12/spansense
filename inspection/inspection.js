@@ -1373,6 +1373,14 @@ document.addEventListener("DOMContentLoaded", function () {
                   document.getElementById("defectType").value = defectType;
                   document.getElementById("defectType").dispatchEvent(new Event('change', { bubbles: true }));
                   document.getElementById("defectNumber").value = defectNumber;
+                  // updateDefectNumbers() (run by the change event just above)
+                  // rebuilds the number options for the new type and renders
+                  // its dropdown against whatever was selected at that point
+                  // (the first option) — re-render now that the real number
+                  // for this defect has been set directly.
+                  if (typeof renderCustomSelect === 'function') {
+                      renderCustomSelect('defectNumber', 'defectNumberLabel', 'defectNumberPanel', 'defectNumberDropdown');
+                  }
                   document.getElementById("severity").value = expandableRow.querySelector(".addSeverity").textContent;
                   document.getElementById("extent").value = expandableRow.querySelector(".addExtent").textContent;
                   document.getElementById("works").value = worksValue;

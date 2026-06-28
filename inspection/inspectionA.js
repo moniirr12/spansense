@@ -172,6 +172,10 @@ function updateDefectNumbers() {
   });
 
   if (typeof updateDefectGuidancePanel === 'function') updateDefectGuidancePanel();
+  if (typeof renderCustomSelect === 'function') {
+      renderCustomSelect('defectType', 'defectTypeLabel', 'defectTypePanel', 'defectTypeDropdown');
+      renderCustomSelect('defectNumber', 'defectNumberLabel', 'defectNumberPanel', 'defectNumberDropdown');
+  }
 }
 
 // Add event listener to defectType dropdown
@@ -181,11 +185,65 @@ document.addEventListener('change', function(e) {
     }
     if (e.target && e.target.id === 'defectNumber') {
         if (typeof updateDefectGuidancePanel === 'function') updateDefectGuidancePanel();
+        if (typeof renderCustomSelect === 'function') {
+            renderCustomSelect('defectNumber', 'defectNumberLabel', 'defectNumberPanel', 'defectNumberDropdown');
+        }
     }
 });
 
 // Initialize defectNumber options on page load
 document.addEventListener('DOMContentLoaded', updateDefectNumbers);
+
+// Custom-styled stand-ins for the #defectType/#defectNumber <select>s — same
+// idea as the inspection-date dropdown above: mirror the real select's
+// <option>s into a styled floating panel and forward clicks back onto the
+// real select, so the existing change-driven logic (updateDefectNumbers,
+// the severity guidance panel, saveChanges reading .value, etc.) needs no
+// changes at all.
+function renderCustomSelect(selectId, labelId, panelId, wrapperId) {
+    const select = document.getElementById(selectId);
+    const label = document.getElementById(labelId);
+    const panel = document.getElementById(panelId);
+    if (!select || !label || !panel) return;
+
+    panel.innerHTML = '';
+    Array.from(select.options).forEach((option) => {
+        const item = document.createElement('div');
+        item.className = 'dd-item' + (option.selected ? ' active' : '');
+        item.textContent = option.textContent;
+        item.addEventListener('click', () => {
+            select.value = option.value;
+            select.dispatchEvent(new Event('change'));
+            const wrapper = document.getElementById(wrapperId);
+            if (wrapper) wrapper.classList.remove('open');
+        });
+        panel.appendChild(item);
+    });
+
+    const selectedOption = select.options[select.selectedIndex];
+    label.textContent = selectedOption ? selectedOption.textContent : '';
+}
+
+function setupCustomSelect(selectId, triggerId, labelId, panelId, wrapperId) {
+    const wrapper = document.getElementById(wrapperId);
+    const trigger = document.getElementById(triggerId);
+    if (!wrapper || !trigger) return;
+
+    trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        wrapper.classList.toggle('open');
+    });
+    document.addEventListener('click', (e) => {
+        if (!wrapper.contains(e.target)) wrapper.classList.remove('open');
+    });
+    renderCustomSelect(selectId, labelId, panelId, wrapperId);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    setupCustomSelect('defectType', 'defectTypeTrigger', 'defectTypeLabel', 'defectTypePanel', 'defectTypeDropdown');
+    setupCustomSelect('defectNumber', 'defectNumberTrigger', 'defectNumberLabel', 'defectNumberPanel', 'defectNumberDropdown');
+});
+window.renderCustomSelect = renderCustomSelect;
 
 // Condensed, per-severity guidance — short prompts (not the full Inspection
 // codes - Revision 2 wording) to help an inspector pick a severity while

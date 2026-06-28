@@ -817,7 +817,7 @@
                             <div class="defect-split-half">
                                 <div class="v-label">Element</div>
                                 <div class="form-group" style="margin-bottom:0;">
-                                    <select id="defectType">
+                                    <select id="defectType" style="display:none;">
                                         <option value="1">1 Metalwork</option>
                                         <option value="2">2 RC & prestressed concrete</option>
                                         <option value="3">3 Masonry, brickwork & MC</option>
@@ -835,12 +835,26 @@
                                         <option value="15">15 Stone slab bridges</option>
                                         <option value="16">16 Timber</option>
                                     </select>
+                                    <div class="defect-dropdown" id="defectTypeDropdown">
+                                        <button type="button" class="dd-trigger" id="defectTypeTrigger">
+                                            <span id="defectTypeLabel">1 Metalwork</span>
+                                            <i class="fas fa-chevron-down dd-chevron"></i>
+                                        </button>
+                                        <div class="dd-panel" id="defectTypePanel"></div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="defect-split-half">
                                 <div class="v-label">No.</div>
                                 <div class="form-group" style="margin-bottom:0;">
-                                    <select id="defectNumber"></select>
+                                    <select id="defectNumber" style="display:none;"></select>
+                                    <div class="defect-dropdown" id="defectNumberDropdown">
+                                        <button type="button" class="dd-trigger" id="defectNumberTrigger">
+                                            <span id="defectNumberLabel"></span>
+                                            <i class="fas fa-chevron-down dd-chevron"></i>
+                                        </button>
+                                        <div class="dd-panel" id="defectNumberPanel"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

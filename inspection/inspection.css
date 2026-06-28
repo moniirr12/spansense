@@ -1293,8 +1293,10 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
+    overflow-y: auto;
     background-color: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
+    flex-wrap: wrap;
     justify-content: center;
     align-items: center;
     gap: 16px;
@@ -1324,7 +1326,7 @@ body {
 .defect-guidance-panel {
     display: none;
     flex-direction: column;
-    width: 260px;
+    width: min(260px, 90vw);
     max-height: calc(80vh - 60px);
     background: white;
     border-radius: 24px;
@@ -1405,7 +1407,10 @@ body {
     font-style: italic;
 }
 
-@media (max-width: 900px) {
+/* Below this, side-by-side no longer fits — .modal's flex-wrap drops the
+   guidance panel to its own row underneath instead of hiding it. Only on
+   genuinely small (phone) screens is there no good place to put it. */
+@media (max-width: 420px) {
     .defect-guidance-panel { display: none !important; }
 }
 
@@ -2848,6 +2853,86 @@ body.modal-photo-open .glass-scrollbar {
     -webkit-appearance: none;
     outline: none;
 }
+
+/* ---- Custom Element/No. dropdowns (replace the native select's unstyled
+   OS option list) — trigger stays borderless to blend into the existing
+   .defect-split-half card; only the floating panel gets its own chrome. ---- */
+.defect-dropdown { position: relative; width: 100%; }
+.defect-dropdown .dd-trigger {
+    width: 100%;
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #2c3e44;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    text-align: left;
+}
+.defect-dropdown .dd-trigger span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.defect-dropdown .dd-chevron {
+    font-size: 0.65rem;
+    color: #8a9ba8;
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+}
+.defect-dropdown.open .dd-chevron { transform: rotate(180deg); }
+.defect-dropdown .dd-panel {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: -14px;
+    right: -14px;
+    background: white;
+    border: 1px solid #e9edf2;
+    border-radius: 12px;
+    max-height: 220px;
+    overflow-y: auto;
+    z-index: 1001;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.12);
+    display: none;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(91, 140, 138, 0.3) transparent;
+}
+.defect-dropdown.open .dd-panel { display: block; }
+.defect-dropdown .dd-panel::-webkit-scrollbar { width: 5px; }
+.defect-dropdown .dd-panel::-webkit-scrollbar-thumb {
+    background: rgba(91, 140, 138, 0.3);
+    border-radius: 10px;
+}
+.defect-dropdown .dd-panel::-webkit-scrollbar-thumb:hover {
+    background: rgba(91, 140, 138, 0.5);
+}
+.defect-dropdown .dd-item {
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    line-height: 1.35;
+    color: #4a5b6e;
+    border-bottom: 1px solid #eef1f4;
+    transition: all 0.15s;
+}
+.defect-dropdown .dd-item:last-child { border-bottom: none; }
+.defect-dropdown .dd-item:hover, .defect-dropdown .dd-item.active { background: #eef4f2; color: #5b8c8a; }
+.night-mode .defect-dropdown .dd-trigger { color: #d4dfe3; }
+.night-mode .defect-dropdown .dd-panel {
+    background: #2f3e48;
+    border-color: #3e525e;
+    scrollbar-color: rgba(138, 180, 176, 0.35) transparent;
+}
+.night-mode .defect-dropdown .dd-panel::-webkit-scrollbar-thumb { background: rgba(138, 180, 176, 0.35); }
+.night-mode .defect-dropdown .dd-panel::-webkit-scrollbar-thumb:hover { background: rgba(138, 180, 176, 0.55); }
+.night-mode .defect-dropdown .dd-item { color: #a8c4cc; border-bottom-color: #3e525e; }
+.night-mode .defect-dropdown .dd-item:hover, .night-mode .defect-dropdown .dd-item.active { background: #3a6b62; color: white; }
 
 /* ---- Scores row with stepper cards ---- */
 .scores-row-steppers {

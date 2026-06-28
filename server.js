@@ -2169,16 +2169,14 @@ app.listen(PORT, () => {
 
 
 // Serve frontend static files (must be before error handler and listen).
-// HTML stays no-cache since pages here change often; CSS/JS/images get an
-// hour of caching so navigating between pages doesn't re-fetch the same
-// shared assets (map.css, inspection.js, etc.) on every single page load.
+// no-cache (not "don't cache") — the browser still keeps the file and
+// reuses it via a cheap 304 if the ETag matches, it just always asks first.
+// A time-based max-age previously caused edited JS/CSS to keep being served
+// stale for up to an hour after every deploy, which repeatedly looked like
+// new features "not working" during active development.
 app.use(express.static(path.join(__dirname), {
-    setHeaders: (res, filePath) => {
-        if (filePath.endsWith('.html')) {
-            res.setHeader('Cache-Control', 'no-cache');
-        } else {
-            res.setHeader('Cache-Control', 'public, max-age=3600');
-        }
+    setHeaders: (res) => {
+        res.setHeader('Cache-Control', 'no-cache');
     }
 }));
 
