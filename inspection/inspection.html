@@ -1027,7 +1027,8 @@
                     <button class="close-btn" onclick="closeSplitModal()">&times;</button>
                 </div>
                 <textarea id="conclusionsText" placeholder="Summarise overall bridge condition."></textarea>
-                <div class="modal-footer" style="padding: 16px 24px; text-align: right;">
+                <div class="modal-footer" style="padding: 16px 24px; display: flex; justify-content: space-between; align-items: center;">
+                    <button class="btn-suggest-draft" onclick="suggestDraftConclusions()"><i class="fas fa-wand-magic-sparkles"></i> Suggest Draft</button>
                     <button class="btn-save-conclusions" onclick="saveConclusions()">Save Conclusions</button>
                 </div>
             </div>

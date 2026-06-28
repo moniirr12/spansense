@@ -226,40 +226,44 @@ function getDefectDescription(defectId, defectType, defectNumber) {
     return defectId || `Defect ${defectType}.${defectNumber}`;
 }
 
+// Reads from the same sessionStorage 'defects' array saveChanges()/the Copy
+// handler/quick actions all write to — the array that actually gets sent on
+// save. (inspectionData.defects is a secondary, locate3d-position-only copy
+// that some of those paths don't keep in sync, so it isn't reliable here.)
 function getAllDefects() {
-    const all = [];
-    const inspectionData = JSON.parse(sessionStorage.getItem('inspectionData') || '{}');
-    
-    if (inspectionData.defects && Array.isArray(inspectionData.defects)) {
-        inspectionData.defects.forEach(defect => {
-            let defectType = defect.defectType;
-            let defectNumber = defect.defectNumber;
-            
-            if ((!defectType || !defectNumber) && defect.defectId && defect.defectId.includes('.')) {
-                const parts = defect.defectId.split('.');
-                defectType = parts[0];
-                defectNumber = parts[1];
-            }
-            
-            all.push({
-                span: defect.spanNumber,
-                elementNumber: defect.elementNumber,
-                element: defect.elementDescription || `Element ${defect.elementNumber}`,
-                defectId: defect.defectId,
-                defectType: defectType,
-                defectNumber: defectNumber,
-                severity: defect.severity,
-                extent: defect.extent,
-                works: defect.worksRequired,
-                priority: defect.priority,
-                cost: defect.cost,
-                comment: defect.comments,
-                remedialWorks: defect.remedialWorks
-            });
-        });
-    }
-    
-    return all;
+    const defects = JSON.parse(sessionStorage.getItem('defects') || '[]');
+    return defects.map(defect => {
+        let defectType = defect.defectType;
+        let defectNumber = defect.defectNumber;
+        if ((!defectType || !defectNumber) && defect.defectCombined && defect.defectCombined.includes('.')) {
+            const parts = defect.defectCombined.split('.');
+            defectType = parts[0];
+            defectNumber = parts[1];
+        }
+        return {
+            span: defect.spanNumber,
+            elementNumber: defect.elementNumber,
+            element: getElementDescriptionSafe(defect.elementNumber),
+            defectId: defect.defectCombined,
+            defectType: defectType,
+            defectNumber: defectNumber,
+            severity: defect.severity,
+            extent: defect.extent,
+            works: defect.works,
+            priority: defect.priority,
+            cost: defect.cost,
+            comment: defect.comment,
+            remedialWorks: defect.remedialWorks,
+            isPrimary: defect.isPrimary === true
+        };
+    });
+}
+
+// "0.0" (No Defects) / "0.1" (Not Inspected) are element-status markers, not
+// actual findings — reports/summaries should count and list them separately
+// from real defects.
+function isRealDefect(defect) {
+    return defect.defectId !== '0.0' && defect.defectId !== '0.1';
 }
 
 function renderDefectsSummary() {
@@ -368,6 +372,72 @@ function saveConclusions() {
         closeSplitModal();
     }
 }
+
+// Builds a plain-language draft from what's actually been recorded so far —
+// a starting point to edit, not a final answer.
+function generateDraftConclusions() {
+    const inspectionData = JSON.parse(sessionStorage.getItem('inspectionData') || '{}');
+    const allDefects = getAllDefects();
+    const realDefects = allDefects.filter(isRealDefect);
+    const noDefectsCount = allDefects.filter(d => d.defectId === '0.0').length;
+    const notInspectedCount = allDefects.filter(d => d.defectId === '0.1').length;
+    const elementsChecked = new Set(allDefects.map(d => `${d.span}-${d.elementNumber}`)).size;
+    const worksRequired = realDefects.filter(d => d.works === 'Y');
+    const monitorRequired = realDefects.filter(d => d.works === 'M');
+    const worstSeverity = realDefects.reduce((max, d) => Math.max(max, parseInt(d.severity) || 0), 0);
+
+    const spansWithBci = (inspectionData.spans || []).filter(s => s.bciAv != null && s.bciCrit != null);
+    const bciAv = spansWithBci.length
+        ? spansWithBci.reduce((sum, s) => sum + parseFloat(s.bciAv), 0) / spansWithBci.length
+        : parseFloat(document.getElementById('bciAvResult')?.textContent) || 100;
+    const bciCrit = spansWithBci.length
+        ? spansWithBci.reduce((sum, s) => sum + parseFloat(s.bciCrit), 0) / spansWithBci.length
+        : parseFloat(document.getElementById('bciCritResult')?.textContent) || 100;
+    const conditionLabel = bciAv >= 85 ? 'good' : bciAv >= 65 ? 'fair' : bciAv >= 40 ? 'poor' : 'critical';
+
+    const sentences = [];
+    sentences.push(`This inspection covered ${elementsChecked} element${elementsChecked === 1 ? '' : 's'}, of which ${noDefectsCount} showed no defects${notInspectedCount ? ` and ${notInspectedCount} could not be inspected` : ''}.`);
+
+    if (realDefects.length === 0) {
+        sentences.push('No defects were recorded during this inspection.');
+    } else {
+        sentences.push(`${realDefects.length} defect${realDefects.length === 1 ? '' : 's'} ${realDefects.length === 1 ? 'was' : 'were'} identified, with the most severe rated at severity ${worstSeverity}.`);
+        if (worksRequired.length) {
+            sentences.push(`${worksRequired.length} defect${worksRequired.length === 1 ? '' : 's'} require${worksRequired.length === 1 ? 's' : ''} remedial works${monitorRequired.length ? `, and ${monitorRequired.length} should be monitored` : ''}.`);
+        } else if (monitorRequired.length) {
+            sentences.push(`${monitorRequired.length} defect${monitorRequired.length === 1 ? '' : 's'} should be monitored going forward.`);
+        }
+    }
+
+    sentences.push(`Overall structural condition is assessed as ${conditionLabel} (BCI Average ${bciAv.toFixed(2)}, BCI Critical ${bciCrit.toFixed(2)}).`);
+    sentences.push(worksRequired.length
+        ? 'It is recommended that the identified remedial works be prioritised accordingly.'
+        : 'No remedial works are currently required.');
+
+    return sentences.join(' ');
+}
+
+async function suggestDraftConclusions() {
+    const textarea = document.getElementById('conclusionsText');
+    if (!textarea) return;
+    const draft = generateDraftConclusions();
+
+    // Only ask if there's actually something of the user's to lose.
+    if (textarea.value.trim().length > 0) {
+        const confirmed = await showConfirmModal({
+            title: 'Replace Conclusions?',
+            message: "This will replace your current text with a suggested draft. You can still edit it afterwards.",
+            type: 'warning',
+            confirmText: 'Replace',
+            cancelText: 'Keep Mine',
+            showCancel: true
+        });
+        if (!confirmed) return;
+    }
+    textarea.value = draft;
+}
+window.generateDraftConclusions = generateDraftConclusions;
+window.suggestDraftConclusions = suggestDraftConclusions;
 
 function showToast(message) {
     const toast = document.createElement('div');
@@ -496,47 +566,122 @@ function showError(message) {
     alert(message);
 }
 
-// Preview Inspection
+// Preview Inspection — a readable report (grouped by span, with element
+// names and BCI scores), not a raw data dump.
 const previewButton = document.getElementById('previewInspection');
 if (previewButton) {
   previewButton.addEventListener('click', function() {
     const inspectionData = JSON.parse(sessionStorage.getItem('inspectionData')) || {};
-    const defects = JSON.parse(sessionStorage.getItem('defects')) || [];
     const photoData = JSON.parse(sessionStorage.getItem('photoData')) || {};
-    
-    let previewContent = `
+    const allDefects = getAllDefects();
+    const realDefects = allDefects.filter(isRealDefect);
+    const noDefectsCount = allDefects.filter(d => d.defectId === '0.0').length;
+    const notInspectedCount = allDefects.filter(d => d.defectId === '0.1').length;
+    const worksRequiredCount = realDefects.filter(d => d.works === 'Y').length;
+    const photoCountByElement = {};
+    Object.values(photoData).forEach(list => {
+      (list || []).forEach(p => {
+        if (p.photo_url) photoCountByElement[p.defect_id] = (photoCountByElement[p.defect_id] || 0) + 1;
+      });
+    });
+
+    const bciAv = document.getElementById('bciAvResult')?.textContent || '100.00';
+    const bciCrit = document.getElementById('bciCritResult')?.textContent || '100.00';
+
+    const bySpan = {};
+    realDefects.forEach(d => {
+      (bySpan[d.span] = bySpan[d.span] || []).push(d);
+    });
+    const spanNumbers = Object.keys(bySpan).map(Number).sort((a, b) => a - b);
+
+    const spanSections = spanNumbers.length ? spanNumbers.map(spanNum => `
+      <h2>Span ${spanNum}</h2>
+      <table>
+        <thead>
+          <tr><th>Element</th><th>Sev</th><th>Ext</th><th>Defect</th><th>Works</th><th>Comments</th></tr>
+        </thead>
+        <tbody>
+          ${bySpan[spanNum].map(d => `
+            <tr>
+              <td>${escapeHtml(d.element)}</td>
+              <td>${escapeHtml(d.severity || '-')}</td>
+              <td>${escapeHtml(d.extent || '-')}</td>
+              <td>${escapeHtml(getFullDefectDescription(d.defectType, d.defectNumber, d.defectId))}</td>
+              <td>${d.works === 'Y' ? 'Yes' : d.works === 'M' ? 'Monitor' : 'No'}</td>
+              <td>${escapeHtml(d.comment || '')}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `).join('') : '<p class="muted">No defects recorded.</p>';
+
+    const previewContent = `
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Inspection Preview</title>
+        <title>Inspection Report — ${escapeHtml(inspectionData.structureName || 'Bridge')}</title>
         <style>
-          body { font-family: Arial, sans-serif; padding: 20px; }
-          h1 { color: #333; }
-          .container { max-width: 900px; margin: 0 auto; }
-          pre { background: #f5f5f5; padding: 15px; border-radius: 5px; overflow-x: auto; }
+          body { font-family: 'Inter', Arial, sans-serif; padding: 40px; background: #f5f7fb; color: #2c3e44; }
+          .container { max-width: 900px; margin: 0 auto; background: white; padding: 40px; border-radius: 24px; }
+          h1 { color: #2c5a57; border-bottom: 2px solid #8ab4b0; padding-bottom: 16px; margin-bottom: 4px; }
+          .subtitle { color: #8a9ba8; font-size: 0.85rem; margin-bottom: 24px; }
+          h2 { color: #2c5a57; font-size: 1.05rem; margin: 28px 0 12px; }
+          .meta { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; margin: 24px 0; }
+          .meta-item { background: #f8fafc; padding: 16px; border-radius: 14px; }
+          .meta-label { font-size: 0.7rem; color: #8a9ba8; text-transform: uppercase; font-weight: 600; }
+          .meta-value { font-size: 1.2rem; font-weight: 700; color: #2c4a48; margin-top: 4px; }
+          .stats-row { display: flex; gap: 20px; flex-wrap: wrap; margin: 16px 0 8px; font-size: 0.85rem; color: #4a5b6e; }
+          .stats-row b { color: #2c4a48; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+          th { background: #f8fafc; padding: 10px 12px; text-align: left; font-size: 0.72rem; text-transform: uppercase; color: #8a9ba8; }
+          td { padding: 10px 12px; border-bottom: 1px solid #e9edf2; font-size: 0.82rem; vertical-align: top; }
+          tr:hover td { background: #f8fafc; }
+          .conclusions-box { background: #f8fafc; border-radius: 14px; padding: 16px 20px; font-size: 0.88rem; line-height: 1.6; white-space: pre-line; }
+          .muted { color: #8a9ba8; font-size: 0.85rem; }
+          @media print { body { background: white; } .container { box-shadow: none; padding: 0; } }
         </style>
       </head>
       <body>
         <div class="container">
-          <h1>${inspectionData.structureName || 'Structure'} Inspection</h1>
-          <p><strong>Date:</strong> ${inspectionData.inspectionDate ? formatDate(inspectionData.inspectionDate) : 'N/A'}</p>
-          <h2>Inspection Details</h2>
-          <pre>${JSON.stringify(inspectionData, null, 2)}</pre>
-          <h2>All Defects (${defects.length})</h2>
-          <pre>${JSON.stringify(defects, null, 2)}</pre>
-          <h2>All Photos (${Object.keys(photoData).length})</h2>
-          <pre>${JSON.stringify(photoData, null, 2)}</pre>
+          <h1>${escapeHtml(inspectionData.structureName || 'Bridge Inspection')}</h1>
+          <div class="subtitle">Structure #${escapeHtml(inspectionData.structureId || '')} &middot; ${escapeHtml(inspectionData.inspectorName || 'Unassigned inspector')}</div>
+          <div class="meta">
+            <div class="meta-item">
+              <div class="meta-label">Inspection Date</div>
+              <div class="meta-value">${inspectionData.inspectionDate ? formatDate(inspectionData.inspectionDate) : 'N/A'}</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">Defects Found</div>
+              <div class="meta-value">${realDefects.length}</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">BCI Average</div>
+              <div class="meta-value" style="color:#5b8c8a;">${bciAv}</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">BCI Critical</div>
+              <div class="meta-value" style="color:#e8a87c;">${bciCrit}</div>
+            </div>
+          </div>
+          <div class="stats-row">
+            <span><b>${noDefectsCount}</b> element(s) with no defects</span>
+            <span><b>${notInspectedCount}</b> element(s) not inspected</span>
+            <span><b>${worksRequiredCount}</b> defect(s) requiring works</span>
+          </div>
+          ${spanSections}
+          <h2>Conclusions</h2>
+          <div class="conclusions-box">${escapeHtml(inspectionData.conclusions || 'No conclusions recorded yet.')}</div>
         </div>
       </body>
       </html>
     `;
-    
+
     const previewWindow = window.open('', '_blank');
     if (previewWindow) {
       previewWindow.document.write(previewContent);
       previewWindow.document.close();
     } else {
-      alert("Popup blocked. Please allow popups for this site.");
+      showToast("Popup blocked. Please allow popups for this site.");
     }
   });
 }
@@ -834,3 +979,30 @@ window.initializeSpanButtons = initializeSpanButtons;
 window.handleSpanButtonClick = handleSpanButtonClick;
 window.getElementDescriptionSafe = getElementDescriptionSafe;
 window.refreshBCIScores = refreshBCIScores;
+
+// Escape closes whichever modal is open, innermost first — the photo modal
+// and the defect-entry modal (#modal) already handle their own Escape key,
+// this covers the rest (locate3d nests on top of the conclusions modal, so
+// it has to be checked before it).
+document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Escape') return;
+    const photoModal = document.getElementById('uploadModal-photo');
+    if (photoModal && photoModal.style.display === 'flex') {
+        if (typeof closePhotoModal === 'function') closePhotoModal();
+        return;
+    }
+    const locate3dModal = document.getElementById('locate3dModal');
+    if (locate3dModal && locate3dModal.classList.contains('active')) {
+        closeLocate3dModal();
+        return;
+    }
+    const splitModal = document.getElementById('splitModal');
+    if (splitModal && splitModal.classList.contains('active')) {
+        closeSplitModal();
+        return;
+    }
+    const postSaveOverlay = document.getElementById('postSaveOverlay');
+    if (postSaveOverlay && postSaveOverlay.classList.contains('active')) {
+        closePostSaveModal();
+    }
+});
