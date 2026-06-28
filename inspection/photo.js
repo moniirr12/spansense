@@ -187,9 +187,24 @@ async function loadDefectPhotos(defectId) {
 // ============================================
 // HANDLE NEW PHOTOS — auto-uploads immediately, no separate Save step
 // ============================================
+const MAX_PHOTO_SIZE = 15 * 1024 * 1024; // matches the server's multer limit
+
 function handleNewPhotos(fileInput, defectId) {
-    const files = Array.from(fileInput.files).filter(f => f.type.startsWith('image/'));
+    const picked = Array.from(fileInput.files);
     fileInput.value = '';
+
+    const oversized = picked.filter(f => f.type.startsWith('image/') && f.size > MAX_PHOTO_SIZE);
+    const files = picked.filter(f => f.type.startsWith('image/') && f.size <= MAX_PHOTO_SIZE);
+
+    if (oversized.length) {
+        const names = oversized.map(f => `${f.name} (${(f.size / (1024 * 1024)).toFixed(1)}MB)`).join(', ');
+        showAlertModal(
+            `${oversized.length > 1 ? 'These photos are' : 'This photo is'} over the 15MB limit and ${oversized.length > 1 ? "weren't" : "wasn't"} added: ${names}`,
+            'warning',
+            'Photo Too Large'
+        );
+    }
+
     if (!files.length) return;
 
     files.forEach((file) => {

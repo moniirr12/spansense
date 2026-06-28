@@ -310,12 +310,31 @@ const matDefect = new THREE.MeshStandardMaterial({color: 0xe06a5a, emissive: 0xc
 const matStone    = new THREE.MeshStandardMaterial({color: 0x8a8378, metalness: 0.0, roughness: 0.95});
 const matConcrete = new THREE.MeshStandardMaterial({color: 0x9aa39c, metalness: 0.05, roughness: 0.85});
 
-// Used for the Works Required overlay - colours a span by how many of its
-// defects have works_required = 'Y', not by BCI.
-function worksColor(count) {
-    if (!count) return 0x5b8c8a;
-    if (count <= 2) return 0xc28b5a;
-    return 0xc0392b;
+// Cone marker (distinct from the octahedron defect markers) for the Works
+// Required layer. exact=false (no placed x/y/z) renders semi-transparent so
+// it reads as an estimate rather than a precise location.
+function createWorksMarker(exact) {
+    var color = 0xc28b5a;
+    var mat = new THREE.MeshStandardMaterial({
+        color: color, emissive: color, emissiveIntensity: 1.1,
+        transparent: !exact, opacity: exact ? 1 : 0.55
+    });
+    return new THREE.Mesh(new THREE.ConeGeometry(0.7, 1.6, 8), mat);
+}
+
+// Real placed position if this defect has one, otherwise a position spread
+// across its span/element so multiple unlocated works-required defects in
+// the same span don't all stack on one spot.
+function worksMarkerPosition(d, X0, SPAN_LEN, NUM_SPANS, DECK_W, deckY) {
+    if (d.x != null && d.y != null && d.z != null) {
+        return { x: d.x, y: d.y, z: d.z, exact: true };
+    }
+    var spanIdx = Math.min(Math.max((d.spanNumber || 1) - 1, 0), Math.max(NUM_SPANS - 1, 0));
+    var x = X0 + SPAN_LEN * spanIdx + SPAN_LEN / 2;
+    var seed = ((d.elementNo || 0) * 37) % 100 / 100;
+    x += (seed - 0.5) * SPAN_LEN * 0.6;
+    var z = ((d.elementNo || 0) % 2 === 0 ? 1 : -1) * (DECK_W * 0.25);
+    return { x: x, y: deckY + 1.6, z: z, exact: false };
 }
 
 const rig = new THREE.Group();
@@ -407,21 +426,16 @@ function rebuildModel(bridge) {
         sensorGroup.add(ring);
     });
 
-    // Works Required overlay (per span count of defects with works_required = 'Y')
-    var worksCounts = new Array(NUM_SPANS).fill(0);
-    (bridge.defects || []).forEach(function(d) {
-        if (!d.worksRequired) return;
-        var idx = (d.spanNumber || 1) - 1;
-        if (idx >= 0 && idx < NUM_SPANS) worksCounts[idx]++;
+    // Works Required markers — one per defect flagged works_required='Y',
+    // at its real placed position if it has one, otherwise an approximate
+    // spot within its span so the layer isn't empty just because most
+    // defects haven't been located on the model yet.
+    (bridge.defects || []).filter(function(d) { return d.worksRequired; }).forEach(function(d) {
+        var pos = worksMarkerPosition(d, X0, SPAN_LEN, NUM_SPANS, DECK_W, deckY);
+        var m = createWorksMarker(pos.exact);
+        m.position.set(pos.x, pos.y, pos.z);
+        worksGroup.add(m);
     });
-    for (var i = 0; i < NUM_SPANS; i++) {
-        var x = X0 + SPAN_LEN * i + SPAN_LEN / 2;
-        var geo = new THREE.BoxGeometry(SPAN_LEN - 1, 0.08, DECK_W + 0.4);
-        var mat = new THREE.MeshBasicMaterial({color: worksColor(worksCounts[i]), transparent: true, opacity: 0.55});
-        var slab = new THREE.Mesh(geo, mat);
-        slab.position.set(x, deckY + 0.42, 0);
-        worksGroup.add(slab);
-    }
 
     // Defects: only ones with real coordinates set are rendered. There's no
     // interface to place them yet, so this layer is sparse/empty until then.

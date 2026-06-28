@@ -147,6 +147,34 @@ function createDefectMarker(severity) {
     return mesh;
 }
 
+// Cone marker (distinct from the defect octahedron) for the Works Required
+// layer. exact=false (no placed x/y/z yet) renders semi-transparent so it
+// reads as an estimate rather than a precise location.
+function createWorksMarker(exact) {
+    var color = 0xc28b5a;
+    var mat = new THREE.MeshStandardMaterial({
+        color: color, emissive: color, emissiveIntensity: 1.1,
+        transparent: !exact, opacity: exact ? 1 : 0.55
+    });
+    var mesh = new THREE.Mesh(new THREE.ConeGeometry(0.7, 1.6, 8), mat);
+    return mesh;
+}
+
+// Real placed position if this defect has one, otherwise a position spread
+// across its span/element so multiple unlocated works-required defects in
+// the same span don't all stack on one spot.
+function worksMarkerPosition(d, X0, SPAN_LEN, NUM_SPANS, DECK_W, deckY) {
+    if (d.x != null && d.y != null && d.z != null) {
+        return { x: d.x, y: d.y, z: d.z, exact: true };
+    }
+    var spanIdx = Math.min(Math.max((d.spanNumber || 1) - 1, 0), Math.max(NUM_SPANS - 1, 0));
+    var x = X0 + SPAN_LEN * spanIdx + SPAN_LEN / 2;
+    var seed = ((d.elementNumber || 0) * 37) % 100 / 100;
+    x += (seed - 0.5) * SPAN_LEN * 0.6;
+    var z = ((d.elementNumber || 0) % 2 === 0 ? 1 : -1) * (DECK_W * 0.25);
+    return { x: x, y: deckY + 1.6, z: z, exact: false };
+}
+
 /* ============================================================
    MODEL BUILD (structure + sensors + works required + already-placed defects)
    ============================================================ */
@@ -233,18 +261,16 @@ function rebuildLocate3DModel(bridge) {
         sensorGroup.add(ring);
     });
 
-    // Works Required overlay (per span count of this session's defects with works = 'Y')
-    var worksCounts = bridge.worksCounts || [];
-    for (var sIdx = 0; sIdx < NUM_SPANS; sIdx++) {
-        var sx = X0 + SPAN_LEN * sIdx + SPAN_LEN / 2;
-        var count = worksCounts[sIdx] || 0;
-        var worksColor = !count ? 0x5b8c8a : (count <= 2 ? 0xc28b5a : 0xc0392b);
-        var geo2 = new THREE.BoxGeometry(SPAN_LEN - 1, 0.08, DECK_W + 0.4);
-        var mat2 = new THREE.MeshBasicMaterial({ color: worksColor, transparent: true, opacity: 0.55 });
-        var slab = new THREE.Mesh(geo2, mat2);
-        slab.position.set(sx, deckY + 0.42, 0);
-        worksGroup.add(slab);
-    }
+    // Works Required markers — one per defect flagged works_required='Y',
+    // at its real placed position if it has one, otherwise an approximate
+    // spot within its span so the layer isn't empty just because most
+    // defects haven't been located on the model yet.
+    (bridge.worksRequiredDefects || []).forEach(function(d) {
+        var pos = worksMarkerPosition(d, X0, SPAN_LEN, NUM_SPANS, DECK_W, deckY);
+        var m = createWorksMarker(pos.exact);
+        m.position.set(pos.x, pos.y, pos.z);
+        worksGroup.add(m);
+    });
 
     // Defects already placed in a previous session render as markers immediately
     (bridge.defects || []).forEach(function(d) {
@@ -508,18 +534,24 @@ function getLocate3DBridgeData() {
         }
     });
 
-    // Real per-span works-required counts, from every defect entered this
-    // session (not just the ones placed on the 3D model above) - reuses
-    // spans.js's getAllDefects()/isRealDefect(), already loaded on this page.
-    var worksCounts = new Array(spans).fill(0);
-    if (typeof getAllDefects === 'function') {
-        getAllDefects().forEach(function(d) {
-            if (d.works !== 'Y') return;
-            if (typeof isRealDefect === 'function' && !isRealDefect(d)) return;
-            var idx = (parseInt(d.span, 10) || 1) - 1;
-            if (idx >= 0 && idx < spans) worksCounts[idx]++;
+    // Every defect flagged works_required='Y' this session, with its real
+    // placed position (x/y/z) carried over if it's already been located on
+    // the model, or null if not - rebuildLocate3DModel() approximates a
+    // position from spanNumber/elementNumber for those. inspectionData.defects
+    // (not getAllDefects()) is the source because it's the only one carrying
+    // x/y/z, same as the `defects` array just above.
+    var worksRequiredDefects = (inspectionData.defects || [])
+        .filter(function(d) { return d.worksRequired === 'Y'; })
+        .map(function(d) {
+            return {
+                spanNumber: d.spanNumber,
+                elementNumber: d.elementNumber,
+                severity: d.severity,
+                x: d.x != null ? d.x : null,
+                y: d.y != null ? d.y : null,
+                z: d.z != null ? d.z : null
+            };
         });
-    }
 
     return {
         spans: spans,
@@ -530,7 +562,7 @@ function getLocate3DBridgeData() {
         model: model,
         bciAv: bciAv,
         defects: defects,
-        worksCounts: worksCounts
+        worksRequiredDefects: worksRequiredDefects
     };
 }
 

@@ -357,9 +357,17 @@ async function createFolder() {
 }
 
 // Upload a file
+const MAX_DOC_SIZE = 15 * 1024 * 1024; // matches the server's multer limit
+
 async function uploadFile() {
   const file = fileInput.files[0];
   if (!file) return;
+
+  if (file.size > MAX_DOC_SIZE) {
+    alert(`"${file.name}" is ${(file.size / (1024 * 1024)).toFixed(1)}MB, which is over the 15MB limit.`);
+    fileInput.value = '';
+    return;
+  }
 
   const formData = new FormData();
   formData.append('file', file);

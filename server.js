@@ -834,8 +834,8 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // Then your existing Multer config:
 const upload = multer({
     storage: photoStorage,
-    limits: { 
-        fileSize: 50 * 1024 * 1024,
+    limits: {
+        fileSize: 15 * 1024 * 1024,
         files: 20
     },
     fileFilter: fileFilter
@@ -925,7 +925,17 @@ app.get('/api/bridges/:structureId/files', async (req, res) => {
 });
 
 // Upload file to a bridge
-app.post('/api/bridges/:structureId/files', upload.single('file'), async (req, res) => {
+app.post('/api/bridges/:structureId/files',
+    (req, res, next) => {
+        upload.single('file')(req, res, (err) => {
+            if (!err) return next();
+            if (err.code === 'LIMIT_FILE_SIZE') {
+                return res.status(413).json({ error: 'File exceeds the 15MB limit.' });
+            }
+            return res.status(400).json({ error: err.message });
+        });
+    },
+    async (req, res) => {
     try {
         const { structureId } = req.params;
         const { folderId } = req.body;
@@ -1658,7 +1668,7 @@ const inspectionPhotoStorage = multer.diskStorage({
 
 const uploadInspectionPhotos = multer({
     storage: inspectionPhotoStorage,
-    limits: { fileSize: 50 * 1024 * 1024 },
+    limits: { fileSize: 15 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
         if (file.mimetype.startsWith('image/')) {
             cb(null, true);
@@ -1669,8 +1679,16 @@ const uploadInspectionPhotos = multer({
 });
 
 // Photo upload endpoint
-app.post('/api/bridges/:structureId/inspection-photos', 
-    uploadInspectionPhotos.array('photos', 20),
+app.post('/api/bridges/:structureId/inspection-photos',
+    (req, res, next) => {
+        uploadInspectionPhotos.array('photos', 20)(req, res, (err) => {
+            if (!err) return next();
+            if (err.code === 'LIMIT_FILE_SIZE') {
+                return res.status(413).json({ success: false, error: 'Photo exceeds the 15MB limit.' });
+            }
+            return res.status(400).json({ success: false, error: err.message });
+        });
+    },
     async (req, res) => {
         try {
             if (!req.files || req.files.length === 0) {
