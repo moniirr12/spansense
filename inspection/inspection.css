@@ -167,6 +167,10 @@ body {
 }
 .stat-card .stat-value { font-size: 2rem; font-weight: 700; color: #2c4a48; line-height: 1.2; }
 .stat-card.critical .stat-value { color: #e8a87c; }
+/* Shown only until the real score is computed on load — deliberately
+   doesn't look like "100.00" so it can't be mistaken for a real score. */
+.stat-value.stat-loading { color: #c5d3d9 !important; font-weight: 400; letter-spacing: 0.1em; }
+.night-mode .stat-value.stat-loading { color: #4a5b62 !important; }
 
 /* Date card inner layout */
 .date-card-content {
@@ -1296,10 +1300,8 @@ body {
     overflow-y: auto;
     background-color: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
-    flex-wrap: wrap;
     justify-content: center;
     align-items: center;
-    gap: 16px;
     padding-top: 60px;
     box-sizing: border-box;
 
@@ -1321,10 +1323,29 @@ body {
 }
 .modal-photo { max-width: 750px; animation: modalSlideIn 0.3s ease; }
 
+/* #modal's defect-entry .modal-content is fixed in place (rather than flex-
+   centered with the guidance panel as a pair) so toggling the guidance
+   panel never shifts it — it sits a fixed amount left of true-center, which
+   is exactly the room a visible guidance panel + gap needs on its right, so
+   the pair still reads as centered when the panel is showing. */
+#modal .modal-content {
+    position: fixed;
+    left: calc(50% - 138px);
+    top: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0;
+}
+
 /* Severity guidance panel — sits beside the Add Defect modal, condensed
-   prompts from the Inspection codes - Revision 2 severity tables. */
+   prompts from the Inspection codes - Revision 2 severity tables. Anchored
+   to the viewport at a fixed offset from #modal's centerline (not flex-
+   paired with .modal-content) so it never causes .modal-content to move. */
 .defect-guidance-panel {
     display: none;
+    position: fixed;
+    left: calc(50% + 153px);
+    top: 50%;
+    transform: translateY(-50%);
     flex-direction: column;
     width: min(260px, 90vw);
     max-height: calc(80vh - 60px);
@@ -1407,11 +1428,13 @@ body {
     font-style: italic;
 }
 
-/* Below this, side-by-side no longer fits — .modal's flex-wrap drops the
-   guidance panel to its own row underneath instead of hiding it. Only on
-   genuinely small (phone) screens is there no good place to put it. */
-@media (max-width: 420px) {
+/* Below ~826px there isn't room for the panel beside a centered, fixed-
+   width modal without overflowing the viewport — hide it and let
+   .modal-content fall back to true center (it never shows up in this
+   state, so there's nothing to jump when re-centering here). */
+@media (max-width: 860px) {
     .defect-guidance-panel { display: none !important; }
+    #modal .modal-content { left: 50%; }
 }
 
 .night-mode .defect-guidance-panel {
