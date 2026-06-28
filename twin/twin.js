@@ -2,6 +2,23 @@
    SPANSENSE - TWINVIEW PAGE SCRIPTS
    ============================================================ */
 
+// Glass Scrollbar
+(function(){
+    const sb=document.getElementById('glassScrollbar'), th=document.getElementById('glassThumb');
+    if(!sb||!th)return;
+    let drag=false, sy=0, sty=0;
+    function m(){const st=window.scrollY||0,th=document.documentElement.scrollHeight,vh=window.innerHeight,dh=Math.max(1,th-vh),tr=sb.offsetHeight||1,r=vh/Math.max(1,th),h=Math.max(40,r*tr),mx=Math.max(0,tr-h);return{st,p:st/dh,tr,h,mx,dh}}
+    function u(){const x=m();th.style.setProperty('height',x.h+'px','important');th.style.setProperty('top',(x.p*x.mx)+'px','important')}
+    window.addEventListener('scroll',u,{passive:true});window.addEventListener('resize',u);
+    th.addEventListener('mousedown',e=>{drag=true;sy=e.clientY;sty=m().p*m().mx;e.preventDefault()});
+    sb.addEventListener('mousedown',e=>{if(e.target===th||th.contains(e.target))return;const r=sb.getBoundingClientRect(),y=e.clientY-r.top,x=m();window.scrollTo({top:Math.max(0,Math.min(1,y/x.tr))*x.dh,behavior:'smooth'})});
+    window.addEventListener('mousemove',e=>{if(!drag)return;const x=m(),ny=sty+(e.clientY-sy),c=Math.max(0,Math.min(x.mx,ny));window.scrollTo(0,(c/Math.max(1,x.mx))*x.dh)});
+    window.addEventListener('mouseup',()=>drag=false);
+    new MutationObserver(()=>{clearTimeout(window._t);window._t=setTimeout(u,50)}).observe(document.body,{childList:true,subtree:true});
+    u();[50,100,250,500,1000,2000].forEach(d=>setTimeout(u,d));
+    window.updateGlassScrollbar=u;
+})();
+
 var API_BASE = window.location.hostname === 'localhost'
     ? 'http://localhost:3000'
     : 'https://spansense.onrender.com';

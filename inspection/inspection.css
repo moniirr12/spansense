@@ -2208,9 +2208,34 @@ body {
 .night-mode .modal-body::-webkit-scrollbar-thumb:hover,
 .night-mode .preview-container-photo::-webkit-scrollbar-thumb:hover { background: #3a5c5a; }
 
-/* Defects list panels (split modal + locate3d modal) scroll without a visible scrollbar */
+/* Conclusions panel's defects list scrolls without a visible scrollbar */
 .defects-list-container { scrollbar-width: none; -ms-overflow-style: none; }
 .defects-list-container::-webkit-scrollbar { display: none; }
+
+/* Locate-on-3D-model's defects list gets the same thin "spansense style"
+   scrollbar used elsewhere (date dropdown, etc.) instead of hiding it
+   entirely — there's no other affordance that it scrolls. */
+#locate3dDefectsList {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(91, 140, 138, 0.3) transparent;
+}
+#locate3dDefectsList::-webkit-scrollbar { display: block; width: 5px; }
+#locate3dDefectsList::-webkit-scrollbar-thumb {
+    background: rgba(91, 140, 138, 0.3);
+    border-radius: 10px;
+}
+#locate3dDefectsList::-webkit-scrollbar-thumb:hover {
+    background: rgba(91, 140, 138, 0.5);
+}
+.night-mode #locate3dDefectsList {
+    scrollbar-color: rgba(138, 180, 176, 0.35) transparent;
+}
+.night-mode #locate3dDefectsList::-webkit-scrollbar-thumb {
+    background: rgba(138, 180, 176, 0.35);
+}
+.night-mode #locate3dDefectsList::-webkit-scrollbar-thumb:hover {
+    background: rgba(138, 180, 176, 0.55);
+}
 
 /* Hidden elements */
 #inspectionDetails, #historicalDefects { display: none; }
