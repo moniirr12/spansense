@@ -143,8 +143,10 @@ var PAGE_TARGET_HEIGHT = (841 - 80) * 0.967;
 var PAGE1_FIXED_ROWS_HEIGHT = 164;
 var PAGE1_DATA_TEXT_HEIGHT = 10.627;
 
-// A4 usable width with 40pt margins = 515pt
-var PW = 375;
+// A4 usable width with 40pt margins = 515pt. Table is 375pt by base design,
+// scaled up 15% per request (still well under the 515pt usable width, so
+// centering still leaves margin on both sides).
+var PW = 375 * 1.15;
 
 // 20 column widths
 var COL_WIDTHS = [
@@ -638,15 +640,12 @@ function buildBCIPage2Content(bciFormData) {
         ]);
 
         tableBody.push([
-            { text: 'Name:',   colSpan: 2,  bold: true, fontSize: 7 }, { text: '' },
-            { text: inspector, colSpan: 5,  fontSize: 7 },
-            { text: '' }, { text: '' }, { text: '' }, { text: '' },
-            { text: 'Signed:', colSpan: 2,  bold: true, fontSize: 7 }, { text: '' },
-            { text: '',        colSpan: 6,  fontSize: 7 },
-            { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
-            { text: 'Date:',   colSpan: 2,  bold: true, fontSize: 7 }, { text: '' },
-            { text: date, colSpan: 3, fontSize: 7 },
-            { text: '' }, { text: '' }
+            lv('Name: ', inspector, { colSpan: 7 }),
+            { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
+            { text: [{ text: 'Signed: ', bold: true }, { text: inspector, italics: true }], colSpan: 8, fontSize: 7 },
+            { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
+            lv('Date: ', date, { colSpan: 5 }),
+            { text: '' }, { text: '' }, { text: '' }, { text: '' }
         ]);
 
         // SECTION 3: ENGINEER'S COMMENTS
@@ -662,15 +661,12 @@ function buildBCIPage2Content(bciFormData) {
         ]);
 
         tableBody.push([
-            { text: 'Name:',         colSpan: 2,  bold: true, fontSize: 7 }, { text: '' },
-            { text: '[Insert name]', colSpan: 5,  fontSize: 7 },
-            { text: '' }, { text: '' }, { text: '' }, { text: '' },
-            { text: 'Signed:',       colSpan: 2,  bold: true, fontSize: 7 }, { text: '' },
-            { text: '',              colSpan: 6,  fontSize: 7 },
-            { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
-            { text: 'Date:',         colSpan: 2,  bold: true, fontSize: 7 }, { text: '' },
-            { text: date, colSpan: 3, fontSize: 7 },
-            { text: '' }, { text: '' }
+            lv('Name: ', '[Insert name]', { colSpan: 7 }),
+            { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
+            { text: 'Signed: ', bold: true, colSpan: 8, fontSize: 7 },
+            { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
+            lv('Date: ', date, { colSpan: 5 }),
+            { text: '' }, { text: '' }, { text: '' }, { text: '' }
         ]);
 
         // SECTION 4: WORK REQUIRED
@@ -721,15 +717,12 @@ function buildBCIPage2Content(bciFormData) {
         }
 
         tableBody.push([
-            { text: 'Name:',   colSpan: 2,  bold: true, fontSize: 7 }, { text: '' },
-            { text: inspector, colSpan: 5,  fontSize: 7 },
-            { text: '' }, { text: '' }, { text: '' }, { text: '' },
-            { text: 'Signed:', colSpan: 2,  bold: true, fontSize: 7 }, { text: '' },
-            { text: '',        colSpan: 6,  fontSize: 7 },
-            { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
-            { text: 'Date:',   colSpan: 2,  bold: true, fontSize: 7 }, { text: '' },
-            { text: date, colSpan: 3, fontSize: 7 },
-            { text: '' }, { text: '' }
+            lv('Name: ', inspector, { colSpan: 7 }),
+            { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
+            { text: [{ text: 'Signed: ', bold: true }, { text: inspector, italics: true }], colSpan: 8, fontSize: 7 },
+            { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
+            lv('Date: ', date, { colSpan: 5 }),
+            { text: '' }, { text: '' }, { text: '' }, { text: '' }
         ]);
 
         var page2Layout = {

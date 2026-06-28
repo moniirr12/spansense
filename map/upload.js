@@ -144,8 +144,8 @@ async function loadFolderContents(folderId = null) {
 async function fetchFolders(parentId = null) {
     try {
         const url = parentId 
-            ? `http://localhost:3000/api/bridges/${currentStructureId}/folders?parentId=${parentId}`
-            : `http://localhost:3000/api/bridges/${currentStructureId}/folders`;
+            ? `${API_BASE}/api/bridges/${currentStructureId}/folders?parentId=${parentId}`
+            : `${API_BASE}/api/bridges/${currentStructureId}/folders`;
         
         const response = await fetch(url);
         if (!response.ok) {
@@ -163,8 +163,8 @@ async function fetchFolders(parentId = null) {
 async function fetchFiles(folderId = null) {
     try {
         const url = folderId 
-            ? `http://localhost:3000/api/bridges/${currentStructureId}/files?folderId=${folderId}`
-            : `http://localhost:3000/api/bridges/${currentStructureId}/files`;
+            ? `${API_BASE}/api/bridges/${currentStructureId}/files?folderId=${folderId}`
+            : `${API_BASE}/api/bridges/${currentStructureId}/files`;
         
         const response = await fetch(url);
         if (!response.ok) {
@@ -181,7 +181,7 @@ async function fetchFiles(folderId = null) {
 // Get folder path hierarchy
 async function fetchFolderPath(folderId) {
     try {
-        const response = await fetch(`http://localhost:3000/api/bridges/${currentStructureId}/folders/${folderId}/path`);
+        const response = await fetch(`${API_BASE}/api/bridges/${currentStructureId}/folders/${folderId}/path`);
         if (!response.ok) {
             throw new Error(`Server returned ${response.status}: ${response.statusText}`);
         }
@@ -347,7 +347,7 @@ async function createFolder() {
     if (!name) return;
 
     try {
-        const response = await fetch(`http://localhost:3000/api/bridges/${currentStructureId}/folders`, {
+        const response = await fetch(`${API_BASE}/api/bridges/${currentStructureId}/folders`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -389,7 +389,7 @@ async function uploadFile() {
   }
 
   try {
-    const response = await fetch(`http://localhost:3000/api/bridges/${currentStructureId}/files`, {
+    const response = await fetch(`${API_BASE}/api/bridges/${currentStructureId}/files`, {
       method: 'POST',
       body: formData,
       // Don't set Content-Type manually - let browser set it with boundary
@@ -423,8 +423,8 @@ async function deleteSelectedItem() {
 
     try {
         const endpoint = selectedItem.type === 'folder'
-            ? `http://localhost:3000/api/bridges/${currentStructureId}/folders/${selectedItem.id}`
-            : `http://localhost:3000/api/bridges/${currentStructureId}/files/${selectedItem.id}`;
+            ? `${API_BASE}/api/bridges/${currentStructureId}/folders/${selectedItem.id}`
+            : `${API_BASE}/api/bridges/${currentStructureId}/files/${selectedItem.id}`;
 
         const response = await fetch(endpoint, {
             method: 'DELETE',
