@@ -373,18 +373,35 @@ function saveConclusions() {
     }
 }
 
+const DEFECT_NARRATION_VERBS = ['shows', 'exhibits', 'presents with', 'has developed', 'displays'];
+
+// Turns one defect record into a readable sentence naming the element and
+// finding, rather than just a code — e.g. "North girder shows rusting,
+// rated severe, requiring remedial works."
+function describeDefectSentence(defect, verbIndex) {
+    const verb = DEFECT_NARRATION_VERBS[verbIndex % DEFECT_NARRATION_VERBS.length];
+    const shortText = getDefectText(parseInt(defect.defectType), parseInt(defect.defectNumber));
+    const defectText = (shortText || getFullDefectDescription(defect.defectType, defect.defectNumber, defect.defectId)).toLowerCase();
+    const severityWord = getSeverityLabel(defect.severity).toLowerCase();
+    const worksPhrase = defect.works === 'Y' ? ', requiring remedial works'
+        : defect.works === 'M' ? ', recommended for ongoing monitoring'
+        : '';
+    const commentPhrase = defect.comment ? ` (noted: "${defect.comment.trim()}")` : '';
+    return `${defect.element} ${verb} ${defectText}, rated ${severityWord}${worksPhrase}${commentPhrase}.`;
+}
+
 // Builds a plain-language draft from what's actually been recorded so far —
-// a starting point to edit, not a final answer.
+// describing the actual defects found, not just totals — as a starting
+// point to edit, not a final answer.
 function generateDraftConclusions() {
     const inspectionData = JSON.parse(sessionStorage.getItem('inspectionData') || '{}');
     const allDefects = getAllDefects();
-    const realDefects = allDefects.filter(isRealDefect);
+    const realDefects = allDefects.filter(isRealDefect)
+        .sort((a, b) => (parseInt(b.severity) || 0) - (parseInt(a.severity) || 0));
     const noDefectsCount = allDefects.filter(d => d.defectId === '0.0').length;
     const notInspectedCount = allDefects.filter(d => d.defectId === '0.1').length;
     const elementsChecked = new Set(allDefects.map(d => `${d.span}-${d.elementNumber}`)).size;
     const worksRequired = realDefects.filter(d => d.works === 'Y');
-    const monitorRequired = realDefects.filter(d => d.works === 'M');
-    const worstSeverity = realDefects.reduce((max, d) => Math.max(max, parseInt(d.severity) || 0), 0);
 
     const spansWithBci = (inspectionData.spans || []).filter(s => s.bciAv != null && s.bciCrit != null);
     const bciAv = spansWithBci.length
@@ -395,26 +412,36 @@ function generateDraftConclusions() {
         : parseFloat(document.getElementById('bciCritResult')?.textContent) || 100;
     const conditionLabel = bciAv >= 85 ? 'good' : bciAv >= 65 ? 'fair' : bciAv >= 40 ? 'poor' : 'critical';
 
-    const sentences = [];
-    sentences.push(`This inspection covered ${elementsChecked} element${elementsChecked === 1 ? '' : 's'}, of which ${noDefectsCount} showed no defects${notInspectedCount ? ` and ${notInspectedCount} could not be inspected` : ''}.`);
+    const paragraphs = [];
+    paragraphs.push(`This inspection covered ${elementsChecked} element${elementsChecked === 1 ? '' : 's'}, of which ${noDefectsCount} showed no defects${notInspectedCount ? ` and ${notInspectedCount} could not be inspected` : ''}.`);
 
     if (realDefects.length === 0) {
-        sentences.push('No defects were recorded during this inspection.');
+        paragraphs.push('No defects were recorded during this inspection.');
     } else {
-        sentences.push(`${realDefects.length} defect${realDefects.length === 1 ? '' : 's'} ${realDefects.length === 1 ? 'was' : 'were'} identified, with the most severe rated at severity ${worstSeverity}.`);
-        if (worksRequired.length) {
-            sentences.push(`${worksRequired.length} defect${worksRequired.length === 1 ? '' : 's'} require${worksRequired.length === 1 ? 's' : ''} remedial works${monitorRequired.length ? `, and ${monitorRequired.length} should be monitored` : ''}.`);
-        } else if (monitorRequired.length) {
-            sentences.push(`${monitorRequired.length} defect${monitorRequired.length === 1 ? '' : 's'} should be monitored going forward.`);
+        // Describe the most severe defects individually; fold the rest into
+        // one summary clause so the draft doesn't read as an endless list.
+        const DESCRIBE_LIMIT = 4;
+        const described = realDefects.slice(0, DESCRIBE_LIMIT);
+        const remainder = realDefects.slice(DESCRIBE_LIMIT);
+
+        paragraphs.push(described.map((d, i) => describeDefectSentence(d, i)).join(' '));
+
+        if (remainder.length) {
+            const remainderElements = [...new Set(remainder.map(d => d.element))];
+            const elementList = remainderElements.length <= 3
+                ? remainderElements.join(', ')
+                : `${remainderElements.slice(0, 3).join(', ')} and other elements`;
+            const remainderWorksCount = remainder.filter(d => d.works === 'Y').length;
+            paragraphs.push(`A further ${remainder.length} lower-severity defect${remainder.length === 1 ? '' : 's'} ${remainder.length === 1 ? 'was' : 'were'} recorded, affecting ${elementList}${remainderWorksCount ? `, with ${remainderWorksCount} requiring remedial works` : ''}.`);
         }
     }
 
-    sentences.push(`Overall structural condition is assessed as ${conditionLabel} (BCI Average ${bciAv.toFixed(2)}, BCI Critical ${bciCrit.toFixed(2)}).`);
-    sentences.push(worksRequired.length
+    paragraphs.push(`Overall structural condition is assessed as ${conditionLabel} (BCI Average ${bciAv.toFixed(2)}, BCI Critical ${bciCrit.toFixed(2)}).`);
+    paragraphs.push(worksRequired.length
         ? 'It is recommended that the identified remedial works be prioritised accordingly.'
         : 'No remedial works are currently required.');
 
-    return sentences.join(' ');
+    return paragraphs.join(' ');
 }
 
 async function suggestDraftConclusions() {
