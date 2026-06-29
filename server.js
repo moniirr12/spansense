@@ -7,9 +7,9 @@ const cors = require("cors");
 const multer = require('multer');
 const path = require('path');
 const proj4 = require('proj4');
+const storage = require('./supabaseStorage');
 
 const router = express.Router();
-const fs = require('fs');
 
 const app = express();
 
@@ -826,36 +826,18 @@ app.get('/api/twin/:structureId', async (req, res) => {
     }
 });
 
-// Configure multer storage for bridge-specific uploads
-const photoStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const structureId = req.params.structureId;
-        const inspectionDate = req.body.inspectionDate || 
-                             new Date().toISOString().split('T')[0];
+// Files are buffered in memory, then uploaded to Supabase Storage explicitly
+// inside each route handler (the storage path depends on route params/body
+// that multer's storage engine callbacks have, but doing the actual upload
+// there would make error handling/rollback awkward - simpler to just hold
+// the buffer and upload it once the handler has validated everything).
+function buildDocStoragePath(structureId, originalname) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(originalname);
+    return `bridge_${structureId}/documents/${uniqueSuffix}${ext}`;
+}
 
-        if (!structureId) {
-            return cb(new Error('Bridge ID is required'), null);
-        }
-
-        const uploadDir = path.join(
-            __dirname, 
-            'uploads',
-            `bridge_${structureId}`,
-            'inspections',
-            inspectionDate
-        );
-
-        fs.mkdir(uploadDir, { recursive: true }, (err) => {
-            if (err) return cb(err);
-            cb(null, uploadDir);
-        });
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const ext = path.extname(file.originalname);
-        cb(null, `photo_${uniqueSuffix}${ext}`);
-    }
-});
+const docMemoryStorage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
     const allowedTypes = [
@@ -881,9 +863,8 @@ const fileFilter = (req, file, cb) => {
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Then your existing Multer config:
 const upload = multer({
-    storage: photoStorage,
+    storage: docMemoryStorage,
     limits: {
         fileSize: 15 * 1024 * 1024,
         files: 20
@@ -968,7 +949,11 @@ app.get('/api/bridges/:structureId/files', async (req, res) => {
         }
 
         const files = await dbAll(query, params);
-        res.json(files);
+        const signedFiles = await Promise.all(files.map(async f => ({
+            ...f,
+            filepath: await storage.getSignedUrl(f.filepath)
+        })));
+        res.json(signedFiles);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -996,7 +981,6 @@ app.post('/api/bridges/:structureId/files',
 
         const bridgeExists = await dbGet('SELECT 1 FROM bridges WHERE id = $1', [structureId]);
         if (!bridgeExists) {
-            fs.unlinkSync(req.file.path);
             return res.status(404).json({ error: 'Bridge not found' });
         }
 
@@ -1006,12 +990,12 @@ app.post('/api/bridges/:structureId/files',
                 [folderId, structureId]
             );
             if (!folderExists) {
-                fs.unlinkSync(req.file.path);
                 return res.status(400).json({ error: 'Folder not found in this bridge' });
             }
         }
 
-        const filePath = path.join('bridge_' + structureId, req.file.filename);
+        const filePath = buildDocStoragePath(structureId, req.file.originalname);
+        await storage.uploadFile(filePath, req.file.buffer, req.file.mimetype);
 
         const result = await pool.query(
             `INSERT INTO files (name, filepath, size, mime_type, folder_id, bridge_id)
@@ -1037,7 +1021,6 @@ app.post('/api/bridges/:structureId/files',
             created_at: new Date().toISOString()
         });
     } catch (err) {
-        if (req.file) fs.unlinkSync(req.file.path);
         res.status(500).json({ error: err.message });
     }
 });
@@ -1069,13 +1052,7 @@ app.delete('/api/bridges/:structureId/files/:fileId', async (req, res) => {
             return res.status(404).json({ error: 'File not found in database' });
         }
 
-        const fullPath = path.join(__dirname, 'uploads', file.filepath);
-
-        try {
-            await fs.promises.unlink(fullPath);
-        } catch (fsErr) {
-            console.error('File system deletion error:', fsErr);
-        }
+        await storage.deleteFile(file.filepath);
 
         res.json({ success: true });
 
@@ -1128,10 +1105,6 @@ app.delete('/api/bridges/:structureId/folders/:folderId', async (req, res) => {
         });
     }
 });
-
-// Serve uploaded files
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
 
 
 // Backend route for getting folder path
@@ -1581,13 +1554,18 @@ app.get('/api/inspection/full', async (req, res) => {
             ORDER BY defect_id, display_order
         `, [inspection.id]);
 
-        // Group photos by defect_id
-        const photosByDefect = defectPhotos.reduce((acc, photo) => {
+        // Group photos by defect_id (signing each path into a temporary URL,
+        // since the storage bucket is private)
+        const signedDefectPhotos = await Promise.all(defectPhotos.map(async photo => ({
+            ...photo,
+            signedUrl: await storage.getSignedUrl(photo.photo_url)
+        })));
+        const photosByDefect = signedDefectPhotos.reduce((acc, photo) => {
             if (!acc[photo.defect_id]) {
                 acc[photo.defect_id] = [];
             }
             acc[photo.defect_id].push({
-                url: photo.photo_url,
+                url: photo.signedUrl,
                 description: photo.photo_description,
                 displayOrder: photo.display_order,
                 frontDefectId: photo.front_defectid
@@ -1703,24 +1681,15 @@ app.get('/api/worksrequired', async (req, res) => {
 
 //Testing.
 
-// Configure photo storage
-const inspectionPhotoStorage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const { structureId } = req.params;
-        const inspectionDate = req.body.inspectionDate || new Date().toISOString().split('T')[0];
-        const uploadDir = path.join(__dirname, 'uploads', `bridge_${structureId}`, 'inspections', inspectionDate);
-
-        fs.mkdirSync(uploadDir, { recursive: true });
-        cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-    }
-});
+// Buffered in memory, then uploaded to Supabase Storage inside the route
+// handler (same reasoning as buildDocStoragePath above).
+function buildInspectionPhotoStoragePath(structureId, inspectionDate, originalname) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    return `bridge_${structureId}/inspections/${inspectionDate}/photo-${uniqueSuffix}${path.extname(originalname)}`;
+}
 
 const uploadInspectionPhotos = multer({
-    storage: inspectionPhotoStorage,
+    storage: multer.memoryStorage(),
     limits: { fileSize: 15 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
         if (file.mimetype.startsWith('image/')) {
@@ -1766,10 +1735,14 @@ app.post('/api/bridges/:structureId/inspection-photos',
                 if (existing) realDefectId = existing.id;
             }
 
+            const { structureId } = req.params;
+            const inspectionDate = req.body.inspectionDate || new Date().toISOString().split('T')[0];
+
             const uploadedFiles = [];
             for (let index = 0; index < req.files.length; index++) {
                 const file = req.files[index];
-                const url = `/uploads/${path.relative(path.join(__dirname, 'uploads'), file.path).split(path.sep).join('/')}`;
+                const url = buildInspectionPhotoStoragePath(structureId, inspectionDate, file.originalname);
+                await storage.uploadFile(url, file.buffer, file.mimetype);
                 const photo_description = descriptions[index] || '';
                 const display_order = displayOrders[index] || index;
                 let photoId = null;
@@ -1788,8 +1761,8 @@ app.post('/api/bridges/:structureId/inspection-photos',
                 uploadedFiles.push({
                     id: photoId,
                     originalName: file.originalname,
-                    filename: file.filename,
-                    path: file.path,
+                    filename: path.basename(url),
+                    path: url,
                     size: file.size,
                     mimetype: file.mimetype,
                     url,
@@ -1844,20 +1817,22 @@ app.get('/api/bridges/:structureId/inspection-photos', async (req, res) => {
             [inspection.id]
         );
 
+        const signedPhotos = await Promise.all(photos.map(async photo => ({
+            photo_id: photo.id,
+            defect_id: photo.defect_id,
+            front_defectid: photo.front_defectid,
+            photo_url: await storage.getSignedUrl(photo.photo_url),
+            photo_description: photo.photo_description,
+            display_order: photo.display_order,
+            file_name: photo.file_name,
+            file_size: photo.file_size,
+            file_type: photo.file_type,
+            uploaded_at: photo.uploaded_at
+        })));
+
         res.json({
             success: true,
-            photos: photos.map(photo => ({
-                photo_id: photo.id,
-                defect_id: photo.defect_id,
-                front_defectid: photo.front_defectid,
-                photo_url: photo.photo_url,
-                photo_description: photo.photo_description,
-                display_order: photo.display_order,
-                file_name: photo.file_name,
-                file_size: photo.file_size,
-                file_type: photo.file_type,
-                uploaded_at: photo.uploaded_at
-            }))
+            photos: signedPhotos
         });
     } catch (err) {
         console.error('Database error:', err);
@@ -1879,10 +1854,7 @@ app.delete('/api/inspection-photos/:photoId', async (req, res) => {
 
         await pool.query('DELETE FROM defect_photos WHERE id = $1', [photoId]);
 
-        const filePath = path.join(__dirname, photo.photo_url.replace(/^\//, ''));
-        fs.unlink(filePath, (err) => {
-            if (err) console.warn('Could not delete photo file:', filePath, err.message);
-        });
+        await storage.deleteFile(photo.photo_url);
 
         res.json({ success: true });
     } catch (err) {
