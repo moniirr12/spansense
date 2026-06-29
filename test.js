@@ -258,16 +258,28 @@ async function generateSimplePDFReport(doc, mode = 'download') {
         allPhotos.forEach(photo => {
             globalPhotoCounter++;
             const photoNumber = globalPhotoCounter;
-            const frontDefectId = photo.front_defectid;
-            
-            if (frontDefectId) {
-                const parts = frontDefectId.split('_');
-                const defectCode = parts[parts.length - 1];
-                
+
+            // front_defectid (a temp key) is only set for photos queued
+            // before the inspection was saved, via /save-inspection's bulk
+            // insert. Photos uploaded straight to an already-saved defect
+            // (e.g. editing an existing inspection) only get a real numeric
+            // defect_id, so relying on front_defectid alone silently dropped
+            // those from the appendix - match by defect_id first instead.
+            let defectCode = null;
+            if (photo.defect_id != null) {
+                const matchedDefect = defectsData.find(d => d.defectDbId === photo.defect_id);
+                if (matchedDefect) defectCode = matchedDefect.defectId;
+            }
+            if (!defectCode && photo.front_defectid) {
+                const parts = photo.front_defectid.split('_');
+                defectCode = parts[parts.length - 1];
+            }
+
+            if (defectCode) {
                 if (!photosByDefect[defectCode]) {
                     photosByDefect[defectCode] = [];
                 }
-                
+
                 photosByDefect[defectCode].push({
                     photo_url: photo.photo_url,
                     photo_description: photo.photo_description,
@@ -761,7 +773,7 @@ async function generateSimplePDFReport(doc, mode = 'download') {
                 table: {
                     widths: ['20%', '30%', '20%', '30%'],
                     body: [
-                        ['Easting:', bridgeData.easting || 'N/A', 'Northing:', bridgeData.northing || 'N/A'],
+                        ['Easting:', bridgeData.easting || bridgeData.ose || 'N/A', 'Northing:', bridgeData.northing || bridgeData.osn || 'N/A'],
                         ['Latitude:', (parseFloat(bridgeData.latitude) || 0).toFixed(6) || 'N/A', 'Longitude:', (parseFloat(bridgeData.longitude) || 0).toFixed(6) || 'N/A']
                     ]
                 },
@@ -809,8 +821,8 @@ async function generateSimplePDFReport(doc, mode = 'download') {
                 const spanDefects = defectsData.filter(d => d.spanNumber === span.spanNumber);
                 const spanScores = spanDefects.map(d => d.severity || 0);
                 
-                let spanBciAv = span.bciA ? parseFloat(span.bciA) : null;
-                let spanBciCrit = span.bciC ? parseFloat(span.bciC) : null;
+                let spanBciAv = span.bciAv ? parseFloat(span.bciAv) : null;
+                let spanBciCrit = span.bciCrit ? parseFloat(span.bciCrit) : null;
                 
                 if (spanBciAv === null && spanScores.length > 0) {
                     const avgScore = spanScores.reduce((a, b) => a + b, 0) / spanScores.length;
