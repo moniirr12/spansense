@@ -809,8 +809,8 @@ async function generateSimplePDFReport(doc, mode = 'download') {
                 const spanDefects = defectsData.filter(d => d.spanNumber === span.spanNumber);
                 const spanScores = spanDefects.map(d => d.severity || 0);
                 
-                let spanBciAv = span.bciA ? parseFloat(span.bciA) : null;
-                let spanBciCrit = span.bciC ? parseFloat(span.bciC) : null;
+                let spanBciAv = span.bciAv ? parseFloat(span.bciAv) : null;
+                let spanBciCrit = span.bciCrit ? parseFloat(span.bciCrit) : null;
                 
                 if (spanBciAv === null && spanScores.length > 0) {
                     const avgScore = spanScores.reduce((a, b) => a + b, 0) / spanScores.length;

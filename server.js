@@ -1687,7 +1687,7 @@ app.get('/api/worksrequired', async (req, res) => {
             worksRequired: worksRequired.map(item => ({
                 ...item,
                 worksRequired: item.worksRequired,
-                cost: item.cost ? `£${item.cost.toFixed(2)}` : 'Not specified'
+                cost: item.cost ? `£${Number(item.cost).toFixed(2)}` : 'Not specified'
             })),
             count: worksRequired.length
         };
