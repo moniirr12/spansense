@@ -444,10 +444,12 @@ async function getAllPhotosForCurrentInspection() {
 
     try {
         const response = await fetch(`/api/bridges/${bridgeId}/inspection-photos?inspectionDate=${encodeURIComponent(inspectionDate)}`);
-        if (!response.ok) throw new Error('Failed to fetch photos');
-
+        // A brand-new, not-yet-saved inspection has no row in the inspections
+        // table yet, so the server 404s with {success:false} - that's a normal
+        // "no photos yet" state here, not a real error (it still returns valid
+        // JSON either way, so just branch on result.success below).
         const result = await response.json();
-        
+
         if (!result.success || !result.photos) {
             return [];
         }
