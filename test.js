@@ -761,7 +761,7 @@ async function generateSimplePDFReport(doc, mode = 'download') {
                 table: {
                     widths: ['20%', '30%', '20%', '30%'],
                     body: [
-                        ['Easting:', bridgeData.easting || 'N/A', 'Northing:', bridgeData.northing || 'N/A'],
+                        ['Easting:', bridgeData.easting || bridgeData.ose || 'N/A', 'Northing:', bridgeData.northing || bridgeData.osn || 'N/A'],
                         ['Latitude:', (parseFloat(bridgeData.latitude) || 0).toFixed(6) || 'N/A', 'Longitude:', (parseFloat(bridgeData.longitude) || 0).toFixed(6) || 'N/A']
                     ]
                 },
