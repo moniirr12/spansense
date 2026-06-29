@@ -443,10 +443,7 @@ async function getAllPhotosForCurrentInspection() {
     }
 
     try {
-        const apiUrl = new URL(`/api/bridges/${bridgeId}/inspection-photos`);
-        apiUrl.searchParams.append('inspectionDate', inspectionDate);
-
-        const response = await fetch(apiUrl.toString());
+        const response = await fetch(`/api/bridges/${bridgeId}/inspection-photos?inspectionDate=${encodeURIComponent(inspectionDate)}`);
         if (!response.ok) throw new Error('Failed to fetch photos');
 
         const result = await response.json();
