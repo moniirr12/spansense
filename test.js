@@ -258,16 +258,28 @@ async function generateSimplePDFReport(doc, mode = 'download') {
         allPhotos.forEach(photo => {
             globalPhotoCounter++;
             const photoNumber = globalPhotoCounter;
-            const frontDefectId = photo.front_defectid;
-            
-            if (frontDefectId) {
-                const parts = frontDefectId.split('_');
-                const defectCode = parts[parts.length - 1];
-                
+
+            // front_defectid (a temp key) is only set for photos queued
+            // before the inspection was saved, via /save-inspection's bulk
+            // insert. Photos uploaded straight to an already-saved defect
+            // (e.g. editing an existing inspection) only get a real numeric
+            // defect_id, so relying on front_defectid alone silently dropped
+            // those from the appendix - match by defect_id first instead.
+            let defectCode = null;
+            if (photo.defect_id != null) {
+                const matchedDefect = defectsData.find(d => d.defectDbId === photo.defect_id);
+                if (matchedDefect) defectCode = matchedDefect.defectId;
+            }
+            if (!defectCode && photo.front_defectid) {
+                const parts = photo.front_defectid.split('_');
+                defectCode = parts[parts.length - 1];
+            }
+
+            if (defectCode) {
                 if (!photosByDefect[defectCode]) {
                     photosByDefect[defectCode] = [];
                 }
-                
+
                 photosByDefect[defectCode].push({
                     photo_url: photo.photo_url,
                     photo_description: photo.photo_description,
