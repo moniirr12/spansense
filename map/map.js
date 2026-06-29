@@ -116,6 +116,27 @@ const getStructureIcon = (type) => {
             iconSize: [36, 36],
             popupAnchor: [0, -18],
             className: 'custom-marker'
+        }),
+        sign_gantry: L.divIcon({
+            html: `<div style="
+                background: #7c6fc4;
+                width: 36px; height: 36px;
+                border-radius: 50%;
+                display: flex; align-items: center; justify-content: center;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                border: 2px solid white;
+            ">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 7 V20"/>
+                    <path d="M21 7 V20"/>
+                    <path d="M3 7 H21" stroke-width="2.2"/>
+                    <rect x="7" y="9.5" width="5" height="3.4" rx="0.4"/>
+                    <rect x="13" y="9.5" width="4" height="3.4" rx="0.4"/>
+                </svg>
+            </div>`,
+            iconSize: [36, 36],
+            popupAnchor: [0, -18],
+            className: 'custom-marker'
         })
     };
 

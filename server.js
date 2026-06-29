@@ -356,7 +356,7 @@ app.get('/api/inspection-dates/:structureId', async (req, res) => {
 // Any other type (Footbridge, Culvert, ...) uses the Bridge list - they
 // share the same BCI methodology (same importance mapping/critical elements
 // in inspection/bci.js's STRUCTURE_TYPE_CONFIG too).
-const SEEDED_ELEMENT_TYPES = ["Bridge", "Retaining wall"];
+const SEEDED_ELEMENT_TYPES = ["Bridge", "Retaining wall", "Sign Gantry"];
 function resolveElementsType(requestedType) {
     return SEEDED_ELEMENT_TYPES.includes(requestedType) ? requestedType : "Bridge";
 }

@@ -78,6 +78,34 @@ const STRUCTURE_TYPE_CONFIG = {
     criticalElements: [1, 2, 3],
     // Items 1-17. Excludes ancillary 18-20.
     bciAvIncludedElements: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+  },
+  // Per Highways Agency Guidance Document for Performance Measurement of
+  // Highway Structures, Part B1, Table 11. No real completed Sign Gantry
+  // proforma was available to validate against (unlike Bridge/Retaining
+  // wall above), so criticalElements follows Section 4.6's documented rule
+  // exactly - "SCSCrit is based on only those elements which have a Very
+  // High importance classification" - rather than the +1 exception pattern
+  // seen in the other two types.
+  "Sign Gantry": {
+    importanceMapping: {
+      1: "High",       // Foundations
+      2: "Very High",  // Truss/beams/cantilever
+      3: "Very High",  // Transverse/horiz. bracing elements
+      4: "Very High",  // Columns/supports/legs
+      5: "Medium",     // Surface finishes: truss/beams/cantilever
+      6: "Medium",     // Surface finishes: columns/supports/legs
+      7: "Low",        // Surface finishes: other elements
+      8: "High",       // Access/walkway/deck
+      9: "High",       // Access ladder
+      10: "High",      // Handrails/guard rails
+      11: "Very High", // Base connections
+      12: "Very High", // Support to longitudinal connection
+      13: "Medium"     // Sign and signal supports
+      // 14 (Signs/signals), 15 (Lighting), 16 (Services): ancillary, no importance assigned.
+    },
+    criticalElements: [2, 3, 4, 11, 12],
+    // Items 1-13. Excludes ancillary 14-16.
+    bciAvIncludedElements: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
   }
 };
 

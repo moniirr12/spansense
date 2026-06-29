@@ -787,6 +787,24 @@ const ELEMENTS_DB_BY_TYPE = {
         18: { category: "Ancillary Elements", description: "Signs" },
         19: { category: "Ancillary Elements", description: "Lighting" },
         20: { category: "Ancillary Elements", description: "Services" }
+    },
+    "Sign Gantry": {
+        1: { category: "Main Elements", description: "Foundations" },
+        2: { category: "Main Elements", description: "Truss/beams/cantilever" },
+        3: { category: "Main Elements", description: "Transverse/horiz. bracing elements" },
+        4: { category: "Main Elements", description: "Columns/supports/legs" },
+        5: { category: "Durability Elements", description: "Surface finishes: truss/beams/cantilever" },
+        6: { category: "Durability Elements", description: "Surface finishes: columns/supports/legs" },
+        7: { category: "Durability Elements", description: "Surface finishes: other elements" },
+        8: { category: "Safety Elements", description: "Access/walkway/deck" },
+        9: { category: "Safety Elements", description: "Access ladder" },
+        10: { category: "Safety Elements", description: "Handrails/guard rails" },
+        11: { category: "Other Elements", description: "Base connections" },
+        12: { category: "Other Elements", description: "Support to longitudinal connection" },
+        13: { category: "Other Elements", description: "Sign and signal supports" },
+        14: { category: "Ancillary Elements", description: "Signs/signals" },
+        15: { category: "Ancillary Elements", description: "Lighting" },
+        16: { category: "Ancillary Elements", description: "Services" }
     }
 };
 

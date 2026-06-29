@@ -227,6 +227,24 @@ async function generateSimplePDFReport(doc, mode = 'download') {
                 { category: "Ancillary Elements", mainNumber: "4.5", subNumber: "4.5.1", name: "Signs", elementNo: 18 },
                 { category: "Ancillary Elements", mainNumber: "4.5", subNumber: "4.5.2", name: "Lighting", elementNo: 19 },
                 { category: "Ancillary Elements", mainNumber: "4.5", subNumber: "4.5.3", name: "Services", elementNo: 20 }
+            ],
+            "Sign Gantry": [
+                { category: "Main Elements", mainNumber: "4.1", subNumber: "4.1.1", name: "Foundations", elementNo: 1 },
+                { category: "Main Elements", mainNumber: "4.1", subNumber: "4.1.2", name: "Truss/beams/cantilever", elementNo: 2 },
+                { category: "Main Elements", mainNumber: "4.1", subNumber: "4.1.3", name: "Transverse/horiz. bracing elements", elementNo: 3 },
+                { category: "Main Elements", mainNumber: "4.1", subNumber: "4.1.4", name: "Columns/supports/legs", elementNo: 4 },
+                { category: "Durability Elements", mainNumber: "4.2", subNumber: "4.2.1", name: "Surface finishes: truss/beams/cantilever", elementNo: 5 },
+                { category: "Durability Elements", mainNumber: "4.2", subNumber: "4.2.2", name: "Surface finishes: columns/supports/legs", elementNo: 6 },
+                { category: "Durability Elements", mainNumber: "4.2", subNumber: "4.2.3", name: "Surface finishes: other elements", elementNo: 7 },
+                { category: "Safety Elements", mainNumber: "4.3", subNumber: "4.3.1", name: "Access/walkway/deck", elementNo: 8 },
+                { category: "Safety Elements", mainNumber: "4.3", subNumber: "4.3.2", name: "Access ladder", elementNo: 9 },
+                { category: "Safety Elements", mainNumber: "4.3", subNumber: "4.3.3", name: "Handrails/guard rails", elementNo: 10 },
+                { category: "Other Elements", mainNumber: "4.4", subNumber: "4.4.1", name: "Base connections", elementNo: 11 },
+                { category: "Other Elements", mainNumber: "4.4", subNumber: "4.4.2", name: "Support to longitudinal connection", elementNo: 12 },
+                { category: "Other Elements", mainNumber: "4.4", subNumber: "4.4.3", name: "Sign and signal supports", elementNo: 13 },
+                { category: "Ancillary Elements", mainNumber: "4.5", subNumber: "4.5.1", name: "Signs/signals", elementNo: 14 },
+                { category: "Ancillary Elements", mainNumber: "4.5", subNumber: "4.5.2", name: "Lighting", elementNo: 15 },
+                { category: "Ancillary Elements", mainNumber: "4.5", subNumber: "4.5.3", name: "Services", elementNo: 16 }
             ]
         };
         const allElementsList = ALL_ELEMENTS_LIST_BY_TYPE[bridgeData.type] || ALL_ELEMENTS_LIST_BY_TYPE.Bridge;
