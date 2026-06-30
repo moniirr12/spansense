@@ -91,12 +91,28 @@ body {
     -webkit-text-fill-color: transparent !important;
 }
 
-/* Fix account links */
+/* Account / contact icon buttons */
+.navbar .account-links {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
 .navbar .account-links a {
     text-decoration: none !important;
-    color: #6a7c8e !important;
-    margin-left: 16px !important;
-    font-size: 0.85rem !important;
+    color: #5b8c8a !important;
+    background: rgba(240, 242, 245, 0.8) !important;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1rem !important;
+    transition: background 0.2s, transform 0.15s !important;
+}
+.navbar .account-links a:hover {
+    background: #e2e8f0 !important;
+    transform: scale(1.05) !important;
 }
 
 /* Fix night mode toggle */
@@ -2409,6 +2425,15 @@ body.modal-open {
 
 .night-mode .night-mode-toggle:hover {
     background: #4a6570;
+}
+
+.night-mode .navbar .account-links a {
+    background: rgba(62, 82, 94, 0.8) !important;
+    color: #c5e0e6 !important;
+}
+
+.night-mode .navbar .account-links a:hover {
+    background: #4a6570 !important;
 }
 
 
