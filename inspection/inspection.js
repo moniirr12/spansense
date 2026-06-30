@@ -1346,8 +1346,12 @@ document.addEventListener("DOMContentLoaded", function () {
   });
   document.getElementById('inspectionElementsTable').addEventListener('click', function (event) {
       const target = event.target;
-      if (target.closest("button[title='Edit']")) {
-          const expandableRow = target.closest("tr.expandable-row");
+      const onExpandableRow = target.closest("tr.expandable-row");
+      const isExcluded = target.closest("button[title='View']") ||
+                         target.closest("button[title='Delete']") ||
+                         target.closest("button[title='Copy']");
+      if (onExpandableRow && !isExcluded) {
+          const expandableRow = onExpandableRow;
           if (expandableRow && expandableRow.classList.contains("retrieved-defect")) {
               showAlertModal("Retrieved defects cannot be edited. Please copy the defect to create a new editable version.");
               return;

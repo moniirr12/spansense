@@ -542,6 +542,12 @@ body {
     background-image: radial-gradient(circle at center, #3a2020 14px, transparent 14px);
 }
 
+/* Clicking anywhere on an expandable row opens the edit modal */
+#inspectionElementsTable tr.expandable-row { cursor: pointer; }
+#inspectionElementsTable tr.expandable-row button[title='View'],
+#inspectionElementsTable tr.expandable-row button[title='Delete'],
+#inspectionElementsTable tr.expandable-row button[title='Copy'] { cursor: default; }
+
 /* Severity/extent colour badges inside the expandable defect rows — mirrors
    the main-row severity colours and the extent stepper's blue progression. */
 #inspectionElementsTable tr.expandable-row .addSeverity .sev-1 { color: #2d7a6e; }
