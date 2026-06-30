@@ -159,7 +159,7 @@ function restoreFilterState() {
 }
 
 // Load the bridge data from the JSON file
-fetch('bridges.json')
+fetch(`${API_BASE}/api/bridges`)
     .then(response => {
         if (!response.ok) throw new Error('Network response was not ok');
         return response.json();
@@ -214,22 +214,6 @@ fetch('bridges.json')
             if (event.target === modal) modal.style.display = 'none';
         });
 
-        // Fetch BCI data for all structures, then place markers with correct condition rings
-        return Promise.all(
-            bridgeData.map((bridge, i) =>
-                fetch(`${API_BASE}/api/bridges/${bridge.id}`)
-                    .then(r => r.ok ? r.json() : null)
-                    .then(apiData => {
-                        if (apiData && apiData.bci_av != null) {
-                            bridgeData[i].bci_av = parseFloat(apiData.bci_av);
-                        }
-                    })
-                    .catch(() => null)
-            )
-        );
-    })
-    .then(() => {
-        // All BCI data loaded — now create markers with correct condition rings and filter
         restoreFilterState();
     })
     .catch(error => {
