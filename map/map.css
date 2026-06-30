@@ -99,7 +99,7 @@ body {
 }
 .navbar .account-links a {
     text-decoration: none !important;
-    color: #5b8c8a !important;
+    color: #8a9ba8 !important;
     font-size: 1.2rem !important;
     display: flex !important;
     align-items: center !important;
@@ -107,7 +107,7 @@ body {
     transition: color 0.2s, transform 0.15s !important;
 }
 .navbar .account-links a:hover {
-    color: #2d7a6e !important;
+    color: #5b8c8a !important;
     transform: scale(1.1) !important;
 }
 
