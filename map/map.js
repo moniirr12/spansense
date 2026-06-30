@@ -159,7 +159,7 @@ function restoreFilterState() {
 }
 
 // Load the bridge data from the JSON file
-fetch(`${API_BASE}/api/bridges`)
+fetch('bridges.json')
     .then(response => {
         if (!response.ok) throw new Error('Network response was not ok');
         return response.json();
@@ -214,6 +214,19 @@ fetch(`${API_BASE}/api/bridges`)
             if (event.target === modal) modal.style.display = 'none';
         });
 
+        // Enrich bridgeData with bci_av from the bulk API endpoint (one request, graceful fallback)
+        return fetch(`${API_BASE}/api/bridges`)
+            .then(r => r.ok ? r.json() : null)
+            .catch(() => null)
+            .then(apiRows => {
+                if (apiRows && Array.isArray(apiRows)) {
+                    const bciMap = {};
+                    apiRows.forEach(b => { if (b.bci_av != null) bciMap[b.id] = parseFloat(b.bci_av); });
+                    bridgeData.forEach(b => { if (bciMap[b.id] != null) b.bci_av = bciMap[b.id]; });
+                }
+            });
+    })
+    .then(() => {
         restoreFilterState();
     })
     .catch(error => {
