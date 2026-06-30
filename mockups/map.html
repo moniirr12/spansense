@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>spanSense — Map (Redesign Concept)</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="redesign.css">
+<style>
+html, body { height: 100%; margin: 0; overflow: hidden; background: var(--bg); }
+
+.map-root { position: relative; height: 100vh; display: flex; flex-direction: column; }
+.mockup-banner { position: relative; z-index: 500; flex-shrink: 0; }
+.map-frame { position: relative; flex: 1; min-height: 0; }
+#map { position: absolute; inset: 0; z-index: 1; filter: saturate(0.78) brightness(1.04) hue-rotate(4deg); }
+
+/* ── Floating Navbar ── */
+.map-navbar {
+  position: absolute; top: 16px; left: 18px; right: 18px; z-index: 200;
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.90); backdrop-filter: blur(20px);
+  border: 1px solid var(--border); border-radius: var(--r-xl);
+  box-shadow: var(--shadow-md); padding: 8px 12px 8px 16px; height: 56px;
+}
+.map-navbar .brand {
+  font-family: 'Lexend', sans-serif; font-weight: 700; font-size: 17px;
+  color: var(--teal-900); display: flex; align-items: center; gap: 7px;
+  padding-right: 14px; border-right: 1px solid var(--border); margin-right: 2px; white-space: nowrap;
+}
+.map-navbar .brand .dot { width: 8px; height: 8px; border-radius: 50%; background: linear-gradient(135deg,var(--teal-500),var(--teal-700)); }
+.map-nav-link {
+  display: flex; align-items: center; gap: 5px; padding: 7px 13px;
+  border-radius: var(--r-lg); font-size: 13px; font-weight: 600;
+  color: var(--ink-500); text-decoration: none; transition: background .14s, color .14s; white-space: nowrap;
+}
+.map-nav-link:hover { background: var(--surface-sunken); color: var(--ink-900); }
+.map-nav-link.active { background: var(--teal-800); color: #fff; }
+.map-spacer { flex: 1; }
+.map-search { position: relative; width: 240px; flex-shrink: 0; }
+.map-search input {
+  width: 100%; background: var(--surface-sunken); border: 1px solid var(--border);
+  border-radius: var(--r-xl); padding: 8px 14px 8px 32px;
+  font-size: 13px; font-family: inherit; color: var(--ink-900); transition: box-shadow .15s, background .15s;
+}
+.map-search input:focus { outline: none; box-shadow: var(--shadow-focus); background: #fff; }
+.map-search .sicon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--ink-400); font-size: 12px; pointer-events: none; }
+
+/* ── Stats strip ── */
+.map-stats-strip {
+  position: absolute; top: 84px; left: 50%; transform: translateX(-50%);
+  z-index: 100; display: flex; gap: 8px;
+}
+.mss-pill {
+  background: rgba(255,255,255,0.93); backdrop-filter: blur(12px);
+  border: 1px solid var(--border); border-radius: var(--r-xl); box-shadow: var(--shadow-sm);
+  padding: 6px 13px; font-size: 12px; font-weight: 700; color: var(--ink-700);
+  display: flex; align-items: center; gap: 6px; white-space: nowrap;
+}
+.mss-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── Filter Rail (accordion) ── */
+.filter-rail { position: absolute; top: 90px; left: 18px; z-index: 100; }
+.filter-card {
+  background: rgba(255,255,255,0.93); backdrop-filter: blur(16px);
+  border: 1px solid var(--border); border-radius: var(--r-lg);
+  box-shadow: var(--shadow-md); overflow: hidden; min-width: 190px;
+}
+.filter-card-heading {
+  display: flex; align-items: center; gap: 8px;
+  padding: 11px 14px; border-bottom: 1px solid var(--border);
+  font-size: 10.5px; font-weight: 800; letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--ink-500);
+}
+.filter-card-heading svg { opacity: 0.5; }
+
+/* accordion rows */
+.acc-row {
+  display: flex; align-items: center; gap: 8px; padding: 9px 14px;
+  cursor: pointer; transition: background .12s; user-select: none;
+  border-bottom: 1px solid var(--border);
+}
+.acc-row:last-of-type { border-bottom: none; }
+.acc-row:hover { background: var(--surface-sunken); }
+.acc-row-label { font-size: 12.5px; font-weight: 700; color: var(--ink-700); flex: 1; }
+.acc-count { font-size: 10.5px; font-weight: 700; color: var(--ink-400); margin-right: 2px; }
+.acc-chevron {
+  width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;
+  color: var(--ink-400); font-size: 9px; transition: transform .2s;
+}
+.acc-section.open .acc-chevron { transform: rotate(90deg); }
+
+/* accordion content */
+.acc-content {
+  max-height: 0; overflow: hidden;
+  transition: max-height .24s cubic-bezier(.4,0,.2,1);
+  background: var(--surface-sunken);
+}
+.acc-section.open .acc-content { max-height: 240px; }
+
+/* filter items inside accordion */
+.filter-item {
+  display: flex; align-items: center; gap: 9px; padding: 7px 14px 7px 20px;
+  cursor: pointer; transition: background .12s;
+  font-size: 12.5px; font-weight: 600; color: var(--ink-700);
+  border-bottom: 1px solid var(--border);
+}
+.filter-item:last-child { border-bottom: none; }
+.filter-item:hover { background: rgba(255,255,255,0.7); }
+.filter-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.filter-check {
+  width: 15px; height: 15px; border-radius: 4px; border: 1.5px solid var(--border-strong);
+  margin-left: auto; display: flex; align-items: center; justify-content: center;
+  font-size: 9px; color: #fff; flex-shrink: 0;
+}
+.filter-item.on .filter-check { background: var(--teal-700); border-color: var(--teal-700); }
+
+/* ── Right Detail Panel ── */
+.detail-panel {
+  position: absolute; top: 90px; right: 18px; width: 368px; z-index: 150;
+  border-radius: var(--r-lg); overflow: hidden;
+  box-shadow: 0 24px 60px -12px rgba(21,38,43,0.22), 0 8px 20px -6px rgba(21,38,43,0.12);
+  border: 1px solid var(--border); display: flex; flex-direction: column;
+  max-height: calc(100% - 108px - 96px); background: var(--surface);
+}
+.dp-hero {
+  position: relative; height: 148px; flex-shrink: 0;
+  background: linear-gradient(145deg, var(--teal-900) 0%, var(--teal-700) 55%, var(--teal-500) 100%);
+  overflow: hidden;
+}
+.dp-hero::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 80% 20%, rgba(255,255,255,0.12) 0%, transparent 60%),
+              radial-gradient(circle at 20% 80%, rgba(143,192,183,0.15) 0%, transparent 50%);
+}
+.dp-hero::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 60px;
+  background: linear-gradient(transparent, rgba(22,54,50,0.65));
+}
+.dp-close {
+  position: absolute; top: 12px; right: 12px; z-index: 3;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 12px; transition: background .15s;
+}
+.dp-close:hover { background: rgba(255,255,255,0.38); }
+.dp-bci-chip {
+  position: absolute; top: 14px; left: 16px; z-index: 3;
+  background: rgba(255,255,255,0.18); backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.28); border-radius: 12px; padding: 6px 12px;
+}
+.dp-bci-num { font-family: 'Lexend', sans-serif; font-size: 20px; font-weight: 700; color: #fff; line-height: 1; }
+.dp-bci-sub { font-size: 10px; color: rgba(255,255,255,0.72); font-weight: 600; margin-top: 1px; }
+.dp-hero-info { position: absolute; bottom: 0; left: 0; right: 0; z-index: 2; padding: 10px 16px 13px; }
+.dp-type-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.22);
+  color: rgba(255,255,255,0.92); font-size: 10.5px; font-weight: 700;
+  padding: 2px 9px; border-radius: 20px; margin-bottom: 5px; letter-spacing: 0.03em;
+}
+.dp-name { font-family: 'Lexend', sans-serif; font-size: 19px; font-weight: 700; color: #fff; line-height: 1.15; }
+.dp-loc { font-size: 11.5px; color: rgba(255,255,255,0.75); margin-top: 3px; }
+
+.dp-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.dp-stat { padding: 12px 8px; text-align: center; border-right: 1px solid var(--border); }
+.dp-stat:last-child { border-right: none; }
+.dp-stat .v { font-family: 'Lexend', sans-serif; font-size: 16px; font-weight: 700; color: var(--ink-900); }
+.dp-stat .l { font-size: 10px; font-weight: 600; color: var(--ink-500); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px; }
+
+.cond-bar-wrap { padding: 12px 18px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.cond-bar-labels { display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; color: var(--ink-500); margin-bottom: 5px; }
+.cond-bar { height: 7px; border-radius: 4px; background: linear-gradient(90deg,#c0392b 0%,#c0703f 28%,#a8740f 52%,#5fae62 76%,#2d7a6e 100%); position: relative; }
+.cond-ptr { position: absolute; top: 50%; transform: translate(-50%,-50%); width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 3px solid var(--teal-700); box-shadow: 0 2px 8px rgba(0,0,0,0.18); }
+.cond-center { display: flex; justify-content: center; margin-top: 8px; }
+
+.dp-tabs { display: flex; border-bottom: 1px solid var(--border); padding: 0 14px; flex-shrink: 0; }
+.dp-tab { padding: 10px 11px; font-size: 12.5px; font-weight: 600; color: var(--ink-400); cursor: pointer; border-bottom: 2px solid transparent; transition: color .15s; white-space: nowrap; }
+.dp-tab.active { color: var(--teal-800); border-bottom-color: var(--teal-700); }
+
+.dp-body { overflow-y: auto; flex: 1; min-height: 0; }
+.dp-body::-webkit-scrollbar { width: 5px; }
+.dp-body::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+
+.dp-tab-pane { padding: 14px 18px; display: none; }
+.dp-tab-pane.active { display: block; }
+
+.dp-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.dp-row:last-child { border-bottom: none; }
+.dp-row .lbl { color: var(--ink-500); font-weight: 500; }
+.dp-row .val { color: var(--ink-900); font-weight: 600; }
+
+.insp-mini { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+.insp-mini:last-child { border-bottom: none; }
+.insp-tag { width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: 800; }
+.insp-tag.gi { background: var(--teal-100); color: var(--teal-800); }
+.insp-tag.pi { background: #eef0fb; color: #3a5fb0; }
+.insp-name { font-size: 12.5px; font-weight: 600; color: var(--ink-900); }
+.insp-meta { font-size: 11px; color: var(--ink-500); margin-top: 1px; }
+.insp-score { margin-left: auto; text-align: right; flex-shrink: 0; }
+.insp-score .s { font-family: 'Lexend', sans-serif; font-size: 15px; font-weight: 700; color: var(--ink-900); }
+.insp-score .t { font-size: 10px; color: var(--ink-500); }
+
+.dp-footer { padding: 12px 16px; border-top: 1px solid var(--border); display: flex; gap: 7px; flex-shrink: 0; background: var(--surface); }
+.dp-footer .btn { flex: 1; justify-content: center; font-size: 12px; padding: 9px 8px; border-radius: var(--r-md); }
+
+/* ── Zoom + FAB ── */
+.zoom-rail {
+  position: absolute; bottom: 90px; right: 18px; z-index: 100;
+  background: rgba(255,255,255,0.93); backdrop-filter: blur(14px);
+  border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: var(--shadow-md); overflow: hidden;
+}
+.zoom-btn { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 300; color: var(--ink-700); cursor: pointer; border: none; background: transparent; transition: background .12s; }
+.zoom-btn:hover { background: var(--teal-100); color: var(--teal-800); }
+.zoom-div { height: 1px; background: var(--border); margin: 0 6px; }
+
+.map-fab {
+  position: absolute; bottom: 26px; right: 18px; z-index: 100;
+  width: 50px; height: 50px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--teal-600), var(--teal-900));
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow-lg); font-size: 22px; cursor: pointer;
+  border: none; transition: transform .2s, box-shadow .2s;
+}
+.map-fab:hover { transform: scale(1.09) translateY(-2px); box-shadow: 0 20px 50px -8px rgba(21,38,43,0.35); }
+
+/* ── Legend (type only) ── */
+.map-legend {
+  position: absolute; bottom: 22px; left: 18px; z-index: 100;
+  background: rgba(255,255,255,0.93); backdrop-filter: blur(14px);
+  border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: var(--shadow-md);
+  padding: 10px 16px; display: flex; gap: 16px; flex-wrap: wrap;
+  font-size: 11.5px; color: var(--ink-600); font-weight: 600; align-items: center;
+}
+.leg-item { display: flex; align-items: center; gap: 7px; }
+.leg-pip { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+</style>
+</head>
+<body>
+<div class="map-root">
+  <div class="mockup-banner" style="position:relative;">REDESIGN CONCEPT — mockup only, not wired to live data <span>·</span> spanSense Map</div>
+
+  <div class="map-frame">
+    <div id="map"></div>
+
+    <!-- ── Navbar ── -->
+    <nav class="map-navbar">
+      <div class="brand"><span class="dot"></span> spanSense</div>
+      <a class="map-nav-link active" href="#">🗺️ Map</a>
+      <a class="map-nav-link" href="dashboard.html">📊 Dashboard</a>
+      <a class="map-nav-link" href="database.html">🗄️ Database</a>
+      <a class="map-nav-link" href="planning.html">📅 Planning</a>
+      <a class="map-nav-link" href="#">🌉 twinView</a>
+      <div class="map-spacer"></div>
+      <div class="map-search">
+        <span class="sicon">🔍</span>
+        <input type="text" placeholder="Search structures, IDs…" value="Iron Bridge">
+      </div>
+      <div class="icon-btn" title="Night mode" style="margin-left:4px;">🌙</div>
+      <div class="avatar-chip"><span class="av">MK</span> Monir</div>
+    </nav>
+
+    <!-- ── Stats strip ── -->
+    <div class="map-stats-strip">
+      <div class="mss-pill"><span class="mss-dot" style="background:var(--teal-600)"></span>20 Structures</div>
+      <div class="mss-pill"><span class="mss-dot" style="background:var(--good)"></span>16 Good / Very Good</div>
+      <div class="mss-pill"><span class="mss-dot" style="background:var(--fair)"></span>3 Fair</div>
+      <div class="mss-pill"><span class="mss-dot" style="background:var(--critical)"></span>1 Critical</div>
+    </div>
+
+    <!-- ── Filter Rail — compact accordion ── -->
+    <div class="filter-rail">
+      <div class="filter-card">
+        <!-- Header -->
+        <div class="filter-card-heading">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+            <circle cx="5" cy="4" r="1.5"/><circle cx="9" cy="10" r="1.5"/>
+            <line x1="1" y1="4" x2="3.5" y2="4"/><line x1="6.5" y1="4" x2="13" y2="4"/>
+            <line x1="1" y1="10" x2="7.5" y2="10"/><line x1="10.5" y1="10" x2="13" y2="10"/>
+          </svg>
+          View
+        </div>
+
+        <!-- Type section -->
+        <div class="acc-section" id="acc-type">
+          <div class="acc-row" onclick="toggleAcc('type')">
+            <span class="acc-chevron">▶</span>
+            <span class="acc-row-label">Type</span>
+            <span class="acc-count">20</span>
+          </div>
+          <div class="acc-content">
+            <div class="filter-item on"><span class="filter-dot" style="background:#2c645c"></span>Bridges (9)<span class="filter-check">✓</span></div>
+            <div class="filter-item on"><span class="filter-dot" style="background:#4f9088"></span>Footbridges (3)<span class="filter-check">✓</span></div>
+            <div class="filter-item on"><span class="filter-dot" style="background:#c79a4b"></span>Culverts (3)<span class="filter-check">✓</span></div>
+            <div class="filter-item on"><span class="filter-dot" style="background:#9b4f4f"></span>Retaining Walls (4)<span class="filter-check">✓</span></div>
+            <div class="filter-item on"><span class="filter-dot" style="background:#7a6fb0"></span>Sign Gantries (1)<span class="filter-check">✓</span></div>
+          </div>
+        </div>
+
+        <!-- Condition section -->
+        <div class="acc-section" id="acc-condition" style="border-top: 1px solid var(--border);">
+          <div class="acc-row" onclick="toggleAcc('condition')" style="border-bottom:none;">
+            <span class="acc-chevron">▶</span>
+            <span class="acc-row-label">Condition</span>
+            <span class="acc-count">All</span>
+          </div>
+          <div class="acc-content">
+            <div class="filter-item on"><span class="filter-dot" style="background:var(--good)"></span>Good / Very Good<span class="filter-check">✓</span></div>
+            <div class="filter-item on"><span class="filter-dot" style="background:var(--fair)"></span>Fair<span class="filter-check">✓</span></div>
+            <div class="filter-item on"><span class="filter-dot" style="background:var(--poor)"></span>Poor<span class="filter-check">✓</span></div>
+            <div class="filter-item on"><span class="filter-dot" style="background:var(--critical)"></span>Critical<span class="filter-check">✓</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Structure Detail Panel (Iron Bridge) ── -->
+    <div class="detail-panel" id="detailPanel">
+      <div class="dp-hero">
+        <button class="dp-close" onclick="document.getElementById('detailPanel').style.display='none'">✕</button>
+        <div class="dp-bci-chip">
+          <div class="dp-bci-num">83.1</div>
+          <div class="dp-bci-sub">BCI Average</div>
+        </div>
+        <div class="dp-hero-info">
+          <div class="dp-type-tag">Bridge · Structure #14</div>
+          <div class="dp-name">Iron Bridge</div>
+          <div class="dp-loc">📍 Shropshire · 52.6273°, −2.4856°</div>
+        </div>
+      </div>
+
+      <div class="dp-stats">
+        <div class="dp-stat"><div class="v">83.1</div><div class="l">BCI Avg</div></div>
+        <div class="dp-stat"><div class="v">81.0</div><div class="l">BCI Critical</div></div>
+        <div class="dp-stat"><div class="v">30 May 26</div><div class="l">Last Insp.</div></div>
+      </div>
+
+      <div class="cond-bar-wrap">
+        <div class="cond-bar-labels"><span>Critical (0)</span><span>Very Good (100)</span></div>
+        <div class="cond-bar"><div class="cond-ptr" style="left:83%"></div></div>
+        <div class="cond-center"><span class="badge good" style="margin-top:6px;">Good — BCI 83.1</span></div>
+      </div>
+
+      <div class="dp-tabs">
+        <div class="dp-tab active" data-tab="overview">Overview</div>
+        <div class="dp-tab" data-tab="inspections">Inspections</div>
+        <div class="dp-tab" data-tab="documents">Documents</div>
+      </div>
+
+      <div class="dp-body">
+        <div class="dp-tab-pane active" id="pane-overview">
+          <div class="dp-row"><span class="lbl">Structure Type</span><span class="val"><span class="badge brand">Bridge</span></span></div>
+          <div class="dp-row"><span class="lbl">Year Built</span><span class="val">1779</span></div>
+          <div class="dp-row"><span class="lbl">Number of Spans</span><span class="val">1</span></div>
+          <div class="dp-row"><span class="lbl">Span Length</span><span class="val">60.0 m</span></div>
+          <div class="dp-row"><span class="lbl">Total Length</span><span class="val">60.0 m</span></div>
+          <div class="dp-row"><span class="lbl">Next GI Due</span><span class="val" style="color:var(--good)">May 2028</span></div>
+          <div class="dp-row"><span class="lbl">Next PI Due</span><span class="val" style="color:var(--fair)">Apr 2028</span></div>
+          <div class="dp-row"><span class="lbl">Inspections on Record</span><span class="val">3</span></div>
+          <div style="margin-top:14px;">
+            <div class="section-label" style="font-size:12px;margin-bottom:8px;">📋 Recent Inspections</div>
+            <div class="insp-mini">
+              <div class="insp-tag gi">GI</div>
+              <div><div class="insp-name">General Inspection</div><div class="insp-meta">30 May 2026 · Monir Khan</div></div>
+              <div class="insp-score"><div class="s">83.1</div><div class="t">BCI Avg</div></div>
+            </div>
+            <div class="insp-mini">
+              <div class="insp-tag pi">PI</div>
+              <div><div class="insp-name">Principal Inspection</div><div class="insp-meta">12 Apr 2022 · Monir Khan</div></div>
+              <div class="insp-score"><div class="s">79.4</div><div class="t">BCI Avg</div></div>
+            </div>
+            <div class="insp-mini">
+              <div class="insp-tag gi">GI</div>
+              <div><div class="insp-name">General Inspection</div><div class="insp-meta">14 Nov 2020 · Monir Khan</div></div>
+              <div class="insp-score"><div class="s">81.8</div><div class="t">BCI Avg</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dp-tab-pane" id="pane-inspections">
+          <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
+            <span class="chip active" style="font-size:11px;padding:5px 11px;">All (3)</span>
+            <span class="chip" style="font-size:11px;padding:5px 11px;">GI (2)</span>
+            <span class="chip" style="font-size:11px;padding:5px 11px;">PI (1)</span>
+          </div>
+          <div class="insp-mini">
+            <div class="insp-tag gi">GI</div>
+            <div style="flex:1;min-width:0;"><div class="insp-name">General Inspection</div><div class="insp-meta">30 May 2026 · 4 defects noted</div></div>
+            <div class="insp-score"><div class="s">83.1</div><div class="t">BCI Avg</div></div>
+          </div>
+          <div class="insp-mini">
+            <div class="insp-tag pi">PI</div>
+            <div style="flex:1;min-width:0;"><div class="insp-name">Principal Inspection</div><div class="insp-meta">12 Apr 2022 · 7 defects noted</div></div>
+            <div class="insp-score"><div class="s">79.4</div><div class="t">BCI Avg</div></div>
+          </div>
+          <div class="insp-mini">
+            <div class="insp-tag gi">GI</div>
+            <div style="flex:1;min-width:0;"><div class="insp-name">General Inspection</div><div class="insp-meta">14 Nov 2020 · 2 defects noted</div></div>
+            <div class="insp-score"><div class="s">81.8</div><div class="t">BCI Avg</div></div>
+          </div>
+          <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:14px;border-radius:var(--r-md);">+ Start New Inspection</button>
+        </div>
+
+        <div class="dp-tab-pane" id="pane-documents">
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div class="card" style="padding:12px 14px;display:flex;align-items:center;gap:10px;">
+              <span style="font-size:20px;">📄</span>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13px;font-weight:600;color:var(--ink-900);">BCI Pro Forma — May 2026</div>
+                <div style="font-size:11px;color:var(--ink-500);margin-top:1px;">PDF · 2.4 MB · 30 May 2026</div>
+              </div>
+              <button class="btn btn-ghost" style="font-size:11.5px;padding:6px 11px;">↓</button>
+            </div>
+            <div class="card" style="padding:12px 14px;display:flex;align-items:center;gap:10px;">
+              <span style="font-size:20px;">🖼️</span>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13px;font-weight:600;color:var(--ink-900);">Defect Photos (8 files)</div>
+                <div style="font-size:11px;color:var(--ink-500);margin-top:1px;">ZIP · 14.1 MB · 30 May 2026</div>
+              </div>
+              <button class="btn btn-ghost" style="font-size:11.5px;padding:6px 11px;">↓</button>
+            </div>
+            <div class="card" style="padding:12px 14px;display:flex;align-items:center;gap:10px;">
+              <span style="font-size:20px;">📋</span>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13px;font-weight:600;color:var(--ink-900);">PI Report — Apr 2022</div>
+                <div style="font-size:11px;color:var(--ink-500);margin-top:1px;">PDF · 5.8 MB · 12 Apr 2022</div>
+              </div>
+              <button class="btn btn-ghost" style="font-size:11.5px;padding:6px 11px;">↓</button>
+            </div>
+          </div>
+          <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:12px;border-radius:var(--r-md);">📁 Open Full Document Explorer</button>
+        </div>
+      </div>
+
+      <div class="dp-footer">
+        <button class="btn btn-ghost">📁 Documents</button>
+        <button class="btn btn-ghost">📋 Inspections</button>
+        <button class="btn btn-primary">+ New Inspection</button>
+      </div>
+    </div>
+
+    <!-- ── Zoom Controls ── -->
+    <div class="zoom-rail">
+      <button class="zoom-btn">＋</button>
+      <div class="zoom-div"></div>
+      <button class="zoom-btn">－</button>
+    </div>
+
+    <!-- ── FAB ── -->
+    <button class="map-fab" title="Add new structure">＋</button>
+
+    <!-- ── Legend (type only) ── -->
+    <div class="map-legend">
+      <div class="leg-item"><span class="leg-pip" style="background:#2c645c"></span>Bridge</div>
+      <div class="leg-item"><span class="leg-pip" style="background:#4f9088"></span>Footbridge</div>
+      <div class="leg-item"><span class="leg-pip" style="background:#c79a4b"></span>Culvert</div>
+      <div class="leg-item"><span class="leg-pip" style="background:#9b4f4f"></span>Retaining Wall</div>
+      <div class="leg-item"><span class="leg-pip" style="background:#7a6fb0"></span>Sign Gantry</div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+/* ── Map ── */
+const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([53.0, -1.8], 6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(map);
+
+/* ── SVG icons (clean, minimal, white strokes on colored circles) ── */
+const s = `stroke="white" stroke-linecap="round" stroke-linejoin="round" fill="none"`;
+
+const icons = {
+  bridge: (sz) => `<svg viewBox="0 0 20 20" width="${sz}" height="${sz}" ${s} stroke-width="1.9">
+    <path d="M1 15h18"/>
+    <path d="M4 15v-4.5Q4 5 10 5Q16 5 16 10.5V15"/>
+    <line x1="1" y1="10" x2="4" y2="10"/>
+    <line x1="16" y1="10" x2="19" y2="10"/>
+  </svg>`,
+
+  footbridge: (sz) => `<svg viewBox="0 0 20 20" width="${sz}" height="${sz}" ${s} stroke-width="1.9">
+    <path d="M1 15h18"/>
+    <path d="M5 15v-3Q5 7 10 7Q15 7 15 12v3"/>
+  </svg>`,
+
+  culvert: (sz) => `<svg viewBox="0 0 20 20" width="${sz}" height="${sz}" ${s} stroke-width="1.9">
+    <circle cx="10" cy="10" r="7"/>
+    <circle cx="10" cy="10" r="3"/>
+    <line x1="3" y1="17" x2="17" y2="17"/>
+  </svg>`,
+
+  wall: (sz) => `<svg viewBox="0 0 20 20" width="${sz}" height="${sz}" ${s} stroke-width="1.9">
+    <rect x="2" y="5" width="16" height="11" rx="1.5"/>
+    <line x1="2" y1="10.5" x2="18" y2="10.5"/>
+    <line x1="7" y1="5" x2="7" y2="10.5"/>
+    <line x1="13" y1="10.5" x2="13" y2="16"/>
+  </svg>`,
+
+  gantry: (sz) => `<svg viewBox="0 0 20 20" width="${sz}" height="${sz}" ${s} stroke-width="1.9">
+    <line x1="5" y1="3" x2="5" y2="17"/>
+    <line x1="15" y1="3" x2="15" y2="17"/>
+    <line x1="5" y1="8" x2="15" y2="8"/>
+    <line x1="5" y1="13" x2="15" y2="13"/>
+    <line x1="3" y1="3" x2="17" y2="3"/>
+  </svg>`,
+};
+
+function condRing(bci) {
+  if (bci === null) return '#9aa8c2';
+  if (bci >= 80) return '#2d7a6e';
+  if (bci >= 65) return '#a8740f';
+  if (bci >= 40) return '#c0703f';
+  return '#c0392b';
+}
+
+const structures = [
+  { pos:[51.5055,-0.0754], fill:'#2c645c', type:'bridge',     bci:72  },
+  { pos:[51.488, -0.107],  fill:'#4f9088', type:'footbridge',  bci:88  },
+  { pos:[53.4,   -2.99],   fill:'#c79a4b', type:'culvert',     bci:61  },
+  { pos:[52.6273,-2.4856], fill:'#2c645c', type:'bridge',      bci:83, active:true },
+  { pos:[54.97,  -1.6],    fill:'#9b4f4f', type:'wall',        bci:47  },
+  { pos:[55.95,  -3.19],   fill:'#7a6fb0', type:'gantry',      bci:91  },
+  { pos:[53.95,  -1.08],   fill:'#c79a4b', type:'culvert',     bci:76  },
+  { pos:[52.95,  -1.15],   fill:'#4f9088', type:'footbridge',  bci:85  },
+  { pos:[51.449, -2.628],  fill:'#2c645c', type:'bridge',      bci:90  },
+  { pos:[54.5,   -1.2],    fill:'#9b4f4f', type:'wall',        bci:64  },
+  { pos:[53.2,   -0.5],    fill:'#2c645c', type:'bridge',      bci:44  },
+  { pos:[52.0,   -2.2],    fill:'#4f9088', type:'footbridge',  bci:79  },
+  { pos:[53.8,   -1.55],   fill:'#9b4f4f', type:'wall',        bci:82  },
+  { pos:[51.18,  -1.83],   fill:'#9b4f4f', type:'wall',        bci:89  },
+  { pos:[51.75,  -1.26],   fill:'#c79a4b', type:'culvert',     bci:93  },
+  { pos:[52.48,   1.74],   fill:'#2c645c', type:'bridge',      bci:78  },
+  { pos:[50.72,  -3.53],   fill:'#4f9088', type:'footbridge',  bci:87  },
+  { pos:[53.60,  -2.55],   fill:'#2c645c', type:'bridge',      bci:70  },
+  { pos:[54.78,  -1.57],   fill:'#2c645c', type:'bridge',      bci:84  },
+  { pos:[53.96,  -1.08],   fill:'#7a6fb0', type:'gantry',      bci:null},
+];
+
+structures.forEach(s_ => {
+  const ring = condRing(s_.bci);
+  const sz   = s_.active ? 44 : 36;
+  const icSz = s_.active ? 18 : 15;
+  const bw   = s_.active ? 4 : 3;
+  const glow = s_.active
+    ? `0 0 0 7px rgba(44,100,92,0.16), 0 6px 22px rgba(0,0,0,0.30)`
+    : '0 2px 10px rgba(0,0,0,0.22)';
+  const svgHtml = icons[s_.type](icSz);
+  const ic = L.divIcon({
+    html: `<div style="
+      width:${sz}px;height:${sz}px;border-radius:50%;
+      background:${s_.fill};
+      border:${bw}px solid ${ring};
+      box-shadow:${glow};
+      display:flex;align-items:center;justify-content:center;
+      cursor:pointer;
+    ">${svgHtml}</div>`,
+    iconSize:[sz,sz], iconAnchor:[sz/2,sz/2], className:''
+  });
+  L.marker(s_.pos, { icon: ic }).addTo(map);
+});
+
+/* ── Accordion ── */
+function toggleAcc(id) {
+  const el = document.getElementById('acc-' + id);
+  el.classList.toggle('open');
+}
+
+/* ── Tab switching ── */
+document.querySelectorAll('.dp-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.dp-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.dp-tab-pane').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('pane-' + tab.dataset.tab).classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

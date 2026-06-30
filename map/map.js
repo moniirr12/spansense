@@ -26,121 +26,45 @@ function closeDocumentsModalAndRestore() {
     }
 }
 
-// Clear, recognizable icons for each structure type - PERMANENT mapping
-const getStructureIcon = (type) => {
+// Returns a condition-ring border color based on BCI score
+function condRing(bci) {
+    if (bci === null || bci === undefined) return '#9aa8c2';
+    if (bci >= 80) return '#2d7a6e';
+    if (bci >= 65) return '#a8740f';
+    if (bci >= 40) return '#c0703f';
+    return '#c0392b';
+}
+
+const typeIcons = {
+    bridge:         (sz) => `<svg viewBox="0 0 20 20" width="${sz}" height="${sz}" stroke="white" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-width="1.9"><path d="M1 15h18"/><path d="M4 15v-4.5Q4 5 10 5Q16 5 16 10.5V15"/><line x1="1" y1="10" x2="4" y2="10"/><line x1="16" y1="10" x2="19" y2="10"/></svg>`,
+    footbridge:     (sz) => `<svg viewBox="0 0 20 20" width="${sz}" height="${sz}" stroke="white" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-width="1.9"><path d="M1 15h18"/><path d="M5 15v-3Q5 7 10 7Q15 7 15 12v3"/></svg>`,
+    culvert:        (sz) => `<svg viewBox="0 0 20 20" width="${sz}" height="${sz}" stroke="white" stroke-linecap="round" fill="none" stroke-width="1.9"><circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="3"/><line x1="3" y1="17" x2="17" y2="17"/></svg>`,
+    retaining_wall: (sz) => `<svg viewBox="0 0 20 20" width="${sz}" height="${sz}" stroke="white" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-width="1.9"><rect x="2" y="5" width="16" height="11" rx="1.5"/><line x1="2" y1="10.5" x2="18" y2="10.5"/><line x1="7" y1="5" x2="7" y2="10.5"/><line x1="13" y1="10.5" x2="13" y2="16"/></svg>`,
+    sign_gantry:    (sz) => `<svg viewBox="0 0 20 20" width="${sz}" height="${sz}" stroke="white" stroke-linecap="round" fill="none" stroke-width="1.9"><line x1="5" y1="3" x2="5" y2="17"/><line x1="15" y1="3" x2="15" y2="17"/><line x1="5" y1="8" x2="15" y2="8"/><line x1="5" y1="13" x2="15" y2="13"/><line x1="3" y1="3" x2="17" y2="3"/></svg>`,
+};
+
+const typeFill = {
+    bridge:         '#2c645c',
+    footbridge:     '#4f9088',
+    culvert:        '#c79a4b',
+    retaining_wall: '#9b4f4f',
+    sign_gantry:    '#7a6fb0',
+};
+
+const getStructureIcon = (type, bci) => {
     const normalizedType = type?.toLowerCase().replace(/\s+/g, '_') || 'bridge';
+    const fill = typeFill[normalizedType] || '#2c645c';
+    const ring = condRing(bci);
+    const iconFn = typeIcons[normalizedType] || typeIcons.bridge;
+    const svgHtml = iconFn(16);
 
-    const icons = {
-        bridge: L.divIcon({
-            html: `<div style="
-                background: #2c5f8a;
-                width: 36px; height: 36px;
-                border-radius: 50%;
-                display: flex; align-items: center; justify-content: center;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-                border: 2px solid white;
-            ">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M2 13 H22"/>
-                    <path d="M5 13 C5 8 19 8 19 13"/>
-                    <path d="M7 13 V17"/>
-                    <path d="M17 13 V17"/>
-                    <path d="M2 17 H22" stroke-dasharray="2 2"/>
-                </svg>
-            </div>`,
-            iconSize: [36, 36],
-            popupAnchor: [0, -18],
-            className: 'custom-marker'
-        }),
-        footbridge: L.divIcon({
-            html: `<div style="
-                background: #2d7a4b;
-                width: 36px; height: 36px;
-                border-radius: 50%;
-                display: flex; align-items: center; justify-content: center;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-                border: 2px solid white;
-            ">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 16 Q12 6 21 16"/>
-                    <path d="M7 12.3 V10.3"/>
-                    <path d="M12 8.6 V6.6"/>
-                    <path d="M17 12.3 V10.3"/>
-                    <path d="M5 16 V18"/>
-                    <path d="M19 16 V18"/>
-                    <path d="M2 18 H22" stroke-dasharray="2 2"/>
-                </svg>
-            </div>`,
-            iconSize: [36, 36],
-            popupAnchor: [0, -18],
-            className: 'custom-marker'
-        }),
-        culvert: L.divIcon({
-            html: `<div style="
-                background: #d97706;
-                width: 36px; height: 36px;
-                border-radius: 50%;
-                display: flex; align-items: center; justify-content: center;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-                border: 2px solid white;
-            ">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M1 8 L7 4 H17 L23 8"/>
-                    <path d="M1 8 H23"/>
-                    <circle cx="12" cy="16" r="5.2"/>
-                    <path d="M9 16 Q10.5 14.2 12 16 Q13.5 17.8 15 16"/>
-                </svg>
-            </div>`,
-            iconSize: [36, 36],
-            popupAnchor: [0, -18],
-            className: 'custom-marker'
-        }),
-        retaining_wall: L.divIcon({
-            html: `<div style="
-                background: #991b1b;
-                width: 36px; height: 36px;
-                border-radius: 50%;
-                display: flex; align-items: center; justify-content: center;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-                border: 2px solid white;
-            ">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M2 20 H22"/>
-                    <path d="M6 20 V5" stroke-width="2.2"/>
-                    <path d="M6 9 H9"/>
-                    <path d="M6 13 H9"/>
-                    <path d="M6 17 H9"/>
-                    <path d="M9 20 L9 12 L20 5"/>
-                </svg>
-            </div>`,
-            iconSize: [36, 36],
-            popupAnchor: [0, -18],
-            className: 'custom-marker'
-        }),
-        sign_gantry: L.divIcon({
-            html: `<div style="
-                background: #7c6fc4;
-                width: 36px; height: 36px;
-                border-radius: 50%;
-                display: flex; align-items: center; justify-content: center;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-                border: 2px solid white;
-            ">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 7 V20"/>
-                    <path d="M21 7 V20"/>
-                    <path d="M3 7 H21" stroke-width="2.2"/>
-                    <rect x="7" y="9.5" width="5" height="3.4" rx="0.4"/>
-                    <rect x="13" y="9.5" width="4" height="3.4" rx="0.4"/>
-                </svg>
-            </div>`,
-            iconSize: [36, 36],
-            popupAnchor: [0, -18],
-            className: 'custom-marker'
-        })
-    };
-
-    return icons[normalizedType] || icons.bridge;
+    return L.divIcon({
+        html: `<div style="width:36px;height:36px;border-radius:50%;background:${fill};border:3px solid ${ring};box-shadow:0 2px 10px rgba(0,0,0,0.22);display:flex;align-items:center;justify-content:center;cursor:pointer;">${svgHtml}</div>`,
+        iconSize: [36, 36],
+        iconAnchor: [18, 18],
+        popupAnchor: [0, -18],
+        className: ''
+    });
 };
 
 // Function to create a marker with proper icon
@@ -148,7 +72,7 @@ function createStructureMarker(bridge) {
     const structureType = bridge.type;
 
     const marker = L.marker([bridge.latitude, bridge.longitude], {
-        icon: getStructureIcon(structureType),
+        icon: getStructureIcon(structureType, bridge.bci_av),
         structureType: structureType,
         structureId: bridge.id,
         structureName: bridge.name,
@@ -179,21 +103,32 @@ function createStructureMarker(bridge) {
     return marker;
 }
 
-// Rebuild markers based on selected types
+// Rebuild markers based on selected types and conditions
 function rebuildMarkersFromFilter() {
     bridgeMarkers.clearLayers();
 
     const selectedTypes = Array.from(document.querySelectorAll('#typeOptions input[name="structureType"]:checked'))
         .map(checkbox => checkbox.value);
 
+    const selectedConditions = Array.from(document.querySelectorAll('#conditionOptions input[name="conditionFilter"]:checked'))
+        .map(checkbox => checkbox.value);
+
     bridgeData.forEach(bridge => {
-        if (selectedTypes.includes(bridge.type)) {
-            const marker = createStructureMarker(bridge);
-            bridgeMarkers.addLayer(marker);
-        }
+        if (!selectedTypes.includes(bridge.type)) return;
+        const bci = bridge.bci_av;
+        let cond;
+        if (bci === null || bci === undefined) cond = 'uninspected';
+        else if (bci >= 80) cond = 'good';
+        else if (bci >= 65) cond = 'fair';
+        else if (bci >= 40) cond = 'poor';
+        else cond = 'critical';
+        if (selectedConditions.length && !selectedConditions.includes(cond)) return;
+        const marker = createStructureMarker(bridge);
+        bridgeMarkers.addLayer(marker);
     });
 
     localStorage.setItem('selectedStructureTypes', JSON.stringify(selectedTypes));
+    localStorage.setItem('selectedConditions', JSON.stringify(selectedConditions));
 }
 
 // Restore filter state on page load
@@ -205,11 +140,22 @@ function restoreFilterState() {
             document.querySelectorAll('#typeOptions input[name="structureType"]').forEach(checkbox => {
                 checkbox.checked = selectedTypes.includes(checkbox.value);
             });
-            rebuildMarkersFromFilter();
         } catch(e) {
-            console.error('Error restoring filter state:', e);
+            console.error('Error restoring type filter state:', e);
         }
     }
+    const savedCond = localStorage.getItem('selectedConditions');
+    if (savedCond) {
+        try {
+            const selectedConditions = JSON.parse(savedCond);
+            document.querySelectorAll('#conditionOptions input[name="conditionFilter"]').forEach(checkbox => {
+                checkbox.checked = selectedConditions.includes(checkbox.value);
+            });
+        } catch(e) {
+            console.error('Error restoring condition filter state:', e);
+        }
+    }
+    rebuildMarkersFromFilter();
 }
 
 // Load the bridge data from the JSON file
@@ -341,6 +287,24 @@ if (typeLink) {
 const typeCheckboxes = document.querySelectorAll('#typeOptions input[name="structureType"]');
 if (typeCheckboxes.length) {
     typeCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', rebuildMarkersFromFilter);
+    });
+}
+
+// Toggle submenu when "Condition" is clicked
+const conditionLink = document.getElementById('conditionLink');
+if (conditionLink) {
+    conditionLink.addEventListener('click', function (e) {
+        e.preventDefault();
+        const submenu = document.getElementById('conditionOptions');
+        if (submenu) submenu.classList.toggle('active');
+    });
+}
+
+// Filter markers by condition
+const conditionCheckboxes = document.querySelectorAll('#conditionOptions input[name="conditionFilter"]');
+if (conditionCheckboxes.length) {
+    conditionCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', rebuildMarkersFromFilter);
     });
 }
