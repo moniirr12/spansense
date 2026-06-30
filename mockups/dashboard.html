@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>spanSense — Dashboard (Redesign Concept)</title>
+<link rel="stylesheet" href="redesign.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  .dash-grid { display: grid; grid-template-columns: 1.1fr 1.1fr 1.3fr; gap: 18px; margin-bottom: 18px; }
+  .chart-card canvas { max-height: 230px; }
+  .bottom-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 18px; }
+  .crit-row { display: flex; align-items: center; gap: 14px; padding: 13px 0; border-bottom: 1px solid var(--border); }
+  .crit-row:last-child { border-bottom: none; }
+  .crit-icon { width: 40px; height: 40px; border-radius: 12px; background: var(--critical-bg); color: var(--critical); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .crit-name { font-weight: 600; color: var(--ink-900); font-size: 13.5px; }
+  .crit-meta { font-size: 12px; color: var(--ink-500); margin-top: 2px; }
+  .crit-score { margin-left: auto; text-align: right; }
+  .crit-score b { font-family: 'Lexend',sans-serif; font-size: 18px; color: var(--critical); }
+  .act-row { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .act-row:last-child { border-bottom: none; }
+  .act-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--teal-500); margin-top: 6px; flex-shrink: 0; }
+  .act-text { font-size: 13px; color: var(--ink-700); }
+  .act-text b { color: var(--ink-900); }
+  .act-time { font-size: 11.5px; color: var(--ink-400); margin-top: 2px; }
+  .legend-row { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; font-size: 11.5px; color: var(--ink-500); }
+  .legend-row span { display: inline-flex; align-items: center; gap: 5px; }
+  .legend-row i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .seg-toggle { display: flex; background: var(--surface-sunken); border-radius: 20px; padding: 3px; gap: 2px; }
+  .seg-toggle button { border: none; background: transparent; font-size: 11.5px; font-weight: 700; padding: 5px 12px; border-radius: 16px; color: var(--ink-500); cursor: pointer; }
+  .seg-toggle button.active { background: var(--surface); color: var(--teal-800); box-shadow: var(--shadow-sm); }
+</style>
+</head>
+<body>
+<div class="mockup-banner">REDESIGN CONCEPT — mockup only, not wired to live data <span>·</span> spanSense Dashboard</div>
+
+<div class="page">
+  <nav class="navbar">
+    <div class="brand"><span class="dot"></span> spanSense</div>
+    <a class="nav-link" href="map.html">🗺️ Map</a>
+    <a class="nav-link active" href="#">📊 Dashboard</a>
+    <a class="nav-link" href="database.html">🗄️ Database</a>
+    <a class="nav-link" href="#">📅 Planning</a>
+    <a class="nav-link" href="#">🌉 twinView</a>
+    <div class="spacer"></div>
+    <div class="nav-right">
+      <div class="icon-btn" title="Toggle dark mode">🌙</div>
+      <div class="avatar-chip"><span class="av">MK</span> Monir Khan</div>
+    </div>
+  </nav>
+
+  <div class="page-head">
+    <div>
+      <button class="back-btn">← Back</button>
+      <h1 style="margin-top:14px;"><span class="accent-bar"></span> Dashboard</h1>
+      <p>Live KPIs, condition charts, and critical structure alerts across your portfolio</p>
+    </div>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-top"><div class="stat-icon">🏗️</div><span class="trend up">▲ 2 this mo.</span></div>
+      <div class="stat-num">20</div>
+      <div class="stat-label">Total Assets</div>
+    </div>
+    <div class="stat-card alert">
+      <div class="stat-top"><div class="stat-icon">⚠️</div><span class="trend down">▼ from 3</span></div>
+      <div class="stat-num">1</div>
+      <div class="stat-label">High-Risk Structures</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-top"><div class="stat-icon">📅</div></div>
+      <div class="stat-num">8</div>
+      <div class="stat-label">Upcoming Inspections</div>
+    </div>
+    <div class="stat-card warn">
+      <div class="stat-top"><div class="stat-icon">⏰</div><span class="trend down">▲ 1 since last week</span></div>
+      <div class="stat-num">4</div>
+      <div class="stat-label">Inspections Overdue</div>
+    </div>
+  </div>
+
+  <div class="section-label">📈 Analytics &amp; Insights</div>
+
+  <div class="dash-grid">
+    <div class="card chart-card">
+      <div class="card-head"><h3>Asset Inventory</h3><span class="badge brand">By Type</span></div>
+      <div class="card-body"><canvas id="invChart"></canvas></div>
+    </div>
+    <div class="card chart-card">
+      <div class="card-head"><h3>Average BCI by Type</h3><span class="badge brand">Condition</span></div>
+      <div class="card-body"><canvas id="bciChart"></canvas></div>
+    </div>
+    <div class="card chart-card">
+      <div class="card-head">
+        <h3>BCI Score Distribution</h3>
+        <div class="seg-toggle"><button class="active">Current</button><button>By Year</button></div>
+      </div>
+      <div class="card-body">
+        <canvas id="distChart"></canvas>
+        <div class="legend-row">
+          <span><i style="background:var(--good)"></i>Very Good (90-100)</span>
+          <span><i style="background:#5fae62"></i>Good (80-89)</span>
+          <span><i style="background:var(--fair)"></i>Fair (65-79)</span>
+          <span><i style="background:var(--poor)"></i>Poor (40-64)</span>
+          <span><i style="background:var(--critical)"></i>Critical (0-39)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-grid">
+    <div class="card">
+      <div class="card-head"><h3>⚠️ Critical Structures</h3><span class="badge critical">BCI &lt; 55</span></div>
+      <div class="card-body">
+        <div class="crit-row">
+          <div class="crit-icon">🌉</div>
+          <div><div class="crit-name">Albert Bridge</div><div class="crit-meta">Suspension · Last inspected 31 May 2021</div></div>
+          <div class="crit-score"><b>47.4</b><div class="crit-meta">BCI Critical</div></div>
+        </div>
+        <div class="crit-row">
+          <div class="crit-icon">🏗️</div>
+          <div><div class="crit-name">Culvert at River Thames</div><div class="crit-meta">Culvert · Last inspected 14 Feb 2025</div></div>
+          <div class="crit-score"><b>58.0</b><div class="crit-meta">BCI Critical</div></div>
+        </div>
+        <div class="crit-row">
+          <div class="crit-icon">🧱</div>
+          <div><div class="crit-name">Retaining Wall at York Minster</div><div class="crit-meta">Retaining Wall · Last inspected 23 Apr 2021</div></div>
+          <div class="crit-score"><b>61.2</b><div class="crit-meta">BCI Critical</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>🕓 Recent Activity</h3><span class="badge neutral">Latest</span></div>
+      <div class="card-body">
+        <div class="act-row"><div class="act-dot"></div><div><div class="act-text"><b>Monir Khan</b> saved a PI inspection for <b>Culvert at River Thames</b></div><div class="act-time">2 hours ago</div></div></div>
+        <div class="act-row"><div class="act-dot"></div><div><div class="act-text"><b>Monir Khan</b> uploaded 3 defect photos to <b>Iron Bridge</b></div><div class="act-time">5 hours ago</div></div></div>
+        <div class="act-row"><div class="act-dot"></div><div><div class="act-text"><b>Monir Khan</b> generated a BCI Pro Forma for <b>Tyne Bridge</b></div><div class="act-time">Yesterday</div></div></div>
+        <div class="act-row"><div class="act-dot"></div><div><div class="act-text"><b>Monir Khan</b> added a new structure — <b>Sign Gantry, A1 Northbound</b></div><div class="act-time">Yesterday</div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.color = '#6b8088';
+Chart.defaults.borderColor = '#e1e9e8';
+
+new Chart(document.getElementById('invChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Bridge', 'Retaining Wall', 'Footbridge', 'Culvert', 'Sign Gantry'],
+    datasets: [{ data: [9, 4, 3, 3, 1], backgroundColor: ['#2c645c','#4f9088','#8fc0b7','#c79a4b','#9aa8c2'], borderRadius: 8, maxBarThickness: 28 }]
+  },
+  options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { display: false } } } }
+});
+
+new Chart(document.getElementById('bciChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Bridge', 'Culvert', 'Retaining Wall', 'Footbridge'],
+    datasets: [{ data: [78, 81, 64, 69], backgroundColor: '#2c645c', borderRadius: 8, maxBarThickness: 28 }]
+  },
+  options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { max: 100, grid: { color: '#eef3f3' } }, y: { grid: { display: false } } } }
+});
+
+new Chart(document.getElementById('distChart'), {
+  type: 'bar',
+  data: {
+    labels: ['0-39', '40-64', '65-79', '80-89', '90-100'],
+    datasets: [{ data: [1, 3, 4, 7, 5], backgroundColor: ['#c0392b','#c0703f','#a8740f','#5fae62','#2d7a6e'], borderRadius: 8, maxBarThickness: 34 }]
+  },
+  options: { plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#eef3f3' } } } }
+});
+</script>
+</body>
+</html>

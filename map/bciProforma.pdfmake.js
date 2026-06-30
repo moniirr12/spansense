@@ -81,6 +81,28 @@ var BCI_ELEMENTS_BY_TYPE = {
         { no: 18, desc: 'Signs' },
         { no: 19, desc: 'Lighting' },
         { no: 20, desc: 'Services' },
+    ],
+    // Per Highways Agency Guidance Document for Performance Measurement of
+    // Highway Structures, Part B1, Table 11 - the "Additional HA Element"
+    // (Road Restraint System) sits outside the numbered list and is left
+    // out, same treatment as Anchoring System was for Retaining wall.
+    'Sign Gantry': [
+        { no: 1,  desc: 'Foundations' },
+        { no: 2,  desc: 'Truss/beams/cantilever' },
+        { no: 3,  desc: 'Transverse/horiz. bracing elements' },
+        { no: 4,  desc: 'Columns/supports/legs' },
+        { no: 5,  desc: 'Surface finishes: truss/beams/cantilever' },
+        { no: 6,  desc: 'Surface finishes: columns/supports/legs' },
+        { no: 7,  desc: 'Surface finishes: other elements' },
+        { no: 8,  desc: 'Access/walkway/deck' },
+        { no: 9,  desc: 'Access ladder' },
+        { no: 10, desc: 'Handrails/guard rails' },
+        { no: 11, desc: 'Base connections' },
+        { no: 12, desc: 'Support to longitudinal connection' },
+        { no: 13, desc: 'Sign and signal supports' },
+        { no: 14, desc: 'Signs/signals' },
+        { no: 15, desc: 'Lighting' },
+        { no: 16, desc: 'Services' },
     ]
 };
 
@@ -99,12 +121,20 @@ var BCI_GROUPS_BY_TYPE = {
         { label: 'Safety Elements',     count: 5 },
         { label: 'Other Elements',      count: 4 },
         { label: 'Ancillary Elements',  count: 3 },
+    ],
+    'Sign Gantry': [
+        { label: 'Main Elements',       count: 4 },
+        { label: 'Durability Elements', count: 3 },
+        { label: 'Safety Elements',     count: 3 },
+        { label: 'Other Elements',      count: 3 },
+        { label: 'Ancillary Elements',  count: 3 },
     ]
 };
 
 var BCI_SPARE_BY_TYPE = {
     Bridge: [39, 40, 41, 42],
-    'Retaining wall': []
+    'Retaining wall': [],
+    'Sign Gantry': []
 };
 
 function getBCIProformaConfig(structureType) {

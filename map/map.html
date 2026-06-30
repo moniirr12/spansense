@@ -82,6 +82,47 @@
                                             <input type="checkbox" name="structureType" value="retaining_wall" checked> Retaining Wall
                                         </label>
                                     </li>
+                                    <li>
+                                        <label>
+                                            <input type="checkbox" name="structureType" value="sign_gantry" checked> Sign Gantry
+                                        </label>
+                                    </li>
+                                </div>
+                            </ul>
+                        </li>
+                        <li>
+                            <a href="#" id="conditionLink">
+                                <i class="fas fa-circle-half-stroke"></i>
+                                <span>Condition</span>
+                                <i class="fas fa-chevron-down menu-chevron"></i>
+                            </a>
+                            <ul id="conditionOptions" class="submenu">
+                                <div>
+                                    <li>
+                                        <label>
+                                            <input type="checkbox" name="conditionFilter" value="good" checked> Good / Very Good
+                                        </label>
+                                    </li>
+                                    <li>
+                                        <label>
+                                            <input type="checkbox" name="conditionFilter" value="fair" checked> Fair
+                                        </label>
+                                    </li>
+                                    <li>
+                                        <label>
+                                            <input type="checkbox" name="conditionFilter" value="poor" checked> Poor
+                                        </label>
+                                    </li>
+                                    <li>
+                                        <label>
+                                            <input type="checkbox" name="conditionFilter" value="critical" checked> Critical
+                                        </label>
+                                    </li>
+                                    <li>
+                                        <label>
+                                            <input type="checkbox" name="conditionFilter" value="uninspected" checked> Not Inspected
+                                        </label>
+                                    </li>
                                 </div>
                             </ul>
                         </li>
@@ -113,9 +154,6 @@
                 </a>
             </li>
         </ul>
-        <div class="sidebar-footer">
-            <div class="version">spanSense v1.1</div>
-        </div>
     </div>
 
     <!-- Map Container -->
@@ -320,6 +358,15 @@
     <input type="file" id="fileInput" multiple style="display: none;">
 
     <div id="toast" class="toast"></div>
+
+    <!-- Map Legend (bottom-left, type only) -->
+    <div class="map-legend" id="mapLegend">
+        <div class="leg-row"><span class="leg-pip" style="background:#2c645c"></span><span class="leg-label">Bridge</span></div>
+        <div class="leg-row"><span class="leg-pip" style="background:#4f9088"></span><span class="leg-label">Footbridge</span></div>
+        <div class="leg-row"><span class="leg-pip" style="background:#c79a4b"></span><span class="leg-label">Culvert</span></div>
+        <div class="leg-row"><span class="leg-pip" style="background:#9b4f4f"></span><span class="leg-label">Retaining Wall</span></div>
+        <div class="leg-row"><span class="leg-pip" style="background:#7a6fb0"></span><span class="leg-label">Sign Gantry</span></div>
+    </div>
 
     <!-- Leaflet JavaScript -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

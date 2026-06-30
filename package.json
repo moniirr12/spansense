@@ -15,5 +15,8 @@
     "sqlite3": "^5.1.7",
     "staticmap": "^0.0.4",
     "staticmaps": "^1.13.1"
+  },
+  "devDependencies": {
+    "playwright": "^1.61.1"
   }
 }

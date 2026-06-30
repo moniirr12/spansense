@@ -198,7 +198,7 @@
                 var typeMap = {
                     'bridge': 'Bridge', 'footbridge': 'Footbridge',
                     'retaining_wall': 'Retaining Wall', 'culvert': 'Culvert',
-                    'tunnel': 'Tunnel', 'viaduct': 'Viaduct'
+                    'tunnel': 'Tunnel', 'viaduct': 'Viaduct', 'sign_gantry': 'Sign Gantry'
                 };
                 var typeLabel = typeMap[(row.type || '').toLowerCase()] ||
                     (row.type ? row.type.charAt(0).toUpperCase() + row.type.slice(1).replace(/_/g, ' ') : '--');
@@ -739,7 +739,8 @@
                 { id: 'bridge', icon: 'fa-bridge', label: 'Bridges', color: '#5b8c8a' },
                 { id: 'footbridge', icon: 'fa-person-walking', label: 'Footbridges', color: '#8ab4b0' },
                 { id: 'retaining_wall', icon: 'fa-wall', label: 'Retaining Walls', color: '#eab308' },
-                { id: 'culvert', icon: 'fa-water', label: 'Culverts', color: '#f97316' }
+                { id: 'culvert', icon: 'fa-water', label: 'Culverts', color: '#f97316' },
+                { id: 'sign_gantry', icon: 'fa-sign', label: 'Sign Gantries', color: '#7c6fc4' }
             ],
             inspections: [
                 { id: 'all', icon: 'fa-check', label: 'All Inspections' },
@@ -1078,7 +1079,8 @@
                 { id: 'bridge', icon: 'fa-bridge', label: 'Bridges', color: '#5b8c8a' },
                 { id: 'footbridge', icon: 'fa-person-walking', label: 'Footbridges', color: '#8ab4b0' },
                 { id: 'retaining_wall', icon: 'fa-wall', label: 'Retaining Walls', color: '#eab308' },
-                { id: 'culvert', icon: 'fa-water', label: 'Culverts', color: '#f97316' }
+                { id: 'culvert', icon: 'fa-water', label: 'Culverts', color: '#f97316' },
+                { id: 'sign_gantry', icon: 'fa-sign', label: 'Sign Gantries', color: '#7c6fc4' }
             ],
             inspections: [
                 { id: 'all', icon: 'fa-check', label: 'All Inspections' },
