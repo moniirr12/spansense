@@ -1353,7 +1353,6 @@ document.addEventListener("DOMContentLoaded", function () {
       if (onExpandableRow && !isExcluded) {
           const expandableRow = onExpandableRow;
           if (expandableRow && expandableRow.classList.contains("retrieved-defect")) {
-              showAlertModal("Retrieved defects cannot be edited. Please copy the defect to create a new editable version.");
               return;
           }
           if (expandableRow) {
