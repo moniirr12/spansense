@@ -197,32 +197,7 @@ fetch('bridges.json')
         // Add default base layer
         openStreetMap.addTo(map);
 
-        // Create all markers
-        bridgeData.forEach(bridge => {
-            const marker = createStructureMarker(bridge);
-            bridgeMarkers.addLayer(marker);
-        });
-
         bridgeMarkers.addTo(map);
-        restoreFilterState();
-
-        // Fetch live BCI data for each structure and rebuild markers with condition rings
-        Promise.all(
-            bridgeData.map(bridge =>
-                fetch(`${API_BASE}/api/bridges/${bridge.id}`)
-                    .then(r => r.ok ? r.json() : null)
-                    .catch(() => null)
-            )
-        ).then(results => {
-            let updated = false;
-            results.forEach((apiData, i) => {
-                if (apiData && apiData.bci_av != null) {
-                    bridgeData[i].bci_av = parseFloat(apiData.bci_av);
-                    updated = true;
-                }
-            });
-            if (updated) rebuildMarkersFromFilter();
-        });
 
         // Setup layer controls
         const baseMaps = {
@@ -238,6 +213,24 @@ fetch('bridges.json')
             const modal = document.getElementById('bridgeModal');
             if (event.target === modal) modal.style.display = 'none';
         });
+
+        // Fetch BCI data for all structures, then place markers with correct condition rings
+        return Promise.all(
+            bridgeData.map((bridge, i) =>
+                fetch(`${API_BASE}/api/bridges/${bridge.id}`)
+                    .then(r => r.ok ? r.json() : null)
+                    .then(apiData => {
+                        if (apiData && apiData.bci_av != null) {
+                            bridgeData[i].bci_av = parseFloat(apiData.bci_av);
+                        }
+                    })
+                    .catch(() => null)
+            )
+        );
+    })
+    .then(() => {
+        // All BCI data loaded — now create markers with correct condition rings and filter
+        restoreFilterState();
     })
     .catch(error => {
         console.error('Error loading bridge data:', error);
