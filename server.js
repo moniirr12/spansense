@@ -663,7 +663,7 @@ app.get('/api/activity', async (req, res) => {
         const limit = parseInt(req.query.limit) || 20;
         const rows = await dbAll(`
             SELECT i.id, i.structure_name, i.inspection_date, i.inspection_type,
-                   i.inspector_name, i.bci_av, i.overall_bcicrit
+                   i.inspector_name, i.overall_bciave AS bci_av, i.overall_bcicrit
             FROM inspections i
             WHERE i.inspection_date IS NOT NULL
             ORDER BY i.inspection_date DESC

@@ -1078,7 +1078,7 @@
 
             const list = document.getElementById('activityList');
 
-            fetch(`${API_BASE}/api/activity?limit=15`)
+            fetch(`${API_BASE}/api/activity?limit=5`)
                 .then(r => r.ok ? r.json() : [])
                 .then(rows => {
                     if (!rows.length) {
