@@ -206,6 +206,24 @@ fetch('bridges.json')
         bridgeMarkers.addTo(map);
         restoreFilterState();
 
+        // Fetch live BCI data for each structure and rebuild markers with condition rings
+        Promise.all(
+            bridgeData.map(bridge =>
+                fetch(`${API_BASE}/api/bridges/${bridge.id}`)
+                    .then(r => r.ok ? r.json() : null)
+                    .catch(() => null)
+            )
+        ).then(results => {
+            let updated = false;
+            results.forEach((apiData, i) => {
+                if (apiData && apiData.bci_av != null) {
+                    bridgeData[i].bci_av = parseFloat(apiData.bci_av);
+                    updated = true;
+                }
+            });
+            if (updated) rebuildMarkersFromFilter();
+        });
+
         // Setup layer controls
         const baseMaps = {
             "OpenStreetMap": openStreetMap,
