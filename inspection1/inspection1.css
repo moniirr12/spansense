@@ -59,18 +59,15 @@ body {
     gap: 20px;
 }
 
+.navbar .account-links { display: flex; align-items: center; gap: 20px; }
 .navbar .account-links a {
     text-decoration: none;
-    color: #6a7c8e;
-    margin-left: 16px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    transition: color 0.2s;
-}
-
-.navbar .account-links a:hover {
     color: #5b8c8a;
+    font-size: 1.2rem;
+    display: flex; align-items: center;
+    transition: color 0.2s, transform 0.15s;
 }
+.navbar .account-links a:hover { color: #2d7a6e; transform: scale(1.1); }
 
 .night-mode-toggle {
     background: rgba(240, 242, 245, 0.75);

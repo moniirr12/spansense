@@ -85,14 +85,15 @@
             transition: all 0.2s;
         }
         .night-mode-toggle:hover { background: #f0f4f8; color: #5b8c8a; }
+        .navbar .account-links { display: flex; align-items: center; gap: 20px; }
         .navbar .account-links a {
             text-decoration: none;
-            color: #6a7c8e;
-            margin-left: 16px;
-            font-size: 0.85rem;
-            transition: color 0.2s;
+            color: #5b8c8a;
+            font-size: 1.2rem;
+            display: flex; align-items: center;
+            transition: color 0.2s, transform 0.15s;
         }
-        .navbar .account-links a:hover { color: #5b8c8a; }
+        .navbar .account-links a:hover { color: #2d7a6e; transform: scale(1.1); }
 
         /* ---------- MAIN WRAPPER - 75% WIDTH ---------- */
         .page-wrapper {
@@ -849,8 +850,8 @@
         <div class="right">
             <div class="night-mode-toggle" id="nightModeToggle"><i class="fas fa-moon"></i></div>
             <div class="account-links">
-                <a href="../accounts/accounts.html">Account</a>
-                <a href="../contacts/contacts.html" class="active">Contact Us</a>
+                <a href="../accounts/accounts.html" title="Account"><i class="fas fa-user-circle"></i></a>
+                <a href="../contacts/contacts.html" class="active" title="Contact Us"><i class="fas fa-envelope"></i></a>
             </div>
         </div>
     </div>

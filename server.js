@@ -657,6 +657,24 @@ app.get('/api/bridges', async (req, res) => {
     }
 });
 
+// GET RECENT ACTIVITY — latest inspections across all structures
+app.get('/api/activity', async (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit) || 20;
+        const rows = await dbAll(`
+            SELECT i.id, i.structure_name, i.inspection_date, i.inspection_type,
+                   i.inspector_name, i.bci_av, i.overall_bcicrit
+            FROM inspections i
+            WHERE i.inspection_date IS NOT NULL
+            ORDER BY i.inspection_date DESC
+            LIMIT $1
+        `, [limit]);
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Get complete bridge data (PostgreSQL version)
 app.get('/api/bridges/:id', async (req, res) => {
     try {

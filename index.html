@@ -240,21 +240,21 @@ body {
 .navbar .account-links {
     display: flex;
     align-items: center;
-    gap: 0;
+    gap: 20px;
 }
 
 .navbar .account-links a {
     text-decoration: none;
-    color: #6a7c8e;
-    margin-left: 16px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    transition: color 0.2s;
+    color: #5b8c8a;
+    font-size: 1.2rem;
+    display: flex; align-items: center;
+    transition: color 0.2s, transform 0.15s;
     cursor: pointer;
 }
 
 .navbar .account-links a:hover {
-    color: #5b8c8a;
+    color: #2d7a6e;
+    transform: scale(1.1);
 }
 
 /* Dark mode navbar styles */
@@ -1466,8 +1466,8 @@ html::-webkit-scrollbar { display: none; }
     <div class="right">
         <div class="mode-toggle" onclick="toggleTheme()" id="themeToggle"><i class="fas fa-moon"></i></div>
         <div class="account-links">
-            <a href="accounts/accounts.html">Account</a>
-            <a href="contacts/contacts.html">Contact Us</a>
+            <a href="accounts/accounts.html" title="Account"><i class="fas fa-user-circle"></i></a>
+            <a href="contacts/contacts.html" title="Contact Us"><i class="fas fa-envelope"></i></a>
         </div>
     </div>
 </nav>

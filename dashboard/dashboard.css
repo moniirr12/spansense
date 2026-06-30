@@ -77,14 +77,15 @@ body {
     transition: all 0.2s;
 }
 .night-mode-toggle:hover { background: #f0f4f8; color: #5b8c8a; }
+.navbar .account-links { display: flex; align-items: center; gap: 20px; }
 .navbar .account-links a {
     text-decoration: none;
-    color: #6a7c8e;
-    margin-left: 16px;
-    font-size: 0.85rem;
-    transition: color 0.2s;
+    color: #5b8c8a;
+    font-size: 1.2rem;
+    display: flex; align-items: center;
+    transition: color 0.2s, transform 0.15s;
 }
-.navbar .account-links a:hover { color: #5b8c8a; }
+.navbar .account-links a:hover { color: #2d7a6e; transform: scale(1.1); }
 
 /* ============================================
    BACK BUTTON - GLASS PILL STYLE
