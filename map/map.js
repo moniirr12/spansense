@@ -26,6 +26,13 @@ function closeDocumentsModalAndRestore() {
     }
 }
 
+// Structure ID/name labels only render once zoomed in past this level, to avoid clutter portfolio-wide
+const LABEL_ZOOM_THRESHOLD = 14;
+function updateLabelVisibility() {
+    const mapEl = document.getElementById('map');
+    if (mapEl) mapEl.classList.toggle('labels-visible', map.getZoom() >= LABEL_ZOOM_THRESHOLD);
+}
+
 // Returns a condition-ring border color based on BCI score
 function condRing(bci) {
     if (bci === null || bci === undefined) return '#9aa8c2';
@@ -86,6 +93,11 @@ function createStructureMarker(bridge) {
         Length: ${bridge.length} meters<br>
         Built: ${bridge.built_year}
     `, { closeButton: false });
+
+    marker.bindTooltip(
+        `<span class="structure-label-id">${bridge.id}</span>${bridge.name}`,
+        { permanent: true, direction: 'top', offset: [0, -18], className: 'structure-label' }
+    );
 
     marker.on('mouseover', function(e) { this.openPopup(); });
     marker.on('mouseout', function(e) { this.closePopup(); });
@@ -176,6 +188,8 @@ fetch('bridges.json')
         // Initialize map
         map = L.map('map').setView([54.0, -2.0], 6);
         map.zoomControl.setPosition('topright');
+        map.on('zoomend', updateLabelVisibility);
+        updateLabelVisibility();
 
         // Define base layers
         darkMap = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
