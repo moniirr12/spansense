@@ -1358,7 +1358,7 @@ body {
 .defect-guidance-panel {
     display: none;
     position: fixed;
-    left: calc(50% + 289px);
+    left: calc(50% + 281px);
     top: 50%;
     transform: translateY(-50%);
     flex-direction: column;
@@ -4056,7 +4056,7 @@ body.night-mode.contracted-rows #inspectionElementsTable tr.expandable-row .grid
 /* Panel itself — fixed, floats left of centered modal */
 .prev-defects-panel {
     position: fixed;
-    right: calc(50% + 289px);
+    right: calc(50% + 281px);
     top: 50%;
     transform: translateY(-50%);
     width: 240px;
@@ -4112,7 +4112,7 @@ body.night-mode.contracted-rows #inspectionElementsTable tr.expandable-row .grid
 }
 .prev-defects-panel.prev-collapsed .prev-hdr-left { gap: 0; }
 .prev-defects-panel.prev-collapsed .prev-hdr-text,
-.prev-defects-panel.prev-collapsed .prev-hdr-icon { display: none; }
+.prev-defects-panel.prev-collapsed .prev-collapse-btn { display: none; }
 
 /* Panel body */
 .prev-panel-body {
