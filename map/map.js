@@ -27,7 +27,7 @@ function closeDocumentsModalAndRestore() {
 }
 
 // Structure ID/name labels only render once zoomed in past this level, to avoid clutter portfolio-wide
-const LABEL_ZOOM_THRESHOLD = 14;
+const LABEL_ZOOM_THRESHOLD = 8;
 function updateLabelVisibility() {
     const mapEl = document.getElementById('map');
     if (mapEl) mapEl.classList.toggle('labels-visible', map.getZoom() >= LABEL_ZOOM_THRESHOLD);
