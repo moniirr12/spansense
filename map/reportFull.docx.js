@@ -2,13 +2,27 @@
  * reportFull.docx.js
  * Builds a real .docx version of the full narrative inspection report
  * (the same one test.js's generateSimplePDFReport produces as a PDF) -
- * cover page, structure details, location map, per-element defect
- * narrative, conclusions/remedial works, and a photo appendix.
- * Deliberately does NOT include the BCI Proforma appendix.
+ * cover page, clickable table of contents, structure details, location
+ * map, per-element defect narrative (with numbered sections and clickable
+ * photo cross-references), conclusions/remedial works, and a photo
+ * appendix. Deliberately does NOT include the BCI Proforma appendix.
  * Guarded to prevent double-declaration errors.
  */
 
 if (typeof buildFullInspectionReportDocx === 'undefined') {
+
+// SpanSense brand palette / body copy matches bciProforma.pdfmake.js's and
+// test.js's own PDF styling (sectionHeader #2c3e44, subsectionHeader
+// #5b8c8a, Roboto - pdfMake's default font, same one used across the app's
+// PDFs) so the Word version reads as the same report, not a generic one.
+var REPORT_FONT = 'Roboto';
+var REPORT_COLORS = {
+    text: '2C3E44',
+    heading: '2C3E44',
+    subheading: '5B8C8A',
+    muted: '888888',
+    link: '2563EB',
+};
 
 // Same per-structure-type element/category list as test.js's
 // generateSimplePDFReport (kept separate since it uses report-numbering
@@ -96,8 +110,27 @@ var REPORT_ELEMENTS_BY_TYPE = {
     ]
 };
 
-function reportHeading(d, text, level) {
-    return new d.Paragraph({ heading: level, children: [new d.TextRun({ text: text })], spacing: { before: 240, after: 120 } });
+// ── Document-wide style overrides: without these, Word's built-in Heading
+// styles render in its own default blue/Calibri theme instead of SpanSense's. ──
+function reportDocStyles(d) {
+    return {
+        default: {
+            document: { run: { font: REPORT_FONT, size: 18, color: REPORT_COLORS.text } },
+            heading1: { run: { font: REPORT_FONT, size: 26, bold: true, color: REPORT_COLORS.heading } },
+            heading2: { run: { font: REPORT_FONT, size: 22, bold: true, color: REPORT_COLORS.subheading } },
+            heading3: { run: { font: REPORT_FONT, size: 20, bold: true, color: REPORT_COLORS.subheading } },
+        }
+    };
+}
+
+// A heading that's also a jump target - wraps the text in a Bookmark so a
+// Table of Contents (or a photo cross-reference) can link straight to it.
+function bookmarkedHeading(d, text, level, bookmarkId) {
+    return new d.Paragraph({
+        heading: level,
+        spacing: { before: 240, after: 120 },
+        children: [new d.Bookmark({ id: bookmarkId, children: [new d.TextRun({ text: text })] })]
+    });
 }
 
 function reportPara(d, text, opts) {
@@ -105,7 +138,27 @@ function reportPara(d, text, opts) {
     return new d.Paragraph({
         alignment: opts.alignment,
         spacing: { after: opts.after != null ? opts.after : 120 },
-        children: [new d.TextRun({ text: text != null ? String(text) : '', italics: !!opts.italics, bold: !!opts.bold, color: opts.color, size: opts.size || 20 })]
+        children: [new d.TextRun({ text: text != null ? String(text) : '', italics: !!opts.italics, bold: !!opts.bold, color: opts.color, size: opts.size || 18 })]
+    });
+}
+
+// One clickable line in the manually-built Table of Contents.
+function tocEntry(d, text, bookmarkId, indent) {
+    return new d.Paragraph({
+        indent: indent ? { left: indent } : undefined,
+        spacing: { after: 80 },
+        children: [new d.InternalHyperlink({
+            anchor: bookmarkId,
+            children: [new d.TextRun({ text: text, color: REPORT_COLORS.link, underline: { type: 'single' }, size: indent ? 18 : 20 })]
+        })]
+    });
+}
+
+// Inline "(Photo N)" link, jumping to that photo's bookmark in Appendix A.
+function photoLinkRun(d, photoNum) {
+    return new d.InternalHyperlink({
+        anchor: 'photo-' + photoNum,
+        children: [new d.TextRun({ text: '(Photo ' + photoNum + ')', color: REPORT_COLORS.link, underline: { type: 'single' }, size: 18 })]
     });
 }
 
@@ -117,11 +170,11 @@ function kvTable(d, pairs) {
                 children: [
                     new d.TableCell({
                         width: { size: 30, type: d.WidthType.PERCENTAGE },
-                        children: [new d.Paragraph({ children: [new d.TextRun({ text: pair[0], bold: true, size: 20 })] })]
+                        children: [new d.Paragraph({ children: [new d.TextRun({ text: pair[0], bold: true, size: 18 })] })]
                     }),
                     new d.TableCell({
                         width: { size: 70, type: d.WidthType.PERCENTAGE },
-                        children: [new d.Paragraph({ children: [new d.TextRun({ text: pair[1] != null ? String(pair[1]) : '', size: 20 })] })]
+                        children: [new d.Paragraph({ children: [new d.TextRun({ text: pair[1] != null ? String(pair[1]) : '', size: 18 })] })]
                     })
                 ]
             });
@@ -196,6 +249,14 @@ async function buildFullInspectionReportDocx(doc) {
     allElementsList.forEach(function(el) { elementNameMap[el.elementNo] = el.name; });
     function getElementDesc(def) { return elementNameMap[def.elementNumber] || ('Element ' + def.elementNumber); }
 
+    // Category order + numbering ("3.1", "3.2", ...) derived from the list
+    // itself, so it stays correct for Bridge/Retaining wall/Sign Gantry
+    // without hand-maintaining separate numbering tables.
+    var categoriesInOrder = [];
+    allElementsList.forEach(function(el) { if (categoriesInOrder.indexOf(el.category) === -1) categoriesInOrder.push(el.category); });
+    var categoryBookmarkId = {};
+    categoriesInOrder.forEach(function(cat, idx) { categoryBookmarkId[cat] = 'section3_' + (idx + 1); });
+
     // Bridge cover photo
     var bridgePhotoDataURL = null;
     var photoMeta = await fetch(API_BASE + '/getBridgePhoto?bridgeId=' + structureId).then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; });
@@ -249,22 +310,38 @@ async function buildFullInspectionReportDocx(doc) {
     var children = [];
 
     // ── COVER PAGE ──
-    children.push(new d.Paragraph({ alignment: d.AlignmentType.CENTER, spacing: { before: 1600 }, children: [new d.TextRun({ text: 'SPANSENSE', bold: true, size: 40, color: '5B8C8A' })] }));
-    children.push(new d.Paragraph({ alignment: d.AlignmentType.CENTER, spacing: { after: 400 }, children: [new d.TextRun({ text: 'BRIDGE INSPECTION REPORT', bold: true, size: 32, color: '2C3E44' })] }));
+    children.push(new d.Paragraph({ alignment: d.AlignmentType.CENTER, spacing: { before: 1600 }, children: [new d.TextRun({ text: 'SPANSENSE', bold: true, size: 40, color: REPORT_COLORS.subheading })] }));
+    children.push(new d.Paragraph({ alignment: d.AlignmentType.CENTER, spacing: { after: 400 }, children: [new d.TextRun({ text: 'BRIDGE INSPECTION REPORT', bold: true, size: 32, color: REPORT_COLORS.heading })] }));
     children.push(new d.Paragraph({ alignment: d.AlignmentType.CENTER, spacing: { after: 100 }, children: [new d.TextRun({ text: structureName, bold: true, size: 28 })] }));
-    children.push(new d.Paragraph({ alignment: d.AlignmentType.CENTER, spacing: { after: 400 }, children: [new d.TextRun({ text: 'Structure ID: ' + structureId, size: 20, color: '888888' })] }));
+    children.push(new d.Paragraph({ alignment: d.AlignmentType.CENTER, spacing: { after: 400 }, children: [new d.TextRun({ text: 'Structure ID: ' + structureId, size: 20, color: REPORT_COLORS.muted })] }));
     if (bridgePhotoDataURL) { var coverImg = imageParagraph(d, bridgePhotoDataURL, 400); if (coverImg) children.push(coverImg); }
     children.push(reportPara(d, 'Inspection Date: ' + formatDate(inspectionDate), { alignment: d.AlignmentType.CENTER }));
     children.push(reportPara(d, 'Report Generated: ' + new Date().toLocaleDateString(), { alignment: d.AlignmentType.CENTER }));
 
-    // ── TABLE OF CONTENTS (native Word field - updates when opened/refreshed in Word) ──
+    // ── TABLE OF CONTENTS ── (built manually, as clickable links to bookmarks
+    // below - a native Word TOC field only populates after the user manually
+    // updates it, so it reads as "missing" until then; this is always visible.)
     children.push(new d.Paragraph({ children: [], pageBreakBefore: true }));
-    children.push(reportHeading(d, 'Table of Contents', d.HeadingLevel.HEADING_1));
-    children.push(new d.TableOfContents('Table of Contents', { hyperlink: true, headingStyleRange: '1-3' }));
+    children.push(new d.Paragraph({ heading: d.HeadingLevel.HEADING_1, spacing: { after: 200 }, children: [new d.TextRun({ text: 'Table of Contents' })] }));
+    children.push(tocEntry(d, '1. Structure Details', 'section1'));
+    children.push(tocEntry(d, '1.1 Structure Description', 'section1_1', 360));
+    children.push(tocEntry(d, '1.2 Coordinates', 'section1_2', 360));
+    if (mapDataURL) children.push(tocEntry(d, '1.3 Location Map', 'section1_3', 360));
+    children.push(tocEntry(d, '2. Inspection Details', 'section2'));
+    children.push(tocEntry(d, '2.1 Span Details & BCI Scores', 'section2_1', 360));
+    children.push(tocEntry(d, '3. Description of Defects', 'section3'));
+    categoriesInOrder.forEach(function(cat, idx) {
+        children.push(tocEntry(d, '3.' + (idx + 1) + ' ' + cat, categoryBookmarkId[cat], 360));
+    });
+    children.push(tocEntry(d, '4. Conclusions and Recommendations', 'section4'));
+    children.push(tocEntry(d, '4.1 Conclusions', 'section4_1', 360));
+    children.push(tocEntry(d, '4.2 Recommended Remedial Works', 'section4_2', 360));
+    children.push(tocEntry(d, '4.3 Next Inspection', 'section4_3', 360));
+    children.push(tocEntry(d, 'Appendix A: Photographs', 'appendixA'));
 
     // ── SECTION 1: STRUCTURE DETAILS ──
     children.push(new d.Paragraph({ children: [], pageBreakBefore: true }));
-    children.push(reportHeading(d, '1. Structure Details', d.HeadingLevel.HEADING_1));
+    children.push(bookmarkedHeading(d, '1. Structure Details', d.HeadingLevel.HEADING_1, 'section1'));
     children.push(kvTable(d, [
         ['Structure Name:', structureName],
         ['Structure Number:', structureId],
@@ -274,10 +351,10 @@ async function buildFullInspectionReportDocx(doc) {
         ['Location:', bridgeData.location || 'Not specified'],
     ]));
 
-    children.push(reportHeading(d, '1.1 Structure Description', d.HeadingLevel.HEADING_2));
+    children.push(bookmarkedHeading(d, '1.1 Structure Description', d.HeadingLevel.HEADING_2, 'section1_1'));
     children.push(reportPara(d, bridgeData.description || 'No structural description available for this bridge.'));
 
-    children.push(reportHeading(d, '1.2 Coordinates', d.HeadingLevel.HEADING_2));
+    children.push(bookmarkedHeading(d, '1.2 Coordinates', d.HeadingLevel.HEADING_2, 'section1_2'));
     children.push(kvTable(d, [
         ['Easting:', bridgeData.easting || bridgeData.ose || 'N/A'],
         ['Northing:', bridgeData.northing || bridgeData.osn || 'N/A'],
@@ -286,14 +363,14 @@ async function buildFullInspectionReportDocx(doc) {
     ]));
 
     if (mapDataURL) {
-        children.push(reportHeading(d, '1.3 Location Map', d.HeadingLevel.HEADING_2));
+        children.push(bookmarkedHeading(d, '1.3 Location Map', d.HeadingLevel.HEADING_2, 'section1_3'));
         var mapImg = imageParagraph(d, mapDataURL, 400);
         if (mapImg) children.push(mapImg);
     }
 
     // ── SECTION 2: INSPECTION DETAILS ──
     children.push(new d.Paragraph({ children: [], pageBreakBefore: true }));
-    children.push(reportHeading(d, '2. Inspection Details', d.HeadingLevel.HEADING_1));
+    children.push(bookmarkedHeading(d, '2. Inspection Details', d.HeadingLevel.HEADING_1, 'section2'));
     children.push(kvTable(d, [
         ['Inspector Name:', inspectionData.inspectorName || 'Not recorded'],
         ['Inspection Type:', inspectionData.inspectionType || 'N/A'],
@@ -302,7 +379,7 @@ async function buildFullInspectionReportDocx(doc) {
     ]));
 
     if (inspectionData.spans && inspectionData.spans.length > 0) {
-        children.push(reportHeading(d, '2.1 Span Details & BCI Scores', d.HeadingLevel.HEADING_2));
+        children.push(bookmarkedHeading(d, '2.1 Span Details & BCI Scores', d.HeadingLevel.HEADING_2, 'section2_1'));
         inspectionData.spans.forEach(function(span) {
             var spanDefects = defectsData.filter(function(dd) { return dd.spanNumber === span.spanNumber; });
             var spanScores = spanDefects.map(function(dd) { return dd.severity || 0; });
@@ -319,21 +396,21 @@ async function buildFullInspectionReportDocx(doc) {
                 width: { size: 100, type: d.WidthType.PERCENTAGE },
                 rows: [new d.TableRow({ children: [
                     new d.TableCell({ width: { size: 34, type: d.WidthType.PERCENTAGE }, children: [
-                        reportPara(d, 'BCI Average', { alignment: d.AlignmentType.CENTER, bold: true, size: 16, color: '888888', after: 40 }),
+                        reportPara(d, 'BCI Average', { alignment: d.AlignmentType.CENTER, bold: true, size: 16, color: REPORT_COLORS.muted, after: 40 }),
                         reportPara(d, String(spanBciAv), { alignment: d.AlignmentType.CENTER, bold: true, size: 32 })
                     ] }),
                     new d.TableCell({ width: { size: 33, type: d.WidthType.PERCENTAGE }, children: [
-                        reportPara(d, 'BCI Critical', { alignment: d.AlignmentType.CENTER, bold: true, size: 16, color: '888888', after: 40 }),
+                        reportPara(d, 'BCI Critical', { alignment: d.AlignmentType.CENTER, bold: true, size: 16, color: REPORT_COLORS.muted, after: 40 }),
                         reportPara(d, String(spanBciCrit), { alignment: d.AlignmentType.CENTER, bold: true, size: 32, color: 'DC2626' })
                     ] }),
                     new d.TableCell({ width: { size: 33, type: d.WidthType.PERCENTAGE }, children: [
-                        reportPara(d, 'Defects', { alignment: d.AlignmentType.CENTER, bold: true, size: 16, color: '888888', after: 40 }),
-                        reportPara(d, String(spanDefects.length), { alignment: d.AlignmentType.CENTER, bold: true, size: 32, color: '5B8C8A' })
+                        reportPara(d, 'Defects', { alignment: d.AlignmentType.CENTER, bold: true, size: 16, color: REPORT_COLORS.muted, after: 40 }),
+                        reportPara(d, String(spanDefects.length), { alignment: d.AlignmentType.CENTER, bold: true, size: 32, color: REPORT_COLORS.subheading })
                     ] }),
                 ] })]
             }));
             if (span.comments) {
-                children.push(reportPara(d, 'Comments:', { bold: true, size: 16, color: '888888', after: 40 }));
+                children.push(reportPara(d, 'Comments:', { bold: true, size: 16, color: REPORT_COLORS.muted, after: 40 }));
                 children.push(reportPara(d, span.comments, { italics: true, color: '4A5B6E' }));
             }
         });
@@ -341,28 +418,39 @@ async function buildFullInspectionReportDocx(doc) {
 
     // ── SECTION 3: DESCRIPTION OF DEFECTS ──
     children.push(new d.Paragraph({ children: [], pageBreakBefore: true }));
-    children.push(reportHeading(d, '3. Description of Defects', d.HeadingLevel.HEADING_1));
+    children.push(bookmarkedHeading(d, '3. Description of Defects', d.HeadingLevel.HEADING_1, 'section3'));
     spanNumbers.forEach(function(spanNum) {
-        children.push(reportHeading(d, 'Span ' + spanNum, d.HeadingLevel.HEADING_2));
+        children.push(reportPara(d, 'Span ' + spanNum, { bold: true, size: 22, after: 100 }));
         var currentCategory = '';
+        var catIdx = 0;
+        var elIdxInCat = 0;
         allElementsList.forEach(function(el) {
             if (el.category !== currentCategory) {
                 currentCategory = el.category;
-                children.push(reportHeading(d, currentCategory, d.HeadingLevel.HEADING_3));
+                catIdx += 1;
+                elIdxInCat = 0;
+                children.push(bookmarkedHeading(d, '3.' + catIdx + ' ' + currentCategory, d.HeadingLevel.HEADING_3, categoryBookmarkId[currentCategory]));
             }
-            children.push(reportPara(d, el.name, { bold: true, after: 40 }));
+            elIdxInCat += 1;
+            children.push(reportPara(d, '3.' + catIdx + '.' + elIdxInCat + ' ' + el.name, { bold: true, after: 40 }));
 
             var elementDefects = defectsData.filter(function(dd) { return dd.elementNumber === el.elementNo && dd.spanNumber === spanNum; });
             if (elementDefects.length === 0) {
-                children.push(reportPara(d, 'No defects recorded', { italics: true, color: '888888', size: 18 }));
+                children.push(reportPara(d, 'No defects recorded', { italics: true, color: REPORT_COLORS.muted, size: 18 }));
             } else {
                 elementDefects.forEach(function(def) {
                     children.push(reportPara(d, def.defectId + '. Severity: ' + (def.severity || '?') + '. Extent: ' + (def.extent || '?'), { size: 18, after: 40 }));
                     var comment = def.comments && def.comments !== 'Add' ? def.comments.trim() : '';
                     var photoNums = getPhotoNumbersForDefect(def.defectId);
-                    var line = comment;
-                    if (photoNums.length > 0) line += (comment ? ' ' : '') + photoNums.map(function(n) { return '(Photo ' + n + ')'; }).join(' ');
-                    if (line) children.push(reportPara(d, line, { size: 18 }));
+                    if (comment || photoNums.length > 0) {
+                        var runs = [];
+                        if (comment) runs.push(new d.TextRun({ text: comment, size: 18 }));
+                        photoNums.forEach(function(n, idx) {
+                            if (comment || idx > 0) runs.push(new d.TextRun({ text: ' ', size: 18 }));
+                            runs.push(photoLinkRun(d, n));
+                        });
+                        children.push(new d.Paragraph({ children: runs, spacing: { after: 120 } }));
+                    }
                 });
             }
         });
@@ -370,17 +458,17 @@ async function buildFullInspectionReportDocx(doc) {
 
     // ── SECTION 4: CONCLUSIONS AND RECOMMENDATIONS ──
     children.push(new d.Paragraph({ children: [], pageBreakBefore: true }));
-    children.push(reportHeading(d, '4. Conclusions and Recommendations', d.HeadingLevel.HEADING_1));
-    children.push(reportHeading(d, '4.1 Conclusions', d.HeadingLevel.HEADING_2));
+    children.push(bookmarkedHeading(d, '4. Conclusions and Recommendations', d.HeadingLevel.HEADING_1, 'section4'));
+    children.push(bookmarkedHeading(d, '4.1 Conclusions', d.HeadingLevel.HEADING_2, 'section4_1'));
     children.push(reportPara(d, (inspectionData.conclusions || '').trim() || 'No conclusions provided for this inspection.'));
 
-    children.push(reportHeading(d, '4.2 Recommended Remedial Works', d.HeadingLevel.HEADING_2));
+    children.push(bookmarkedHeading(d, '4.2 Recommended Remedial Works', d.HeadingLevel.HEADING_2, 'section4_2'));
     var defectsWithRemedial = defectsData.filter(function(dd) {
         var remedial = dd.remedialWorks || dd.remedial_works;
         return remedial && remedial.trim().length > 0 && remedial !== 'Add';
     });
     if (defectsWithRemedial.length === 0) {
-        children.push(reportPara(d, 'No specific remedial works recorded for this inspection.', { italics: true, color: '888888' }));
+        children.push(reportPara(d, 'No specific remedial works recorded for this inspection.', { italics: true, color: REPORT_COLORS.muted }));
     } else {
         [
             { label: 'HIGH PRIORITY', code: 'H', color: 'DC2626' },
@@ -395,7 +483,7 @@ async function buildFullInspectionReportDocx(doc) {
         });
     }
 
-    children.push(reportHeading(d, '4.3 Next Inspection', d.HeadingLevel.HEADING_2));
+    children.push(bookmarkedHeading(d, '4.3 Next Inspection', d.HeadingLevel.HEADING_2, 'section4_3'));
     var highSeverity = severityCounts[5] + severityCounts[4];
     var nextInspText = highSeverity > 0
         ? 'It is recommended that the next general inspection be carried out within 6 months.\n\nNote: Interim safety inspections should be conducted monthly due to identified severe/critical defects.'
@@ -404,28 +492,35 @@ async function buildFullInspectionReportDocx(doc) {
         : defectsData.length > 0
         ? 'It is recommended that the next general inspection be carried out within 24 months.'
         : 'It is recommended that the next general inspection be carried out within 24-36 months.';
-    children.push(reportPara(d, nextInspText, { color: highSeverity > 0 ? 'DC2626' : '2C3E44' }));
+    children.push(reportPara(d, nextInspText, { color: highSeverity > 0 ? 'DC2626' : REPORT_COLORS.heading }));
 
     // ── APPENDIX A: PHOTOGRAPHS ──
     children.push(new d.Paragraph({ children: [], pageBreakBefore: true }));
-    children.push(reportHeading(d, 'Appendix A: Photographs', d.HeadingLevel.HEADING_1));
+    children.push(bookmarkedHeading(d, 'Appendix A: Photographs', d.HeadingLevel.HEADING_1, 'appendixA'));
     if (photosWithDataURLs.length === 0) {
-        children.push(reportPara(d, 'No photographs available for this inspection.', { italics: true, color: '888888', alignment: d.AlignmentType.CENTER }));
+        children.push(reportPara(d, 'No photographs available for this inspection.', { italics: true, color: REPORT_COLORS.muted, alignment: d.AlignmentType.CENTER }));
     } else {
-        children.push(reportPara(d, 'The following pages contain photographic documentation of identified defects.', { italics: true, color: '888888', alignment: d.AlignmentType.CENTER }));
+        children.push(reportPara(d, 'The following pages contain photographic documentation of identified defects.', { italics: true, color: REPORT_COLORS.muted, alignment: d.AlignmentType.CENTER }));
         photosWithDataURLs.forEach(function(photo) {
             if (photo.dataURL) {
                 var img = imageParagraph(d, photo.dataURL, 400);
                 if (img) children.push(img);
             } else {
-                children.push(reportPara(d, '[Image not available]', { italics: true, color: '888888', alignment: d.AlignmentType.CENTER }));
+                children.push(reportPara(d, '[Image not available]', { italics: true, color: REPORT_COLORS.muted, alignment: d.AlignmentType.CENTER }));
             }
-            children.push(reportPara(d, 'Photo ' + photo.photoNumber + ': ' + (photo.photo_description || ''), { bold: true, alignment: d.AlignmentType.CENTER, after: 200 }));
+            children.push(new d.Paragraph({
+                alignment: d.AlignmentType.CENTER,
+                spacing: { after: 200 },
+                children: [new d.Bookmark({
+                    id: 'photo-' + photo.photoNumber,
+                    children: [new d.TextRun({ text: 'Photo ' + photo.photoNumber + ': ' + (photo.photo_description || ''), bold: true })]
+                })]
+            }));
         });
     }
 
     return new d.Document({
-        features: { updateFields: true },
+        styles: reportDocStyles(d),
         sections: [{ properties: {}, children: children }]
     });
 }
