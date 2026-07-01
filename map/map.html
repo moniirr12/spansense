@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <script>if(localStorage.getItem('nightMode')==='on')document.documentElement.classList.add('nm-preload');</script>
+    <script>(function(){var nm=localStorage.getItem('nightMode');var dark=nm==='on'||(nm===null&&!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches));if(dark)document.documentElement.classList.add('nm-preload');})();</script>
     <style>html.nm-preload,html.nm-preload body{background-color:#243038!important;}</style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Homepage</title>
@@ -34,8 +34,8 @@
             <i class="fas fa-moon"></i>
         </div>
         <div class="account-links">
-            <a href="../accounts/accounts.html">Account</a>
-            <a href="../contacts/contacts.html" class="active">Contact Us</a>
+            <a href="../accounts/accounts.html" title="Account"><i class="fas fa-user-circle"></i></a>
+            <a href="../contacts/contacts.html" title="Contact Us"><i class="fas fa-envelope"></i></a>
         </div>
     </div>
 </div>

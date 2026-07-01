@@ -39,7 +39,10 @@ const API_BASE = window.location.hostname === 'localhost'
         }
     };
 
-    if (localStorage.getItem('nightMode') === 'on') {
+    const savedNightMode = localStorage.getItem('nightMode');
+    const systemPrefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    document.documentElement.classList.remove('nm-preload');
+    if (savedNightMode === 'on' || (savedNightMode === null && !systemPrefersLight)) {
         document.body.classList.add('night-mode');
         toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
     }

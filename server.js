@@ -593,7 +593,8 @@ app.get('/api/defectsbci', async (req, res) => {
                 s.bci_crit,
                 s.bci_av,
                 i.inspection_date,
-                i.inspector_name
+                i.inspector_name,
+                i.inspection_type
             FROM inspection_spans s
             JOIN inspections i ON s.inspection_id = i.id
             WHERE s.inspection_id IN (${placeholders})
@@ -651,6 +652,45 @@ app.get('/api/bridges', async (req, res) => {
                      b.primary_material, b.secondary_material, b.organization_id, b.bci_av
             ORDER BY b.name
         `);
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET RECENT ACTIVITY — latest inspections across all structures
+app.get('/api/activity', async (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit) || 20;
+        const rows = await dbAll(`
+            SELECT i.id, i.structure_name, i.inspection_date, i.inspection_type,
+                   i.inspector_name, i.overall_bciave AS bci_av, i.overall_bcicrit
+            FROM inspections i
+            WHERE i.inspection_date IS NOT NULL
+            ORDER BY i.inspection_date DESC
+            LIMIT $1
+        `, [limit]);
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET previous defects for a specific element across all prior inspections
+app.get('/api/previous-defects', async (req, res) => {
+    try {
+        const { structureId, elementNo } = req.query;
+        if (!structureId || !elementNo) return res.status(400).json({ error: 'structureId and elementNo required' });
+        const rows = await dbAll(`
+            SELECT d.id, d.defect_type, d.defect_number, d.severity, d.extent,
+                   d.works_required, d.remedial_works, d.priority, d.cost, d.comments,
+                   d.element_description,
+                   i.inspection_date, i.inspector_name
+            FROM defects d
+            JOIN inspections i ON d.inspection_id = i.id
+            WHERE i.structure_id = $1 AND d.element_no = $2
+            ORDER BY i.inspection_date DESC, d.defect_no
+        `, [structureId, parseInt(elementNo)]);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });

@@ -241,12 +241,58 @@ function lv(label, value, extra) {
     };
 }
 
-function setCell(label, rowSpan) {
+function escapeXml(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// pdfmake table cells can't rotate plain text, so vertical labels ("Set"
+// column, "Bridge code") are drawn as an inline SVG instead. Rotating -90deg
+// (SVG's coordinate system is y-down, so a negative angle is anticlockwise
+// on screen) makes the label read bottom-to-top. `fit` only ever shrinks,
+// never grows, so if `h` slightly overshoots the cell's real content height
+// it still can't push the table past its tuned PAGE_TARGET_HEIGHT.
+function rotatedLabel(text, w, h, fontSize) {
+    fontSize = fontSize || 6.5;
+    var cx = w / 2, cy = h / 2;
     return {
-        text: label, rowSpan: rowSpan, bold: true, fontSize: 6.5,
-        alignment: 'center', fillColor: BCI_COLORS.sectionBg,
-        margin: [0, 4, 0, 4],
+        svg: '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '">' +
+             '<text x="' + cx + '" y="' + cy + '" transform="rotate(-90 ' + cx + ' ' + cy + ')" ' +
+             'text-anchor="middle" dominant-baseline="middle" ' +
+             'font-family="Helvetica" font-weight="bold" font-size="' + fontSize + '">' +
+             escapeXml(text) + '</text></svg>',
+        fit: [w, h]
     };
+}
+
+function setCell(label, rowSpan, rowHeightTarget, rowPad) {
+    var w = COL_WIDTHS[0];
+    // This cell gets rowPad top+bottom padding once (not per spanned row)
+    // around its content, so leave room for that plus a small margin.
+    var h = Math.max(10, rowSpan * rowHeightTarget - 2 * rowPad - 2);
+    return Object.assign(
+        { rowSpan: rowSpan, alignment: 'center', fillColor: BCI_COLORS.sectionBg },
+        rotatedLabel(label, w, h, 6)
+    );
+}
+
+// Left-aligned (the pdfmake default) text cells get a one-space left margin,
+// as literal text rather than cell padding - page1Layout/page2Layout
+// deliberately zero out paddingLeft on the narrow columns to avoid a pdfmake
+// column-offset drift bug (see their comments below), so padding isn't an
+// option here. Centered/right-aligned cells and rotated (svg) labels are
+// left untouched since they don't start flush against the left border.
+function padCellText(c) {
+    if (!c || c.alignment === 'center' || c.alignment === 'right' || c.svg) return c;
+    if (typeof c.text === 'string') {
+        if (c.text !== '') c.text = ' ' + c.text;
+    } else if (Array.isArray(c.text) && c.text.length && typeof c.text[0].text === 'string' && c.text[0].text !== '') {
+        c.text[0].text = ' ' + c.text[0].text;
+    }
+    return c;
+}
+function padTableBody(tableBody) {
+    tableBody.forEach(function(row) { row.forEach(padCellText); });
+    return tableBody;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -302,18 +348,44 @@ function buildBCIProformaContent(bciFormData) {
         var bciCrit    = spanData.bci_crit != null ? String(spanData.bci_crit) : '—';
         var bciAv      = spanData.bci_av != null ? String(spanData.bci_av) : '—';
         var bridgeCode = bridgeData.bridge_code || '';
+        var inspType   = spanData.inspection_type || '';
 
         if (spanIdx > 0) content.push({ text: '', pageBreak: 'before' });
 
         var tableBody = [];
 
+        // Ticks the inspection type this span's report is for (SI/GI/PI) -
+        // Special is left as a plain header, never ticked. Drawn as an SVG
+        // path rather than a "✓" character - pdfmake's embedded font subset
+        // is missing that glyph (renders as a tofu box, same as the
+        // pre-existing ✓ used in the Action column further down).
+        function inspTypeHeader(label, code) {
+            if (inspType !== code) {
+                return { text: label, colSpan: 3, bold: true, fontSize: 7,
+                         alignment: 'center', fillColor: BCI_COLORS.headerBg };
+            }
+            return {
+                colSpan: 3, fillColor: BCI_COLORS.headerBg,
+                columns: [
+                    { width: '*', text: '' },
+                    { width: 'auto', text: label, bold: true, fontSize: 7 },
+                    { width: 3, text: '' },
+                    { width: 8, margin: [0, 1, 0, 0],
+                      svg: '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24">' +
+                           '<path d="M3 13 L9 19 L21 5" stroke="#1a7a3c" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>' +
+                           '</svg>' },
+                    { width: '*', text: '' }
+                ]
+            };
+        }
+
         // ROW 1: Superficial(3) | General(3) | Principal(3) | Special(3) | Forms(8) = 20
         tableBody.push([
-            { text: 'Superficial', colSpan: 3, bold: true, fontSize: 7, alignment: 'center', fillColor: BCI_COLORS.headerBg },
+            inspTypeHeader('Superficial', 'SI'),
             { text: '' }, { text: '' },
-            { text: 'General', colSpan: 3, bold: true, fontSize: 7, alignment: 'center', fillColor: BCI_COLORS.headerBg },
+            inspTypeHeader('General', 'GI'),
             { text: '' }, { text: '' },
-            { text: 'Principal', colSpan: 3, bold: true, fontSize: 7, alignment: 'center', fillColor: BCI_COLORS.headerBg },
+            inspTypeHeader('Principal', 'PI'),
             { text: '' }, { text: '' },
             { text: 'Special', colSpan: 3, bold: true, fontSize: 7, alignment: 'center', fillColor: BCI_COLORS.headerBg },
             { text: '' }, { text: '' },
@@ -321,16 +393,18 @@ function buildBCIProformaContent(bciFormData) {
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }
         ]);
 
-        // ROW 2: Inspector(5) | Date(5) | Next(5) | Road(5) = 20
+        // ROW 2: Inspector(5) | Date(5) | Next(7) | Road(3) = 20
+        // Next inspection needs more room than Road Ref to keep its (longer)
+        // date + type text on one line - Road Ref values are typically short.
         tableBody.push([
             lv('Inspector: ', inspector, { colSpan: 5 }),
             { text: '' }, { text: '' }, { text: '' }, { text: '' },
             lv('Date: ', date, { colSpan: 5 }),
             { text: '' }, { text: '' }, { text: '' }, { text: '' },
-            lv('Next inspection: ', nextInsp, { colSpan: 5 }),
-            { text: '' }, { text: '' }, { text: '' }, { text: '' },
-            lv('Road Ref: ', roadRef, { colSpan: 5 }),
-            { text: '' }, { text: '' }, { text: '' }, { text: '' }
+            lv('Next inspection: ', nextInsp, { colSpan: 7 }),
+            { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
+            lv('Road Ref: ', roadRef, { colSpan: 3 }),
+            { text: '' }, { text: '' }
         ]);
 
         // ROW 3: BridgeName(10) | BridgeRef(6) | BridgeCode(1) | PrimaryForm(3) = 20
@@ -339,8 +413,14 @@ function buildBCIProformaContent(bciFormData) {
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
             lv('Bridge Ref: ', structureId, { colSpan: 6 }),
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
-            { text: [{ text: 'Bridge\ncode\n', bold: true }, { text: String(bridgeCode) }],
-              rowSpan: 4, fontSize: 6.5, alignment: 'center', fillColor: BCI_COLORS.sectionBg },
+            Object.assign(
+                { rowSpan: 4, alignment: 'center', fillColor: BCI_COLORS.sectionBg },
+                // Spans ROW3-ROW6, which aren't part of the data-row stretch
+                // system - PAGE1_FIXED_ROWS_HEIGHT/9 approximates one of
+                // those rows' height (8 header + 1 footer rows); `fit`
+                // shrinks to the real space if this overshoots.
+                rotatedLabel('Bridge code ' + bridgeCode, COL_WIDTHS[16], 4 * (PAGE1_FIXED_ROWS_HEIGHT / 9) - 6, 6)
+            ),
             lv('Primary deck form (Table G.4): ', primForm, { colSpan: 3 }),
             { text: '' }, { text: '' }
         ]);
@@ -412,6 +492,15 @@ function buildBCIProformaContent(bciFormData) {
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }
         ]);
 
+        // Target height of one data row - needed up-front (not just for page1Layout's
+        // padding below) so the rotated "Set" column labels can be sized to their
+        // rowSpan before those rows are built.
+        var dataRowCount = BCI_ELEMENTS.length + BCI_SPARE.length;
+        var dataRowFirstIdx = 8;
+        var dataRowLastIdx = dataRowFirstIdx + dataRowCount - 1;
+        var dataRowHeightTarget = (PAGE_TARGET_HEIGHT - PAGE1_FIXED_ROWS_HEIGHT) / dataRowCount;
+        var dataRowPad = Math.max(1.5, (dataRowHeightTarget - PAGE1_DATA_TEXT_HEIGHT) / 2);
+
         // ========== DATA ROWS ==========
         var elIdx = 0;
         BCI_GROUPS.forEach(function(group) {
@@ -431,7 +520,7 @@ function buildBCIProformaContent(bciFormData) {
                 var dataRow = [];
 
                 if (idxInGroup === 0) {
-                    dataRow.push(setCell(group.label, group.count));
+                    dataRow.push(setCell(group.label, group.count, dataRowHeightTarget, dataRowPad));
                 } else {
                     dataRow.push({ text: '' });
                 }
@@ -445,9 +534,10 @@ function buildBCIProformaContent(bciFormData) {
                 dataRow.push({ text: String(d.s != null ? d.s : '-'), alignment: 'center', fontSize: 7 });
                 dataRow.push({ text: String(d.ex != null ? d.ex : '-'), alignment: 'center', fontSize: 7 });
                 dataRow.push({ text: defDisplay, alignment: 'center', fontSize: 7 });
+                var worksNotRequired = d.w === 'N';
                 dataRow.push({ text: String(d.w != null ? d.w : '-'), alignment: 'center', fontSize: 7 });
-                dataRow.push({ text: String(d.p != null ? d.p : '-'), alignment: 'center', fontSize: 7 });
-                dataRow.push({ text: String(d.cost != null ? d.cost : ''), colSpan: 2, alignment: 'right', fontSize: 7 });
+                dataRow.push({ text: worksNotRequired ? '' : String(d.p != null ? d.p : '-'), alignment: 'center', fontSize: 7 });
+                dataRow.push({ text: worksNotRequired ? '' : String(d.cost != null ? d.cost : ''), colSpan: 2, alignment: 'right', fontSize: 7 });
                 dataRow.push({ text: '' });
                 dataRow.push({ text: comments, colSpan: 6, fontSize: 6.5 });
                 dataRow.push({ text: '' });
@@ -465,7 +555,7 @@ function buildBCIProformaContent(bciFormData) {
             var spareRow = [];
 
             if (i === 0) {
-                spareRow.push(setCell('Spare', BCI_SPARE.length));
+                spareRow.push(setCell('Spare', BCI_SPARE.length, dataRowHeightTarget, dataRowPad));
             } else {
                 spareRow.push({ text: '' });
             }
@@ -501,14 +591,6 @@ function buildBCIProformaContent(bciFormData) {
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }
         ]);
 
-        // Stretch the data rows (elements + spare - rows 8 through the row
-        // before the footer) so the table reaches the same total height as
-        // page 2's, regardless of how many elements this structure type has.
-        var dataRowCount = BCI_ELEMENTS.length + BCI_SPARE.length;
-        var dataRowFirstIdx = 8;
-        var dataRowLastIdx = dataRowFirstIdx + dataRowCount - 1;
-        var dataRowHeightTarget = (PAGE_TARGET_HEIGHT - PAGE1_FIXED_ROWS_HEIGHT) / dataRowCount;
-        var dataRowPad = Math.max(1.5, (dataRowHeightTarget - PAGE1_DATA_TEXT_HEIGHT) / 2);
         var page1Layout = {
             hLineWidth:    function() { return 0.5; },
             vLineWidth:    function() { return 0.5; },
@@ -528,7 +610,7 @@ function buildBCIProformaContent(bciFormData) {
         };
 
         content.push(centeredTable({
-            table: { widths: COL_WIDTHS, body: tableBody },
+            table: { widths: COL_WIDTHS, body: padTableBody(tableBody) },
             layout: page1Layout,
         }));
     }
@@ -723,8 +805,9 @@ function buildBCIPage2Content(bciFormData) {
         for (var i = 0; i < WORK_ROW_COUNT; i++) {
             var w        = spanWorks[i] || {};
             var remedial = w.remedialWorks || w.remedial_works || '';
-            var priority = w.priority || '';
-            var cost     = (w.cost && w.cost !== 'Not specified') ? w.cost : '';
+            var worksNotRequired = w.worksRequired === 'N';
+            var priority = worksNotRequired ? '' : (w.priority || '');
+            var cost     = worksNotRequired ? '' : ((w.cost && w.cost !== 'Not specified') ? w.cost : '');
             var action   = w.worksRequired === 'Y' ? '✓' : (w.worksRequired === 'M' ? '?' : '');
             var pColor   = priority === 'H' ? BCI_COLORS.priorityH
                            : priority === 'M' ? BCI_COLORS.priorityM
@@ -769,7 +852,7 @@ function buildBCIPage2Content(bciFormData) {
         };
 
         content.push(centeredTable({
-            table: { widths: COL_WIDTHS, body: tableBody },
+            table: { widths: COL_WIDTHS, body: padTableBody(tableBody) },
             layout: page2Layout,
         }));
     }

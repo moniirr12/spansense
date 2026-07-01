@@ -130,7 +130,10 @@
                 localStorage.setItem('nightMode', 'off');
             }
         };
-        if (localStorage.getItem('nightMode') === 'on') {
+        var savedNightMode = localStorage.getItem('nightMode');
+        var systemPrefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+        document.documentElement.classList.remove('nm-preload');
+        if (savedNightMode === 'on' || (savedNightMode === null && !systemPrefersLight)) {
             document.body.classList.add('night-mode');
             toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
         }
@@ -1250,7 +1253,15 @@
                     await exportToPDF(exportData, checkedCols);
                 }
             } else if (format === 'docx') {
-                showToast('DOCX export coming soon', 'info');
+                if (currentCategory === 'reports') {
+                    for (var j = 0; j < exportData.length; j++) {
+                        text.textContent = 'Generating Word report ' + (j + 1) + ' of ' + exportData.length + '...';
+                        await generateReportDocx(exportData[j].inspection_id);
+                        await new Promise(function(r) { setTimeout(r, 300); });
+                    }
+                } else {
+                    showToast('DOCX export is only available for Reports', 'info');
+                }
             }
 
             fill.style.width = '100%';
@@ -1522,6 +1533,76 @@
             console.error('BCI generation error:', error);
             overlay.classList.remove('active');
             showToast('Report generation failed: ' + error.message, 'error');
+            fill.style.width = '0%';
+            percent.textContent = '';
+        }
+    };
+
+    // ============================================
+    // GENERATE REPORT (DOCX) - full narrative report (structure details,
+    // location map, per-element defect descriptions, conclusions/remedial
+    // works, photo appendix). Deliberately excludes the BCI Proforma grid.
+    // ============================================
+    window.generateReportDocx = async function(inspectionId) {
+        var inspection = inspectionsData.find(function(i) { return i.id === inspectionId; });
+        if (!inspection) { showToast('Inspection not found', 'error'); return; }
+
+        var overlay = document.getElementById('progressOverlay');
+        var fill    = document.getElementById('progressFill');
+        var percent = document.getElementById('progressPercent');
+        var text    = document.getElementById('progressText');
+
+        text.textContent = 'Generating Word report for ' + (inspection.structure_name || inspectionId) + '...';
+        overlay.classList.add('active');
+        fill.style.width = '10%';
+
+        try {
+            if (typeof window.docx === 'undefined') {
+                await loadScript('https://cdn.jsdelivr.net/npm/docx@9.7.1/dist/index.iife.js');
+            }
+            if (typeof buildFullInspectionReportDocx !== 'function') {
+                throw new Error('DOCX generator not loaded. Please refresh the page.');
+            }
+
+            fill.style.width = '25%';
+
+            var docInfo = {
+                structure_id: inspection.structure_id || '',
+                structure_name: inspection.structure_name || '',
+                date: inspection.inspection_date || ''
+            };
+
+            var wordDoc = await buildFullInspectionReportDocx(docInfo);
+            fill.style.width = '85%';
+
+            var blob = await window.docx.Packer.toBlob(wordDoc);
+            fill.style.width = '95%';
+
+            var fileName = (inspection.structure_name || 'Report').replace(/[^a-z0-9]/gi, '_') + '_Inspection_Report_' + inspection.inspection_date + '.docx';
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.setAttribute('download', fileName);
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            fill.style.width = '100%';
+            percent.textContent = '100%';
+
+            setTimeout(function() {
+                overlay.classList.remove('active');
+                showToast('Word report generated: ' + fileName, 'success');
+                fill.style.width = '0%';
+                percent.textContent = '';
+                addActivity(1, 'Inspection Report (Word)');
+            }, 500);
+
+        } catch (error) {
+            console.error('DOCX generation error:', error);
+            overlay.classList.remove('active');
+            showToast('Word report generation failed: ' + error.message, 'error');
             fill.style.width = '0%';
             percent.textContent = '';
         }

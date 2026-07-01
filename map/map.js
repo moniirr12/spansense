@@ -26,6 +26,13 @@ function closeDocumentsModalAndRestore() {
     }
 }
 
+// Structure ID/name labels only render once zoomed in past this level, to avoid clutter portfolio-wide
+const LABEL_ZOOM_THRESHOLD = 8;
+function updateLabelVisibility() {
+    const mapEl = document.getElementById('map');
+    if (mapEl) mapEl.classList.toggle('labels-visible', map.getZoom() >= LABEL_ZOOM_THRESHOLD);
+}
+
 // Returns a condition-ring border color based on BCI score
 function condRing(bci) {
     if (bci === null || bci === undefined) return '#9aa8c2';
@@ -86,6 +93,11 @@ function createStructureMarker(bridge) {
         Length: ${bridge.length} meters<br>
         Built: ${bridge.built_year}
     `, { closeButton: false });
+
+    marker.bindTooltip(
+        `<span class="structure-label-id">${bridge.id}</span>${bridge.name}`,
+        { permanent: true, direction: 'top', offset: [0, -18], className: 'structure-label' }
+    );
 
     marker.on('mouseover', function(e) { this.openPopup(); });
     marker.on('mouseout', function(e) { this.closePopup(); });
@@ -176,6 +188,8 @@ fetch('bridges.json')
         // Initialize map
         map = L.map('map').setView([54.0, -2.0], 6);
         map.zoomControl.setPosition('topright');
+        map.on('zoomend', updateLabelVisibility);
+        updateLabelVisibility();
 
         // Define base layers
         darkMap = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
@@ -197,32 +211,7 @@ fetch('bridges.json')
         // Add default base layer
         openStreetMap.addTo(map);
 
-        // Create all markers
-        bridgeData.forEach(bridge => {
-            const marker = createStructureMarker(bridge);
-            bridgeMarkers.addLayer(marker);
-        });
-
         bridgeMarkers.addTo(map);
-        restoreFilterState();
-
-        // Fetch live BCI data for each structure and rebuild markers with condition rings
-        Promise.all(
-            bridgeData.map(bridge =>
-                fetch(`${API_BASE}/api/bridges/${bridge.id}`)
-                    .then(r => r.ok ? r.json() : null)
-                    .catch(() => null)
-            )
-        ).then(results => {
-            let updated = false;
-            results.forEach((apiData, i) => {
-                if (apiData && apiData.bci_av != null) {
-                    bridgeData[i].bci_av = parseFloat(apiData.bci_av);
-                    updated = true;
-                }
-            });
-            if (updated) rebuildMarkersFromFilter();
-        });
 
         // Setup layer controls
         const baseMaps = {
@@ -238,6 +227,21 @@ fetch('bridges.json')
             const modal = document.getElementById('bridgeModal');
             if (event.target === modal) modal.style.display = 'none';
         });
+
+        // Enrich bridgeData with bci_av from the bulk API endpoint (one request, graceful fallback)
+        return fetch(`${API_BASE}/api/bridges`)
+            .then(r => r.ok ? r.json() : null)
+            .catch(() => null)
+            .then(apiRows => {
+                if (apiRows && Array.isArray(apiRows)) {
+                    const bciMap = {};
+                    apiRows.forEach(b => { if (b.bci_av != null) bciMap[b.id] = parseFloat(b.bci_av); });
+                    bridgeData.forEach(b => { if (bciMap[b.id] != null) b.bci_av = bciMap[b.id]; });
+                }
+            });
+    })
+    .then(() => {
+        restoreFilterState();
     })
     .catch(error => {
         console.error('Error loading bridge data:', error);
@@ -335,12 +339,17 @@ if (conditionCheckboxes.length) {
         return;
     }
 
+    const savedNightMode = localStorage.getItem('nightMode');
+    const systemPrefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    const wantsNightMode = savedNightMode === 'on' || (savedNightMode === null && !systemPrefersLight);
+    document.documentElement.classList.remove('nm-preload');
+
     let mapReady = false;
     let checkInterval = setInterval(function() {
         if (typeof map !== 'undefined' && map && darkMap && openStreetMap) {
             mapReady = true;
             clearInterval(checkInterval);
-            if (localStorage.getItem('nightMode') === 'on' && darkMap) {
+            if (wantsNightMode && darkMap) {
                 if (openStreetMap) map.removeLayer(openStreetMap);
                 darkMap.addTo(map);
             }
@@ -368,7 +377,7 @@ if (conditionCheckboxes.length) {
         }
     };
 
-    if (localStorage.getItem('nightMode') === 'on') {
+    if (wantsNightMode) {
         document.body.classList.add('night-mode');
         toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
     }

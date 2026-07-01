@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){var nm=localStorage.getItem('nightMode');var dark=nm==='on'||(nm===null&&!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches));if(dark)document.documentElement.classList.add('nm-preload');})();</script>
+<style>html.nm-preload,html.nm-preload body{background-color:#0f1419!important;}</style>
 <title>spanSense - Bridge Management System</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -43,7 +45,7 @@
     --bridge-arch: #C4A882;
 }
 
-[data-theme="dark"] {
+body.night-mode {
     --bg-primary: #0f1419;
     --bg-secondary: #1a2027;
     --bg-glass: rgba(26, 32, 39, 0.7);
@@ -213,10 +215,10 @@ body {
 .navbar .right {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 10px;
 }
 
-.mode-toggle {
+.night-mode-toggle {
     cursor: pointer;
     font-size: 1.2rem;
     color: #8a9ba8;
@@ -231,7 +233,7 @@ body {
     justify-content: center;
 }
 
-.mode-toggle:hover {
+.night-mode-toggle:hover {
     background: #e2e8f0;
     color: #5b8c8a;
     transform: scale(1.05);
@@ -240,62 +242,66 @@ body {
 .navbar .account-links {
     display: flex;
     align-items: center;
-    gap: 0;
+    gap: 10px;
 }
 
 .navbar .account-links a {
     text-decoration: none;
-    color: #6a7c8e;
-    margin-left: 16px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    transition: color 0.2s;
+    color: #8a9ba8;
+    font-size: 1.2rem;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    transition: color 0.2s, transform 0.15s, background 0.2s;
     cursor: pointer;
 }
 
 .navbar .account-links a:hover {
+    background: #f0f4f8;
     color: #5b8c8a;
+    transform: scale(1.1);
 }
 
 /* Dark mode navbar styles */
-[data-theme="dark"] .navbar {
+.night-mode .navbar {
     background: rgba(35, 46, 52, 0.95);
     border-color: #2f3e45;
 }
 
-[data-theme="dark"] .navbar .logo {
+.night-mode .navbar .logo {
     background: linear-gradient(135deg, #8ab4b0 0%, #a0c8c4 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
-[data-theme="dark"] .navbar .menu a {
+.night-mode .navbar .menu a {
     color: #9ab0b8;
 }
 
-[data-theme="dark"] .navbar .menu a:hover,
-[data-theme="dark"] .navbar .menu a.active {
+.night-mode .navbar .menu a:hover,
+.night-mode .navbar .menu a.active {
     color: #8ab4b0;
 }
 
-[data-theme="dark"] .navbar .menu a.active {
+.night-mode .navbar .menu a.active {
     background: rgba(138, 180, 176, 0.15);
 }
 
-[data-theme="dark"] .mode-toggle {
+.night-mode .night-mode-toggle {
     background: #3e525e;
     color: #c5e0e6;
 }
 
-[data-theme="dark"] .mode-toggle:hover {
+.night-mode .night-mode-toggle:hover {
     background: #4a6570;
 }
 
-[data-theme="dark"] .navbar .account-links a {
+.night-mode .navbar .account-links a {
     color: #9ab0b8;
 }
 
-[data-theme="dark"] .navbar .account-links a:hover {
+.night-mode .navbar .account-links a:hover {
+    background: #2f3e45;
     color: #b8d4d0;
 }
 
@@ -1307,14 +1313,14 @@ html::-webkit-scrollbar { display: none; }
     cursor: grabbing;
 }
 
-/* ========== DARK MODE SCROLLBAR - using data-theme ========== */
-[data-theme="dark"] .glass-scrollbar {
+/* ========== DARK MODE SCROLLBAR ========== */
+body.night-mode .glass-scrollbar {
     background: rgba(35, 46, 52, 0.7) !important;
     border-color: rgba(58, 75, 83, 0.5) !important;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255,255,255,0.03) !important;
 }
 
-[data-theme="dark"] .glass-scrollbar .thumb {
+body.night-mode .glass-scrollbar .thumb {
     background: linear-gradient(180deg, #ff6b6b, #c0392b) !important;
     box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.1), 0 0 14px rgba(138, 180, 176, 0.45), 0 0 28px rgba(138, 180, 176, 0.2) !important;
 }
@@ -1464,10 +1470,10 @@ html::-webkit-scrollbar { display: none; }
         </div>
     </div>
     <div class="right">
-        <div class="mode-toggle" onclick="toggleTheme()" id="themeToggle"><i class="fas fa-moon"></i></div>
+        <div class="night-mode-toggle" id="nightModeToggle"><i class="fas fa-moon"></i></div>
         <div class="account-links">
-            <a href="accounts/accounts.html">Account</a>
-            <a href="contacts/contacts.html">Contact Us</a>
+            <a href="accounts/accounts.html" title="Account"><i class="fas fa-user-circle"></i></a>
+            <a href="contacts/contacts.html" title="Contact Us"><i class="fas fa-envelope"></i></a>
         </div>
     </div>
 </nav>
@@ -1606,32 +1612,35 @@ html::-webkit-scrollbar { display: none; }
 </div>
 
 <script>
-// Theme management
-function setTheme(theme) {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
-    
-    const toggleBtn = document.getElementById('themeToggle');
-    if (toggleBtn) {
-        toggleBtn.innerHTML = theme === 'dark' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+// Night mode - defaults to dark unless the system explicitly prefers light
+(function() {
+    const toggleBtn = document.getElementById('nightModeToggle');
+    const nm = localStorage.getItem('nightMode');
+    const systemPrefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    const dark = nm === 'on' || (nm === null && !systemPrefersLight);
+
+    // The preload snippet in <head> forces a dark background to avoid a flash;
+    // now that the real theme is decided, drop it so the background can't stay dark once night-mode is removed.
+    document.documentElement.classList.remove('nm-preload');
+
+    if (dark) {
+        document.body.classList.add('night-mode');
+        if (toggleBtn) toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
     }
-}
 
-function toggleTheme() {
-    const currentTheme = document.documentElement.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    setTheme(newTheme);
-}
-
-// Load saved theme
-const savedTheme = localStorage.getItem('theme');
-if (savedTheme && (savedTheme === 'dark' || savedTheme === 'light')) {
-    setTheme(savedTheme);
-} else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    setTheme('dark');
-} else {
-    setTheme('light');
-}
+    if (toggleBtn) {
+        toggleBtn.onclick = function() {
+            document.body.classList.toggle('night-mode');
+            if (document.body.classList.contains('night-mode')) {
+                toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
+                localStorage.setItem('nightMode', 'on');
+            } else {
+                toggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
+                localStorage.setItem('nightMode', 'off');
+            }
+        };
+    }
+})();
 
 // Scroll reveal animation
 function handleScrollReveal() {

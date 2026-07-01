@@ -56,7 +56,7 @@ body {
 }
 
 .navbar .right {
-    gap: 20px !important;
+    gap: 10px !important;
 }
 
 /* Fix search bar width */
@@ -91,12 +91,28 @@ body {
     -webkit-text-fill-color: transparent !important;
 }
 
-/* Fix account links */
+/* Account / contact icon buttons */
+.navbar .account-links {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+}
 .navbar .account-links a {
     text-decoration: none !important;
-    color: #6a7c8e !important;
-    margin-left: 16px !important;
-    font-size: 0.85rem !important;
+    color: #8a9ba8 !important;
+    font-size: 1.2rem !important;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: color 0.2s, transform 0.15s, background 0.2s !important;
+}
+.navbar .account-links a:hover {
+    background: #e2e8f0 !important;
+    color: #5b8c8a !important;
+    transform: scale(1.1) !important;
 }
 
 /* Fix night mode toggle */
@@ -563,6 +579,26 @@ body {
     color: #2c3e44;
     font-family: 'Segoe UI', sans-serif;
 }
+
+/* Structure ID/name label under each marker - only shown once zoomed in (see LABEL_ZOOM_THRESHOLD in map.js) */
+.leaflet-tooltip.structure-label {
+    background: white;
+    border: 1px solid #e2e8ee;
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #2c3e44;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.10);
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease;
+}
+.leaflet-tooltip.structure-label::before { display: none; }
+#map.labels-visible .leaflet-tooltip.structure-label { opacity: 1; visibility: visible; }
+.structure-label-id { color: #2d7a6e; font-weight: 700; margin-right: 4px; }
 
 /* ============================================
    SEARCH RESULTS DROPDOWN
@@ -2411,6 +2447,15 @@ body.modal-open {
     background: #4a6570;
 }
 
+.night-mode .navbar .account-links a {
+    color: #c5e0e6 !important;
+}
+
+.night-mode .navbar .account-links a:hover {
+    background: #4a6570 !important;
+    color: #8ab4b0 !important;
+}
+
 
 /* Search results */
 .night-mode .search-results div {
@@ -2719,6 +2764,15 @@ body.modal-open {
 }
 .night-mode .leaflet-popup-tip {
     background: #2f3e48;
+}
+
+.night-mode .leaflet-tooltip.structure-label {
+    background: #2f3e48;
+    border-color: #3e525e;
+    color: #d4dfe3;
+}
+.night-mode .structure-label-id {
+    color: #8ab4b0;
 }
 
 /* ============================================

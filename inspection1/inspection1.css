@@ -56,21 +56,20 @@ body {
 .navbar .right {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 10px;
 }
 
+.navbar .account-links { display: flex; align-items: center; gap: 10px; }
 .navbar .account-links a {
     text-decoration: none;
-    color: #6a7c8e;
-    margin-left: 16px;
-    font-size: 0.85rem;
-    font-weight: 500;
-    transition: color 0.2s;
+    color: #8a9ba8;
+    font-size: 1.2rem;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    transition: color 0.2s, transform 0.15s, background 0.2s;
 }
-
-.navbar .account-links a:hover {
-    color: #5b8c8a;
-}
+.navbar .account-links a:hover { background: rgba(224, 232, 240, 0.9); color: #5b8c8a; transform: scale(1.1); }
 
 .night-mode-toggle {
     background: rgba(240, 242, 245, 0.75);
@@ -646,6 +645,11 @@ textarea:focus {
 .night-mode .navbar .menu a,
 .night-mode .navbar .account-links a {
     color: #9ab0b8;
+}
+
+.night-mode .navbar .account-links a:hover {
+    background: #3a4b53;
+    color: #b8d4d0;
 }
 
 /* Sidebar */

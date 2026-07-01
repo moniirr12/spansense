@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <script>if(localStorage.getItem('nightMode')==='on')document.documentElement.classList.add('nm-preload');</script>
+    <script>(function(){var nm=localStorage.getItem('nightMode');var dark=nm==='on'||(nm===null&&!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches));if(dark)document.documentElement.classList.add('nm-preload');})();</script>
     <style>html.nm-preload,html.nm-preload body{background-color:#1a2428!important;}</style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>SpanSense — Bridge Inspection | Defect Management</title>
@@ -525,8 +525,8 @@
         <div class="right">
             <div class="night-mode-toggle" id="nightModeToggle"><i class="fas fa-moon"></i></div>
             <div class="account-links">
-                <a href="../accounts/accounts.html" target="_self">Account</a>
-                <a href="../contacts/contacts.html" target="_self">Contact Us</a>
+                <a href="../accounts/accounts.html" target="_self" title="Account"><i class="fas fa-user-circle"></i></a>
+                <a href="../contacts/contacts.html" target="_self" title="Contact Us"><i class="fas fa-envelope"></i></a>
             </div>
         </div>
     </div>
@@ -543,13 +543,13 @@
                     <!-- BCI Average Card -->
                     <div class="stat-card average">
                         <div class="stat-label">BCI AVERAGE</div>
-                        <div class="stat-value stat-loading" id="bciAvResult">···</div>
+                        <div class="stat-value stat-loading" id="bciAvResult">Â·Â·Â·</div>
                     </div>
 
                     <!-- BCI Critical Card -->
                     <div class="stat-card critical">
                         <div class="stat-label">BCI CRITICAL</div>
-                        <div class="stat-value critical stat-loading" id="bciCritResult">···</div>
+                        <div class="stat-value critical stat-loading" id="bciCritResult">Â·Â·Â·</div>
                     </div>
 
                     <!-- Date Card -->
@@ -718,7 +718,7 @@
                     
                     <div class="mock-image">
                         <i class="fas fa-bridge"></i>
-                        <span>spanSense ©</span>
+                        <span>spanSense Â©</span>
                     </div>
                     
                     <div class="sidebar-divider"></div>
@@ -785,9 +785,42 @@
     </div>
 
     <div id="modal" class="modal">
+        <!-- Previous defects floating panel -->
+        <div class="prev-defects-panel" id="prevDefectsPanel" style="display:none;">
+            <div class="prev-hdr">
+                <div class="prev-hdr-left">
+                    <div class="prev-hdr-icon"><i class="fas fa-history"></i></div>
+                    <div class="prev-hdr-text">
+                        <div class="prev-hdr-title">Previous Defects</div>
+                        <div class="prev-hdr-sub" id="prevHdrSub">—</div>
+                    </div>
+                </div>
+                <button class="prev-collapse-btn" id="prevCollapseBtn" title="Collapse">
+                    <i class="fas fa-chevron-left" id="prevCollapseIcon"></i>
+                </button>
+            </div>
+            <div class="prev-panel-body" id="prevPanelBody">
+                <div class="prev-chip">
+                    <span class="prev-chip-num" id="prevChipNum">—</span>
+                    <span class="prev-chip-name" id="prevChipName">—</span>
+                    <span class="prev-chip-count" id="prevChipCount">0</span>
+                </div>
+                <div class="prev-list" id="prevList"></div>
+                <div class="prev-footer" id="prevFooter" style="display:none;">
+                    <button class="prev-load-more-btn" id="prevLoadMoreBtn">
+                        <i class="fas fa-chevron-down"></i> Load more
+                    </button>
+                </div>
+            </div>
+        </div>
         <div class="modal-content">
             <div class="modal-header">
-                <h2 id="modalTitle">Details</h2>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <h2 id="modalTitle">Details</h2>
+                    <span id="prevLoadedBadge" class="prev-loaded-badge" style="display:none;">
+                        <i class="fas fa-history"></i> <span class="prev-badge-date"></span>
+                    </span>
+                </div>
                 <button class="close-btn" id="modalCloseBtn">&times;</button>
             </div>
             
@@ -1246,7 +1279,10 @@
                 }
             };
 
-            if (localStorage.getItem('nightMode') === 'on') {
+            const savedNightMode = localStorage.getItem('nightMode');
+            const systemPrefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+            document.documentElement.classList.remove('nm-preload');
+            if (savedNightMode === 'on' || (savedNightMode === null && !systemPrefersLight)) {
                 document.body.classList.add('night-mode');
                 toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
             }
@@ -1342,7 +1378,7 @@
             });
         }
 
-        // Defect type → number cascade
+        // Defect type â†’ number cascade
         var defectTypeEl = document.getElementById('defectType');
         if (defectTypeEl) {
             defectTypeEl.addEventListener('change', function() {
@@ -1404,6 +1440,7 @@
     <script src="spans.js"></script>
     <script src="photo.js"></script>
     <script src="../inspection1/inspection1.js"></script>
+    <script src="prevDefects.js"></script>
 
     <!-- 3D defect locator -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>

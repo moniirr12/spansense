@@ -50,15 +50,28 @@ body {
     -webkit-text-fill-color: transparent;
 }
 
-.navbar .right { display: flex; align-items: center; gap: 20px; }
+.navbar .right { display: flex; align-items: center; gap: 10px; }
+.night-mode-toggle {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    color: #8a9ba8;
+    background: #f0f2f5;
+    transition: all 0.2s;
+}
+.night-mode-toggle:hover { background: #e2e8f0; color: #5b8c8a; }
+.navbar .account-links { display: flex; align-items: center; gap: 10px; }
 .navbar .account-links a {
     text-decoration: none;
-    color: #6a7c8e;
-    margin-left: 16px;
-    font-size: 0.85rem;
-    transition: color 0.2s;
+    color: #8a9ba8;
+    font-size: 1.2rem;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    transition: color 0.2s, transform 0.15s, background 0.2s;
 }
-.navbar .account-links a:hover { color: #5b8c8a; }
+.navbar .account-links a:hover { background: #f0f4f8; color: #5b8c8a; transform: scale(1.1); }
 
 /* ---------- CONTAINER & HEADER ---------- */
 .container { max-width: 960px; margin: 0 auto; padding: 20px; }
@@ -540,6 +553,12 @@ body {
 .night-mode #inspectionElementsTable tr.main-row td.severity:has(.sev-5) {
     background-image: radial-gradient(circle at center, #3a2020 14px, transparent 14px);
 }
+
+/* Clicking anywhere on an expandable row opens the edit modal */
+#inspectionElementsTable tr.expandable-row { cursor: pointer; }
+#inspectionElementsTable tr.expandable-row button[title='View'],
+#inspectionElementsTable tr.expandable-row button[title='Delete'],
+#inspectionElementsTable tr.expandable-row button[title='Copy'] { cursor: default; }
 
 /* Severity/extent colour badges inside the expandable defect rows — mirrors
    the main-row severity colours and the extent stepper's blue progression. */
@@ -1335,12 +1354,13 @@ body {
     transform: translate(-50%, -50%);
     margin: 0;
     transition: left 0.3s ease;
+    max-width: 467px;
 }
 /* Only the Add Defect segment needs room for the guidance panel on the
    right — No Defects/Not Inspected have nothing beside them, so they stay
    genuinely centered instead of carrying the same offset for no reason. */
 #modal[data-modal-state="defect"] .modal-content {
-    left: calc(50% - 138px);
+    left: 50%;
 }
 
 /* Severity guidance panel — sits beside the Add Defect modal, condensed
@@ -1350,7 +1370,7 @@ body {
 .defect-guidance-panel {
     display: none;
     position: fixed;
-    left: calc(50% + 153px);
+    left: calc(50% + 281px);
     top: 50%;
     transform: translateY(-50%);
     flex-direction: column;
@@ -1439,6 +1459,9 @@ body {
    width modal without overflowing the viewport — hide it and let
    .modal-content fall back to true center (it never shows up in this
    state, so there's nothing to jump when re-centering here). */
+@media (max-width: 1100px) {
+    .prev-defects-panel { display: none !important; }
+}
 @media (max-width: 860px) {
     .defect-guidance-panel { display: none !important; }
     #modal[data-modal-state="defect"] .modal-content { left: 50%; }
@@ -2056,6 +2079,9 @@ body {
 .night-mode .navbar { background: rgba(35, 46, 52, 0.95) !important; border-color: #2f3e45; }
 .night-mode .navbar .logo { background: linear-gradient(135deg, #8ab4b0 0%, #a0c8c4 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 .night-mode .navbar .menu a, .night-mode .navbar .account-links a { color: #9ab0b8; }
+.night-mode .navbar .account-links a:hover { background: #2f3e45; color: #8ab4b0; }
+.night-mode .night-mode-toggle { background: #2f3e45; color: #9ab0b8; }
+.night-mode .night-mode-toggle:hover { background: #3a4b53; color: #8ab4b0; }
 
 .night-mode .stat-card, .night-mode .span-toggle,
 .night-mode .table-container, .night-mode #inspectionElementsTable,
@@ -4027,3 +4053,182 @@ body.night-mode.contracted-rows #inspectionElementsTable tr.expandable-row .grid
     background: linear-gradient(135deg, #3a2020 0%, #2a1818 100%);
     color: #c07070;
 }
+
+/* ============================================
+   PREVIOUS DEFECTS PANEL
+   ============================================ */
+
+/* "From [date]" badge in modal header */
+.prev-loaded-badge {
+    font-size: 0.68rem; font-weight: 600;
+    background: #eef6f5; color: #2d7a6e;
+    border: 1px solid #b8ddd5; border-radius: 20px;
+    padding: 3px 10px; display: inline-flex; align-items: center; gap: 5px;
+    flex-shrink: 0;
+}
+.night-mode .prev-loaded-badge { background: #1e3a35; border-color: #3a6b60; color: #8ab4b0; }
+
+/* Panel itself — fixed, floats left of centered modal */
+.prev-defects-panel {
+    position: fixed;
+    right: calc(50% + 281px);
+    top: 50%;
+    transform: translateY(-50%);
+    width: 240px;
+    max-height: calc(72vh - 54px);
+    background: white;
+    border-radius: 24px;
+    border: 1px solid #e9edf2;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.10);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    z-index: 1001;
+    transition: width 0.22s ease;
+}
+.prev-defects-panel.prev-collapsed { width: 48px; }
+.night-mode .prev-defects-panel { background: #1e2a2f; border-color: #2f3e45; }
+
+/* Header */
+.prev-hdr {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 14px 12px; border-bottom: 1px solid #e9edf2;
+    background: #fafbfc; flex-shrink: 0;
+}
+.night-mode .prev-hdr { background: #1a2228; border-color: #2f3e45; }
+.prev-hdr-left { display: flex; align-items: center; gap: 9px; overflow: hidden; }
+.prev-hdr-icon {
+    width: 28px; height: 28px; flex-shrink: 0; border-radius: 8px;
+    background: #eef6f5; display: flex; align-items: center; justify-content: center;
+    color: #2d7a6e; font-size: 12px;
+}
+.night-mode .prev-hdr-icon { background: #1e3a35; color: #8ab4b0; }
+.prev-hdr-text { overflow: hidden; }
+.prev-hdr-title { font-size: 0.78rem; font-weight: 700; color: #2c3e44; white-space: nowrap; }
+.prev-hdr-sub { font-size: 0.65rem; color: #8a9ba8; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.night-mode .prev-hdr-title { color: #d4dfe3; }
+
+.prev-collapse-btn {
+    flex-shrink: 0; background: #f1f3f5; border: 1px solid #e9edf2;
+    border-radius: 8px; width: 28px; height: 28px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    color: #8a9ba8; font-size: 10px; transition: background 0.15s, color 0.15s;
+}
+.prev-collapse-btn:hover { background: #e4ecf2; color: #2d7a6e; }
+.night-mode .prev-collapse-btn { background: #2f3e45; border-color: #3a4b53; color: #8a9ba8; }
+.night-mode .prev-collapse-btn:hover { background: #3a4b53; color: #8ab4b0; }
+
+/* Collapsed state */
+.prev-defects-panel.prev-collapsed {
+    cursor: pointer;
+}
+.prev-defects-panel.prev-collapsed .prev-hdr {
+    padding: 10px; border-bottom: none; justify-content: center;
+}
+.prev-defects-panel.prev-collapsed .prev-hdr-left { gap: 0; }
+.prev-defects-panel.prev-collapsed .prev-hdr-text,
+.prev-defects-panel.prev-collapsed .prev-collapse-btn { display: none; }
+
+/* Panel body */
+.prev-panel-body {
+    flex: 1; overflow: hidden; display: flex; flex-direction: column;
+    transition: max-height 0.22s ease, opacity 0.18s ease;
+}
+.prev-defects-panel.prev-collapsed .prev-panel-body { max-height: 0; opacity: 0; overflow: hidden; }
+
+/* Element chip */
+.prev-chip {
+    margin: 10px 12px 6px; background: #eef6f5; border-radius: 10px;
+    padding: 6px 10px; display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+}
+.night-mode .prev-chip { background: #1e3a35; }
+.prev-chip-num { font-size: 14px; font-weight: 800; color: #2d7a6e; }
+.prev-chip-name { font-size: 11px; font-weight: 600; color: #2c5a57; line-height: 1.2; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prev-chip-count { font-size: 10px; font-weight: 700; background: #2d7a6e; color: white; border-radius: 20px; padding: 1px 7px; flex-shrink: 0; }
+.night-mode .prev-chip-name { color: #8ab4b0; }
+
+/* Scrollable list */
+.prev-list {
+    flex: 1; overflow-y: auto; padding: 4px 10px 0;
+}
+.prev-list::-webkit-scrollbar { width: 4px; }
+.prev-list::-webkit-scrollbar-thumb { background: #c5dbd8; border-radius: 10px; }
+
+/* Defect cards */
+.prev-card {
+    border: 1.5px solid #e9edf2; border-radius: 14px;
+    padding: 10px 12px; margin-bottom: 8px;
+    background: white; cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+    position: relative;
+}
+.prev-card:hover { border-color: #8ab4b0; box-shadow: 0 4px 14px rgba(91,140,138,0.12); }
+.prev-card.prev-selected {
+    border-color: #2d7a6e;
+    background: linear-gradient(135deg, #f4fbf9, #f0f8f5);
+    box-shadow: 0 4px 14px rgba(45,122,110,0.14);
+}
+.prev-card.prev-selected::before {
+    content: ''; position: absolute; left: 0; top: 14px; bottom: 14px;
+    width: 3px; background: #2d7a6e; border-radius: 0 3px 3px 0;
+}
+.night-mode .prev-card { background: #1e2a2f; border-color: #2f3e45; }
+.night-mode .prev-card:hover { border-color: #8ab4b0; }
+.night-mode .prev-card.prev-selected { background: #1a3530; border-color: #2d7a6e; }
+
+.prev-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 4px; margin-bottom: 5px; }
+.prev-code { font-size: 11.5px; font-weight: 700; color: #2c3e44; line-height: 1.3; }
+.prev-date { font-size: 9.5px; color: #9ab0bc; font-weight: 500; white-space: nowrap; flex-shrink: 0; padding-top: 1px; }
+.night-mode .prev-code { color: #d4dfe3; }
+
+.prev-badges { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 5px; }
+.pb { font-size: 9.5px; font-weight: 700; padding: 2px 6px; border-radius: 20px; }
+.pb-s1 { background: #e8f5f0; color: #2d7a6e; }
+.pb-s2 { background: #fef3e2; color: #BA7517; }
+.pb-s3 { background: #fce8e6; color: #c0392b; }
+.pb-e  { background: #eef2f9; color: #4a7098; }
+.pb-wy { background: #fce8e6; color: #c0392b; }
+.pb-wn { background: #eef6f5; color: #2d7a6e; }
+.pb-wm { background: #fff8ee; color: #BA7517; }
+
+.prev-comment {
+    font-size: 10.5px; color: #7a8e9a; line-height: 1.4;
+    overflow: hidden; display: -webkit-box;
+    -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;
+    margin-bottom: 4px;
+}
+.night-mode .prev-comment { color: #6a8090; }
+
+.prev-hint {
+    font-size: 10px; font-weight: 600; color: #2d7a6e;
+    display: flex; align-items: center; gap: 4px;
+    opacity: 0; transition: opacity 0.15s;
+}
+.prev-card:hover .prev-hint,
+.prev-card.prev-selected .prev-hint { opacity: 1; }
+
+/* Loading / empty states */
+.prev-loading {
+    padding: 32px; text-align: center; color: #8a9ba8; font-size: 18px;
+}
+.prev-empty {
+    padding: 24px 16px; text-align: center; color: #8a9ba8;
+}
+.prev-empty i { font-size: 26px; margin-bottom: 10px; display: block; opacity: 0.4; }
+.prev-empty p { font-size: 12px; line-height: 1.5; }
+
+/* Footer / load more */
+.prev-footer {
+    padding: 6px 10px 12px; flex-shrink: 0;
+}
+.prev-load-more-btn {
+    width: 100%; background: none; border: 1.5px solid #e9edf2;
+    border-radius: 10px; padding: 7px 0;
+    font-size: 11px; font-weight: 600; color: #6a7c8e;
+    cursor: pointer; font-family: inherit;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    transition: border-color 0.15s, color 0.15s;
+}
+.prev-load-more-btn:hover { border-color: #8ab4b0; color: #2d7a6e; }
+.night-mode .prev-load-more-btn { border-color: #2f3e45; color: #6a8090; }
+.night-mode .prev-load-more-btn:hover { border-color: #8ab4b0; color: #8ab4b0; }

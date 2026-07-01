@@ -1346,10 +1346,13 @@ document.addEventListener("DOMContentLoaded", function () {
   });
   document.getElementById('inspectionElementsTable').addEventListener('click', function (event) {
       const target = event.target;
-      if (target.closest("button[title='Edit']")) {
-          const expandableRow = target.closest("tr.expandable-row");
+      const onExpandableRow = target.closest("tr.expandable-row");
+      const isExcluded = target.closest("button[title='View']") ||
+                         target.closest("button[title='Delete']") ||
+                         target.closest("button[title='Copy']");
+      if (onExpandableRow && !isExcluded) {
+          const expandableRow = onExpandableRow;
           if (expandableRow && expandableRow.classList.contains("retrieved-defect")) {
-              showAlertModal("Retrieved defects cannot be edited. Please copy the defect to create a new editable version.");
               return;
           }
           if (expandableRow) {
@@ -1590,7 +1593,10 @@ document.getElementById('works').addEventListener('change', function() {
             console.log('Dark mode OFF');
         }
     };
-    if (localStorage.getItem('nightMode') === 'on') {
+    const savedNightMode = localStorage.getItem('nightMode');
+    const systemPrefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    document.documentElement.classList.remove('nm-preload');
+    if (savedNightMode === 'on' || (savedNightMode === null && !systemPrefersLight)) {
         document.body.classList.add('night-mode');
         toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
         console.log('Restored dark mode from storage');

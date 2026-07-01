@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <script>if(localStorage.getItem('nightMode')==='on')document.documentElement.classList.add('nm-preload');</script>
+    <script>(function(){var nm=localStorage.getItem('nightMode');var dark=nm==='on'||(nm===null&&!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches));if(dark)document.documentElement.classList.add('nm-preload');})();</script>
     <style>html.nm-preload,html.nm-preload body{background-color:#1a2428!important;}</style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SpanSense — Inspection Planning</title>
@@ -75,24 +75,28 @@
             padding: 6px 14px;
             border-radius: 20px;
         }
-        .navbar .right { display: flex; align-items: center; gap: 20px; }
+        .navbar .right { display: flex; align-items: center; gap: 10px; }
         .night-mode-toggle {
             width: 36px; height: 36px;
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             cursor: pointer;
             color: #8a9ba8;
+            background: #f0f2f5;
             transition: all 0.2s;
         }
-        .night-mode-toggle:hover { background: #f0f4f8; color: #5b8c8a; }
+        .night-mode-toggle:hover { background: #e2e8f0; color: #5b8c8a; }
+        .navbar .account-links { display: flex; align-items: center; gap: 10px; }
         .navbar .account-links a {
             text-decoration: none;
-            color: #6a7c8e;
-            margin-left: 16px;
-            font-size: 0.85rem;
-            transition: color 0.2s;
+            color: #8a9ba8;
+            font-size: 1.2rem;
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            transition: color 0.2s, transform 0.15s, background 0.2s;
         }
-        .navbar .account-links a:hover { color: #5b8c8a; }
+        .navbar .account-links a:hover { background: #f0f4f8; color: #5b8c8a; transform: scale(1.1); }
 
         /* ---------- MAIN WRAPPER - 75% WIDTH ---------- */
         .page-wrapper {
@@ -793,6 +797,10 @@
         .night-mode .navbar .logo { background: linear-gradient(135deg, #8ab4b0 0%, #a0c8c4 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .night-mode .navbar .menu a { color: #9ab0b8; }
         .night-mode .navbar .menu a.active { background: rgba(138, 180, 176, 0.15); color: #8ab4b0; }
+        .night-mode .navbar .account-links a { color: #9ab0b8; }
+        .night-mode .navbar .account-links a:hover { background: #2f3e45; color: #8ab4b0; }
+        .night-mode .night-mode-toggle { background: #2f3e45; color: #9ab0b8; }
+        .night-mode .night-mode-toggle:hover { background: #3a4b53; color: #8ab4b0; }
         .night-mode .night-mode-toggle { color: #9ab0b8; }
         .night-mode .night-mode-toggle:hover { background: #2f3e45; color: #8ab4b0; }
         .night-mode .back-pill { background: rgba(35, 46, 52, 0.8); border-color: rgba(138, 180, 176, 0.3); color: #8ab4b0; }
@@ -849,8 +857,8 @@
         <div class="right">
             <div class="night-mode-toggle" id="nightModeToggle"><i class="fas fa-moon"></i></div>
             <div class="account-links">
-                <a href="../accounts/accounts.html">Account</a>
-                <a href="../contacts/contacts.html" class="active">Contact Us</a>
+                <a href="../accounts/accounts.html" title="Account"><i class="fas fa-user-circle"></i></a>
+                <a href="../contacts/contacts.html" class="active" title="Contact Us"><i class="fas fa-envelope"></i></a>
             </div>
         </div>
     </div>
@@ -1382,7 +1390,10 @@
                 this.innerHTML = document.body.classList.contains('night-mode') ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
                 localStorage.setItem('nightMode', document.body.classList.contains('night-mode') ? 'on' : 'off');
             };
-            if (localStorage.getItem('nightMode') === 'on') { document.body.classList.add('night-mode'); toggleBtn.innerHTML = '<i class="fas fa-sun"></i>'; }
+            const savedNightMode = localStorage.getItem('nightMode');
+            const systemPrefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+            document.documentElement.classList.remove('nm-preload');
+            if (savedNightMode === 'on' || (savedNightMode === null && !systemPrefersLight)) { document.body.classList.add('night-mode'); toggleBtn.innerHTML = '<i class="fas fa-sun"></i>'; }
         })();
 
         fetchAllData();
