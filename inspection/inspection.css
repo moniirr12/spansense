@@ -1342,6 +1342,7 @@ body {
     transform: translate(-50%, -50%);
     margin: 0;
     transition: left 0.3s ease;
+    max-width: 467px;
 }
 /* Only the Add Defect segment needs room for the guidance panel on the
    right — No Defects/Not Inspected have nothing beside them, so they stay
@@ -4059,7 +4060,7 @@ body.night-mode.contracted-rows #inspectionElementsTable tr.expandable-row .grid
     top: 50%;
     transform: translateY(-50%);
     width: 240px;
-    max-height: calc(80vh - 60px);
+    max-height: calc(72vh - 54px);
     background: white;
     border-radius: 24px;
     border: 1px solid #e9edf2;
@@ -4103,12 +4104,15 @@ body.night-mode.contracted-rows #inspectionElementsTable tr.expandable-row .grid
 .night-mode .prev-collapse-btn:hover { background: #3a4b53; color: #8ab4b0; }
 
 /* Collapsed state */
+.prev-defects-panel.prev-collapsed {
+    cursor: pointer;
+}
 .prev-defects-panel.prev-collapsed .prev-hdr {
     padding: 10px; border-bottom: none; justify-content: center;
 }
 .prev-defects-panel.prev-collapsed .prev-hdr-left { gap: 0; }
 .prev-defects-panel.prev-collapsed .prev-hdr-text,
-.prev-defects-panel.prev-collapsed .prev-collapse-btn { display: none; }
+.prev-defects-panel.prev-collapsed .prev-hdr-icon { display: none; }
 
 /* Panel body */
 .prev-panel-body {

@@ -95,11 +95,13 @@
         const structureId = sessionStorage.getItem('structureId');
         if (!structureId || !elementNo) { p.style.display = 'none'; return; }
 
-        // Reset collapse
-        _collapsed = false;
-        p.classList.remove('prev-collapsed');
+        // Start collapsed — user can click the panel or the chevron to expand
+        _collapsed = true;
+        p.classList.add('prev-collapsed');
         const icon = document.getElementById('prevCollapseIcon');
-        if (icon) icon.className = 'fas fa-chevron-left';
+        if (icon) icon.className = 'fas fa-chevron-right';
+        const btn0 = document.getElementById('prevCollapseBtn');
+        if (btn0) btn0.title = 'Expand';
 
         // Update chip header
         document.getElementById('prevChipNum').textContent = elementNo;
@@ -191,14 +193,27 @@
     // ── Wire up after DOM ready ──
     document.addEventListener('DOMContentLoaded', () => {
 
-        // Collapse toggle
-        document.getElementById('prevCollapseBtn')?.addEventListener('click', () => {
+        // Collapse toggle button
+        document.getElementById('prevCollapseBtn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
             const p = panel(); if (!p) return;
             _collapsed = !_collapsed;
             p.classList.toggle('prev-collapsed', _collapsed);
             const icon = document.getElementById('prevCollapseIcon');
             if (icon) icon.className = _collapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-left';
             document.getElementById('prevCollapseBtn').title = _collapsed ? 'Expand' : 'Collapse';
+        });
+
+        // Click anywhere on the collapsed panel to expand it
+        document.getElementById('prevDefectsPanel')?.addEventListener('click', () => {
+            if (!_collapsed) return;
+            const p = panel(); if (!p) return;
+            _collapsed = false;
+            p.classList.remove('prev-collapsed');
+            const icon = document.getElementById('prevCollapseIcon');
+            if (icon) icon.className = 'fas fa-chevron-left';
+            const btn = document.getElementById('prevCollapseBtn');
+            if (btn) btn.title = 'Collapse';
         });
 
         // Load more
