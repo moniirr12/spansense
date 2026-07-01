@@ -675,6 +675,27 @@ app.get('/api/activity', async (req, res) => {
     }
 });
 
+// GET previous defects for a specific element across all prior inspections
+app.get('/api/previous-defects', async (req, res) => {
+    try {
+        const { structureId, elementNo } = req.query;
+        if (!structureId || !elementNo) return res.status(400).json({ error: 'structureId and elementNo required' });
+        const rows = await dbAll(`
+            SELECT d.id, d.defect_type, d.defect_number, d.severity, d.extent,
+                   d.works_required, d.remedial_works, d.priority, d.cost, d.comments,
+                   d.element_description,
+                   i.inspection_date, i.inspector_name
+            FROM defects d
+            JOIN inspections i ON d.inspection_id = i.id
+            WHERE i.structure_id = $1 AND d.element_no = $2
+            ORDER BY i.inspection_date DESC, d.defect_no
+        `, [structureId, parseInt(elementNo)]);
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Get complete bridge data (PostgreSQL version)
 app.get('/api/bridges/:id', async (req, res) => {
     try {

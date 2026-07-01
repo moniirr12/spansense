@@ -785,9 +785,42 @@
     </div>
 
     <div id="modal" class="modal">
+        <!-- Previous defects floating panel -->
+        <div class="prev-defects-panel" id="prevDefectsPanel" style="display:none;">
+            <div class="prev-hdr">
+                <div class="prev-hdr-left">
+                    <div class="prev-hdr-icon"><i class="fas fa-history"></i></div>
+                    <div class="prev-hdr-text">
+                        <div class="prev-hdr-title">Previous Defects</div>
+                        <div class="prev-hdr-sub" id="prevHdrSub">—</div>
+                    </div>
+                </div>
+                <button class="prev-collapse-btn" id="prevCollapseBtn" title="Collapse">
+                    <i class="fas fa-chevron-left" id="prevCollapseIcon"></i>
+                </button>
+            </div>
+            <div class="prev-panel-body" id="prevPanelBody">
+                <div class="prev-chip">
+                    <span class="prev-chip-num" id="prevChipNum">—</span>
+                    <span class="prev-chip-name" id="prevChipName">—</span>
+                    <span class="prev-chip-count" id="prevChipCount">0</span>
+                </div>
+                <div class="prev-list" id="prevList"></div>
+                <div class="prev-footer" id="prevFooter" style="display:none;">
+                    <button class="prev-load-more-btn" id="prevLoadMoreBtn">
+                        <i class="fas fa-chevron-down"></i> Load more
+                    </button>
+                </div>
+            </div>
+        </div>
         <div class="modal-content">
             <div class="modal-header">
-                <h2 id="modalTitle">Details</h2>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <h2 id="modalTitle">Details</h2>
+                    <span id="prevLoadedBadge" class="prev-loaded-badge" style="display:none;">
+                        <i class="fas fa-history"></i> <span class="prev-badge-date"></span>
+                    </span>
+                </div>
                 <button class="close-btn" id="modalCloseBtn">&times;</button>
             </div>
             
@@ -1404,6 +1437,7 @@
     <script src="spans.js"></script>
     <script src="photo.js"></script>
     <script src="../inspection1/inspection1.js"></script>
+    <script src="prevDefects.js"></script>
 
     <!-- 3D defect locator -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
