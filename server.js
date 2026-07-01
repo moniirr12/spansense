@@ -593,7 +593,8 @@ app.get('/api/defectsbci', async (req, res) => {
                 s.bci_crit,
                 s.bci_av,
                 i.inspection_date,
-                i.inspector_name
+                i.inspector_name,
+                i.inspection_type
             FROM inspection_spans s
             JOIN inspections i ON s.inspection_id = i.id
             WHERE s.inspection_id IN (${placeholders})
