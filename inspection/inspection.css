@@ -50,17 +50,18 @@ body {
     -webkit-text-fill-color: transparent;
 }
 
-.navbar .right { display: flex; align-items: center; gap: 20px; }
+.navbar .right { display: flex; align-items: center; gap: 10px; }
 .night-mode-toggle {
     width: 36px; height: 36px;
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer;
     color: #8a9ba8;
+    background: #f0f2f5;
     transition: all 0.2s;
 }
-.night-mode-toggle:hover { background: #f0f4f8; color: #5b8c8a; }
-.navbar .account-links { display: flex; align-items: center; gap: 20px; }
+.night-mode-toggle:hover { background: #e2e8f0; color: #5b8c8a; }
+.navbar .account-links { display: flex; align-items: center; gap: 10px; }
 .navbar .account-links a {
     text-decoration: none;
     color: #8a9ba8;
@@ -2079,8 +2080,8 @@ body {
 .night-mode .navbar .logo { background: linear-gradient(135deg, #8ab4b0 0%, #a0c8c4 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 .night-mode .navbar .menu a, .night-mode .navbar .account-links a { color: #9ab0b8; }
 .night-mode .navbar .account-links a:hover { background: #2f3e45; color: #8ab4b0; }
-.night-mode .night-mode-toggle { color: #9ab0b8; }
-.night-mode .night-mode-toggle:hover { background: #2f3e45; color: #8ab4b0; }
+.night-mode .night-mode-toggle { background: #2f3e45; color: #9ab0b8; }
+.night-mode .night-mode-toggle:hover { background: #3a4b53; color: #8ab4b0; }
 
 .night-mode .stat-card, .night-mode .span-toggle,
 .night-mode .table-container, .night-mode #inspectionElementsTable,

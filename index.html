@@ -215,7 +215,7 @@ body {
 .navbar .right {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 10px;
 }
 
 .night-mode-toggle {
@@ -242,7 +242,7 @@ body {
 .navbar .account-links {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 10px;
 }
 
 .navbar .account-links a {
@@ -1618,6 +1618,10 @@ body.night-mode .glass-scrollbar .thumb {
     const nm = localStorage.getItem('nightMode');
     const systemPrefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
     const dark = nm === 'on' || (nm === null && !systemPrefersLight);
+
+    // The preload snippet in <head> forces a dark background to avoid a flash;
+    // now that the real theme is decided, drop it so the background can't stay dark once night-mode is removed.
+    document.documentElement.classList.remove('nm-preload');
 
     if (dark) {
         document.body.classList.add('night-mode');

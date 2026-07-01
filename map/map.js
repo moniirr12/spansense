@@ -328,6 +328,7 @@ if (conditionCheckboxes.length) {
     const savedNightMode = localStorage.getItem('nightMode');
     const systemPrefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
     const wantsNightMode = savedNightMode === 'on' || (savedNightMode === null && !systemPrefersLight);
+    document.documentElement.classList.remove('nm-preload');
 
     let mapReady = false;
     let checkInterval = setInterval(function() {

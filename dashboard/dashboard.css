@@ -67,17 +67,18 @@ body {
     padding: 6px 14px;
     border-radius: 20px;
 }
-.navbar .right { display: flex; align-items: center; gap: 20px; }
+.navbar .right { display: flex; align-items: center; gap: 10px; }
 .night-mode-toggle {
     width: 36px; height: 36px;
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer;
     color: #8a9ba8;
+    background: #f0f2f5;
     transition: all 0.2s;
 }
-.night-mode-toggle:hover { background: #f0f4f8; color: #5b8c8a; }
-.navbar .account-links { display: flex; align-items: center; gap: 20px; }
+.night-mode-toggle:hover { background: #e2e8f0; color: #5b8c8a; }
+.navbar .account-links { display: flex; align-items: center; gap: 10px; }
 .navbar .account-links a {
     text-decoration: none;
     color: #8a9ba8;

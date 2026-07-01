@@ -467,6 +467,11 @@ function renderConditionDistributionChart(data) {
     // Load saved preference, defaulting to dark unless the system explicitly prefers light
     const savedNightMode = localStorage.getItem('nightMode');
     const systemPrefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+
+    // The preload snippet in <head> forces a dark background to avoid a flash;
+    // now that the real theme is decided, drop it so the background can't stay dark once night-mode is removed.
+    document.documentElement.classList.remove('nm-preload');
+
     if (savedNightMode === 'on' || (savedNightMode === null && !systemPrefersLight)) {
         document.body.classList.add('night-mode');
         toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
