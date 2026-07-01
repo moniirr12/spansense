@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <script>if(localStorage.getItem('nightMode')==='on')document.documentElement.classList.add('nm-preload');</script>
+    <script>(function(){var nm=localStorage.getItem('nightMode');var dark=nm==='on'||(nm===null&&!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches));if(dark)document.documentElement.classList.add('nm-preload');})();</script>
     <style>html.nm-preload,html.nm-preload body{background-color:#1a2428!important;}</style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SpanSense — Account</title>
+    <title>SpanSense â€” Account</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <script>
@@ -104,10 +104,12 @@
             text-decoration: none;
             color: #8a9ba8;
             font-size: 1.2rem;
-            display: flex; align-items: center;
-            transition: color 0.2s, transform 0.15s;
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            transition: color 0.2s, transform 0.15s, background 0.2s;
         }
-        .navbar .account-links a:hover { color: #5b8c8a; transform: scale(1.1); }
+        .navbar .account-links a:hover { background: #f0f4f8; color: #5b8c8a; transform: scale(1.1); }
 
         /* ---------- MAIN WRAPPER ---------- */
         .page-wrapper {
@@ -613,6 +615,7 @@
         .night-mode .navbar .menu a { color: #9ab0b8; }
         .night-mode .navbar .menu a.active { background: rgba(138, 180, 176, 0.15); color: #8ab4b0; }
         .night-mode .navbar .account-links a { color: #9ab0b8; }
+        .night-mode .navbar .account-links a:hover { background: #2f3e45; color: #8ab4b0; }
         .night-mode .night-mode-toggle { color: #9ab0b8; }
         .night-mode .night-mode-toggle:hover { background: #2f3e45; color: #8ab4b0; }
         .night-mode .back-pill {
@@ -775,7 +778,7 @@
             </div>
             <div class="profile-info">
                 <div class="name">Monir Khan</div>
-                <div class="role">Bridge Inspector · joined March 2026</div>
+                <div class="role">Bridge Inspector Â· joined March 2026</div>
                 <div class="profile-badges">
                     <span class="profile-badge admin"><i class="fas fa-shield-alt"></i> Inspector</span>
                     <span class="profile-badge verified"><i class="fas fa-check-circle"></i> Verified</span>
@@ -918,7 +921,7 @@
             <h2><i class="fas fa-history"></i> Recent Activity</h2>
             <div class="activity-list" id="activityList">
                 <div class="activity-row" style="justify-content:center;color:#8a9ba8;font-size:0.85rem;padding:20px 0;">
-                    <i class="fas fa-spinner fa-spin" style="margin-right:8px;"></i> Loading activity…
+                    <i class="fas fa-spinner fa-spin" style="margin-right:8px;"></i> Loading activityâ€¦
                 </div>
             </div>
         </div>
@@ -963,12 +966,14 @@
                     localStorage.setItem('nightMode', 'off');
                 }
             };
-            if (localStorage.getItem('nightMode') === 'on') {
+            const savedNightMode = localStorage.getItem('nightMode');
+            const systemPrefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+            if (savedNightMode === 'on' || (savedNightMode === null && !systemPrefersLight)) {
                 document.body.classList.add('night-mode');
                 toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
             }
         }
-    
+
         // ============================================
         // SIGN OUT
         // ============================================
@@ -1044,7 +1049,7 @@
         }
 
         // ============================================
-        // RECENT ACTIVITY — live from /api/activity
+        // RECENT ACTIVITY â€” live from /api/activity
         // ============================================
         (function() {
             const API_BASE = window.location.origin.includes('localhost')
@@ -1058,7 +1063,7 @@
             };
 
             function relativeTime(dateStr) {
-                if (!dateStr) return '—';
+                if (!dateStr) return 'â€”';
                 const then = new Date(dateStr);
                 const diffMs = Date.now() - then.getTime();
                 const days = Math.floor(diffMs / 86400000);
@@ -1087,14 +1092,14 @@
                     }
                     list.innerHTML = rows.map(row => {
                         const cfg = typeConfig[row.inspection_type] || { label: row.inspection_type || 'Inspection', icon: 'fa-clipboard-check', cls: 'edit' };
-                        const bciPart = row.bci_av != null ? ` · BCI avg ${Math.round(parseFloat(row.bci_av))}` : '';
+                        const bciPart = row.bci_av != null ? ` Â· BCI avg ${Math.round(parseFloat(row.bci_av))}` : '';
                         const inspector = row.inspector_name ? row.inspector_name : 'Unknown inspector';
                         return `
                         <div class="activity-row">
                             <div class="act-icon ${cfg.cls}"><i class="fas ${cfg.icon}"></i></div>
                             <div class="act-details">
-                                <div class="act-title">${cfg.label} — ${row.structure_name || 'Unknown structure'}</div>
-                                <div class="act-meta">${inspector} · ${formatDate(row.inspection_date)}${bciPart}</div>
+                                <div class="act-title">${cfg.label} â€” ${row.structure_name || 'Unknown structure'}</div>
+                                <div class="act-meta">${inspector} Â· ${formatDate(row.inspection_date)}${bciPart}</div>
                             </div>
                             <div class="act-time">${relativeTime(row.inspection_date)}</div>
                         </div>`;

@@ -325,12 +325,16 @@ if (conditionCheckboxes.length) {
         return;
     }
 
+    const savedNightMode = localStorage.getItem('nightMode');
+    const systemPrefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    const wantsNightMode = savedNightMode === 'on' || (savedNightMode === null && !systemPrefersLight);
+
     let mapReady = false;
     let checkInterval = setInterval(function() {
         if (typeof map !== 'undefined' && map && darkMap && openStreetMap) {
             mapReady = true;
             clearInterval(checkInterval);
-            if (localStorage.getItem('nightMode') === 'on' && darkMap) {
+            if (wantsNightMode && darkMap) {
                 if (openStreetMap) map.removeLayer(openStreetMap);
                 darkMap.addTo(map);
             }
@@ -358,7 +362,7 @@ if (conditionCheckboxes.length) {
         }
     };
 
-    if (localStorage.getItem('nightMode') === 'on') {
+    if (wantsNightMode) {
         document.body.classList.add('night-mode');
         toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
     }

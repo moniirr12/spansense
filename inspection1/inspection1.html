@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <script>if(localStorage.getItem('nightMode')==='on')document.documentElement.classList.add('nm-preload');</script>
+    <script>(function(){var nm=localStorage.getItem('nightMode');var dark=nm==='on'||(nm===null&&!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches));if(dark)document.documentElement.classList.add('nm-preload');})();</script>
     <style>html.nm-preload,html.nm-preload body{background-color:#1a2428!important;}</style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>SpanSense — Inspection Details | Modern Layout</title>
+    <title>SpanSense â€” Inspection Details | Modern Layout</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="inspection1.css">
@@ -77,7 +77,7 @@
                     <!-- Mock Image -->
                     <div class="mock-image">
                         <i class="fas fa-bridge"></i>
-                        <span>spanSense ©</span>
+                        <span>spanSense Â©</span>
                     </div>
                     
                     <div class="sidebar-divider"></div>
@@ -138,7 +138,7 @@
     <script src="inspection1.js"></script>
     <script>   
         // ============================================
-        // MODAL SYSTEM — MUST be defined BEFORE navigateToNextPage
+        // MODAL SYSTEM â€” MUST be defined BEFORE navigateToNextPage
         // ============================================
         (function() {
             'use strict';

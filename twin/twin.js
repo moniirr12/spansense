@@ -554,7 +554,9 @@ nightToggle.addEventListener('click', function() {
         localStorage.setItem('nightMode', 'off');
     }
 });
-if (localStorage.getItem('nightMode') === 'on') {
+var savedNightMode = localStorage.getItem('nightMode');
+var systemPrefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+if (savedNightMode === 'on' || (savedNightMode === null && !systemPrefersLight)) {
     document.body.classList.add('night-mode');
     nightToggle.innerHTML = '<i class="fas fa-sun"></i>';
 }

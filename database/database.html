@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <script>if(localStorage.getItem('nightMode')==='on')document.documentElement.classList.add('nm-preload');</script>
+    <script>(function(){var nm=localStorage.getItem('nightMode');var dark=nm==='on'||(nm===null&&!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches));if(dark)document.documentElement.classList.add('nm-preload');})();</script>
     <style>html.nm-preload,html.nm-preload body{background-color:#1a2428!important;}</style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SpanSense — Database Export</title>
+    <title>SpanSense â€” Database Export</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="database.css">
@@ -76,7 +76,7 @@
                 <div class="card-title">Reports</div>
                 <div class="card-desc">Export generated inspection reports and summary documents</div>
                 <div class="card-meta">
-                    <span class="count" id="reports-count">—</span>
+                    <span class="count" id="reports-count">â€”</span>
                     <span><i class="fas fa-file-pdf"></i> PDF, DOCX</span>
                 </div>
                 <div class="card-arrow"><i class="fas fa-arrow-right"></i></div>

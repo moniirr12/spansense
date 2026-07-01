@@ -464,8 +464,10 @@ function renderConditionDistributionChart(data) {
         }
     };
     
-    // Load saved preference
-    if (localStorage.getItem('nightMode') === 'on') {
+    // Load saved preference, defaulting to dark unless the system explicitly prefers light
+    const savedNightMode = localStorage.getItem('nightMode');
+    const systemPrefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    if (savedNightMode === 'on' || (savedNightMode === null && !systemPrefersLight)) {
         document.body.classList.add('night-mode');
         toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
         console.log('Restored dark mode from storage');

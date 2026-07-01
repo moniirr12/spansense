@@ -101,12 +101,16 @@ body {
     text-decoration: none !important;
     color: #8a9ba8 !important;
     font-size: 1.2rem !important;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 50% !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    transition: color 0.2s, transform 0.15s !important;
+    transition: color 0.2s, transform 0.15s, background 0.2s !important;
 }
 .navbar .account-links a:hover {
+    background: #e2e8f0 !important;
     color: #5b8c8a !important;
     transform: scale(1.1) !important;
 }
@@ -2428,6 +2432,7 @@ body.modal-open {
 }
 
 .night-mode .navbar .account-links a:hover {
+    background: #4a6570 !important;
     color: #8ab4b0 !important;
 }
 

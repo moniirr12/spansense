@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){var nm=localStorage.getItem('nightMode');var dark=nm==='on'||(nm===null&&!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches));if(dark)document.documentElement.classList.add('nm-preload');})();</script>
+<style>html.nm-preload,html.nm-preload body{background-color:#1a2428!important;}</style>
 <title>SpanSense · twinView</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -83,10 +85,12 @@ body {
     text-decoration: none;
     color: #8a9ba8;
     font-size: 1.2rem;
-    display: flex; align-items: center;
-    transition: color 0.2s, transform 0.15s;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    transition: color 0.2s, transform 0.15s, background 0.2s;
 }
-.navbar .account-links a:hover { color: #5b8c8a; transform: scale(1.1); }
+.navbar .account-links a:hover { background: #f0f4f8; color: #5b8c8a; transform: scale(1.1); }
 
 /* ---------- MAIN WRAPPER ---------- */
 .page-wrapper {
@@ -693,6 +697,7 @@ body.night-mode .glass-scrollbar .thumb {
 .night-mode .navbar .menu a { color: #9ab0b8; }
 .night-mode .navbar .menu a.active { background: rgba(138, 180, 176, 0.15); color: #8ab4b0; }
 .night-mode .navbar .account-links a { color: #9ab0b8; }
+.night-mode .navbar .account-links a:hover { background: #2f3e45; color: #8ab4b0; }
 .night-mode .night-mode-toggle { color: #9ab0b8; }
 .night-mode .night-mode-toggle:hover { background: #2f3e45; color: #8ab4b0; }
 .night-mode .back-pill { background: rgba(35,46,52,0.8) !important; border-color: rgba(138,180,176,0.3) !important; color:#8ab4b0 !important; }

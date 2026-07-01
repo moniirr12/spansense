@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <script>if(localStorage.getItem('nightMode')==='on')document.documentElement.classList.add('nm-preload');</script>
+    <script>(function(){var nm=localStorage.getItem('nightMode');var dark=nm==='on'||(nm===null&&!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches));if(dark)document.documentElement.classList.add('nm-preload');})();</script>
     <style>html.nm-preload,html.nm-preload body{background-color:#1a2428!important;}</style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>SpanSense — Bridge Inspection | Defect Management</title>
+    <title>SpanSense â€” Bridge Inspection | Defect Management</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -328,11 +328,11 @@
         }
 
         /* ============================================
-           LEFT FLOATING RAIL — CONCLUSIONS + TWIN VIEW
+           LEFT FLOATING RAIL â€” CONCLUSIONS + TWIN VIEW
            Stacks both bars and centers them as a group,
            horizontally, in the gutter to the left of the
            75%-wide content wrapper (inspection-wrapper).
-           top:320px below is just the pre-JS fallback —
+           top:320px below is just the pre-JS fallback â€”
            positionLeftRail() in spans.js overrides it on
            load to align with the table's header row. The
            table always renders below the BCI cards, so this
@@ -543,13 +543,13 @@
                     <!-- BCI Average Card -->
                     <div class="stat-card average">
                         <div class="stat-label">BCI AVERAGE</div>
-                        <div class="stat-value stat-loading" id="bciAvResult">···</div>
+                        <div class="stat-value stat-loading" id="bciAvResult">Â·Â·Â·</div>
                     </div>
 
                     <!-- BCI Critical Card -->
                     <div class="stat-card critical">
                         <div class="stat-label">BCI CRITICAL</div>
-                        <div class="stat-value critical stat-loading" id="bciCritResult">···</div>
+                        <div class="stat-value critical stat-loading" id="bciCritResult">Â·Â·Â·</div>
                     </div>
 
                     <!-- Date Card -->
@@ -718,7 +718,7 @@
                     
                     <div class="mock-image">
                         <i class="fas fa-bridge"></i>
-                        <span>spanSense ©</span>
+                        <span>spanSense Â©</span>
                     </div>
                     
                     <div class="sidebar-divider"></div>
@@ -770,7 +770,7 @@
         </div>
     </div>
 
-    <!-- Lightweight styled confirm dialog (replaces native confirm()/alert() — see showConfirmModal in photo.js) -->
+    <!-- Lightweight styled confirm dialog (replaces native confirm()/alert() â€” see showConfirmModal in photo.js) -->
     <div class="modal-overlay" id="confirmModalOverlay">
         <div class="modal-card">
             <div class="modal-icon" id="confirmModalIcon">
@@ -792,7 +792,7 @@
                     <div class="prev-hdr-icon"><i class="fas fa-history"></i></div>
                     <div class="prev-hdr-text">
                         <div class="prev-hdr-title">Previous Defects</div>
-                        <div class="prev-hdr-sub" id="prevHdrSub">—</div>
+                        <div class="prev-hdr-sub" id="prevHdrSub">â€”</div>
                     </div>
                 </div>
                 <button class="prev-collapse-btn" id="prevCollapseBtn" title="Collapse">
@@ -801,8 +801,8 @@
             </div>
             <div class="prev-panel-body" id="prevPanelBody">
                 <div class="prev-chip">
-                    <span class="prev-chip-num" id="prevChipNum">—</span>
-                    <span class="prev-chip-name" id="prevChipName">—</span>
+                    <span class="prev-chip-num" id="prevChipNum">â€”</span>
+                    <span class="prev-chip-name" id="prevChipName">â€”</span>
                     <span class="prev-chip-count" id="prevChipCount">0</span>
                 </div>
                 <div class="prev-list" id="prevList"></div>
@@ -1279,7 +1279,9 @@
                 }
             };
 
-            if (localStorage.getItem('nightMode') === 'on') {
+            const savedNightMode = localStorage.getItem('nightMode');
+            const systemPrefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+            if (savedNightMode === 'on' || (savedNightMode === null && !systemPrefersLight)) {
                 document.body.classList.add('night-mode');
                 toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
             }
@@ -1375,7 +1377,7 @@
             });
         }
 
-        // Defect type → number cascade
+        // Defect type â†’ number cascade
         var defectTypeEl = document.getElementById('defectType');
         if (defectTypeEl) {
             defectTypeEl.addEventListener('change', function() {

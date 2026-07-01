@@ -1593,7 +1593,9 @@ document.getElementById('works').addEventListener('change', function() {
             console.log('Dark mode OFF');
         }
     };
-    if (localStorage.getItem('nightMode') === 'on') {
+    const savedNightMode = localStorage.getItem('nightMode');
+    const systemPrefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    if (savedNightMode === 'on' || (savedNightMode === null && !systemPrefersLight)) {
         document.body.classList.add('night-mode');
         toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
         console.log('Restored dark mode from storage');
