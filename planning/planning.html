@@ -5,7 +5,7 @@
     <script>(function(){var nm=localStorage.getItem('nightMode');var dark=nm==='on'||(nm===null&&!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches));if(dark)document.documentElement.classList.add('nm-preload');})();</script>
     <style>html.nm-preload,html.nm-preload body{background-color:#1a2428!important;}</style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SpanSense â€” Inspection Planning</title>
+    <title>SpanSense — Inspection Planning</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -916,8 +916,8 @@
                 <div class="days-grid" id="monthDaysGrid"></div>
             </div>
             <div class="calendar-legend">
-                <div class="legend-item"><div class="legend-dot" style="background: #eef4f2; border: 2px solid #5b8c8a;"></div>General Inspection (GI) â€” Every 2 years</div>
-                <div class="legend-item"><div class="legend-dot" style="background: #eef2f8; border: 2px solid #2c5f8a;"></div>Principal Inspection (PI) â€” Every 6 years</div>
+                <div class="legend-item"><div class="legend-dot" style="background: #eef4f2; border: 2px solid #5b8c8a;"></div>General Inspection (GI) — Every 2 years</div>
+                <div class="legend-item"><div class="legend-dot" style="background: #eef2f8; border: 2px solid #2c5f8a;"></div>Principal Inspection (PI) — Every 6 years</div>
                 <div class="legend-item"><div class="legend-dot" style="background: #fdf2f2; border: 2px solid #c47070;"></div>Overdue</div>
                 <div class="legend-item"><div class="legend-dot" style="background: #eef4f2; border: 2px dashed #5b8c8a;"></div>Today</div>
             </div>
@@ -1088,7 +1088,7 @@
                 html += `<div class="inspection-item">
                     <div class="inspection-status ${insp.position === 'Overdue' ? 'overdue' : 'assigned'}"></div>
                     <div class="inspection-date"><div class="day">${insp.dueDate.getDate()}</div><div class="month">${insp.dueDate.toLocaleString('default', { month: 'short' })}</div></div>
-                    <div class="inspection-info"><div class="name">${insp.bridgeName}</div><div class="meta">${insp.type} â€” Due ${insp.dueDate.toLocaleDateString()}</div></div>
+                    <div class="inspection-info"><div class="name">${insp.bridgeName}</div><div class="meta">${insp.type} — Due ${insp.dueDate.toLocaleDateString()}</div></div>
                     <span class="inspection-type ${typeClass}">${insp.type}</span>
                 </div>`;
             });
@@ -1152,7 +1152,7 @@
                 let eventsHtml = '';
                 dueInspections.slice(0, 2).forEach(insp => {
                     const chipClass = insp.position === 'Overdue' ? 'overdue' : (insp.type === 'PI' ? 'pi' : 'gi');
-                    eventsHtml += `<div class="event-chip ${chipClass}">${insp.bridgeName.substring(0, 12)} â€” ${insp.type}</div>`;
+                    eventsHtml += `<div class="event-chip ${chipClass}">${insp.bridgeName.substring(0, 12)} — ${insp.type}</div>`;
                 });
                 if (dueInspections.length > 2) eventsHtml += `<div class="event-more">+${dueInspections.length - 2} more</div>`;
                 gridHtml += `<div class="day-cell ${isToday ? 'today' : ''}"><div class="day-number">${d}</div><div class="day-events">${eventsHtml}</div></div>`;
@@ -1168,7 +1168,7 @@
                 let eventsHtml = '';
                 dueThisMonth.slice(0, 3).forEach(insp => {
                     const cls = insp.position === 'Overdue' ? 'overdue' : (insp.type === 'PI' ? 'pi' : 'gi');
-                    eventsHtml += `<div class="month-event ${cls}">${insp.bridgeName.substring(0, 20)} â€” ${insp.type}</div>`;
+                    eventsHtml += `<div class="month-event ${cls}">${insp.bridgeName.substring(0, 20)} — ${insp.type}</div>`;
                 });
                 yearHtml += `<div class="month-card" onclick="switchToMonth(${m})">
                     <div class="month-header">${months[m]} ${year}</div>

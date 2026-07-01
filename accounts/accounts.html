@@ -5,7 +5,7 @@
     <script>(function(){var nm=localStorage.getItem('nightMode');var dark=nm==='on'||(nm===null&&!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches));if(dark)document.documentElement.classList.add('nm-preload');})();</script>
     <style>html.nm-preload,html.nm-preload body{background-color:#1a2428!important;}</style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SpanSense â€” Account</title>
+    <title>SpanSense — Account</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <script>
@@ -922,7 +922,7 @@
             <h2><i class="fas fa-history"></i> Recent Activity</h2>
             <div class="activity-list" id="activityList">
                 <div class="activity-row" style="justify-content:center;color:#8a9ba8;font-size:0.85rem;padding:20px 0;">
-                    <i class="fas fa-spinner fa-spin" style="margin-right:8px;"></i> Loading activityâ€¦
+                    <i class="fas fa-spinner fa-spin" style="margin-right:8px;"></i> Loading activity…
                 </div>
             </div>
         </div>
@@ -1051,7 +1051,7 @@
         }
 
         // ============================================
-        // RECENT ACTIVITY â€” live from /api/activity
+        // RECENT ACTIVITY — live from /api/activity
         // ============================================
         (function() {
             const API_BASE = window.location.origin.includes('localhost')
@@ -1065,7 +1065,7 @@
             };
 
             function relativeTime(dateStr) {
-                if (!dateStr) return 'â€”';
+                if (!dateStr) return '—';
                 const then = new Date(dateStr);
                 const diffMs = Date.now() - then.getTime();
                 const days = Math.floor(diffMs / 86400000);
@@ -1100,7 +1100,7 @@
                         <div class="activity-row">
                             <div class="act-icon ${cfg.cls}"><i class="fas ${cfg.icon}"></i></div>
                             <div class="act-details">
-                                <div class="act-title">${cfg.label} â€” ${row.structure_name || 'Unknown structure'}</div>
+                                <div class="act-title">${cfg.label} — ${row.structure_name || 'Unknown structure'}</div>
                                 <div class="act-meta">${inspector} Â· ${formatDate(row.inspection_date)}${bciPart}</div>
                             </div>
                             <div class="act-time">${relativeTime(row.inspection_date)}</div>
