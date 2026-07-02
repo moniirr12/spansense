@@ -21,9 +21,9 @@ var BCI_COLORS = {
 // ─── BCI elements, per structure type ────────────────────────────────────────
 var BCI_ELEMENTS_BY_TYPE = {
     Bridge: [
-        { no: 1,  desc: 'Primary deck element (Table G.4)' },
-        { no: 2,  desc: 'Secondary deck elements - Transverse beams' },
-        { no: 3,  desc: 'Elements from table G.5' },
+        { no: 1,  desc: 'Primary deck element' },
+        { no: 2,  desc: 'Transverse beams' },
+        { no: 3,  desc: 'Secondary deck element' },
         { no: 4,  desc: 'Half joints' },
         { no: 5,  desc: 'Tie beam/rod' },
         { no: 6,  desc: 'Parapet beam or cantilever' },
@@ -174,16 +174,20 @@ var PAGE1_FIXED_ROWS_HEIGHT = 164;
 var PAGE1_DATA_TEXT_HEIGHT = 10.627;
 
 // A4 usable width with 40pt margins = 515pt. Table is 375pt by base design,
-// scaled up 15% per request (still well under the 515pt usable width, so
-// centering still leaves margin on both sides).
-var PW = 375 * 1.15;
+// scaled up 15% then another 10% per request (474.4pt, still under the
+// 515pt usable width, so centering still leaves margin on both sides).
+var PW = 375 * 1.15 * 1.10;
 
 // 20 column widths
+// Element Description (cols 2-6) widened at the expense of Comments/Remarks
+// (cols 14-19, still by far the widest column group at 0.14 each for 17-18) -
+// col 16 (the rotated "Bridge code" cell) is left untouched since its box
+// height/width was tuned by hand against this exact value.
 var COL_WIDTHS = [
+    PW * 0.04, PW * 0.04, PW * 0.052, PW * 0.052, PW * 0.052,
+    PW * 0.052, PW * 0.052, PW * 0.04, PW * 0.04, PW * 0.04,
     PW * 0.04, PW * 0.04, PW * 0.04, PW * 0.04, PW * 0.04,
-    PW * 0.04, PW * 0.04, PW * 0.04, PW * 0.04, PW * 0.04,
-    PW * 0.04, PW * 0.04, PW * 0.04, PW * 0.04, PW * 0.04,
-    PW * 0.04, PW * 0.04, PW * 0.14,  PW * 0.14,  PW * 0.04
+    PW * 0.04, PW * 0.04, PW * 0.11,  PW * 0.11,  PW * 0.04
 ];
 var TABLE_WIDTH = COL_WIDTHS.reduce(function(a, b) { return a + b; }, 0);
 
@@ -267,8 +271,14 @@ function rotatedLabel(text, w, h, fontSize) {
 function setCell(label, rowSpan, rowHeightTarget, rowPad) {
     var w = COL_WIDTHS[0];
     // This cell gets rowPad top+bottom padding once (not per spanned row)
-    // around its content, so leave room for that plus a small margin.
-    var h = Math.max(10, rowSpan * rowHeightTarget - 2 * rowPad - 2);
+    // around its content, so leave room for that plus a small margin. The
+    // per-row "- 2" safety margin (not just a single flat one) matters here:
+    // any leftover overshoot in a rowSpan cell gets absorbed entirely into
+    // the *last* spanned row rather than spread evenly, so on a 9-row group
+    // a flat margin that looks fine on a 4-row group still visibly stretches
+    // that group's last row (elements 7/14/21/25/34/38/42 - each the last
+    // row of its "Set" group - showed exactly this before this was per-row).
+    var h = Math.max(10, rowSpan * (rowHeightTarget - 2) - 2 * rowPad - 2);
     return Object.assign(
         { rowSpan: rowSpan, alignment: 'center', fillColor: BCI_COLORS.sectionBg },
         rotatedLabel(label, w, h, 6)
@@ -298,7 +308,14 @@ function padTableBody(tableBody) {
 // ─────────────────────────────────────────────────────────────────────────────
 //  PAGE 1
 // ─────────────────────────────────────────────────────────────────────────────
-function buildBCIProformaContent(bciFormData) {
+// `singleSpanIdx`, when given, builds only that one span's page instead of
+// every span - used by buildBCIProformaFullContent below to interleave page
+// 1/page 2 per span (span1 p1, span1 p2, span2 p1, span2 p2, ...) instead of
+// all page 1s followed by all page 2s. The page-break-before logic further
+// down (`if (spanIdx > 0) ...`) already does the right thing unchanged: with
+// a single span requested, spanIdx *is* singleSpanIdx, so it only skips the
+// break when that span is the very first page of the whole document.
+function buildBCIProformaContent(bciFormData, singleSpanIdx) {
     var content = [];
     if (!bciFormData || bciFormData.error) {
         content.push({ text: 'BCI data unavailable: ' + (bciFormData && bciFormData.error ? bciFormData.error : ''), italics: true, color: '#888' });
@@ -309,13 +326,15 @@ function buildBCIProformaContent(bciFormData) {
     var structureId = bciFormData.structureId || '';
     var bridgeData = bciFormData.bridgeData || {};
     var totalSpans = bciFormData.totalSpans || 1;
+    var spanRangeStart = singleSpanIdx != null ? singleSpanIdx : 0;
+    var spanRangeEnd = singleSpanIdx != null ? singleSpanIdx + 1 : totalSpans;
     var spansData = bciFormData.spansData || [];
     var proformaConfig = getBCIProformaConfig(bridgeData.type || 'Bridge');
     var BCI_ELEMENTS = proformaConfig.elements;
     var BCI_GROUPS = proformaConfig.groups;
     var BCI_SPARE = proformaConfig.spare;
 
-    for (var spanIdx = 0; spanIdx < totalSpans; spanIdx++) {
+    for (var spanIdx = spanRangeStart; spanIdx < spanRangeEnd; spanIdx++) {
         var spanNum  = spanIdx + 1;
         var spanData = (spansData || []).find(function(s) { return Number(s.span_number) === spanNum; }) || {};
         var defects  = spanData.defects || [];
@@ -416,12 +435,15 @@ function buildBCIProformaContent(bciFormData) {
             Object.assign(
                 { rowSpan: 4, alignment: 'center', fillColor: BCI_COLORS.sectionBg },
                 // Spans ROW3-ROW6, which aren't part of the data-row stretch
-                // system - PAGE1_FIXED_ROWS_HEIGHT/9 approximates one of
-                // those rows' height (8 header + 1 footer rows); `fit`
-                // shrinks to the real space if this overshoots.
-                rotatedLabel('Bridge code ' + bridgeCode, COL_WIDTHS[16], 4 * (PAGE1_FIXED_ROWS_HEIGHT / 9) - 6, 6)
+                // system, so there's no computed target height to reuse here
+                // - PAGE1_FIXED_ROWS_HEIGHT/9 (used previously) averages in
+                // the much taller header/column-header rows and overshoots
+                // rows 3-6's real height, forcing the last of them to grow;
+                // 44 was tuned by rendering and measuring those 4 rows
+                // directly (same approach as PAGE1_DATA_TEXT_HEIGHT above).
+                rotatedLabel(' Bridge code ' + bridgeCode, COL_WIDTHS[16], 44, 6)
             ),
-            lv('Primary deck form (Table G.4): ', primForm, { colSpan: 3 }),
+            lv('Primary deck form: ', primForm, { colSpan: 3 }),
             { text: '' }, { text: '' }
         ]);
 
@@ -434,7 +456,7 @@ function buildBCIProformaContent(bciFormData) {
             lv('OSN: ', osN, { colSpan: 6 }),
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
             { text: '' },
-            lv('Primary deck material (Table G.6): ', primMat, { colSpan: 3 }),
+            lv('Primary deck material: ', primMat, { colSpan: 3 }),
             { text: '' }, { text: '' }
         ]);
 
@@ -447,7 +469,7 @@ function buildBCIProformaContent(bciFormData) {
             lv('Span Length (m): ', spanL, { colSpan: 6 }),
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
             { text: '' },
-            lv('Secondary deck form (Table G.5): ', secForm, { colSpan: 3 }),
+            lv('Secondary deck form: ', secForm, { colSpan: 3 }),
             { text: '' }, { text: '' }
         ]);
 
@@ -458,7 +480,7 @@ function buildBCIProformaContent(bciFormData) {
             lv('Photographs: ', photos, { colSpan: 6 }),
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
             { text: '' },
-            lv('Secondary deck material (Table G.6): ', secMat, { colSpan: 3 }),
+            lv('Secondary deck material: ', secMat, { colSpan: 3 }),
             { text: '' }, { text: '' }
         ]);
 
@@ -515,7 +537,7 @@ function buildBCIProformaContent(bciFormData) {
                 if (d.def && d.defN) defDisplay = d.def + '.' + d.defN;
                 else if (d.def) defDisplay = String(d.def);
 
-                var comments = hasMulti ? 'See multiple defects table' : (d.comments_remarks && d.comments_remarks !== '-' ? d.comments_remarks : '-');
+                var comments = hasMulti ? 'See multiple defects table' : (d.comments_remarks && d.comments_remarks !== '-' ? d.comments_remarks : '');
 
                 var dataRow = [];
 
@@ -618,7 +640,12 @@ function buildBCIProformaContent(bciFormData) {
     return content;
 }
 
-function buildBCIPage2Content(bciFormData) {
+// See buildBCIProformaContent's comment above re: singleSpanIdx - this
+// function already puts a pageBreak before every span unconditionally
+// (right below), which is exactly right for both the legacy (all page 2s
+// back-to-back) and interleaved (one span's page 2 right after its page 1)
+// arrangements, so nothing else here needs to change for it.
+function buildBCIPage2Content(bciFormData, singleSpanIdx) {
     var content = [];
 
     if (!bciFormData || bciFormData.error) {
@@ -627,6 +654,8 @@ function buildBCIPage2Content(bciFormData) {
     }
 
     var totalSpans = bciFormData.totalSpans || 1;
+    var spanRangeStart = singleSpanIdx != null ? singleSpanIdx : 0;
+    var spanRangeEnd = singleSpanIdx != null ? singleSpanIdx + 1 : totalSpans;
     var spansData = bciFormData.spansData || [];
     var worksRequired = bciFormData.worksRequired || {};
 
@@ -644,7 +673,7 @@ function buildBCIPage2Content(bciFormData) {
     var commentPad = Math.max(1.5, (COMMENT_H  - TEXT_H) / 2);
     var COMMENT_ROW_INDICES = new Set([9, 12]);
 
-    for (var spanIdx = 0; spanIdx < totalSpans; spanIdx++) {
+    for (var spanIdx = spanRangeStart; spanIdx < spanRangeEnd; spanIdx++) {
         var spanNum   = spanIdx + 1;
         var spanData  = (spansData || []).find(function(s) { return Number(s.span_number) === spanNum; }) || {};
         var defects   = spanData.defects || [];
@@ -860,8 +889,23 @@ function buildBCIPage2Content(bciFormData) {
     return content;
 }
 
+// Combined page order per span: span1 page1, span1 page2, span2 page1,
+// span2 page2, ... instead of every span's page 1 followed by every span's
+// page 2. Prefer this over concatenating buildBCIProformaContent(data) and
+// buildBCIPage2Content(data) separately when a structure has multiple spans.
+function buildBCIProformaFullContent(bciFormData) {
+    var totalSpans = (bciFormData && bciFormData.totalSpans) || 1;
+    var content = [];
+    for (var spanIdx = 0; spanIdx < totalSpans; spanIdx++) {
+        content = content.concat(buildBCIProformaContent(bciFormData, spanIdx));
+        content = content.concat(buildBCIPage2Content(bciFormData, spanIdx));
+    }
+    return content;
+}
+
 // ─── Expose globally ─────────────────────────────────────────────────────────
 window.buildBCIProformaContent = buildBCIProformaContent;
 window.buildBCIPage2Content = buildBCIPage2Content;
+window.buildBCIProformaFullContent = buildBCIProformaFullContent;
 
 } // end guard: typeof buildBCIProformaContent === 'undefined'

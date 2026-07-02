@@ -1496,10 +1496,7 @@
             var docDef = {
                 pageSize: 'A4',
                 pageMargins: [40, 40, 40, 40],
-                content: [].concat(
-                    buildBCIProformaContent(bciFormData),
-                    buildBCIPage2Content(bciFormData)
-                ),
+                content: buildBCIProformaFullContent(bciFormData),
                 defaultStyle: { font: 'Roboto' }
             };
 

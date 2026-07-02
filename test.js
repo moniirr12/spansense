@@ -168,8 +168,8 @@ async function generateSimplePDFReport(doc, mode = 'download') {
         const ALL_ELEMENTS_LIST_BY_TYPE = {
             Bridge: [
                 { category: "Deck Elements", mainNumber: "4.1", subNumber: "4.1.1", name: "Primary deck element", elementNo: 1 },
-                { category: "Deck Elements", mainNumber: "4.1", subNumber: "4.1.2", name: "Secondary deck elements - Transverse beams", elementNo: 2 },
-                { category: "Deck Elements", mainNumber: "4.1", subNumber: "4.1.3", name: "Elements from table G.5", elementNo: 3 },
+                { category: "Deck Elements", mainNumber: "4.1", subNumber: "4.1.2", name: "Transverse beams", elementNo: 2 },
+                { category: "Deck Elements", mainNumber: "4.1", subNumber: "4.1.3", name: "Secondary deck element", elementNo: 3 },
                 { category: "Deck Elements", mainNumber: "4.1", subNumber: "4.1.4", name: "Half joints", elementNo: 4 },
                 { category: "Deck Elements", mainNumber: "4.1", subNumber: "4.1.5", name: "Tie beam/rod", elementNo: 5 },
                 { category: "Deck Elements", mainNumber: "4.1", subNumber: "4.1.6", name: "Parapet beam or cantilever", elementNo: 6 },
