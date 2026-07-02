@@ -5,7 +5,7 @@
     <script>(function(){var nm=localStorage.getItem('nightMode');var dark=nm==='on'||(nm===null&&!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches));if(dark)document.documentElement.classList.add('nm-preload');})();</script>
     <style>html.nm-preload,html.nm-preload body{background-color:#1a2428!important;}</style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SpanSense — Inspection Planning</title>
+    <title>spanSense — Inspection Planning</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -1314,7 +1314,7 @@
                 cloneContainer.style.cssText = 'background: white; padding: 20px; font-family: "Inter", sans-serif;';
                 cloneContainer.innerHTML = `
                     <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #5b8c8a; padding-bottom: 10px;">
-                        <h1 style="color: #2c5a57; margin: 0;">SpanSense Inspection Programme</h1>
+                        <h1 style="color: #2c5a57; margin: 0;">spanSense Inspection Programme</h1>
                         <p style="color: #6a7c8e; margin: 5px 0 0;">${ganttSpan === 10 ? `Years: ${currentDisplayYear}–${currentDisplayYear + 9}` : `Year: ${currentDisplayYear}`} | Generated: ${new Date().toLocaleDateString()}</p>
                     </div>
                 `;
