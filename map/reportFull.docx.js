@@ -11,7 +11,7 @@
 
 if (typeof buildFullInspectionReportDocx === 'undefined') {
 
-// SpanSense brand palette / body copy matches bciProforma.pdfmake.js's and
+// spanSense brand palette / body copy matches bciProforma.pdfmake.js's and
 // test.js's own PDF styling (sectionHeader #2c3e44, subsectionHeader
 // #5b8c8a, Roboto - pdfMake's default font, same one used across the app's
 // PDFs) so the Word version reads as the same report, not a generic one.
@@ -111,7 +111,7 @@ var REPORT_ELEMENTS_BY_TYPE = {
 };
 
 // ── Document-wide style overrides: without these, Word's built-in Heading
-// styles render in its own default blue/Calibri theme instead of SpanSense's. ──
+// styles render in its own default blue/Calibri theme instead of spanSense's. ──
 function reportDocStyles(d) {
     return {
         default: {

@@ -1,5 +1,5 @@
 // ============================================
-// SpanSense - Bridge Map & Modal Logic
+// spanSense - Bridge Map & Modal Logic
 // ============================================
 
 // --- Dynamic API Base URL (works on localhost AND production) ---

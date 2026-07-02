@@ -545,15 +545,10 @@ body {
    animation from scratch (including its opening delay, where the "from"
    keyframe is opacity:0) every single time the pulse ended - which is
    exactly what was making this card appear to "disappear" after being
-   highlighted. Transitions don't have that restart hazard, so the tilt
-   is pinned here via an ID selector (beats .reveal's specificity) and
-   only opacity is left for .reveal to animate.  */
-#authCard, #authCard.reveal, #authCard.reveal.active {
-    transform: rotate(-1.2deg);
-}
+   highlighted. Transitions don't have that restart hazard. */
 
-#authCard:hover {
-    transform: rotate(0deg) translateY(-4px);
+.auth-card:hover {
+    transform: translateY(-4px);
     box-shadow: var(--shadow-xl);
     border-color: var(--primary-light);
 }
@@ -561,16 +556,15 @@ body {
 /* Same spring/bloom language as the pylon-grow motion the old bridge
    animation used, and the gradient orbs in the background - a gentle
    scale "pop" plus a soft glow bloom, rather than a sharp notification
-   ring. Keeps the card's resting tilt throughout so it doesn't
-   momentarily snap upright mid-animation. */
+   ring. */
 .auth-card-highlight {
     animation: authHighlightPop 1s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @keyframes authHighlightPop {
-    0%   { transform: rotate(-1.2deg) scale(1);    box-shadow: 0 0 0 0 var(--glow-primary), var(--shadow-xl); border-color: var(--border-light); }
-    30%  { transform: rotate(-1.2deg) scale(1.02); box-shadow: 0 0 50px 10px rgba(91, 140, 138, 0.4), var(--shadow-xl); border-color: var(--primary); }
-    100% { transform: rotate(-1.2deg) scale(1);    box-shadow: 0 0 0 0 rgba(91, 140, 138, 0), var(--shadow-xl); border-color: var(--border-light); }
+    0%   { transform: scale(1);    box-shadow: 0 0 0 0 var(--glow-primary), var(--shadow-xl); border-color: var(--border-light); }
+    30%  { transform: scale(1.02); box-shadow: 0 0 50px 10px rgba(91, 140, 138, 0.4), var(--shadow-xl); border-color: var(--primary); }
+    100% { transform: scale(1);    box-shadow: 0 0 0 0 rgba(91, 140, 138, 0), var(--shadow-xl); border-color: var(--border-light); }
 }
 
 @keyframes fadeInUp {
@@ -1372,9 +1366,9 @@ body.night-mode .glass-scrollbar .thumb {
             Inspection, reporting, and structural intelligence unified into a single platform built for structures management.
         </p>
         <div class="hero-tags">
-            <span class="hero-tag"><i class="fas fa-clipboard-list"></i> GI · PI · SI Inspections</span>
-            <span class="hero-tag"><i class="fas fa-chart-line"></i> BCI Condition Scoring</span>
             <span class="hero-tag"><i class="fas fa-cube"></i> 3D twinView</span>
+            <span class="hero-tag"><i class="fas fa-layer-group"></i> Any Structure Type</span>
+            <span class="hero-tag"><i class="fas fa-chart-line"></i> Automated Condition Scoring</span>
         </div>
         <div class="hero-buttons">
             <button class="btn btn-primary" onclick="scrollToAuth()">Access System →</button>
@@ -1505,7 +1499,7 @@ body.night-mode .glass-scrollbar .thumb {
 <!-- CTA BAND -->
 <section class="cta-band">
     <div class="cta-band-inner reveal">
-        <h2>Built for the people who keep structures standing</h2>
+        <h2>You keep structures standing — we're just here to help.</h2>
         <p>Sign in and start your first inspection.</p>
         <button class="btn btn-primary btn-lg" onclick="scrollToAuth()">Access System →</button>
     </div>
@@ -1513,7 +1507,7 @@ body.night-mode .glass-scrollbar .thumb {
 
 <!-- FOOTER -->
 <footer class="footer">
-    <p>© <span id="footerYear"></span> SpanSense — Asset Management System</p>
+    <p>© <span id="footerYear"></span> spanSense — Asset Management System</p>
 </footer>
 
 <!-- GLASS SCROLLBAR -->
@@ -1709,7 +1703,7 @@ if (footerYearEl) footerYearEl.textContent = new Date().getFullYear();
 
 // Login handler
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('SpanSense ready');
+    console.log('spanSense ready');
     
     const loginBtn = document.getElementById('loginBtn');
     
@@ -1814,11 +1808,11 @@ document.addEventListener('DOMContentLoaded', function() {
 const shakeStyles = document.createElement('style');
 shakeStyles.textContent = `
     @keyframes shake {
-        0%, 100% { transform: rotate(-1.2deg) translateX(0); }
-        20% { transform: rotate(-1.2deg) translateX(-8px); }
-        40% { transform: rotate(-1.2deg) translateX(8px); }
-        60% { transform: rotate(-1.2deg) translateX(-4px); }
-        80% { transform: rotate(-1.2deg) translateX(4px); }
+        0%, 100% { transform: translateX(0); }
+        20% { transform: translateX(-8px); }
+        40% { transform: translateX(8px); }
+        60% { transform: translateX(-4px); }
+        80% { transform: translateX(4px); }
     }
 `;
 document.head.appendChild(shakeStyles);
