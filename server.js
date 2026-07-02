@@ -7,6 +7,7 @@ const cors = require("cors");
 const multer = require('multer');
 const path = require('path');
 const proj4 = require('proj4');
+const bcrypt = require('bcryptjs');
 const storage = require('./supabaseStorage');
 
 const router = express.Router();
@@ -101,12 +102,25 @@ async function initDatabase() {
         // Insert default admin user if table is empty
         const userCount = await dbGet("SELECT COUNT(*) as count FROM users");
         if (parseInt(userCount.count) === 0) {
+            const defaultHash = await bcrypt.hash('admin123', 10);
             await pool.query(
-                `INSERT INTO users (username, password, full_name, role) 
+                `INSERT INTO users (username, password, full_name, role)
                  VALUES ($1, $2, $3, $4)`,
-                ['admin', 'admin123', 'System Admin', 'admin']
+                ['admin', defaultHash, 'System Admin', 'admin']
             );
             console.log('Default user created: admin / admin123');
+        }
+
+        // One-time migration: earlier versions stored passwords in plaintext.
+        // bcrypt hashes always start with $2a$/$2b$/$2y$, so anything else
+        // still needs hashing in place.
+        const existingUsers = await dbAll('SELECT id, password FROM users');
+        for (const u of existingUsers) {
+            if (!/^\$2[aby]\$/.test(u.password)) {
+                const hashed = await bcrypt.hash(u.password, 10);
+                await pool.query('UPDATE users SET password = $1 WHERE id = $2', [hashed, u.id]);
+                console.log('Migrated plaintext password for user id', u.id);
+            }
         }
 
         // Bridges table
@@ -1973,7 +1987,9 @@ app.post('/api/login', async (req, res) => {
             });
         }
 
-        if (password === user.password) {
+        const passwordMatches = await bcrypt.compare(password, user.password);
+
+        if (passwordMatches) {
             req.session.userId = user.id;
             req.session.username = user.username;
             req.session.organizationId = user.organization_id;
