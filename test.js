@@ -515,7 +515,7 @@ async function generateSimplePDFReport(doc, mode = 'download') {
             footer: function(currentPage, pageCount) {
                 if (currentPage === 1) return null;
                 return {
-                    text: `Generated: ${new Date().toLocaleDateString()} | SpanSense Bridge Management System`,
+                    text: `Generated: ${new Date().toLocaleDateString()} | SpanSense Asset Management System`,
                     alignment: 'center',
                     fontSize: 7,
                     color: '#aaa',
