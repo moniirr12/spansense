@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script>(function(){var nm=localStorage.getItem('nightMode');var dark=nm==='on'||(nm===null&&!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches));if(dark)document.documentElement.classList.add('nm-preload');})();</script>
 <style>html.nm-preload,html.nm-preload body{background-color:#0f1419!important;}</style>
-<title>spanSense - Bridge Management System</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<title>spanSense - Asset Management System</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Lexend:wght@500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <style>
 /* ============================================
@@ -34,15 +34,15 @@
     --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.03);
     --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.04);
     --glow-primary: rgba(91, 140, 138, 0.15);
-    
-    /* Bridge Animation Colors */
-    --bridge-pylon: #C4A882;
-    --bridge-deck: #B8D4E3;
-    --bridge-cable: #A8B8BA;
-    --bridge-water: rgba(143, 163, 166, 0.3);
-    --bridge-sun: #F4E4BC;
-    --bridge-cloud: rgba(0, 0, 0, 0.06);
-    --bridge-arch: #C4A882;
+
+    /* Deliberately NOT redefined under body.night-mode - used for the
+       flagship dark-accent card and the CTA band, which should stay a
+       deep teal in both themes. --text-primary flips to near-white in
+       night mode (it's a text color, not a surface color), so pairing
+       a gradient with it inverted those elements to a washed-out white
+       card in dark mode instead of staying a dark accent. */
+    --accent-deep-1: #2c645c;
+    --accent-deep-2: #14262b;
 }
 
 body.night-mode {
@@ -64,15 +64,6 @@ body.night-mode {
     --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.4);
     --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.5);
     --glow-primary: rgba(138, 180, 176, 0.15);
-    
-    /* Bridge Animation Colors - Dark Mode */
-    --bridge-pylon: #A08060;
-    --bridge-deck: #5A859E;
-    --bridge-cable: #809CA0;
-    --bridge-water: rgba(128, 156, 160, 0.2);
-    --bridge-sun: #D4C088;
-    --bridge-cloud: rgba(255, 255, 255, 0.05);
-    --bridge-arch: #A08060;
 }
 
 * {
@@ -333,49 +324,54 @@ body {
     max-width: 1400px;
     margin: 0 auto;
     position: relative;
+    overflow: hidden;
     z-index: 10;
 }
 
 .hero-content {
     flex: 1;
     max-width: 560px;
+    position: relative;
+    z-index: 2;
 }
 
 .hero-badge {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: var(--bg-glass);
-    backdrop-filter: blur(10px);
-    padding: 6px 16px;
+    background: var(--bg-glass-solid);
+    padding: 7px 16px 7px 12px;
     border-radius: 40px;
-    font-size: 0.7rem;
-    font-weight: 600;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
     color: var(--primary);
     margin-bottom: 28px;
     border: 1px solid var(--border-light);
-    letter-spacing: 0.05em;
 }
 
-.hero-badge-dot {
-    width: 6px;
-    height: 6px;
-    background: #4ade80;
-    border-radius: 50%;
-    animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.4; transform: scale(0.8); }
+.hero-badge svg {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
 }
 
 .hero h1 {
-    font-size: clamp(2.2rem, 4.5vw, 3.5rem);
+    font-family: 'Lexend', sans-serif;
+    font-size: clamp(2.4rem, 4.8vw, 4rem);
     font-weight: 700;
-    line-height: 1.2;
-    margin-bottom: 20px;
-    background: linear-gradient(135deg, var(--text-primary), var(--primary-light));
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+    margin-bottom: 22px;
+    color: var(--text-primary);
+}
+
+.hero h1 .highlight {
+    font-family: 'Lexend', sans-serif;
+    font-weight: 500;
+    font-style: italic;
+    background: linear-gradient(120deg, var(--primary), var(--primary-dark));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
@@ -387,28 +383,29 @@ body {
     margin-bottom: 32px;
 }
 
-.hero-stats {
+.hero-tags {
     display: flex;
-    gap: 48px;
+    flex-wrap: wrap;
+    gap: 10px;
     margin-bottom: 40px;
 }
 
-.stat {
-    display: flex;
-    flex-direction: column;
+.hero-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 30px;
+    background: var(--bg-glass-solid);
+    border: 1px solid var(--border-light);
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-secondary);
 }
 
-.stat-value {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--text-primary);
-}
-
-.stat-label {
-    font-size: 0.7rem;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
+.hero-tag i {
+    color: var(--primary);
+    font-size: 0.8rem;
 }
 
 .hero-buttons {
@@ -453,26 +450,127 @@ body {
 }
 
 /* ============================================
+   HERO LINE-ART BRIDGE
+   A minimal single-stroke suspension bridge spanning the full hero width,
+   sitting behind the text and the auth card (not a scene competing with
+   them). Colors track the theme variables so it reacts to night mode
+   automatically instead of being baked-in hex.
+   ============================================ */
+.hero-art-bg {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -18px;
+    width: 100%;
+    height: auto;
+    z-index: -1;
+    opacity: 0.55;
+    pointer-events: none;
+}
+
+.art-line {
+    fill: none;
+    stroke: var(--primary);
+    stroke-dasharray: 2200;
+    stroke-dashoffset: 2200;
+    animation: heroLineDraw 2.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.art-deck  { animation-delay: 0.5s; }
+.art-cable { animation-delay: 0s; }
+
+.art-tower {
+    stroke-width: 5;
+    stroke-linecap: round;
+    stroke-dasharray: 400;
+    stroke-dashoffset: 400;
+    animation: heroLineDraw 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.art-tower-1 { animation-delay: 0.15s; }
+.art-tower-2 { animation-delay: 0.3s; }
+
+.art-susp {
+    stroke: var(--primary-light);
+    stroke-width: 1.5;
+    stroke-dasharray: 220;
+    stroke-dashoffset: 220;
+    animation: heroLineDraw 0.6s ease-out forwards;
+    opacity: 0.7;
+}
+
+@keyframes heroLineDraw { to { stroke-dashoffset: 0; } }
+
+.art-pulse {
+    fill: var(--primary);
+    filter: drop-shadow(0 0 6px var(--primary));
+    opacity: 0;
+    animation: heroPulseTravel 7s linear infinite;
+    animation-delay: 2.6s;
+}
+
+@keyframes heroPulseTravel {
+    0%   { offset-distance: 0%;   opacity: 0; }
+    5%   { opacity: 1; }
+    95%  { opacity: 1; }
+    100% { offset-distance: 100%; opacity: 0; }
+}
+
+@media (max-width: 1024px) {
+    .hero-art-bg { opacity: 0.35; bottom: -8px; }
+}
+
+/* ============================================
    AUTH CARD - GLASSY MORPHISM
    ============================================ */
 .auth-card {
-    background: var(--bg-glass);
+    background: var(--bg-glass-solid);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border-radius: 32px;
+    border-radius: 28px;
     padding: 36px;
-    width: 400px;
+    width: 380px;
     margin-left: 60px;
     border: 1px solid var(--border-light);
     box-shadow: var(--shadow-xl);
-    animation: fadeInUp 0.8s ease-out;
-    transition: all 0.3s ease;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease, opacity 0.8s ease;
+    position: relative;
+    z-index: 2;
 }
 
-.auth-card:hover {
-    transform: translateY(-4px);
+/* The one-time entrance fade uses the same .reveal/.reveal.active
+   transition system every other section uses (see handleScrollReveal),
+   not a @keyframes animation - that's deliberate. The highlight pulse
+   below needs its own real `animation` while it plays, and toggling an
+   `animation` shorthand off would otherwise restart the base `.auth-card`
+   animation from scratch (including its opening delay, where the "from"
+   keyframe is opacity:0) every single time the pulse ended - which is
+   exactly what was making this card appear to "disappear" after being
+   highlighted. Transitions don't have that restart hazard, so the tilt
+   is pinned here via an ID selector (beats .reveal's specificity) and
+   only opacity is left for .reveal to animate.  */
+#authCard, #authCard.reveal, #authCard.reveal.active {
+    transform: rotate(-1.2deg);
+}
+
+#authCard:hover {
+    transform: rotate(0deg) translateY(-4px);
     box-shadow: var(--shadow-xl);
     border-color: var(--primary-light);
+}
+
+/* Same spring/bloom language as the pylon-grow motion the old bridge
+   animation used, and the gradient orbs in the background - a gentle
+   scale "pop" plus a soft glow bloom, rather than a sharp notification
+   ring. Keeps the card's resting tilt throughout so it doesn't
+   momentarily snap upright mid-animation. */
+.auth-card-highlight {
+    animation: authHighlightPop 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes authHighlightPop {
+    0%   { transform: rotate(-1.2deg) scale(1);    box-shadow: 0 0 0 0 var(--glow-primary), var(--shadow-xl); border-color: var(--border-light); }
+    30%  { transform: rotate(-1.2deg) scale(1.02); box-shadow: 0 0 50px 10px rgba(91, 140, 138, 0.4), var(--shadow-xl); border-color: var(--primary); }
+    100% { transform: rotate(-1.2deg) scale(1);    box-shadow: 0 0 0 0 rgba(91, 140, 138, 0), var(--shadow-xl); border-color: var(--border-light); }
 }
 
 @keyframes fadeInUp {
@@ -569,17 +667,17 @@ body {
     font-family: inherit;
 }
 
-.btn-login {
+.btn-enter {
     background: linear-gradient(135deg, var(--primary), var(--primary-dark));
     color: white;
 }
 
-.btn-login:hover {
+.btn-enter:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px var(--glow-primary);
 }
 
-.btn-login:disabled {
+.btn-enter:disabled {
     opacity: 0.6;
     transform: none;
     cursor: not-allowed;
@@ -618,392 +716,6 @@ body {
 }
 
 /* ============================================
-   BRIDGE ANIMATION - ARCH BRIDGE STYLE
-   ============================================ */
-.bridge-scene {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 280px;
-    z-index: 5;
-    pointer-events: none;
-}
-
-/* Sun */
-.bridge-sun {
-    position: absolute;
-    top: 30px;
-    right: 100px;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: var(--bridge-sun);
-    box-shadow: 0 0 40px rgba(244, 228, 188, 0.3);
-    animation: sunPulse 4s ease-in-out infinite;
-}
-
-@keyframes sunPulse {
-    0%, 100% { transform: scale(1); opacity: 0.9; }
-    50% { transform: scale(1.1); opacity: 1; }
-}
-
-/* Clouds */
-.bridge-cloud {
-    position: absolute;
-    background: var(--bridge-cloud);
-    border-radius: 50px;
-    animation: cloudFloat 15s ease-in-out infinite;
-}
-
-.bridge-cloud::before,
-.bridge-cloud::after {
-    content: '';
-    position: absolute;
-    background: var(--bridge-cloud);
-    border-radius: 50%;
-}
-
-.cloud-1 {
-    width: 80px;
-    height: 30px;
-    top: 50px;
-    left: 80px;
-    animation-delay: 0s;
-}
-
-.cloud-1::before {
-    width: 40px;
-    height: 40px;
-    top: -20px;
-    left: 15px;
-}
-
-.cloud-1::after {
-    width: 50px;
-    height: 35px;
-    top: -15px;
-    right: 10px;
-}
-
-.cloud-2 {
-    width: 60px;
-    height: 25px;
-    top: 80px;
-    right: 120px;
-    animation-delay: -5s;
-    opacity: 0.6;
-}
-
-.cloud-2::before {
-    width: 30px;
-    height: 30px;
-    top: -15px;
-    left: 10px;
-}
-
-.cloud-2::after {
-    width: 35px;
-    height: 28px;
-    top: -12px;
-    right: 8px;
-}
-
-@keyframes cloudFloat {
-    0%, 100% { transform: translateX(0); }
-    50% { transform: translateX(20px); }
-}
-
-/* Mountains */
-.bridge-mountain {
-    position: absolute;
-    bottom: 100px;
-    width: 0;
-    height: 0;
-    border-style: solid;
-    opacity: 0.3;
-}
-
-.mountain-1 {
-    left: 50px;
-    border-left: 60px solid transparent;
-    border-right: 60px solid transparent;
-    border-bottom: 80px solid var(--primary);
-    animation: mountainRise 1.5s ease-out 0.2s both;
-}
-
-.mountain-2 {
-    left: 120px;
-    border-left: 80px solid transparent;
-    border-right: 80px solid transparent;
-    border-bottom: 120px solid var(--primary-light);
-    opacity: 0.2;
-    animation: mountainRise 1.5s ease-out 0.4s both;
-}
-
-.mountain-3 {
-    right: 60px;
-    border-left: 70px solid transparent;
-    border-right: 70px solid transparent;
-    border-bottom: 100px solid var(--primary);
-    opacity: 0.25;
-    animation: mountainRise 1.5s ease-out 0.6s both;
-}
-
-@keyframes mountainRise {
-    from { transform: translateY(40px); opacity: 0; }
-    to { transform: translateY(0); opacity: inherit; }
-}
-
-/* Water */
-.bridge-water {
-    position: absolute;
-    bottom: 60px;
-    left: 0;
-    right: 0;
-    height: 40px;
-    background: var(--bridge-water);
-    border-radius: 0 0 20px 20px;
-    overflow: hidden;
-}
-
-.wave {
-    position: absolute;
-    bottom: 0;
-    width: 200%;
-    height: 100%;
-    background: repeating-linear-gradient(
-        90deg,
-        transparent,
-        transparent 20px,
-        rgba(255,255,255,0.1) 20px,
-        rgba(255,255,255,0.1) 40px
-    );
-    animation: waveMove 3s linear infinite;
-}
-
-@keyframes waveMove {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-40px); }
-}
-
-/* Bridge Pylons */
-.bridge-pylon {
-    position: absolute;
-    bottom: 100px;
-    width: 28px;
-    background: linear-gradient(to top, var(--bridge-pylon), var(--primary));
-    border-radius: 4px 4px 0 0;
-    box-shadow: inset -4px 0 8px rgba(0,0,0,0.1), 4px 0 12px rgba(0,0,0,0.15);
-    animation: pylonGrow 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-    transform-origin: bottom;
-}
-
-.pylon-left { 
-    left: 18%; 
-    height: 0;
-    animation-delay: 0.5s;
-}
-
-.pylon-right { 
-    right: 18%; 
-    height: 0;
-    animation-delay: 0.7s;
-}
-
-@keyframes pylonGrow {
-    from { height: 0; opacity: 0; }
-    to { height: 120px; opacity: 1; }
-}
-
-/* Bridge Arch (Added for arch bridge style) */
-.bridge-arch {
-    position: absolute;
-    bottom: 100px;
-    left: 22%;
-    right: 22%;
-    height: 0;
-    border: 3px solid var(--bridge-arch);
-    border-top: none;
-    border-radius: 0 0 100px 100px;
-    animation: archGrow 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-    transform-origin: top;
-    opacity: 0;
-}
-
-@keyframes archGrow {
-    from { height: 0; opacity: 0; }
-    to { height: 80px; opacity: 0.8; }
-}
-
-/* Bridge Deck */
-.bridge-deck {
-    position: absolute;
-    bottom: 100px;
-    left: 12%;
-    right: 12%;
-    height: 6px;
-    background: linear-gradient(90deg, var(--bridge-deck), var(--primary-light), var(--bridge-deck));
-    border-radius: 3px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1), inset 0 -2px 4px rgba(0,0,0,0.1);
-    animation: deckAppear 0.8s ease-out 1.2s both;
-    transform-origin: left;
-}
-
-.bridge-deck::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 5%;
-    right: 5%;
-    height: 1px;
-    background: repeating-linear-gradient(
-        90deg,
-        rgba(255,255,255,0.4),
-        rgba(255,255,255,0.4) 20px,
-        transparent 20px,
-        transparent 40px
-    );
-    transform: translateY(-50%);
-}
-
-@keyframes deckAppear {
-    from { transform: scaleX(0); opacity: 0; }
-    to { transform: scaleX(1); opacity: 1; }
-}
-
-/* Suspender cables (vertical) */
-.bridge-suspender {
-    position: absolute;
-    width: 1.5px;
-    background: var(--bridge-cable);
-    opacity: 0.6;
-    border-radius: 1px;
-    animation: suspenderDrop 0.6s ease-out forwards;
-    transform-origin: top;
-}
-
-.suspender-1 { left: 26%; top: 85px; height: 0; animation-delay: 2.0s; }
-.suspender-2 { left: 33%; top: 70px; height: 0; animation-delay: 2.1s; }
-.suspender-3 { left: 40%; top: 60px; height: 0; animation-delay: 2.2s; }
-.suspender-4 { left: 47%; top: 55px; height: 0; animation-delay: 2.3s; }
-.suspender-5 { left: 54%; top: 60px; height: 0; animation-delay: 2.4s; }
-.suspender-6 { left: 61%; top: 70px; height: 0; animation-delay: 2.5s; }
-.suspender-7 { left: 68%; top: 85px; height: 0; animation-delay: 2.6s; }
-
-@keyframes suspenderDrop {
-    from { height: 0; opacity: 0; }
-    to { height: 45px; opacity: 0.6; }
-}
-
-/* Cars */
-.bridge-car {
-    position: absolute;
-    bottom: 112px;
-    width: 16px;
-    height: 8px;
-    border-radius: 3px 3px 1px 1px;
-    animation: carDrive 8s linear infinite;
-}
-
-.bridge-car::before,
-.bridge-car::after {
-    content: '';
-    position: absolute;
-    bottom: -3px;
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: var(--text-muted);
-    opacity: 0.5;
-}
-
-.bridge-car::before { left: 2px; }
-.bridge-car::after { right: 2px; }
-
-.car-1 {
-    left: -20px;
-    background: #E8A87C;
-    animation-delay: 0s;
-}
-
-.car-2 {
-    left: -20px;
-    background: var(--primary-light);
-    animation-delay: -4s;
-    width: 14px;
-    height: 7px;
-}
-
-@keyframes carDrive {
-    0% { left: -5%; opacity: 0; }
-    10% { opacity: 1; }
-    90% { opacity: 1; }
-    100% { left: 105%; opacity: 0; }
-}
-
-/* Birds */
-.bridge-bird {
-    position: absolute;
-    width: 20px;
-    height: 3px;
-    animation: birdFly 12s linear infinite;
-}
-
-.bridge-bird::before,
-.bridge-bird::after {
-    content: '';
-    position: absolute;
-    width: 10px;
-    height: 2px;
-    background: var(--text-muted);
-    border-radius: 50%;
-    opacity: 0.4;
-}
-
-.bridge-bird::before {
-    left: 0;
-    transform: rotate(-20deg);
-    transform-origin: right center;
-    animation: wingFlap 0.4s ease-in-out infinite;
-}
-
-.bridge-bird::after {
-    right: 0;
-    transform: rotate(20deg);
-    transform-origin: left center;
-    animation: wingFlap 0.4s ease-in-out infinite reverse;
-}
-
-.bird-1 { top: 40px; animation-delay: 0s; }
-.bird-2 { top: 70px; animation-delay: -6s; transform: scale(0.7); }
-
-@keyframes birdFly {
-    0% { left: -5%; }
-    100% { left: 105%; }
-}
-
-@keyframes wingFlap {
-    0%, 100% { transform: rotate(-20deg); }
-    50% { transform: rotate(-40deg); }
-}
-
-/* Reflection */
-.bridge-reflection {
-    position: absolute;
-    bottom: 62px;
-    left: 12%;
-    right: 12%;
-    height: 30px;
-    background: linear-gradient(to bottom, var(--bridge-deck), transparent);
-    opacity: 0.15;
-    border-radius: 0 0 4px 4px;
-    transform: scaleY(-0.6);
-    filter: blur(2px);
-    animation: deckAppear 0.8s ease-out 1.2s both;
-}
-
-/* ============================================
    FEATURES SECTION
    ============================================ */
 .features {
@@ -1013,7 +725,6 @@ body {
     border-top: 1px solid var(--border-light);
     position: relative;
     z-index: 10;
-    margin-top: 280px;
 }
 
 .features-container {
@@ -1027,12 +738,12 @@ body {
 }
 
 .section-header h2 {
+    font-family: 'Lexend', sans-serif;
     font-size: 2rem;
     font-weight: 700;
+    letter-spacing: -0.01em;
     margin-bottom: 12px;
-    background: linear-gradient(135deg, var(--text-primary), var(--primary));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: var(--text-primary);
 }
 
 .section-header p {
@@ -1040,95 +751,212 @@ body {
     font-size: 1rem;
 }
 
+/* ---------- Bento feature grid: uneven card sizes instead of a
+   uniform repeated grid, so the two most "flagship" features (twinView,
+   Proformas & Reports) get more visual weight. ---------- */
 .features-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 28px;
+    grid-template-columns: repeat(6, 1fr);
+    grid-auto-rows: 190px;
+    gap: 18px;
 }
 
 .feature-card {
-    text-align: center;
-    padding: 32px 24px;
+    grid-column: span 2;
+    text-align: left;
+    padding: 26px;
     background: var(--bg-glass-solid);
-    border-radius: 24px;
+    border-radius: 22px;
     transition: all 0.3s ease;
     border: 1px solid var(--border-light);
     cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.feature-card.big {
+    grid-column: span 4;
 }
 
 .feature-card:hover {
-    transform: translateY(-8px);
+    transform: translateY(-4px);
     border-color: var(--primary);
     box-shadow: var(--shadow-lg);
 }
 
+.feature-card .feature-glow {
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--glow-primary), transparent 70%);
+}
+
 .feature-icon {
-    width: 64px;
-    height: 64px;
+    position: absolute;
+    top: 22px;
+    left: 24px;
+    width: 44px;
+    height: 44px;
     background: linear-gradient(135deg, var(--primary), var(--primary-light));
-    border-radius: 20px;
+    border-radius: 13px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 20px;
-    font-size: 1.8rem;
+    font-size: 1.1rem;
     color: white;
 }
 
+.feature-card.dark {
+    background: linear-gradient(135deg, var(--accent-deep-1), var(--accent-deep-2));
+    border-color: var(--accent-deep-1);
+}
+.feature-card.dark .feature-icon { background: rgba(255,255,255,0.16); }
+.feature-card.dark h3 { color: #fff; }
+.feature-card.dark p { color: rgba(255,255,255,0.75); }
+
 .feature-card h3 {
-    font-size: 1rem;
+    font-family: 'Lexend', sans-serif;
+    font-size: 1.05rem;
     font-weight: 600;
-    margin-bottom: 10px;
+    margin-bottom: 6px;
 }
 
 .feature-card p {
-    font-size: 0.8rem;
+    font-size: 0.82rem;
     color: var(--text-secondary);
     line-height: 1.5;
+    margin: 0;
 }
 
 /* ============================================
-   TRUST SECTION
+   WORKFLOW STRIP
    ============================================ */
-.trust {
-    padding: 60px 48px;
-    text-align: center;
+.workflow {
+    padding: 60px 48px 80px;
     background: var(--bg-glass);
     backdrop-filter: blur(10px);
-    border-top: 1px solid var(--border-light);
     position: relative;
     z-index: 10;
 }
 
-.trust-label {
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    color: var(--text-muted);
-    margin-bottom: 28px;
+.flow-strip {
+    position: relative;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
 }
 
-.partners {
+.flow-strip::before {
+    content: '';
+    position: absolute;
+    top: 27px;
+    left: 12.5%;
+    right: 12.5%;
+    height: 2px;
+    background: repeating-linear-gradient(90deg, var(--primary-light) 0 8px, transparent 8px 16px);
+    opacity: 0.6;
+}
+
+.flow-step {
+    position: relative;
+    text-align: center;
+    padding: 0 18px;
+}
+
+.flow-num {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--bg-glass-solid);
+    border: 2px solid var(--primary);
     display: flex;
+    align-items: center;
     justify-content: center;
-    gap: 48px;
-    flex-wrap: wrap;
-}
-
-.partner {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    transition: all 0.3s ease;
-    cursor: default;
-}
-
-.partner:hover {
+    font-family: 'Lexend', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
     color: var(--primary);
+    margin: 0 auto 18px;
+    position: relative;
+    z-index: 2;
+    box-shadow: var(--shadow-sm);
+}
+
+.flow-step h4 {
+    font-family: 'Lexend', sans-serif;
+    font-size: 0.98rem;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+}
+
+.flow-step p {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0;
+}
+
+@media (max-width: 860px) {
+    .flow-strip { grid-template-columns: 1fr; gap: 32px; }
+    .flow-strip::before { display: none; }
+}
+
+/* ============================================
+   CTA BAND
+   ============================================ */
+.cta-band {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 48px 60px;
+    position: relative;
+    z-index: 10;
+}
+
+.cta-band-inner {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--accent-deep-1), var(--accent-deep-2));
+    border-radius: 32px;
+    padding: 64px 48px;
+    text-align: center;
+}
+
+.cta-band-inner h2 {
+    font-family: 'Lexend', sans-serif;
+    font-weight: 700;
+    font-size: clamp(1.7rem, 3vw, 2.3rem);
+    color: #fff;
+    margin-bottom: 14px;
+}
+
+.cta-band-inner p {
+    color: rgba(255,255,255,0.75);
+    max-width: 480px;
+    margin: 0 auto 32px;
+}
+
+.cta-band-inner .btn-lg {
+    background: #fff;
+    color: var(--primary-dark);
+    padding: 14px 30px;
+}
+
+.cta-band-inner .btn-lg:hover {
     transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+}
+
+@media (max-width: 768px) {
+    .cta-band { padding: 0 20px 40px; }
+    .cta-band-inner { padding: 48px 24px; }
 }
 
 /* ============================================
@@ -1164,7 +992,7 @@ body {
         margin-bottom: 48px;
     }
 
-    .hero-stats {
+    .hero-tags {
         justify-content: center;
     }
 
@@ -1180,12 +1008,11 @@ body {
 
     .features-grid {
         grid-template-columns: repeat(2, 1fr);
-        gap: 20px;
+        grid-auto-rows: 175px;
+        gap: 16px;
     }
-    
-    .bridge-scene {
-        transform: scale(0.8);
-        transform-origin: bottom center;
+    .feature-card, .feature-card.big {
+        grid-column: span 2;
     }
 }
 
@@ -1205,32 +1032,19 @@ body {
 
     .features {
         padding: 48px 20px;
-        margin-top: 220px;
     }
 
     .features-grid {
         grid-template-columns: 1fr;
+        grid-auto-rows: auto;
+    }
+    .feature-card, .feature-card.big {
+        grid-column: 1;
+        min-height: 160px;
     }
 
-    .trust {
-        padding: 40px 20px;
-    }
-
-    .partners {
-        gap: 24px;
-    }
-
-    .hero-stats {
-        gap: 24px;
-    }
-
-    .stat-value {
-        font-size: 1.5rem;
-    }
-    
-    .bridge-scene {
-        transform: scale(0.6);
-        transform-origin: bottom center;
+    .hero-tags {
+        gap: 8px;
     }
 }
 
@@ -1330,6 +1144,103 @@ body.night-mode .glass-scrollbar .thumb {
 }
 
 /* ============================================
+   CONFIRM MODAL (styled stand-in for native alert()/confirm())
+   ============================================ */
+.confirm-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 20, 25, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 4000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.confirm-modal-overlay.active { display: flex; }
+
+.confirm-modal-card {
+    background: var(--bg-glass-solid);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-light);
+    border-radius: 24px;
+    width: 100%;
+    max-width: 360px;
+    padding: 32px 28px 24px;
+    text-align: center;
+    box-shadow: var(--shadow-xl);
+    animation: fadeInUp 0.3s ease-out;
+}
+
+.confirm-modal-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 1.4rem;
+}
+.confirm-modal-icon.error   { background: rgba(196, 80, 80, 0.12); color: #c0574a; }
+.confirm-modal-icon.warning { background: rgba(200, 150, 60, 0.14); color: #c28b5a; }
+.confirm-modal-icon.success { background: var(--glow-primary); color: var(--primary); }
+
+.confirm-modal-title {
+    font-family: 'Lexend', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.confirm-modal-message {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.55;
+    margin-bottom: 24px;
+    white-space: pre-line;
+}
+
+.confirm-modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.confirm-modal-btn {
+    padding: 10px 22px;
+    border-radius: 30px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+    transition: all 0.2s;
+}
+.confirm-modal-btn.secondary {
+    background: var(--bg-glass);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-light);
+}
+.confirm-modal-btn.secondary:hover {
+    background: var(--bg-glass-solid);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+.confirm-modal-btn.primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: #fff;
+}
+.confirm-modal-btn.primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px var(--glow-primary);
+}
+
+/* ============================================
    DEMO VIDEO MODAL
    ============================================ */
 .demo-modal-overlay {
@@ -1412,56 +1323,6 @@ body.night-mode .glass-scrollbar .thumb {
     <div class="gradient-orb orb-3"></div>
 </div>
 
-<!-- BRIDGE SCENE ANIMATION -->
-<div class="bridge-scene">
-    <!-- Sun -->
-    <div class="bridge-sun"></div>
-
-    <!-- Clouds -->
-    <div class="bridge-cloud cloud-1"></div>
-    <div class="bridge-cloud cloud-2"></div>
-
-    <!-- Mountains -->
-    <div class="bridge-mountain mountain-1"></div>
-    <div class="bridge-mountain mountain-2"></div>
-    <div class="bridge-mountain mountain-3"></div>
-
-    <!-- Water -->
-    <div class="bridge-water">
-        <div class="wave"></div>
-    </div>
-
-    <!-- Bridge Pylons -->
-    <div class="bridge-pylon pylon-left"></div>
-    <div class="bridge-pylon pylon-right"></div>
-
-    <!-- Bridge Arch -->
-    <div class="bridge-arch"></div>
-
-    <!-- Bridge Deck -->
-    <div class="bridge-deck"></div>
-
-    <!-- Reflection -->
-    <div class="bridge-reflection"></div>
-
-    <!-- Suspender cables -->
-    <div class="bridge-suspender suspender-1"></div>
-    <div class="bridge-suspender suspender-2"></div>
-    <div class="bridge-suspender suspender-3"></div>
-    <div class="bridge-suspender suspender-4"></div>
-    <div class="bridge-suspender suspender-5"></div>
-    <div class="bridge-suspender suspender-6"></div>
-    <div class="bridge-suspender suspender-7"></div>
-
-    <!-- Cars -->
-    <div class="bridge-car car-1"></div>
-    <div class="bridge-car car-2"></div>
-
-    <!-- Birds -->
-    <div class="bridge-bird bird-1"></div>
-    <div class="bridge-bird bird-2"></div>
-</div>
-
 <!-- NAVIGATION -->
 <nav class="navbar">
     <div class="left">
@@ -1472,7 +1333,7 @@ body.night-mode .glass-scrollbar .thumb {
     <div class="right">
         <div class="night-mode-toggle" id="nightModeToggle"><i class="fas fa-moon"></i></div>
         <div class="account-links">
-            <a href="accounts/accounts.html" title="Account"><i class="fas fa-user-circle"></i></a>
+            <a href="#authCard" title="Engineer Access" onclick="scrollToAuth(); return false;"><i class="fas fa-user-circle"></i></a>
             <a href="contacts/contacts.html" title="Contact Us"><i class="fas fa-envelope"></i></a>
         </div>
     </div>
@@ -1480,10 +1341,28 @@ body.night-mode .glass-scrollbar .thumb {
 
 <!-- HERO SECTION -->
 <section class="hero">
+    <!-- Ambient line-art bridge, sits behind the text and the auth card -->
+    <svg class="hero-art-bg" viewBox="0 0 1400 260" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path class="art-line art-deck" d="M40,200 L1360,200" stroke-width="3" stroke-linecap="round"/>
+        <path class="art-line art-tower art-tower-1" d="M300,200 L300,40"/>
+        <path class="art-line art-tower art-tower-2" d="M1100,200 L1100,40"/>
+        <path class="art-line art-cable" d="M40,150 Q170,45 300,38 Q560,140 700,158 Q840,140 1100,38 Q1230,45 1360,150" stroke-width="2.5"/>
+        <line class="art-line art-susp" x1="380" y1="75"  x2="380" y2="200" style="animation-delay:0.9s"/>
+        <line class="art-line art-susp" x1="460" y1="100" x2="460" y2="200" style="animation-delay:0.98s"/>
+        <line class="art-line art-susp" x1="540" y1="120" x2="540" y2="200" style="animation-delay:1.06s"/>
+        <line class="art-line art-susp" x1="620" y1="135" x2="620" y2="200" style="animation-delay:1.14s"/>
+        <line class="art-line art-susp" x1="780" y1="135" x2="780" y2="200" style="animation-delay:1.22s"/>
+        <line class="art-line art-susp" x1="860" y1="120" x2="860" y2="200" style="animation-delay:1.3s"/>
+        <line class="art-line art-susp" x1="940" y1="100" x2="940" y2="200" style="animation-delay:1.38s"/>
+        <line class="art-line art-susp" x1="1020" y1="75" x2="1020" y2="200" style="animation-delay:1.46s"/>
+        <!-- traveling sensing pulse -->
+        <circle class="art-pulse" r="4" style="offset-path: path('M40,150 Q170,45 300,38 Q560,140 700,158 Q840,140 1100,38 Q1230,45 1360,150');"/>
+    </svg>
+
     <div class="hero-content reveal">
         <div class="hero-badge">
-            <span class="hero-badge-dot"></span>
-            Trusted by 200+ infrastructure agencies
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+            Structural Intelligence Platform
         </div>
         <h1>
             Clarity across<br>
@@ -1492,19 +1371,10 @@ body.night-mode .glass-scrollbar .thumb {
         <p class="hero-subtitle">
             Inspection, reporting, and structural intelligence unified into a single platform built for structures management.
         </p>
-        <div class="hero-stats">
-            <div class="stat">
-                <span class="stat-value">14K+</span>
-                <span class="stat-label">Inspections</span>
-            </div>
-            <div class="stat">
-                <span class="stat-value">2,400</span>
-                <span class="stat-label">Structures</span>
-            </div>
-            <div class="stat">
-                <span class="stat-value">99.9%</span>
-                <span class="stat-label">Uptime</span>
-            </div>
+        <div class="hero-tags">
+            <span class="hero-tag"><i class="fas fa-clipboard-list"></i> GI · PI · SI Inspections</span>
+            <span class="hero-tag"><i class="fas fa-chart-line"></i> BCI Condition Scoring</span>
+            <span class="hero-tag"><i class="fas fa-cube"></i> 3D twinView</span>
         </div>
         <div class="hero-buttons">
             <button class="btn btn-primary" onclick="scrollToAuth()">Access System →</button>
@@ -1513,7 +1383,7 @@ body.night-mode .glass-scrollbar .thumb {
     </div>
 
     <!-- AUTH CARD -->
-    <div class="auth-card reveal" id="authCard" style="animation-delay: 0.2s;">
+    <div class="auth-card reveal" id="authCard">
         <div class="auth-header">
             <h2>Engineer Access</h2>
             <p>Sign in to your inspection workspace</p>
@@ -1541,7 +1411,7 @@ body.night-mode .glass-scrollbar .thumb {
             </div>
         </form>
         <div class="auth-footer">
-            <a onclick="alert('Contact your system administrator to reset credentials.')">Forgot credentials? →</a>
+            <a onclick="showAlertModal('Contact your system administrator to reset credentials.', 'warning', 'Forgot Credentials')">Forgot credentials? →</a>
         </div>
     </div>
 </section>
@@ -1551,54 +1421,116 @@ body.night-mode .glass-scrollbar .thumb {
     <div class="features-container">
         <div class="section-header reveal">
             <h2>Everything you need, unified</h2>
-            <p>Purpose-built features for modern bridge management</p>
+            <p>Purpose-built features for modern asset management</p>
         </div>
         <div class="features-grid">
-            <div class="feature-card reveal" style="transition-delay: 0.1s;">
-                <div class="feature-icon">📋</div>
-                <h3>Digital Inspections</h3>
-                <p>Replace paper forms with structured digital workflows</p>
+            <div class="feature-card big dark reveal" style="transition-delay: 0.1s;">
+                <div class="feature-glow"></div>
+                <div class="feature-icon"><i class="fas fa-cube"></i></div>
+                <h3>3D twinView</h3>
+                <p>Visualize structures in three dimensions and pinpoint defects exactly where they occur on the model.</p>
             </div>
             <div class="feature-card reveal" style="transition-delay: 0.2s;">
-                <div class="feature-icon">📊</div>
-                <h3>Condition Ratings</h3>
-                <p>NBI-compatible scoring with automatic deterioration tracking</p>
+                <div class="feature-glow"></div>
+                <div class="feature-icon"><i class="fas fa-clipboard-list"></i></div>
+                <h3>Digital Inspections</h3>
+                <p>Structured GI, PI, and SI workflows that replace paper forms entirely</p>
             </div>
             <div class="feature-card reveal" style="transition-delay: 0.3s;">
-                <div class="feature-icon">📸</div>
-                <h3>Photo Management</h3>
-                <p>Geotagged media linked directly to structural elements</p>
+                <div class="feature-glow"></div>
+                <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+                <h3>Condition Ratings</h3>
+                <p>Industry-standard BCI scoring with automatic deterioration tracking across spans</p>
             </div>
             <div class="feature-card reveal" style="transition-delay: 0.4s;">
-                <div class="feature-icon">📈</div>
-                <h3>Analytics</h3>
-                <p>Trend analysis and predictive maintenance scheduling</p>
+                <div class="feature-glow"></div>
+                <div class="feature-icon"><i class="fas fa-camera"></i></div>
+                <h3>Photo Management</h3>
+                <p>Geotagged media linked directly to structural elements and defects</p>
+            </div>
+            <div class="feature-card reveal" style="transition-delay: 0.5s;">
+                <div class="feature-glow"></div>
+                <div class="feature-icon"><i class="fas fa-calendar-alt"></i></div>
+                <h3>Inspection Planning</h3>
+                <p>Gantt-based scheduling across 1- or 10-year windows, synced to the GI/PI cycle</p>
+            </div>
+            <div class="feature-card reveal" style="transition-delay: 0.6s;">
+                <div class="feature-glow"></div>
+                <div class="feature-icon"><i class="fas fa-map"></i></div>
+                <h3>Structure Map</h3>
+                <p>Every asset plotted on an interactive map with instant access to its history</p>
+            </div>
+            <div class="feature-card big reveal" style="transition-delay: 0.7s;">
+                <div class="feature-glow"></div>
+                <div class="feature-icon"><i class="fas fa-file-invoice"></i></div>
+                <h3>Proformas &amp; Reports</h3>
+                <p>Auto-generated BCI proformas and DOCX/PDF reports, ready to sign and send — plus searchable history of every past inspection for a structure.</p>
             </div>
         </div>
     </div>
 </section>
 
-<!-- TRUST SECTION -->
-<section class="trust">
-    <div class="trust-label reveal">Trusted by leading infrastructure firms</div>
-    <div class="partners">
-        <span class="partner">ARUP</span>
-        <span class="partner">ATKINS</span>
-        <span class="partner">JACOBS</span>
-        <span class="partner">WSP</span>
-        <span class="partner">AECOM</span>
-        <span class="partner">MOTT MACDONALD</span>
+<!-- HOW IT WORKS -->
+<section class="workflow">
+    <div class="features-container">
+        <div class="section-header reveal">
+            <h2>From field to finished report</h2>
+            <p>One continuous flow instead of four disconnected tools</p>
+        </div>
+        <div class="flow-strip">
+            <div class="flow-step reveal" style="transition-delay: 0.1s;">
+                <div class="flow-num">01</div>
+                <h4>Inspect</h4>
+                <p>Capture GI, PI, or SI defects on site, element by element, with photos attached.</p>
+            </div>
+            <div class="flow-step reveal" style="transition-delay: 0.2s;">
+                <div class="flow-num">02</div>
+                <h4>Score</h4>
+                <p>BCI condition scores calculate automatically as defects are logged.</p>
+            </div>
+            <div class="flow-step reveal" style="transition-delay: 0.3s;">
+                <div class="flow-num">03</div>
+                <h4>Plan</h4>
+                <p>Upcoming GI/PI cycles populate the planning calendar on their own.</p>
+            </div>
+            <div class="flow-step reveal" style="transition-delay: 0.4s;">
+                <div class="flow-num">04</div>
+                <h4>Report</h4>
+                <p>Generate a signed BCI proforma or full DOCX/PDF report in one click.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA BAND -->
+<section class="cta-band">
+    <div class="cta-band-inner reveal">
+        <h2>Built for the people who keep structures standing</h2>
+        <p>Sign in and start your first inspection.</p>
+        <button class="btn btn-primary btn-lg" onclick="scrollToAuth()">Access System →</button>
     </div>
 </section>
 
 <!-- FOOTER -->
 <footer class="footer">
-    <p>© 2024 SpanSense — Bridge Asset Management System</p>
+    <p>© <span id="footerYear"></span> SpanSense — Asset Management System</p>
 </footer>
 
 <!-- GLASS SCROLLBAR -->
 <div class="glass-scrollbar" id="glassScrollbar">
     <div class="thumb" id="glassThumb"></div>
+</div>
+
+<!-- CONFIRM MODAL (styled stand-in for native alert()/confirm()) -->
+<div class="confirm-modal-overlay" id="confirmModalOverlay">
+    <div class="confirm-modal-card">
+        <div class="confirm-modal-icon" id="confirmModalIcon"><i class="fas fa-exclamation-circle"></i></div>
+        <h3 class="confirm-modal-title" id="confirmModalTitle">Notice</h3>
+        <p class="confirm-modal-message" id="confirmModalMessage"></p>
+        <div class="confirm-modal-actions" id="confirmModalActions">
+            <button class="confirm-modal-btn primary" id="confirmModalConfirmBtn">OK</button>
+        </div>
+    </div>
 </div>
 
 <!-- DEMO VIDEO MODAL -->
@@ -1658,20 +1590,96 @@ function handleScrollReveal() {
 window.addEventListener('scroll', handleScrollReveal);
 window.addEventListener('load', handleScrollReveal);
 
-// Scroll to auth card
+// Styled stand-in for confirm()/alert() - same pattern used in inspection.js
+// and accounts.html's showConfirmModal, scoped to #confirmModalOverlay here.
+function showConfirmModal(opts) {
+    const overlay = document.getElementById('confirmModalOverlay');
+    if (!overlay) return Promise.resolve(true);
+
+    const iconBox = document.getElementById('confirmModalIcon');
+    const titleBox = document.getElementById('confirmModalTitle');
+    const msgBox = document.getElementById('confirmModalMessage');
+    const actionsBox = document.getElementById('confirmModalActions');
+
+    const type = opts.type || 'error';
+    const confirmText = opts.confirmText || 'OK';
+    const cancelText = opts.cancelText || 'Cancel';
+    const showCancel = opts.showCancel || false;
+
+    return new Promise((resolve) => {
+        iconBox.className = 'confirm-modal-icon ' + type;
+        const iconMap = { error: 'fa-exclamation-circle', warning: 'fa-exclamation-triangle', success: 'fa-check-circle' };
+        iconBox.innerHTML = `<i class="fas ${iconMap[type] || iconMap.error}"></i>`;
+
+        titleBox.textContent = opts.title || '';
+        msgBox.textContent = opts.message || '';
+
+        let buttonsHTML = '';
+        if (showCancel) buttonsHTML += `<button class="confirm-modal-btn secondary" id="confirmModalCancelBtn">${cancelText}</button>`;
+        buttonsHTML += `<button class="confirm-modal-btn primary" id="confirmModalConfirmBtn">${confirmText}</button>`;
+        actionsBox.innerHTML = buttonsHTML;
+
+        const close = (result) => {
+            overlay.classList.remove('active');
+            document.removeEventListener('keydown', escHandler);
+            resolve(result);
+        };
+        const escHandler = (e) => { if (e.key === 'Escape') close(false); };
+
+        document.getElementById('confirmModalConfirmBtn').onclick = () => close(true);
+        const cancelBtn = document.getElementById('confirmModalCancelBtn');
+        if (cancelBtn) cancelBtn.onclick = () => close(false);
+
+        overlay.classList.add('active');
+        document.addEventListener('keydown', escHandler);
+    });
+}
+document.getElementById('confirmModalOverlay')?.addEventListener('click', (e) => {
+    if (e.target.id === 'confirmModalOverlay') e.target.classList.remove('active');
+});
+
+// Styled stand-in for native alert() - single OK button, no cancel.
+function showAlertModal(message, type, title) {
+    const defaultTitles = { error: 'Error', warning: 'Heads Up', success: 'Success' };
+    type = type || 'error';
+    return showConfirmModal({
+        title: title || defaultTitles[type] || 'Notice',
+        message: message,
+        type: type,
+        confirmText: 'OK'
+    });
+}
+
+// Pulse the auth card so it's obvious where focus landed. Only scrolls if
+// the card genuinely isn't in view already - it usually already is (the
+// card lives in the hero, and this is most often clicked from the top of
+// the page), so scrollIntoView's forced re-centering was firing - and
+// visibly jumping the page - even when nothing needed to move.
 function scrollToAuth() {
     const authCard = document.getElementById('authCard');
-    if (authCard) {
+    if (!authCard) return;
+
+    const rect = authCard.getBoundingClientRect();
+    const alreadyInView = rect.top >= 0 && rect.bottom <= window.innerHeight;
+    if (!alreadyInView) {
         authCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        setTimeout(() => {
-            document.getElementById('engineerId').focus();
-        }, 500);
     }
+
+    authCard.classList.remove('auth-card-highlight');
+    void authCard.offsetWidth; // restart animation if triggered twice in a row
+    authCard.classList.add('auth-card-highlight');
+    setTimeout(() => authCard.classList.remove('auth-card-highlight'), 1000);
+
+    setTimeout(() => {
+        // preventScroll: the smooth-scroll/no-scroll decision above is already
+        // made - don't let focus() re-trigger its own jump on top of it.
+        document.getElementById('engineerId').focus({ preventScroll: true });
+    }, alreadyInView ? 50 : 500);
 }
 
 // Register handler
 function handleRegister() {
-    alert('Registration portal coming soon.\nContact your agency administrator for access.');
+    showAlertModal('Registration portal coming soon.\nContact your agency administrator for access.', 'warning', 'Coming Soon');
 }
 
 // Demo video modal
@@ -1696,6 +1704,9 @@ document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeDemoModal();
 });
 
+const footerYearEl = document.getElementById('footerYear');
+if (footerYearEl) footerYearEl.textContent = new Date().getFullYear();
+
 // Login handler
 document.addEventListener('DOMContentLoaded', function() {
     console.log('SpanSense ready');
@@ -1711,7 +1722,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const password = document.getElementById('secureKey').value;
             
             if (!username || !password) {
-                alert('Please enter both Engineer ID and Secure Key');
+                showAlertModal('Please enter both Engineer ID and Secure Key', 'warning', 'Missing Details');
                 return false;
             }
             
@@ -1734,11 +1745,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     sessionStorage.setItem('user', JSON.stringify(data.user));
                     window.location.href = '../map/map.html';
                 } else {
-                    alert('Access denied: ' + (data.message || 'Invalid credentials'));
+                    showAlertModal('Access denied: ' + (data.message || 'Invalid credentials'), 'error', 'Access Denied');
                     loginBtn.disabled = false;
                     loginBtn.textContent = 'ENTER SYSTEM';
                     loginBtn.classList.remove('btn-loading');
-                    
+
                     // Shake animation for error
                     const authCard = document.getElementById('authCard');
                     if (authCard) {
@@ -1749,7 +1760,7 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(function(err) {
                 console.error('Error:', err);
-                alert('Connection error! Please check if the server is running.');
+                showAlertModal('Connection error! Please check if the server is running.', 'error', 'Connection Error');
                 loginBtn.disabled = false;
                 loginBtn.textContent = 'ENTER SYSTEM';
                 loginBtn.classList.remove('btn-loading');
@@ -1803,11 +1814,11 @@ document.addEventListener('DOMContentLoaded', function() {
 const shakeStyles = document.createElement('style');
 shakeStyles.textContent = `
     @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        20% { transform: translateX(-8px); }
-        40% { transform: translateX(8px); }
-        60% { transform: translateX(-4px); }
-        80% { transform: translateX(4px); }
+        0%, 100% { transform: rotate(-1.2deg) translateX(0); }
+        20% { transform: rotate(-1.2deg) translateX(-8px); }
+        40% { transform: rotate(-1.2deg) translateX(8px); }
+        60% { transform: rotate(-1.2deg) translateX(-4px); }
+        80% { transform: rotate(-1.2deg) translateX(4px); }
     }
 `;
 document.head.appendChild(shakeStyles);

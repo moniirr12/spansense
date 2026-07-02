@@ -931,6 +931,10 @@
             <div class="gantt-toolbar">
                 <div class="gantt-toolbar-left">
                     <h2><span id="ganttYear">2026</span> Inspection Programme</h2>
+                    <div class="gantt-filters" id="ganttSpanToggle">
+                        <button class="filter-chip active" data-span="1">1 Year</button>
+                        <button class="filter-chip" data-span="10">10 Years</button>
+                    </div>
                     <div class="gantt-filters" id="ganttFilters">
                         <button class="filter-chip active" data-filter="all">All</button>
                         <button class="filter-chip" data-filter="GI">GI</button>
@@ -981,6 +985,7 @@
         let plannedInspectionsForCalendar = [];
         let currentDisplayYear = new Date().getFullYear();
         let currentGanttFilter = 'all';
+        let ganttSpan = 1;
 
         function safeDate(dateStr) {
             if (!dateStr) return null;
@@ -1130,13 +1135,51 @@
             return yearPlannedInspections;
         }
 
+        // Same recurrence logic as calculatePlannedInspectionsForYear, but walks every
+        // GI (2yr) / PI (6yr) occurrence across a multi-year span instead of just the
+        // single occurrence that lands in one target year — needed for the 10-year gantt view.
+        function calculatePlannedInspectionsForRange(startYear, endYear) {
+            const rangePlannedInspections = [], today = new Date();
+
+            for (const bridge of bridgesData) {
+                const insp = inspectionsData[bridge.id];
+
+                if (!insp || !insp.hasInspections || !insp.latest) {
+                    const thisYear = today.getFullYear();
+                    if (thisYear >= startYear && thisYear <= endYear) {
+                        rangePlannedInspections.push({ bridgeId: bridge.id, bridgeName: bridge.name, type: 'GI', dueDate: new Date(), position: 'Overdue' });
+                    }
+                    continue;
+                }
+                const lastDate = safeDate(insp.latest.date);
+                if (!lastDate) continue;
+
+                let nextGI = new Date(lastDate);
+                nextGI.setFullYear(nextGI.getFullYear() + 2);
+                while (nextGI.getFullYear() < startYear) nextGI.setFullYear(nextGI.getFullYear() + 2);
+                while (nextGI.getFullYear() <= endYear) {
+                    const yearsPastDue = (today - nextGI) / (1000 * 60 * 60 * 24 * 365);
+                    rangePlannedInspections.push({ bridgeId: bridge.id, bridgeName: bridge.name, type: 'GI', dueDate: new Date(nextGI), position: yearsPastDue > 0.5 ? 'Overdue' : (yearsPastDue > 0 ? 'Due' : 'Upcoming') });
+                    nextGI.setFullYear(nextGI.getFullYear() + 2);
+                }
+
+                let nextPI = new Date(lastDate);
+                nextPI.setFullYear(nextPI.getFullYear() + 6);
+                while (nextPI.getFullYear() < startYear) nextPI.setFullYear(nextPI.getFullYear() + 6);
+                while (nextPI.getFullYear() <= endYear) {
+                    rangePlannedInspections.push({ bridgeId: bridge.id, bridgeName: bridge.name, type: 'PI', dueDate: new Date(nextPI), position: 'Upcoming' });
+                    nextPI.setFullYear(nextPI.getFullYear() + 6);
+                }
+            }
+            return rangePlannedInspections;
+        }
+
         function updateCalendarViews() {
             plannedInspectionsForCalendar = calculatePlannedInspectionsForYear(currentDisplayYear);
             generateYearView(currentDisplayYear);
             if (document.getElementById('view-month').style.display !== 'none') generateMonthView(currentDisplayYear, currentMonth);
             if (document.getElementById('view-gantt').style.display !== 'none') generateGanttView();
             updateViewTitle();
-            document.getElementById('ganttYear').textContent = currentDisplayYear;
         }
 
         function generateMonthView(year, month) {
@@ -1181,11 +1224,17 @@
 
         function generateGanttView() {
             const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-            let filteredInspections = plannedInspectionsForCalendar;
+            const isDecade = ganttSpan === 10;
+            const numCols = isDecade ? 10 : 12;
+            const rangeInspections = isDecade
+                ? calculatePlannedInspectionsForRange(currentDisplayYear, currentDisplayYear + 9)
+                : plannedInspectionsForCalendar;
+
+            let filteredInspections = rangeInspections;
             if (currentGanttFilter === 'overdue') {
-                filteredInspections = plannedInspectionsForCalendar.filter(i => i.position === 'Overdue');
+                filteredInspections = rangeInspections.filter(i => i.position === 'Overdue');
             } else if (currentGanttFilter !== 'all') {
-                filteredInspections = plannedInspectionsForCalendar.filter(i => i.type === currentGanttFilter);
+                filteredInspections = rangeInspections.filter(i => i.type === currentGanttFilter);
             }
 
             const bridgeInspections = {};
@@ -1199,7 +1248,7 @@
 
             let sidebarHtml = '<div class="gantt-sidebar-header">Bridge</div>';
             let timelineHeader = '<div class="gantt-timeline-header">';
-            for (let m = 0; m < 12; m++) timelineHeader += `<div class="gantt-month">${months[m]}</div>`;
+            for (let c = 0; c < numCols; c++) timelineHeader += `<div class="gantt-month">${isDecade ? currentDisplayYear + c : months[c]}</div>`;
             timelineHeader += '</div>';
 
             let gridRows = '';
@@ -1218,17 +1267,25 @@
                     </div>`;
 
                     let rowHtml = '<div class="gantt-row">';
-                    for (let m = 0; m < 12; m++) rowHtml += `<div class="gantt-cell"></div>`;
+                    for (let c = 0; c < numCols; c++) rowHtml += `<div class="gantt-cell"></div>`;
                     for (const insp of bridge.inspections) {
-                        if (insp.dueDate && insp.dueDate.getFullYear() === currentDisplayYear) {
+                        if (!insp.dueDate) continue;
+                        let leftPct, widthPct;
+                        if (isDecade) {
+                            const yearIndex = insp.dueDate.getFullYear() - currentDisplayYear;
+                            if (yearIndex < 0 || yearIndex > 9) continue;
+                            leftPct = (yearIndex / 10 * 100).toFixed(2);
+                            widthPct = (1 / 10 * 100 - 1).toFixed(2);
+                        } else {
+                            if (insp.dueDate.getFullYear() !== currentDisplayYear) continue;
                             const month = insp.dueDate.getMonth();
-                            const barClass = insp.position === 'Overdue' ? 'overdue' : (insp.type === 'PI' ? 'pi' : 'gi');
-                            const leftPct = (month / 12 * 100).toFixed(2);
-                            const widthPct = (1 / 12 * 100 - 1).toFixed(2);
-                            rowHtml += `<div class="gantt-bar ${barClass}" style="left:${leftPct}%; width:${widthPct}%;">
-                                <span><i class="fas ${insp.type === 'PI' ? 'fa-clipboard-list' : 'fa-chart-line'}" style="font-size: 9px; margin-right: 4px;"></i>${insp.type}</span>
-                            </div>`;
+                            leftPct = (month / 12 * 100).toFixed(2);
+                            widthPct = (1 / 12 * 100 - 1).toFixed(2);
                         }
+                        const barClass = insp.position === 'Overdue' ? 'overdue' : (insp.type === 'PI' ? 'pi' : 'gi');
+                        rowHtml += `<div class="gantt-bar ${barClass}" style="left:${leftPct}%; width:${widthPct}%;">
+                            <span><i class="fas ${insp.type === 'PI' ? 'fa-clipboard-list' : 'fa-chart-line'}" style="font-size: 9px; margin-right: 4px;"></i>${insp.type}</span>
+                        </div>`;
                     }
                     rowHtml += '</div>';
                     gridRows += rowHtml;
@@ -1238,6 +1295,8 @@
             document.getElementById('ganttBody').innerHTML = `
                 <div class="gantt-sidebar">${sidebarHtml}</div>
                 <div class="gantt-timeline">${timelineHeader}<div class="gantt-grid">${gridRows}</div></div>`;
+
+            document.getElementById('ganttYear').textContent = isDecade ? `${currentDisplayYear}–${currentDisplayYear + 9}` : currentDisplayYear;
         }
 
         // Improved PDF Export with header and better styling
@@ -1256,7 +1315,7 @@
                 cloneContainer.innerHTML = `
                     <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #5b8c8a; padding-bottom: 10px;">
                         <h1 style="color: #2c5a57; margin: 0;">SpanSense Inspection Programme</h1>
-                        <p style="color: #6a7c8e; margin: 5px 0 0;">Year: ${currentDisplayYear} | Generated: ${new Date().toLocaleDateString()}</p>
+                        <p style="color: #6a7c8e; margin: 5px 0 0;">${ganttSpan === 10 ? `Years: ${currentDisplayYear}–${currentDisplayYear + 9}` : `Year: ${currentDisplayYear}`} | Generated: ${new Date().toLocaleDateString()}</p>
                     </div>
                 `;
                 
@@ -1298,7 +1357,7 @@
                 const imgWidth = 280;
                 const imgHeight = (canvas.height * imgWidth) / canvas.width;
                 pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
-                pdf.save(`Inspection_Programme_${currentDisplayYear}.pdf`);
+                pdf.save(`Inspection_Programme_${ganttSpan === 10 ? `${currentDisplayYear}-${currentDisplayYear + 9}` : currentDisplayYear}.pdf`);
                 
                 document.body.removeChild(cloneContainer);
             } catch (error) {
@@ -1314,8 +1373,7 @@
             currentDisplayYear = today.getFullYear();
             currentMonth = today.getMonth();
             updateCalendarViews();
-            document.getElementById('ganttYear').textContent = currentDisplayYear;
-            
+
             const toast = document.createElement('div');
             toast.textContent = `Showing ${currentDisplayYear}`;
             toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#5b8c8a;color:white;padding:8px 16px;border-radius:8px;z-index:10000;font-size:12px;';
@@ -1336,7 +1394,24 @@
             });
         }
 
-        function changeYear(delta) { currentDisplayYear += delta; updateCalendarViews(); }
+        function setupGanttSpanToggle() {
+            document.querySelectorAll('#ganttSpanToggle .filter-chip').forEach(btn => {
+                btn.removeEventListener('click', btn._listener);
+                btn._listener = function() {
+                    document.querySelectorAll('#ganttSpanToggle .filter-chip').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    ganttSpan = parseInt(this.getAttribute('data-span'), 10);
+                    generateGanttView();
+                };
+                btn.addEventListener('click', btn._listener);
+            });
+        }
+
+        function changeYear(delta) {
+            const step = (currentView === 'gantt' && ganttSpan === 10) ? delta * 10 : delta;
+            currentDisplayYear += step;
+            updateCalendarViews();
+        }
 
         function changeMonth(delta) {
             currentMonth += delta;
@@ -1350,7 +1425,9 @@
         function updateViewTitle() {
             document.getElementById('view-title').textContent = currentView === 'month'
                 ? `${new Date(currentDisplayYear, currentMonth, 1).toLocaleString('default', { month: 'long' })} ${currentDisplayYear}`
-                : currentDisplayYear;
+                : (currentView === 'gantt' && ganttSpan === 10)
+                    ? `${currentDisplayYear}–${currentDisplayYear + 9}`
+                    : currentDisplayYear;
         }
 
         function switchView(view) {
@@ -1360,7 +1437,7 @@
             document.getElementById(`view-${view}`).style.display = 'block';
             document.querySelector(`.view-btn[data-view="${view}"]`).classList.add('active');
             if (view === 'month') generateMonthView(currentDisplayYear, currentMonth);
-            else if (view === 'gantt') { generateGanttView(); setupGanttFilters(); }
+            else if (view === 'gantt') { generateGanttView(); setupGanttFilters(); setupGanttSpanToggle(); }
             updateViewTitle();
         }
 

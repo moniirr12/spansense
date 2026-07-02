@@ -30,8 +30,8 @@ var REPORT_COLORS = {
 var REPORT_ELEMENTS_BY_TYPE = {
     Bridge: [
         { category: 'Deck Elements', elementNo: 1, name: 'Primary deck element' },
-        { category: 'Deck Elements', elementNo: 2, name: 'Secondary deck elements - Transverse beams' },
-        { category: 'Deck Elements', elementNo: 3, name: 'Elements from table G.5' },
+        { category: 'Deck Elements', elementNo: 2, name: 'Transverse beams' },
+        { category: 'Deck Elements', elementNo: 3, name: 'Secondary deck element' },
         { category: 'Deck Elements', elementNo: 4, name: 'Half joints' },
         { category: 'Deck Elements', elementNo: 5, name: 'Tie beam/rod' },
         { category: 'Deck Elements', elementNo: 6, name: 'Parapet beam or cantilever' },

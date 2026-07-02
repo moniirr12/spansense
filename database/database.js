@@ -61,7 +61,7 @@
             { id: 'bridge',   label: 'Bridge',          key: 'bridge',         checked: true },
             { id: 'type',     label: 'Type',            key: 'type',           checked: true },
             { id: 'generated',label: 'Generated',       key: 'generated',      checked: true },
-            { id: 'size',     label: 'Size',            key: 'size',           checked: true },
+            { id: 'defects',  label: 'Defects',         key: 'defect_count',   checked: true },
         ]
     };
 
@@ -312,7 +312,7 @@
                 { label: 'Bridge', sortable: true, key: 'bridge' },
                 { label: 'Type', sortable: false },
                 { label: 'Generated', sortable: false },
-                { label: 'Size', sortable: true, key: 'size' }
+                { label: 'Defects', sortable: true, key: 'defect_count' }
             ]
         };
 
@@ -348,8 +348,7 @@
     function sortData(dataArray, key) {
         dataArray.sort(function(a, b) {
             var valA = a[key], valB = b[key];
-            if (key === 'size') { valA = parseSizeToKB(valA); valB = parseSizeToKB(valB); }
-            else if (key === 'id') { valA = parseID(valA); valB = parseID(valB); }
+            if (key === 'id') { valA = parseID(valA); valB = parseID(valB); }
             else if (key === 'overall_bciave' || key === 'overall_bcicrit') {
                 valA = parseFloat(valA) || 0; valB = parseFloat(valB) || 0;
             }
@@ -366,13 +365,6 @@
             }
             return sortState.direction === 'asc' ? cmp : -cmp;
         });
-    }
-
-    function parseSizeToKB(s) {
-        if (!s) return 0;
-        var m = String(s).match(/^([\d.]+)\s*(KB|MB)$/i);
-        if (!m) return 0;
-        return m[2].toUpperCase() === 'MB' ? parseFloat(m[1]) * 1024 : parseFloat(m[1]);
     }
 
     function parseID(id) {
@@ -499,10 +491,6 @@
             if (bciAv !== null && bciAv < 40) status = 'Critical';
             else if (bciAv !== null && bciAv < 65) status = 'Urgent';
 
-            var spanCount = inspection.total_spans || 1;
-            var estSizeKB = Math.round(spanCount * 35 + 2 * 35);
-            var sizeStr   = estSizeKB < 1024 ? estSizeKB + ' KB' : (estSizeKB / 1024).toFixed(1) + ' MB';
-
             var rawType     = inspection.inspection_type || 'GI';
             var displayType = rawType === 'PI' ? 'Principal' : rawType === 'SI' ? 'Superficial' : 'General';
 
@@ -514,7 +502,7 @@
                 type: rawType,
                 display_type: displayType,
                 generated: inspection.inspection_date || '--',
-                size: sizeStr,
+                defect_count: inspection.defect_count != null ? Number(inspection.defect_count) : 0,
                 status: status,
                 overall_bciave: bciAv,
                 overall_bcicrit: bciCrit
@@ -583,7 +571,7 @@
                         (row.type === 'PI' ? 'active' : row.type === 'GI' ? 'completed' : 'monitoring') + '">' +
                         (row.display_type || '--') + '</span></td>' +
                     '<td>' + formatDate(row.generated) + '</td>' +
-                    '<td>' + (row.size || '--') + '</td>' +
+                    '<td>' + (row.defect_count != null ? row.defect_count : '--') + '</td>' +
                     '<td><div class="row-actions">' +
                         '<button title="Generate BCI Proforma" onclick="generateReport(' + row.inspection_id + ')" class="btn-report"><i class="fas fa-file-pdf"></i></button>' +
                         '<button title="View Report" onclick="viewInspection(' + row.inspection_id + ')"><i class="fas fa-eye"></i></button>' +
@@ -1508,10 +1496,7 @@
             var docDef = {
                 pageSize: 'A4',
                 pageMargins: [40, 40, 40, 40],
-                content: [].concat(
-                    buildBCIProformaContent(bciFormData),
-                    buildBCIPage2Content(bciFormData)
-                ),
+                content: buildBCIProformaFullContent(bciFormData),
                 defaultStyle: { font: 'Roboto' }
             };
 
