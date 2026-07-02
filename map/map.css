@@ -790,12 +790,12 @@ body.modal-open {
    classes/components elsewhere in this stylesheet.
    ============================================ */
 #bridgeModal .bridge-card {
-    background: rgba(255, 255, 255, 0.92);
-    backdrop-filter: blur(24px);
-    border-radius: 32px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 24px;
     box-shadow:
-        0 24px 80px rgba(0, 0, 0, 0.12),
-        0 8px 24px rgba(0, 0, 0, 0.06),
+        0 24px 80px rgba(0, 0, 0, 0.14),
+        0 8px 24px rgba(0, 0, 0, 0.07),
         inset 0 1px 0 rgba(255, 255, 255, 0.6);
     border: 1px solid rgba(255, 255, 255, 0.4);
     display: flex;
@@ -803,7 +803,7 @@ body.modal-open {
 }
 
 #bridgeModal .card-header {
-    padding: 28px 28px 20px;
+    padding: 24px 28px 20px;
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
@@ -1790,20 +1790,21 @@ body.modal-open {
 
 .file-explorer-modal .modal-content {
     width: 80%;
-    max-width: 900px;
+    max-width: 720px;
     padding: 0;
-    border-radius: 28px;
+    border-radius: 24px;
     overflow: hidden;
-    background: rgba(255, 255, 255, 0.96);
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(20px);
     box-shadow:
-        0 24px 80px rgba(0, 0, 0, 0.12),
-        0 8px 24px rgba(0, 0, 0, 0.06);
+        0 24px 80px rgba(0, 0, 0, 0.14),
+        0 8px 24px rgba(0, 0, 0, 0.07),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
     border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
 .file-explorer-modal .modal-header {
-    padding: 22px 28px;
+    padding: 24px 28px 20px;
     background: linear-gradient(135deg, rgba(248,250,252,0.8) 0%, rgba(240,244,248,0.6) 100%);
     border-bottom: 1px solid rgba(233, 237, 242, 0.6);
     display: flex;
@@ -1938,7 +1939,7 @@ body.modal-open {
     padding: 10px 12px;
     margin: 0;
     width: 100%;
-    min-height: 300px;
+    min-height: 180px;
 }
 
 .file-list li {
@@ -2561,13 +2562,18 @@ body.modal-open {
     background: #4a7a70;
 }
 
-/* File explorer night mode */
+/* File explorer night mode - same glass treatment as #bridgeModal/.ss-modal */
 .night-mode .file-explorer-modal .modal-content {
-    background: rgba(35, 46, 52, 0.96);
+    background: rgba(35, 46, 52, 0.95);
     border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
-.night-mode .file-explorer-modal .modal-header,
+.night-mode .file-explorer-modal .modal-header {
+    background: linear-gradient(135deg, rgba(30,42,47,0.8) 0%, rgba(35,46,52,0.6) 100%);
+    border-color: rgba(47, 62, 69, 0.6);
+}
+
 .night-mode .toolbar,
 .night-mode .breadcrumbs,
 .night-mode #folderForm {
@@ -3945,14 +3951,16 @@ body.modal-open {
 }
 
 .ss-modal {
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: 24px;
   width: 100%;
   max-width: 720px;
   max-height: 70vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 24px 80px rgba(0,0,0,0.15), 0 8px 24px rgba(0,0,0,0.08);
+  box-shadow: 0 24px 80px rgba(0,0,0,0.14), 0 8px 24px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.6);
   overflow: hidden;
   animation: ssModalUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -3964,8 +3972,8 @@ body.modal-open {
 
 .ss-modal-hdr {
   padding: 24px 28px 20px;
-  background: linear-gradient(135deg, #f8fafc 0%, #f0f4f8 100%);
-  border-bottom: 1px solid #e9edf2;
+  background: linear-gradient(135deg, rgba(248,250,252,0.8) 0%, rgba(240,244,248,0.6) 100%);
+  border-bottom: 1px solid rgba(233, 237, 242, 0.6);
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -3998,6 +4006,7 @@ body.modal-open {
 .ss-hdr-sub span { color: #5b8c8a; font-weight: 600; }
 
 .ss-close-btn {
+  -webkit-appearance: none; appearance: none;
   width: 36px; height: 36px; border-radius: 50%; border: none;
   background: none; color: #8a9ba8; font-size: 1.1rem; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
@@ -4197,16 +4206,19 @@ body.modal-open {
 }
 .ss-empty i { font-size: 2rem; opacity: 0.4; }
 
-/* Night mode */
-.night-mode .ss-modal { background: #232e34; }
-.night-mode .ss-modal-hdr { background: linear-gradient(135deg, #1e2a2f 0%, #232e34 100%); border-bottom-color: #2f3e45; }
+/* Night mode - same glass treatment as #bridgeModal/.file-explorer-modal in dark mode */
+.night-mode .ss-modal {
+  background: rgba(35, 46, 52, 0.95);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+.night-mode .ss-modal-hdr { background: linear-gradient(135deg, rgba(30,42,47,0.8) 0%, rgba(35,46,52,0.6) 100%); border-bottom-color: rgba(47, 62, 69, 0.6); }
 .night-mode .ss-close-btn { color: #9ab0b8; }
 .night-mode .ss-close-btn:hover { background: rgba(196, 112, 112, 0.15); color: #e8a0a0; }
 .night-mode .ss-hdr-label { color: #6a8090; }
 .night-mode .ss-hdr-title { color: #d4dfe3; }
 .night-mode .ss-hdr-sub { color: #8aa4ac; }
 .night-mode .ss-hdr-sub span { color: #8ab4b0; }
-.night-mode .ss-close-btn { background: #2f3e48; color: #8aa4ac; }
 .night-mode .ss-stats-bar { background: #232e34; border-bottom-color: #2f3e45; }
 .night-mode .ss-stat-pill { background: #1e2a2f; border-color: #2f3e45; }
 .night-mode .ss-stat-icon { background: #2f3e48; border-color: #3e525e; color: #8ab4b0; }
