@@ -586,6 +586,58 @@
         .toast-content .toast-title { font-size: 0.9rem; font-weight: 600; color: #2c4a48; margin-bottom: 2px; }
         .toast-content .toast-msg { font-size: 0.8rem; color: #8a9ba8; }
 
+        /* ---------- CONFIRM MODAL (styled stand-in for native confirm()) ---------- */
+        .confirm-modal-overlay {
+            display: none;
+            position: fixed; inset: 0;
+            background: rgba(30, 42, 50, 0.46);
+            backdrop-filter: blur(4px);
+            align-items: center; justify-content: center;
+            z-index: 3000;
+        }
+        .confirm-modal-overlay.active { display: flex; }
+        .confirm-modal-card {
+            background: white;
+            border-radius: 24px;
+            width: 90%; max-width: 360px;
+            padding: 32px 28px 24px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            animation: confirmModalIn 0.25s ease;
+        }
+        @keyframes confirmModalIn {
+            from { opacity: 0; transform: translateY(16px) scale(0.98); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .confirm-modal-icon {
+            width: 56px; height: 56px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 16px;
+            font-size: 1.4rem;
+            background: #fff7ed; color: #c28b5a;
+        }
+        .confirm-modal-title { font-size: 1.05rem; font-weight: 700; color: #2c3e44; margin-bottom: 8px; }
+        .confirm-modal-message { font-size: 0.85rem; color: #6a7c8e; line-height: 1.5; margin-bottom: 24px; white-space: pre-line; }
+        .confirm-modal-actions { display: flex; gap: 10px; justify-content: center; }
+        .confirm-modal-btn {
+            padding: 10px 22px;
+            border-radius: 30px;
+            font-size: 0.8rem; font-weight: 600;
+            cursor: pointer; border: none; font-family: inherit;
+            transition: all 0.2s;
+        }
+        .confirm-modal-btn.secondary { background: #f1f3f5; color: #6a7c8e; }
+        .confirm-modal-btn.secondary:hover { background: #e4ecf2; }
+        .confirm-modal-btn.danger { background: #c0392b; color: white; }
+        .confirm-modal-btn.danger:hover { background: #a93226; }
+        .night-mode .confirm-modal-card { background: #232e34; }
+        .night-mode .confirm-modal-icon { background: #3a3020; color: #e8a87c; }
+        .night-mode .confirm-modal-title { color: #d4dfe3; }
+        .night-mode .confirm-modal-message { color: #8aa4ac; }
+        .night-mode .confirm-modal-btn.secondary { background: #2f3e45; color: #8aa4ac; }
+        .night-mode .confirm-modal-btn.secondary:hover { background: #3a4b53; }
+
         /* ---------- RESPONSIVE ---------- */
         @media (max-width: 1100px) {
             .page-wrapper { max-width: 90%; }
@@ -779,7 +831,7 @@
             </div>
             <div class="profile-info">
                 <div class="name">Monir Khan</div>
-                <div class="role">Bridge Inspector Â· joined March 2026</div>
+                <div class="role">Bridge Inspector · joined March 2026</div>
                 <div class="profile-badges">
                     <span class="profile-badge admin"><i class="fas fa-shield-alt"></i> Inspector</span>
                     <span class="profile-badge verified"><i class="fas fa-check-circle"></i> Verified</span>
@@ -932,6 +984,19 @@
     <!-- TOAST CONTAINER -->
     <div class="toast-container" id="toastContainer"></div>
 
+    <!-- CONFIRM MODAL (styled stand-in for native confirm()) -->
+    <div class="confirm-modal-overlay" id="confirmModalOverlay">
+        <div class="confirm-modal-card">
+            <div class="confirm-modal-icon" id="confirmModalIcon"><i class="fas fa-exclamation-triangle"></i></div>
+            <h3 class="confirm-modal-title" id="confirmModalTitle">Are you sure?</h3>
+            <p class="confirm-modal-message" id="confirmModalMessage">Message goes here</p>
+            <div class="confirm-modal-actions" id="confirmModalActions">
+                <button class="confirm-modal-btn secondary" id="confirmModalCancelBtn">Cancel</button>
+                <button class="confirm-modal-btn danger" id="confirmModalConfirmBtn">OK</button>
+            </div>
+        </div>
+    </div>
+
     <div class="glass-scrollbar" id="glassScrollbar"><div class="thumb" id="glassThumb"></div></div>
 
     <script>
@@ -977,10 +1042,46 @@
         }
 
         // ============================================
+        // CONFIRM MODAL (styled stand-in for native confirm())
+        // ============================================
+        function showConfirmModal(opts) {
+            const overlay = document.getElementById('confirmModalOverlay');
+            if (!overlay) return Promise.resolve(true);
+
+            document.getElementById('confirmModalTitle').textContent = opts.title || 'Are you sure?';
+            document.getElementById('confirmModalMessage').textContent = opts.message || '';
+            document.getElementById('confirmModalConfirmBtn').textContent = opts.confirmText || 'OK';
+            document.getElementById('confirmModalCancelBtn').textContent = opts.cancelText || 'Cancel';
+
+            return new Promise((resolve) => {
+                const close = (result) => {
+                    overlay.classList.remove('active');
+                    document.removeEventListener('keydown', escHandler);
+                    resolve(result);
+                };
+                const escHandler = (e) => { if (e.key === 'Escape') close(false); };
+
+                document.getElementById('confirmModalConfirmBtn').onclick = () => close(true);
+                document.getElementById('confirmModalCancelBtn').onclick = () => close(false);
+
+                overlay.classList.add('active');
+                document.addEventListener('keydown', escHandler);
+            });
+        }
+        document.getElementById('confirmModalOverlay')?.addEventListener('click', (e) => {
+            if (e.target.id === 'confirmModalOverlay') e.target.classList.remove('active');
+        });
+
+        // ============================================
         // SIGN OUT
         // ============================================
-        function confirmSignOut() {
-            const confirmed = confirm('Are you sure you want to sign out?\n\nAny unsaved inspection data will be lost.');
+        async function confirmSignOut() {
+            const confirmed = await showConfirmModal({
+                title: 'Sign Out?',
+                message: 'Are you sure you want to sign out?\n\nAny unsaved inspection data will be lost.',
+                confirmText: 'Sign Out',
+                cancelText: 'Cancel'
+            });
             if (!confirmed) return;
     
             // Preserve night mode preference
@@ -1094,14 +1195,14 @@
                     }
                     list.innerHTML = rows.map(row => {
                         const cfg = typeConfig[row.inspection_type] || { label: row.inspection_type || 'Inspection', icon: 'fa-clipboard-check', cls: 'edit' };
-                        const bciPart = row.bci_av != null ? ` Â· BCI avg ${Math.round(parseFloat(row.bci_av))}` : '';
+                        const bciPart = row.bci_av != null ? ` · BCI avg ${Math.round(parseFloat(row.bci_av))}` : '';
                         const inspector = row.inspector_name ? row.inspector_name : 'Unknown inspector';
                         return `
                         <div class="activity-row">
                             <div class="act-icon ${cfg.cls}"><i class="fas ${cfg.icon}"></i></div>
                             <div class="act-details">
                                 <div class="act-title">${cfg.label} — ${row.structure_name || 'Unknown structure'}</div>
-                                <div class="act-meta">${inspector} Â· ${formatDate(row.inspection_date)}${bciPart}</div>
+                                <div class="act-meta">${inspector} · ${formatDate(row.inspection_date)}${bciPart}</div>
                             </div>
                             <div class="act-time">${relativeTime(row.inspection_date)}</div>
                         </div>`;
