@@ -686,19 +686,42 @@ function buildBCIPage2Content(bciFormData, singleSpanIdx) {
     var spansData = bciFormData.spansData || [];
     var worksRequired = bciFormData.worksRequired || {};
 
+    // Same per-structure-type element/spare counts page 1 uses, so this
+    // page's "Multiple Defects"/"Work Required" content rows come out at
+    // the exact same height as page 1's element rows (same fontSize:7,
+    // same PAGE1_DATA_TEXT_HEIGHT baseline) instead of their own fixed,
+    // unrelated 18*1.05 value.
+    var page2ProformaConfig = getBCIProformaConfig((bciFormData.bridgeData && bciFormData.bridgeData.type) || 'Bridge');
+    var page1DataRowCount = page2ProformaConfig.elements.length + page2ProformaConfig.spare.length;
+    var page1DataRowHeightTarget = (PAGE_TARGET_HEIGHT - PAGE1_FIXED_ROWS_HEIGHT) / page1DataRowCount;
+
     var USABLE_PT       = PAGE_TARGET_HEIGHT;
     var MULTI_ROW_COUNT = 5;
     var WORK_ROW_COUNT  = 6;
     var TOTAL_ROWS      = 23;
     var COMMENT_ROWS    = 2;
-    var TEXT_H          = 7 * 1.2;
-    var DATA_ROW_H      = 18 * 1.05;
+    var TEXT_H          = PAGE1_DATA_TEXT_HEIGHT;
+    var DATA_ROW_H      = page1DataRowHeightTarget;
     var FIXED_ROWS      = TOTAL_ROWS - COMMENT_ROWS;
     var FIXED_TOTAL     = FIXED_ROWS * DATA_ROW_H;
+    // Whatever's left over (rather than more content rows) goes entirely
+    // into the two comment boxes below, split evenly so they're always
+    // the same height as each other regardless of how that leftover varies.
     var COMMENT_H       = (USABLE_PT - FIXED_TOTAL) / COMMENT_ROWS;
-    var dataPad    = Math.max(1.5, (DATA_ROW_H - TEXT_H) / 2);
     var commentPad = Math.max(1.5, (COMMENT_H  - TEXT_H) / 2);
+    // Unlike page 1's data rows (always at least a "-" placeholder), the 5
+    // blank Multiple Defects rows and 6 blank Work Required rows start out
+    // with genuinely empty cells - near-zero natural content height - so
+    // reaching DATA_ROW_H needs padding sized off the empty case
+    // (DATA_ROW_H / 2) for *those specific rows only*; the section/column
+    // header rows around them do have real (bold, similar to page 1's "-")
+    // text, so they keep the TEXT_H-based padding, matching the FIXED_TOTAL
+    // budget's assumption that every one of the 21 non-comment rows reaches
+    // DATA_ROW_H on its own rather than compounding on top of real content.
+    var dataPad      = Math.max(1.5, (DATA_ROW_H - TEXT_H) / 2);
+    var dataPadBlank = Math.max(1.5, DATA_ROW_H / 2);
     var COMMENT_ROW_INDICES = new Set([9, 12]);
+    var BLANK_ROW_INDICES = new Set([3, 4, 5, 6, 7, 16, 17, 18, 19, 20, 21]);
 
     for (var spanIdx = spanRangeStart; spanIdx < spanRangeEnd; spanIdx++) {
         var spanNum   = spanIdx + 1;
@@ -903,8 +926,8 @@ function buildBCIPage2Content(bciFormData, singleSpanIdx) {
             // same fix.
             paddingLeft:   function(i) { return i < 17 ? 0 : 2; },
             paddingRight:  function(i) { return i < 17 ? 0 : 2; },
-            paddingTop:    function(rowIndex) { return COMMENT_ROW_INDICES.has(rowIndex) ? commentPad : dataPad; },
-            paddingBottom: function(rowIndex) { return COMMENT_ROW_INDICES.has(rowIndex) ? commentPad : dataPad; },
+            paddingTop:    function(rowIndex) { return COMMENT_ROW_INDICES.has(rowIndex) ? commentPad : BLANK_ROW_INDICES.has(rowIndex) ? dataPadBlank : dataPad; },
+            paddingBottom: function(rowIndex) { return COMMENT_ROW_INDICES.has(rowIndex) ? commentPad : BLANK_ROW_INDICES.has(rowIndex) ? dataPadBlank : dataPad; },
         };
 
         content.push(centeredTable({
