@@ -2143,10 +2143,11 @@ app.get('/api/condition-distribution', async (req, res) => {
 app.get('/api/inspections', async (req, res) => {
     try {
         const rows = await dbAll(`
-            SELECT id, structure_id, structure_name, inspection_date, 
-                    inspection_type, inspector_name, total_spans, 
-                    created_at, conclusions, overall_bcicrit, overall_bciave
-            FROM inspections 
+            SELECT id, structure_id, structure_name, inspection_date,
+                    inspection_type, inspector_name, total_spans,
+                    created_at, conclusions, overall_bcicrit, overall_bciave,
+                    (SELECT COUNT(*) FROM defects WHERE defects.inspection_id = inspections.id) AS defect_count
+            FROM inspections
             ORDER BY inspection_date DESC
         `);
         res.json(rows);

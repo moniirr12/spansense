@@ -908,38 +908,43 @@ html.night-mode .glass-scrollbar .thumb {
    Add these to your database.css
    ============================================ */
 
-/* BCI Proforma PDF button (red) */
-.row-actions .btn-report {
+/* BCI Proforma PDF button (red)
+   Selectors need 3 classes (.data-table .row-actions .btn-report) to
+   out-specificity ".data-table .row-actions button" above (2 classes + the
+   button element) - otherwise that rule's background:white wins and
+   silently leaves this button showing a white icon on white, i.e. invisible
+   in light mode and barely visible in dark mode. */
+.data-table .row-actions .btn-report {
     background: #dc2626;
     color: #fff;
     transition: all 0.2s ease;
 }
 
-.row-actions .btn-report:hover {
+.data-table .row-actions .btn-report:hover {
     background: #b91c1c;
     transform: scale(1.1);
     box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
 }
 
-.row-actions .btn-report i {
+.data-table .row-actions .btn-report i {
     color: #fff;
     font-size: 0.85rem;
 }
 
-/* Full Report button (teal/blue) */
-.row-actions .btn-full-report {
+/* Full Report button (teal/blue) - same specificity fix as .btn-report */
+.data-table .row-actions .btn-full-report {
     background: #1a3a5c;
     color: #fff;
     transition: all 0.2s ease;
 }
 
-.row-actions .btn-full-report:hover {
+.data-table .row-actions .btn-full-report:hover {
     background: #0f2540;
     transform: scale(1.1);
     box-shadow: 0 2px 8px rgba(26, 58, 92, 0.3);
 }
 
-.row-actions .btn-full-report i {
+.data-table .row-actions .btn-full-report i {
     color: #fff;
     font-size: 0.85rem;
 }
