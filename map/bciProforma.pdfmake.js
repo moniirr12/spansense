@@ -400,11 +400,11 @@ function buildBCIProformaContent(bciFormData, singleSpanIdx) {
 
         var tableBody = [];
 
-        // Ticks the inspection type this span's report is for (SI/GI/PI) -
-        // Special is left as a plain header, never ticked. Drawn as an SVG
-        // path rather than a "✓" character - pdfmake's embedded font subset
-        // is missing that glyph (renders as a tofu box, same as the
-        // pre-existing ✓ used in the Action column further down).
+        // Ticks the inspection type this span's report is for (SI/GI/PI).
+        // Drawn as an SVG path rather than a "✓" character - pdfmake's
+        // embedded font subset is missing that glyph (renders as a tofu
+        // box, same as the pre-existing ✓ used in the Action column
+        // further down).
         function inspTypeHeader(label, code) {
             if (inspType !== code) {
                 return { text: label, colSpan: 3, bold: true, fontSize: 7,
@@ -425,7 +425,7 @@ function buildBCIProformaContent(bciFormData, singleSpanIdx) {
             };
         }
 
-        // ROW 1: Superficial(3) | General(3) | Principal(3) | Special(3) | Forms(8) = 20
+        // ROW 1: Superficial(3) | General(3) | Principal(3) | Forms(11) = 20
         tableBody.push([
             inspTypeHeader('Superficial', 'SI'),
             { text: '' }, { text: '' },
@@ -433,10 +433,8 @@ function buildBCIProformaContent(bciFormData, singleSpanIdx) {
             { text: '' }, { text: '' },
             inspTypeHeader('Principal', 'PI'),
             { text: '' }, { text: '' },
-            { text: 'Special', colSpan: 3, bold: true, fontSize: 7, alignment: 'center', fillColor: BCI_COLORS.headerBg },
-            { text: '' }, { text: '' },
-            { text: 'Number of construction forms in bridge/span*: 1', colSpan: 8, fontSize: 7, fillColor: BCI_COLORS.headerBg },
-            { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }
+            { text: 'Number of construction forms in bridge/span*: 1', colSpan: 11, fontSize: 7, fillColor: BCI_COLORS.headerBg },
+            { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }
         ]);
 
         // ROW 2: Inspector(5) | Date(5) | Next(7) | Road(3) = 20
@@ -560,8 +558,16 @@ function buildBCIProformaContent(bciFormData, singleSpanIdx) {
                 var d = defByEl[el.no] || {};
                 var hasMulti = defects.filter(function(x) { return (x.element_no != null ? x.element_no : x.elementNumber) === el.no; }).length > 1;
 
+                // "No Defects" and "Not Inspected" (Option F segmented control - see
+                // setModalSegment/saveChanges in inspectionA.js) are both saved as
+                // defect_type '0', distinguished only by defect_number ('0' vs '1').
+                var isNoDefect     = d.def === '0' && d.defN === '0';
+                var isNotInspected = d.def === '0' && d.defN === '1';
+
                 var defDisplay = '-';
-                if (d.def && d.defN) defDisplay = d.def + '.' + d.defN;
+                if (isNoDefect) defDisplay = '';
+                else if (isNotInspected) defDisplay = 'NI';
+                else if (d.def && d.defN) defDisplay = d.def + '.' + d.defN;
                 else if (d.def) defDisplay = String(d.def);
 
                 var comments = hasMulti ? 'See multiple defects table' : (d.comments_remarks && d.comments_remarks !== '-' ? d.comments_remarks : '');
@@ -580,11 +586,11 @@ function buildBCIProformaContent(bciFormData, singleSpanIdx) {
                 dataRow.push({ text: '' });
                 dataRow.push({ text: '' });
                 dataRow.push({ text: '' });
-                dataRow.push({ text: String(d.s != null ? d.s : '-'), alignment: 'center', fontSize: 7 });
-                dataRow.push({ text: String(d.ex != null ? d.ex : '-'), alignment: 'center', fontSize: 7 });
+                dataRow.push({ text: isNotInspected ? '' : String(d.s != null ? d.s : '-'), alignment: 'center', fontSize: 7 });
+                dataRow.push({ text: isNotInspected ? '' : String(d.ex != null ? d.ex : '-'), alignment: 'center', fontSize: 7 });
                 dataRow.push({ text: defDisplay, alignment: 'center', fontSize: 7 });
-                var worksNotRequired = d.w === 'N';
-                dataRow.push({ text: String(d.w != null ? d.w : '-'), alignment: 'center', fontSize: 7 });
+                var worksNotRequired = isNotInspected || d.w === 'N';
+                dataRow.push({ text: isNotInspected ? '' : String(d.w != null ? d.w : '-'), alignment: 'center', fontSize: 7 });
                 dataRow.push({ text: worksNotRequired ? '' : String(d.p != null ? d.p : '-'), alignment: 'center', fontSize: 7 });
                 dataRow.push({ text: worksNotRequired ? '' : String(d.cost != null ? d.cost : ''), colSpan: 2, alignment: 'right', fontSize: 7 });
                 dataRow.push({ text: '' });
