@@ -160,18 +160,30 @@ var GRID_LAYOUT = {
 // Shared so page 1 and page 2's tables stretch to the exact same total
 // height regardless of how many rows each one naturally has (otherwise
 // whichever has fewer/shorter rows - e.g. a Retaining Wall's element list
-// vs a Bridge's - ends up visibly shorter). The 0.967 factor was tuned by
-// actually rendering and measuring the PDF, not derived analytically -
-// pdfmake's real row heights don't quite match a simple text+padding model.
-var PAGE_TARGET_HEIGHT = (841 - 80) * 0.967;
+// vs a Bridge's - ends up visibly shorter). 0.95 (up from an original 0.967
+// - which sounds like a decrease, but the *actual* rendered height used to
+// fall well short of that 0.967 target too, see PAGE1_FIXED_ROWS_HEIGHT
+// below) leaves a real, tested buffer under the 761.89pt usable A4 height
+// (841.89 minus 40pt top+bottom margins) once centeredTable's own 8pt top
+// margin is accounted for - 0.99 was tried first and overflowed the
+// footer row onto its own extra page.
+var PAGE_TARGET_HEIGHT = (841 - 80) * 0.95;
 
 // Page 1's 8 header/info rows + 1 footer row, at their natural (unstretched)
 // 1.5pt padding, and the natural height of one data row's text alone with
 // padding removed - both measured the same way as PAGE_TARGET_HEIGHT above
 // (render + measure), used to size the *data* rows (elements + spare) so
 // the whole table reaches PAGE_TARGET_HEIGHT regardless of element count.
-var PAGE1_FIXED_ROWS_HEIGHT = 164;
-var PAGE1_DATA_TEXT_HEIGHT = 10.627;
+// PAGE1_FIXED_ROWS_HEIGHT was last measured before the element-description
+// and "(Table G.x)"-label text was shortened elsewhere in this file; with
+// those rows now wrapping less, they render far shorter than 164 assumed,
+// which was silently starving every data row's padding (that's what was
+// behind the large empty gap under the table) - re-measured at ~107.4.
+var PAGE1_FIXED_ROWS_HEIGHT = 107.5;
+// Re-measured alongside PAGE1_FIXED_ROWS_HEIGHT above - was also stale (had
+// been 10.627), confirmed via a direct test render with padding hardcoded
+// to a known value and measuring the resulting row height back out.
+var PAGE1_DATA_TEXT_HEIGHT = 8.7;
 
 // A4 usable width with 40pt margins = 515pt. Table is 375pt by base design,
 // scaled up 15% then another 10% per request (474.4pt, still under the
@@ -194,14 +206,24 @@ var TABLE_WIDTH = COL_WIDTHS.reduce(function(a, b) { return a + b; }, 0);
 // Tables are narrower than the usable page width (515pt) by design, so
 // pdfmake's default left-alignment leaves them sitting off-centre - flank
 // with two equal auto-stretching columns to centre the fixed-width table.
+// Centers the table by computing its left margin directly, rather than
+// flanking it with two equal '*'-width columns - that trick only centers
+// correctly if the middle column's declared width (TABLE_WIDTH, the sum of
+// COL_WIDTHS) exactly equals the table's true rendered width, but pdfmake
+// draws the 21 vertical gridlines (20 columns) at extra width beyond the
+// column sum, so the table was consistently wider than TABLE_WIDTH and
+// bled into the right-hand flanking column - visually shifting it right.
+// PAGE_USABLE_WIDTH/TABLE_BORDER_OVERHEAD below were tuned by rendering and
+// measuring, same as the height constants.
+var PAGE_USABLE_WIDTH = 515.28; // A4 width (595.28pt) minus 40pt left+right margins
+var TABLE_BORDER_OVERHEAD = 21 * 1.1; // 21 vertical gridlines, empirically ~1.1pt of width each once rendered
 function centeredTable(tableDef) {
+    var trueWidth = TABLE_WIDTH + TABLE_BORDER_OVERHEAD;
+    var sideMargin = Math.max(0, (PAGE_USABLE_WIDTH - trueWidth) / 2);
     return {
-        margin: [0, 8, 0, 0],
-        columns: [
-            { width: '*', text: '' },
-            { width: TABLE_WIDTH, table: tableDef.table, layout: tableDef.layout },
-            { width: '*', text: '' }
-        ]
+        margin: [sideMargin, 8, 0, 0],
+        table: tableDef.table,
+        layout: tableDef.layout
     };
 }
 
@@ -259,7 +281,12 @@ function rotatedLabel(text, w, h, fontSize) {
     fontSize = fontSize || 6.5;
     var cx = w / 2, cy = h / 2;
     return {
-        svg: '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '">' +
+        // overflow="hidden" matters here: the outermost <svg> element defaults
+        // to overflow:visible per the SVG/CSS spec, so without it any glyph
+        // that renders even slightly past the declared width/height (common
+        // for a centered rotated label close to its box's edges) bleeds into
+        // neighbouring cells instead of being clipped to this box.
+        svg: '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '" overflow="hidden">' +
              '<text x="' + cx + '" y="' + cy + '" transform="rotate(-90 ' + cx + ' ' + cy + ')" ' +
              'text-anchor="middle" dominant-baseline="middle" ' +
              'font-family="Helvetica" font-weight="bold" font-size="' + fontSize + '">' +
