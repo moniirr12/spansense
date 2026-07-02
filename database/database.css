@@ -908,28 +908,9 @@ html.night-mode .glass-scrollbar .thumb {
    Add these to your database.css
    ============================================ */
 
-/* BCI Proforma PDF button (red)
-   Selectors need 3 classes (.data-table .row-actions .btn-report) to
-   out-specificity ".data-table .row-actions button" above (2 classes + the
-   button element) - otherwise that rule's background:white wins and
-   silently leaves this button showing a white icon on white, i.e. invisible
-   in light mode and barely visible in dark mode. */
-.data-table .row-actions .btn-report {
-    background: #dc2626;
-    color: #fff;
-    transition: all 0.2s ease;
-}
-
-.data-table .row-actions .btn-report:hover {
-    background: #b91c1c;
-    transform: scale(1.1);
-    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
-}
-
-.data-table .row-actions .btn-report i {
-    color: #fff;
-    font-size: 0.85rem;
-}
+/* BCI Proforma PDF button - intentionally left unstyled so it falls back to
+   the plain ".data-table .row-actions button" look shared by the other
+   row-action icons (View, Download) in both light and dark mode. */
 
 /* Full Report button (teal/blue) - same specificity fix as .btn-report */
 .data-table .row-actions .btn-full-report {

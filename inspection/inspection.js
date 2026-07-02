@@ -1442,9 +1442,17 @@ document.addEventListener("DOMContentLoaded", function () {
           }
       }
   });
-  document.getElementById("inspectionElementsTable").addEventListener("click", function (event) {
+  document.getElementById("inspectionElementsTable").addEventListener("click", async function (event) {
     if (event.target.closest("button[title='Delete']")) {
-      if (!confirm("Are you sure you want to delete this defect?")) return;
+      const confirmed = await showConfirmModal({
+        title: 'Delete Defect?',
+        message: 'Are you sure you want to delete this defect?',
+        type: 'warning',
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+        showCancel: true
+      });
+      if (!confirmed) return;
       const expandableRow = event.target.closest("tr.expandable-row");
       if (!expandableRow) return;
       const defectTimestamp = expandableRow.dataset.timestamp;
