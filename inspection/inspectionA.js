@@ -1013,11 +1013,10 @@ function updateTableVisibility() {
     }
 }
 
-// Make key functions available globally
-window.findAllExpandableRows = findAllExpandableRows;
-window.findButtonRow = findButtonRow;
-window.addButtonRowForMainRow = addButtonRowForMainRow;
-window.toggleButtonRow = toggleButtonRow;
+// Make key functions available globally (findAllExpandableRows, findButtonRow,
+// addButtonRowForMainRow, and toggleButtonRow are declared in inspection.js,
+// loaded next — as plain top-level function declarations they're already on
+// window once that script runs, so they don't need re-exporting here).
 window.updateTableVisibility = updateTableVisibility;
 window.view = view;
 
