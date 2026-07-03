@@ -727,7 +727,7 @@ window.addEventListener('load', async function() {
 async function loadInspectionElements() {
   try {
     const structureType = sessionStorage.getItem('structureType') || 'Bridge';
-    const elementsResponse = await fetch(`/get_elements?type=${encodeURIComponent(structureType)}`);
+    const elementsResponse = await fetch(`/api/elements?type=${encodeURIComponent(structureType)}`);
     const elementsData = await elementsResponse.json();
     const tableBody = document.querySelector("#inspectionElementsTable tbody");
     tableBody.innerHTML = "";

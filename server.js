@@ -400,25 +400,6 @@ function resolveElementsType(requestedType) {
     return SEEDED_ELEMENT_TYPES.includes(requestedType) ? requestedType : "Bridge";
 }
 
-app.get("/get_elements", requireAuth, async (req, res) => {
-    try {
-        const structureType = resolveElementsType(req.query.type || "Bridge");
-        const rows = await dbAll(
-            "SELECT element_number, description FROM elements WHERE structure_type = $1 ORDER BY display_order ASC",
-            [structureType]
-        );
-        res.json(rows.map(row => ({
-            no: row.element_number,
-            description: row.description,
-            severity: "",
-            extent: "",
-            defect: ""
-        })));
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
-
 // Add to your Node.js server
 app.get("/api/defects-by-date", requireAuth, async (req, res) => {
     try {
@@ -565,7 +546,17 @@ app.get('/api/elements', requireAuth, async (req, res) => {
             'SELECT element_number, description FROM elements WHERE structure_type = $1 ORDER BY display_order ASC',
             [structureType]
         );
-        res.json(rows);
+        // no/severity/extent/defect are kept alongside element_number for callers
+        // that render this straight into an inspection table row (formerly served
+        // by the separate /get_elements route, now merged into this one).
+        res.json(rows.map(row => ({
+            element_number: row.element_number,
+            no: row.element_number,
+            description: row.description,
+            severity: "",
+            extent: "",
+            defect: ""
+        })));
     } catch (err) {
         console.error('Error fetching elements:', err);
         res.status(500).json({ error: 'Failed to fetch elements' });
