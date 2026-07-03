@@ -1379,14 +1379,62 @@ body {
    prompts from the Inspection codes - Revision 2 severity tables. Anchored
    to the viewport at a fixed offset from #modal's centerline (not flex-
    paired with .modal-content) so it never causes .modal-content to move. */
-.defect-guidance-panel {
-    display: none;
+.modal-side-rail {
     position: fixed;
     left: calc(50% + 247.5px);
     top: 50%;
     transform: translateY(-50%);
+    display: flex;
     flex-direction: column;
+    gap: 14px;
     width: min(260px, 90vw);
+    max-height: calc(80vh - 60px);
+    z-index: 1001;
+}
+
+/* Live BCI impact preview (see bciPreview.js) — sits above the Severity
+   Guide panel in the same floating side rail, outside the modal itself. */
+.bci-impact-panel {
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    background: white;
+    border-radius: 20px;
+    border: 1px solid #e9edf2;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    padding: 14px 18px;
+    flex-shrink: 0;
+}
+.bci-impact-header {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #2c5a57;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.bci-impact-header i { color: #8ab4b0; }
+.bci-impact-body {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #2c4a48;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.bci-impact-body i.fa-arrow-right { font-size: 0.75rem; color: #b8c4cc; }
+.bci-impact-panel.worse .bci-impact-body #bciPreviewAfter { color: #c0392b; }
+.bci-impact-panel.better .bci-impact-body #bciPreviewAfter { color: #2d7a6e; }
+.night-mode .bci-impact-panel { background: #232e34; border-color: #2f3e45; }
+.night-mode .bci-impact-header { color: #8ab4b0; }
+.night-mode .bci-impact-body { color: #d4dfe3; }
+.night-mode .bci-impact-panel.worse .bci-impact-body #bciPreviewAfter { color: #e07070; }
+.night-mode .bci-impact-panel.better .bci-impact-body #bciPreviewAfter { color: #8ab4b0; }
+
+.defect-guidance-panel {
+    display: none;
+    flex-direction: column;
+    width: 100%;
     max-height: calc(80vh - 60px);
     background: white;
     border-radius: 24px;
@@ -2503,33 +2551,6 @@ body.modal-photo-open .glass-scrollbar {
     background: #e2e8f0;
     margin: 4px 0;
 }
-
-/* Live BCI impact preview (see bciPreview.js) */
-.bci-preview-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 14px;
-    padding: 8px 14px;
-    border-radius: 12px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    font-size: 0.78rem;
-    color: #6a7c8e;
-}
-.bci-preview-row i.fa-chart-line { color: #8ab4b0; font-size: 0.85rem; }
-.bci-preview-row .bci-preview-text i.fa-arrow-right { font-size: 0.7rem; margin: 0 2px; color: #b8c4cc; }
-.bci-preview-row .bci-preview-text b { font-weight: 700; color: #2c4a48; }
-.bci-preview-row.worse .bci-preview-text #bciPreviewAfter { color: #c0392b; }
-.bci-preview-row.better .bci-preview-text #bciPreviewAfter { color: #2d7a6e; }
-.night-mode .bci-preview-row {
-    background: #1e2a2f;
-    border-color: #3a4b53;
-    color: #9ab0b8;
-}
-.night-mode .bci-preview-row .bci-preview-text b { color: #d4dfe3; }
-.night-mode .bci-preview-row.worse .bci-preview-text #bciPreviewAfter { color: #e07070; }
-.night-mode .bci-preview-row.better .bci-preview-text #bciPreviewAfter { color: #8ab4b0; }
 
 .v-badge-amber {
     background: rgba(186,117,23,0.12);

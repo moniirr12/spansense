@@ -971,12 +971,6 @@
 
 
                         </div>
-
-                        <!-- Live BCI Average impact preview (see bciPreview.js) -->
-                        <div class="bci-preview-row" id="bciPreviewRow" style="display:none;">
-                            <i class="fas fa-chart-line"></i>
-                            <span class="bci-preview-text">BCI Average <b id="bciPreviewBefore">—</b> <i class="fas fa-arrow-right"></i> <b id="bciPreviewAfter">—</b></span>
-                        </div>
                     </div>
 
                     <div class="v-divider"></div>
@@ -1068,11 +1062,21 @@
             </div>
         </div>
 
-        <!-- Condensed severity guidance for the currently selected defect type/number -->
-        <div class="defect-guidance-panel" id="defectGuidancePanel">
-            <div class="dgp-header"><i class="fas fa-circle-info"></i> Severity Guide</div>
-            <div class="dgp-subtitle" id="dgpSubtitle">Select a defect type and number</div>
-            <div class="dgp-levels" id="dgpLevels"></div>
+        <!-- Floating side rail: live BCI impact + condensed severity guidance -->
+        <div class="modal-side-rail" id="modalSideRail">
+            <div class="bci-impact-panel" id="bciImpactPanel" style="display:none;">
+                <div class="bci-impact-header"><i class="fas fa-chart-line"></i> BCI Impact</div>
+                <div class="bci-impact-body">
+                    <span id="bciPreviewBefore">—</span>
+                    <i class="fas fa-arrow-right"></i>
+                    <span id="bciPreviewAfter">—</span>
+                </div>
+            </div>
+            <div class="defect-guidance-panel" id="defectGuidancePanel">
+                <div class="dgp-header"><i class="fas fa-circle-info"></i> Severity Guide</div>
+                <div class="dgp-subtitle" id="dgpSubtitle">Select a defect type and number</div>
+                <div class="dgp-levels" id="dgpLevels"></div>
+            </div>
         </div>
     </div>
 

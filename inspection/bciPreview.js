@@ -1,10 +1,16 @@
 // ============================================================
-// LIVE BCI IMPACT PREVIEW (Add Defect modal)
+// LIVE BCI IMPACT PREVIEW (floating panel next to the Add Defect modal)
 //
-// Shows "BCI Average: 91.20 -> 84.60" inside the modal's Scores section,
+// Shows "91.20 -> 84.60" in a panel stacked above the Severity Guide panel,
 // updating as Severity/Extent change, using the exact same calculateBCI()
 // engine bci.js uses for the real score (see bci.js) — this is a preview
 // only, nothing is written to the table/session until Save.
+//
+// Severity/extent can change two ways: a real click on a stepper button
+// (handled entirely inside inspection.js's own closure, calling its local
+// setSeverityStepper/setExtentStepper — NOT window.*) or keyboardNav.js
+// calling window.setSeverityStepper/setExtentStepper directly. Both paths
+// are hooked below so the preview stays in sync regardless of input method.
 // ============================================================
 
 (function () {
@@ -33,13 +39,13 @@
     }
 
     function hidePreview() {
-        const row = document.getElementById('bciPreviewRow');
-        if (row) row.style.display = 'none';
+        const panel = document.getElementById('bciImpactPanel');
+        if (panel) panel.style.display = 'none';
     }
 
     function updateBciPreview() {
-        const row = document.getElementById('bciPreviewRow');
-        if (!row) return;
+        const panel = document.getElementById('bciImpactPanel');
+        if (!panel) return;
 
         const modal = document.getElementById('modal');
         if (!modal || !modal.classList.contains('active')) return hidePreview();
@@ -74,18 +80,30 @@
         if (beforeEl) beforeEl.textContent = before.bciAv.toFixed(2);
         if (afterEl) afterEl.textContent = after.bciAv.toFixed(2);
 
-        row.classList.remove('worse', 'better');
+        panel.classList.remove('worse', 'better');
         const delta = after.bciAv - before.bciAv;
-        if (delta < -0.005) row.classList.add('worse');
-        else if (delta > 0.005) row.classList.add('better');
+        if (delta < -0.005) panel.classList.add('worse');
+        else if (delta > 0.005) panel.classList.add('better');
 
-        row.style.display = 'flex';
+        panel.style.display = 'flex';
     }
 
     document.addEventListener('DOMContentLoaded', function () {
-        // Wrap the stepper setters (bci.js/inspection.js's global exports) so the
-        // preview recomputes on every change, whether it came from a click or
-        // from keyboardNav.js calling these directly.
+        // A real click on a stepper button is handled entirely inside
+        // inspection.js's own closure (it calls its local setSeverityStepper/
+        // setExtentStepper, not window.*), so wrapping window.* alone never
+        // sees it. Listening for the click directly — after inspection.js's
+        // own listener, since both are registered on the same element and
+        // fire in registration order — catches it once the value's updated.
+        ['severityStepperCard', 'extentStepperCard'].forEach(function (id) {
+            document.getElementById(id)?.addEventListener('click', function (e) {
+                if (e.target.closest('.stepper-step')) updateBciPreview();
+            });
+        });
+
+        // Wrap the stepper setters too, so keyboardNav.js calling
+        // window.setSeverityStepper/setExtentStepper directly still updates
+        // the preview (that path never fires a click event at all).
         ['setSeverityStepper', 'setExtentStepper'].forEach(function (name) {
             const original = window[name];
             if (typeof original !== 'function') return;
