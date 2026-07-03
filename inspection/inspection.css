@@ -2504,6 +2504,33 @@ body.modal-photo-open .glass-scrollbar {
     margin: 4px 0;
 }
 
+/* Live BCI impact preview (see bciPreview.js) */
+.bci-preview-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    padding: 8px 14px;
+    border-radius: 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    font-size: 0.78rem;
+    color: #6a7c8e;
+}
+.bci-preview-row i.fa-chart-line { color: #8ab4b0; font-size: 0.85rem; }
+.bci-preview-row .bci-preview-text i.fa-arrow-right { font-size: 0.7rem; margin: 0 2px; color: #b8c4cc; }
+.bci-preview-row .bci-preview-text b { font-weight: 700; color: #2c4a48; }
+.bci-preview-row.worse .bci-preview-text #bciPreviewAfter { color: #c0392b; }
+.bci-preview-row.better .bci-preview-text #bciPreviewAfter { color: #2d7a6e; }
+.night-mode .bci-preview-row {
+    background: #1e2a2f;
+    border-color: #3a4b53;
+    color: #9ab0b8;
+}
+.night-mode .bci-preview-row .bci-preview-text b { color: #d4dfe3; }
+.night-mode .bci-preview-row.worse .bci-preview-text #bciPreviewAfter { color: #e07070; }
+.night-mode .bci-preview-row.better .bci-preview-text #bciPreviewAfter { color: #8ab4b0; }
+
 .v-badge-amber {
     background: rgba(186,117,23,0.12);
     color: #BA7517;

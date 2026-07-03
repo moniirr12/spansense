@@ -969,7 +969,13 @@
                                 </select>
                             </div>
 
-                        
+
+                        </div>
+
+                        <!-- Live BCI Average impact preview (see bciPreview.js) -->
+                        <div class="bci-preview-row" id="bciPreviewRow" style="display:none;">
+                            <i class="fas fa-chart-line"></i>
+                            <span class="bci-preview-text">BCI Average <b id="bciPreviewBefore">—</b> <i class="fas fa-arrow-right"></i> <b id="bciPreviewAfter">—</b></span>
                         </div>
                     </div>
 
@@ -1438,10 +1444,12 @@
     <script src="inspectionA.js"></script>
     <script src="inspection.js"></script>
     <script src="bci.js"></script>
+    <script src="bciPreview.js"></script>
     <script src="spans.js"></script>
     <script src="photo.js"></script>
     <script src="../inspection1/inspection1.js"></script>
     <script src="prevDefects.js"></script>
+    <script src="historicalCheck.js"></script>
 
     <!-- 3D defect locator -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
