@@ -313,15 +313,8 @@ function getSeverityLabel(severity) {
     return severityMap[severity] || `Level ${severity}`;
 }
 
-function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/[&<>]/g, function(m) {
-        if (m === '&') return '&amp;';
-        if (m === '<') return '&lt;';
-        if (m === '>') return '&gt;';
-        return m;
-    });
-}
+// escapeHtml is defined identically in photo.js (loaded after this script),
+// which is the copy that actually runs — see that file for the live implementation.
 
 function refreshDefectsSummary() {
     const modal = document.getElementById('splitModal');
@@ -359,17 +352,19 @@ function saveConclusions() {
             inspectionData.conclusions = conclusionsSaved;
             sessionStorage.setItem('inspectionData', JSON.stringify(inspectionData));
         }
-        
+
         const bar = document.getElementById('conclusionsBar');
+        const barIcon = document.getElementById('barIcon');
+        const hasText = conclusionsSaved && conclusionsSaved.trim().length > 0;
         if (bar) {
-            if (conclusionsSaved && conclusionsSaved.trim().length > 0) {
-                bar.classList.add('done');
-            } else {
-                bar.classList.remove('done');
-            }
+            bar.classList.toggle('done', hasText);
         }
-        
+        if (barIcon) {
+            barIcon.innerHTML = hasText ? '<i class="fas fa-check"></i>' : '<i class="fas fa-pen"></i>';
+        }
+
         closeSplitModal();
+        showToast('Conclusions saved successfully!', 'success');
     }
 }
 
@@ -466,9 +461,11 @@ async function suggestDraftConclusions() {
 window.generateDraftConclusions = generateDraftConclusions;
 window.suggestDraftConclusions = suggestDraftConclusions;
 
-function showToast(message) {
+function showToast(message, type) {
     const toast = document.createElement('div');
-    toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#3d6b69;color:white;padding:12px 24px;border-radius:12px;font-size:0.85rem;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,0.3);z-index:10000;border:1px solid #5b8c8a;opacity:0;transition:opacity 0.3s;';
+    const bg = type === 'success' ? '#22c55e' : '#3d6b69';
+    const fg = type === 'success' ? '#1a2428' : 'white';
+    toast.style.cssText = `position:fixed;bottom:24px;right:24px;background:${bg};color:${fg};padding:12px 24px;border-radius:12px;font-size:0.85rem;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,0.3);z-index:10000;border:1px solid #5b8c8a;opacity:0;transition:opacity 0.3s;`;
     toast.textContent = message;
     document.body.appendChild(toast);
     requestAnimationFrame(() => { toast.style.opacity = '1'; });

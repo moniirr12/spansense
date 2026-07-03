@@ -857,4 +857,3 @@ function updateModalTitle() {
     }
 }
 
-window.generateSimplePDFReport = generatePDFReport; // ← add this line

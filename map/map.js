@@ -248,29 +248,8 @@ fetch('bridges.json')
         alert('Failed to load bridge data. Check the console for details.');
     });
 
-// Function to update the modal title and details
-function updateModalTitle() {
-    const structureName = sessionStorage.getItem('structureName');
-    const structureId = sessionStorage.getItem('structureId');
-    const modalTitle = document.getElementById('modalTitle');
-    const assetIdSpan = document.getElementById('assetId');
-
-    if (modalTitle) modalTitle.textContent = structureName || 'Unknown Structure';
-    if (assetIdSpan && structureId) assetIdSpan.textContent = structureId;
-
-    const avatarElement = document.getElementById('modalBridgeAvatar');
-    if (avatarElement && structureName) {
-        const initials = structureName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-        avatarElement.textContent = initials;
-    }
-
-    const bciScoreElement = document.getElementById('bciScore');
-    const lastInspectedElement = document.getElementById('lastInspected');
-    if (bciScoreElement) bciScoreElement.innerHTML = '<span style="color: #8a9ba8">Loading...</span>';
-    if (lastInspectedElement) lastInspectedElement.textContent = 'Loading...';
-
-    if (structureId) updateBridgeModalData(structureId);
-}
+// updateModalTitle is defined in bcirep.js (loaded after this script), which
+// supersedes this file's original version — see that file for the live implementation.
 
 function fetchBridgePhoto(bridgeId) {
     fetch(`${API_BASE}/getBridgePhoto?bridgeId=${bridgeId}`)
@@ -970,48 +949,5 @@ async function generateBCIProformaForDate(structureId, structureName, date) {
     }
 }
 
-// ============================================
-// Helper: Update bridge modal data
-// ============================================
-function updateBridgeModalData(structureId) {
-    if (!structureId) {
-        console.warn('updateBridgeModalData: No structureId provided');
-        return;
-    }
-    fetch(`${API_BASE}/api/bridges/${structureId}`)
-        .then(response => {
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            return response.json();
-        })
-        .then(bridge => {
-            const bciScoreElement = document.getElementById('bciScore');
-            const lastInspectedElement = document.getElementById('lastInspected');
-            const locationElement = document.getElementById('modalLocation');
-            const spanElement = document.getElementById('modalSpan');
-            const lengthElement = document.getElementById('modalLength');
-            const builtElement = document.getElementById('modalBuilt');
-            const typeElement = document.getElementById('modalType');
-
-            if (bciScoreElement && bridge.bci_av) {
-                const bciValue = Math.round(parseFloat(bridge.bci_av));
-                let label, color;
-                if (bciValue >= 80) { label = 'Good'; color = '#5b8c8a'; }
-                else if (bciValue >= 65) { label = 'Fair'; color = '#eab308'; }
-                else if (bciValue >= 40) { label = 'Poor'; color = '#f97316'; }
-                else { label = 'Critical'; color = '#dc2626'; }
-                bciScoreElement.innerHTML = `${bciValue} — ${label}`;
-                bciScoreElement.style.color = color;
-            }
-
-            if (lastInspectedElement && bridge.last_inspection) {
-                lastInspectedElement.textContent = bridge.last_inspection;
-            }
-
-            if (locationElement) locationElement.textContent = bridge.location || '--';
-            if (spanElement) spanElement.textContent = bridge.span ? `${bridge.span}m` : '--';
-            if (lengthElement) lengthElement.textContent = bridge.length ? `${bridge.length}m` : '--';
-            if (builtElement) builtElement.textContent = bridge.built_year || '--';
-            if (typeElement) typeElement.textContent = bridge.type || '--';
-        })
-        .catch(error => console.error('Error fetching bridge data:', error));
-}
+// updateBridgeModalData is defined in bcirep.js (loaded after this script), which
+// supersedes this file's original version — see that file for the live implementation.

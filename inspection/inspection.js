@@ -727,7 +727,7 @@ window.addEventListener('load', async function() {
 async function loadInspectionElements() {
   try {
     const structureType = sessionStorage.getItem('structureType') || 'Bridge';
-    const elementsResponse = await fetch(`/get_elements?type=${encodeURIComponent(structureType)}`);
+    const elementsResponse = await fetch(`/api/elements?type=${encodeURIComponent(structureType)}`);
     const elementsData = await elementsResponse.json();
     const tableBody = document.querySelector("#inspectionElementsTable tbody");
     tableBody.innerHTML = "";
@@ -1697,22 +1697,8 @@ function updateCharCount() {
     }
 }
 
-function saveConclusions() {
-    const text = conclusionsTextarea ? conclusionsTextarea.value : '';
-    sessionStorage.setItem('inspectionConclusions', text);
-    const inspectionData = JSON.parse(sessionStorage.getItem('inspectionData') || '{}');
-    inspectionData.conclusions = text;
-    sessionStorage.setItem('inspectionData', JSON.stringify(inspectionData));
-    if (text.trim().length > 0) {
-        conclusionsBar.classList.add('done');
-        barIcon.innerHTML = '<i class="fas fa-check"></i>';
-    } else {
-        conclusionsBar.classList.remove('done');
-        barIcon.innerHTML = '<i class="fas fa-pen"></i>';
-    }
-    closeConclusionsModal();
-    showToast('Conclusions saved successfully!', 'success');
-}
+// saveConclusions is defined in spans.js (loaded after this script), which
+// supersedes this file's original version — see that file for the live implementation.
 
 if (conclusionsModalOverlay) {
     conclusionsModalOverlay.addEventListener('click', function(e) {
@@ -1732,48 +1718,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 window.openConclusionsModal = openConclusionsModal;
 window.closeConclusionsModal = closeConclusionsModal;
-window.saveConclusions = saveConclusions;
 window.updateCharCount = updateCharCount;
 
-function showToast(message, type) {
-    let toast = document.getElementById('customToast');
-    if (!toast) {
-        toast = document.createElement('div');
-        toast.id = 'customToast';
-        toast.style.cssText = `
-            position: fixed;
-            bottom: 24px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1a2428;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 30px;
-            font-size: 0.85rem;
-            z-index: 2000;
-            display: none;
-            animation: fadeInUp 0.3s ease;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-        `;
-        document.body.appendChild(toast);
-    }
-    toast.textContent = message;
-    toast.style.display = 'block';
-    if (type === 'success') {
-        toast.style.background = '#22c55e';
-        toast.style.color = '#1a2428';
-    } else {
-        toast.style.background = '#1a2428';
-        toast.style.color = 'white';
-    }
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => {
-            toast.style.display = 'none';
-            toast.style.opacity = '';
-        }, 300);
-    }, 3000);
-}
+// showToast is defined in spans.js (loaded after this script), which
+// supersedes this file's original version — see that file for the live implementation.
 
 window.setAsPrimaryDefect = function(primaryTagElement) {
     const expandableRow = primaryTagElement.closest('.expandable-row');
@@ -1973,39 +1921,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-function showDraftToast(message) {
-    let toast = document.getElementById('draftToast');
-    if (!toast) {
-        toast = document.createElement('div');
-        toast.id = 'draftToast';
-        toast.style.cssText = `
-            position: fixed;
-            bottom: 24px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #3d6b69;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            z-index: 10000;
-            display: none;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        `;
-        document.body.appendChild(toast);
-    }
-    toast.textContent = message;
-    toast.style.display = 'block';
-    toast.style.opacity = '1';
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => {
-            toast.style.display = 'none';
-        }, 300);
-    }, 2500);
-}
-
-
+// showDraftToast is defined in inspection1.js (loaded after this script), which
+// supersedes this file's original version — see that file for the live implementation
+// (inspection1.js's version also adds night-mode and error styling this copy lacked).
 
 // ============================================
 // ROW DENSITY TOGGLE — Bulky ↔ Contracted

@@ -11,8 +11,50 @@ const bcrypt = require('bcryptjs');
 const storage = require('./supabaseStorage');
 
 const router = express.Router();
+const session = require('express-session');
 
 const app = express();
+
+// Core middleware - MUST be registered before any route (app.get/post/etc.)
+// below. Express only applies middleware to routes registered *after* it in
+// the file, in literal call order - these three were previously registered
+// far down the file (after most routes), so req.session was undefined,
+// req.body was unparsed, and CORS headers were missing for every route
+// defined above that point. That's what made requireAuth reject requests
+// even with a valid session cookie attached.
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(cors({
+    origin: [
+        'http://localhost:5500',
+        'http://127.0.0.1:5500',
+        'https://spansense.onrender.com'
+    ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+}));
+app.options('*', cors());
+if (!process.env.SESSION_SECRET) {
+    // Never fall back to a fixed string here - that's exactly the hardcoded-
+    // secret problem this is meant to fix. A random per-boot value at least
+    // means sessions just don't survive a restart instead of being forgeable
+    // by anyone who's read the source.
+    console.warn('[WARN] SESSION_SECRET is not set in the environment - generating a random one for this run. Sessions will not persist across restarts until SESSION_SECRET is configured (in .env locally, and in your hosting provider\'s environment variables for any deployed instance).');
+}
+const sessionSecret = process.env.SESSION_SECRET || require('crypto').randomBytes(48).toString('base64');
+
+app.use(session({
+    secret: sessionSecret,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        maxAge: 24 * 60 * 60 * 1000,
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax'
+    }
+}));
 
 // WGS84 (lat/long) -> OSGB36 / British National Grid (easting/northing).
 // Standard EPSG:27700 definition with the published 7-parameter Helmert
@@ -27,7 +69,7 @@ function latLonToOSGB(lat, lon) {
 }
 
 
-app.get('/api/routes', (req, res) => {
+app.get('/api/routes', requireAuth, (req, res) => {
     const routes = [];
     app._router.stack.forEach(middleware => {
         if (middleware.route) {
@@ -300,25 +342,8 @@ async function resyncSequences() {
 
 initDatabase();
 
-const session = require('express-session');
-
-// Enable CORS for specific origins
-app.use(cors({
-    origin: [
-        'http://localhost:5500', 
-        'http://127.0.0.1:5500',
-        'https://spansense.onrender.com'
-    ],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
-}));
-
-// Handle preflight
-app.options('*', cors());
-
 // GET type distribution counts
-app.get('/api/bridges/type-distribution', async (req, res) => {
+app.get('/api/bridges/type-distribution', requireAuth, async (req, res) => {
     try {
         const rows = await dbAll(`
             SELECT type, COUNT(*) as count 
@@ -333,7 +358,7 @@ app.get('/api/bridges/type-distribution', async (req, res) => {
 });
 
 // Endpoint to fetch the photo URL for a bridge
-app.get('/getBridgePhoto', async (req, res) => {
+app.get('/getBridgePhoto', requireAuth, async (req, res) => {
     try {
         const bridgeId = req.query.bridgeId;
         const row = await dbGet("SELECT photo_url FROM bridges WHERE id = $1", [bridgeId]);
@@ -347,7 +372,7 @@ app.get('/getBridgePhoto', async (req, res) => {
 });
 
 // Get unique inspection dates (and type) for a bridge
-app.get('/api/inspection-dates/:structureId', async (req, res) => {
+app.get('/api/inspection-dates/:structureId', requireAuth, async (req, res) => {
     try {
         const { structureId } = req.params;
         const rows = await dbAll(`
@@ -375,27 +400,8 @@ function resolveElementsType(requestedType) {
     return SEEDED_ELEMENT_TYPES.includes(requestedType) ? requestedType : "Bridge";
 }
 
-app.get("/get_elements", async (req, res) => {
-    try {
-        const structureType = resolveElementsType(req.query.type || "Bridge");
-        const rows = await dbAll(
-            "SELECT element_number, description FROM elements WHERE structure_type = $1 ORDER BY display_order ASC",
-            [structureType]
-        );
-        res.json(rows.map(row => ({
-            no: row.element_number,
-            description: row.description,
-            severity: "",
-            extent: "",
-            defect: ""
-        })));
-    } catch (err) {
-        res.status(500).json({ success: false, error: err.message });
-    }
-});
-
 // Add to your Node.js server
-app.get("/api/defects-by-date", async (req, res) => {
+app.get("/api/defects-by-date", requireAuth, async (req, res) => {
     try {
         const { structure_number, date } = req.query;
         const rows = await dbAll(`
@@ -448,7 +454,7 @@ app.get("/api/defects-by-date", async (req, res) => {
     }
 });
 
-app.get('/get-spans', async (req, res) => {
+app.get('/get-spans', requireAuth, async (req, res) => {
     try {
         const bridgeId = parseInt(req.query.bridgeId, 10);
         if (isNaN(bridgeId)) {
@@ -466,7 +472,7 @@ app.get('/get-spans', async (req, res) => {
 });
 
 // Endpoint to fetch previous inspections for a specific structure
-app.get('/api/previousInspections', async (req, res) => {
+app.get('/api/previousInspections', requireAuth, async (req, res) => {
     try {
         const { structureId } = req.query;
         if (!structureId) {
@@ -533,14 +539,24 @@ app.get('/api/previousInspections', async (req, res) => {
 });
 
 // API endpoint to fetch elements
-app.get('/api/elements', async (req, res) => {
+app.get('/api/elements', requireAuth, async (req, res) => {
     try {
         const structureType = resolveElementsType(req.query.type || 'Bridge');
         const rows = await dbAll(
             'SELECT element_number, description FROM elements WHERE structure_type = $1 ORDER BY display_order ASC',
             [structureType]
         );
-        res.json(rows);
+        // no/severity/extent/defect are kept alongside element_number for callers
+        // that render this straight into an inspection table row (formerly served
+        // by the separate /get_elements route, now merged into this one).
+        res.json(rows.map(row => ({
+            element_number: row.element_number,
+            no: row.element_number,
+            description: row.description,
+            severity: "",
+            extent: "",
+            defect: ""
+        })));
     } catch (err) {
         console.error('Error fetching elements:', err);
         res.status(500).json({ error: 'Failed to fetch elements' });
@@ -548,7 +564,7 @@ app.get('/api/elements', async (req, res) => {
 });
 
 // In your API route handler
-app.get('/api/defectsbci', async (req, res) => {
+app.get('/api/defectsbci', requireAuth, async (req, res) => {
     try {
         const { structureId, date } = req.query;
 
@@ -624,7 +640,7 @@ app.get('/api/defectsbci', async (req, res) => {
                 d.severity AS s,
                 d.extent AS ex,
                 d.defect_type AS def,
-                d.defect_number AS defN,
+                d.defect_number AS defn,
                 d.works_required AS w,
                 d.priority AS p,
                 d.cost,
@@ -652,7 +668,7 @@ app.get('/api/defectsbci', async (req, res) => {
 });
 
 // GET ALL BRIDGES (with last inspection date)
-app.get('/api/bridges', async (req, res) => {
+app.get('/api/bridges', requireAuth, async (req, res) => {
     try {
         const rows = await dbAll(`
             SELECT b.id, b.name, b.location, b.latitude, b.longitude, b.span, b.length,
@@ -673,7 +689,7 @@ app.get('/api/bridges', async (req, res) => {
 });
 
 // GET RECENT ACTIVITY — latest inspections across all structures
-app.get('/api/activity', async (req, res) => {
+app.get('/api/activity', requireAuth, async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 20;
         const rows = await dbAll(`
@@ -691,7 +707,7 @@ app.get('/api/activity', async (req, res) => {
 });
 
 // GET previous defects for a specific element across all prior inspections
-app.get('/api/previous-defects', async (req, res) => {
+app.get('/api/previous-defects', requireAuth, async (req, res) => {
     try {
         const { structureId, elementNo } = req.query;
         if (!structureId || !elementNo) return res.status(400).json({ error: 'structureId and elementNo required' });
@@ -712,7 +728,7 @@ app.get('/api/previous-defects', async (req, res) => {
 });
 
 // Get complete bridge data (PostgreSQL version)
-app.get('/api/bridges/:id', async (req, res) => {
+app.get('/api/bridges/:id', requireAuth, async (req, res) => {
     try {
         const row = await dbGet('SELECT * FROM bridges WHERE id = $1', [req.params.id]);
         if (!row) {
@@ -740,7 +756,7 @@ const PI_CYCLE_YEARS = 6;
 // Aggregated data for the twinView 3D digital twin (twin/twin.html + twin.js).
 // 3D geometry (deck width/truss height/panels per span) is NOT here - it's
 // hand-authored per bridge id in twin/bridgeModels.js, not stored in the DB.
-app.get('/api/twin/:structureId', async (req, res) => {
+app.get('/api/twin/:structureId', requireAuth, async (req, res) => {
     try {
         const { structureId } = req.params;
         const { inspectionId } = req.query;
@@ -913,10 +929,6 @@ const fileFilter = (req, file, cb) => {
     }
 };
 
-// Add this ABOVE your Multer configuration:
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
-
 const upload = multer({
     storage: docMemoryStorage,
     limits: {
@@ -927,7 +939,7 @@ const upload = multer({
 });
 
 // Get folders for a bridge
-app.get('/api/bridges/:structureId/folders', async (req, res) => {
+app.get('/api/bridges/:structureId/folders', requireAuth, async (req, res) => {
     try {
         const { structureId } = req.params;
         const { parentId } = req.query;
@@ -950,7 +962,7 @@ app.get('/api/bridges/:structureId/folders', async (req, res) => {
 });
 
 // Create folder in a bridge
-app.post('/api/bridges/:structureId/folders', async (req, res) => {
+app.post('/api/bridges/:structureId/folders', requireAuth, async (req, res) => {
     try {
         const { structureId } = req.params;
         const { name, parent_id } = req.body;
@@ -987,7 +999,7 @@ app.post('/api/bridges/:structureId/folders', async (req, res) => {
 });
 
 // Get files for a bridge
-app.get('/api/bridges/:structureId/files', async (req, res) => {
+app.get('/api/bridges/:structureId/files', requireAuth, async (req, res) => {
     try {
         const { structureId } = req.params;
         const { folderId } = req.query;
@@ -1014,7 +1026,7 @@ app.get('/api/bridges/:structureId/files', async (req, res) => {
 });
 
 // Upload file to a bridge
-app.post('/api/bridges/:structureId/files',
+app.post('/api/bridges/:structureId/files', requireAuth,
     (req, res, next) => {
         upload.single('file')(req, res, (err) => {
             if (!err) return next();
@@ -1080,7 +1092,7 @@ app.post('/api/bridges/:structureId/files',
 });
 
 // Delete file endpoint - corrected version
-app.delete('/api/bridges/:structureId/files/:fileId', async (req, res) => {
+app.delete('/api/bridges/:structureId/files/:fileId', requireAuth, async (req, res) => {
     try {
         const { structureId, fileId } = req.params;
 
@@ -1120,7 +1132,7 @@ app.delete('/api/bridges/:structureId/files/:fileId', async (req, res) => {
 });
 
 // Delete folder endpoint - improved version
-app.delete('/api/bridges/:structureId/folders/:folderId', async (req, res) => {
+app.delete('/api/bridges/:structureId/folders/:folderId', requireAuth, async (req, res) => {
     try {
         const { structureId, folderId } = req.params;
 
@@ -1162,7 +1174,7 @@ app.delete('/api/bridges/:structureId/folders/:folderId', async (req, res) => {
 
 
 // Backend route for getting folder path
-app.get('/api/bridges/:structureId/folders/:folderId/path', async (req, res) => {
+app.get('/api/bridges/:structureId/folders/:folderId/path', requireAuth, async (req, res) => {
     try {
         const { structureId, folderId } = req.params;
 
@@ -1195,7 +1207,7 @@ app.get('/api/bridges/:structureId/folders/:folderId/path', async (req, res) => 
 });
 
 // In your routes/debug.js or wherever this route lives
-app.get('/api/debug/count-test', async (req, res) => {
+app.get('/api/debug/count-test', requireAuth, async (req, res) => {
     try {
         const result = await dbGet("SELECT COUNT(*) as count FROM bridges");
         res.json({ 
@@ -1213,7 +1225,7 @@ app.get('/api/debug/count-test', async (req, res) => {
 });
 
 // SAVE INSPECTION DATA TO DATABASE
-app.post('/save-inspection', async (req, res) => {
+app.post('/save-inspection', requireAuth, async (req, res) => {
     const { inspection, defects, photoData = {} } = req.body;
 
     console.log('[1/6] Starting inspection save...');
@@ -1382,7 +1394,7 @@ app.post('/save-inspection', async (req, res) => {
 });
 
 // UPDATE INSPECTION ENDPOINT
-app.put('/update-inspection', async (req, res) => {
+app.put('/update-inspection', requireAuth, async (req, res) => {
     const { inspection, defects, inspectionId } = req.body;
 
     const client = await pool.connect();
@@ -1522,7 +1534,7 @@ app.put('/update-inspection', async (req, res) => {
 });
 
 // New endpoint to find inspectionId by structure_id and inspection_date
-app.post('/find-inspection-id', async (req, res) => {
+app.post('/find-inspection-id', requireAuth, async (req, res) => {
     try {
         const { structure_id, inspection_date } = req.body;
         const row = await dbGet(
@@ -1542,7 +1554,7 @@ app.post('/find-inspection-id', async (req, res) => {
 
 // EDIT BUTTON INSPECTION RETRIEVAL
 // Endpoint to fetch full inspection data WITH defects and their photos
-app.get('/api/inspection/full', async (req, res) => {
+app.get('/api/inspection/full', requireAuth, async (req, res) => {
     try {
         const { structure_id, date } = req.query;
 
@@ -1677,7 +1689,7 @@ app.get('/api/inspection/full', async (req, res) => {
 });
 
 // GET /api/worksrequired
-app.get('/api/worksrequired', async (req, res) => {
+app.get('/api/worksrequired', requireAuth, async (req, res) => {
     try {
         const { structureId, date } = req.query;
 
@@ -1755,7 +1767,7 @@ const uploadInspectionPhotos = multer({
 });
 
 // Photo upload endpoint
-app.post('/api/bridges/:structureId/inspection-photos',
+app.post('/api/bridges/:structureId/inspection-photos', requireAuth,
     (req, res, next) => {
         uploadInspectionPhotos.array('photos', 20)(req, res, (err) => {
             if (!err) return next();
@@ -1846,7 +1858,7 @@ app.post('/api/bridges/:structureId/inspection-photos',
 );
 
 // Photo retrieval endpoint
-app.get('/api/bridges/:structureId/inspection-photos', async (req, res) => {
+app.get('/api/bridges/:structureId/inspection-photos', requireAuth, async (req, res) => {
     try {
         const { structureId } = req.params;
         const { inspectionDate } = req.query;
@@ -1898,7 +1910,7 @@ app.get('/api/bridges/:structureId/inspection-photos', async (req, res) => {
 });
 
 // Delete a single already-uploaded inspection photo (DB row + file on disk)
-app.delete('/api/inspection-photos/:photoId', async (req, res) => {
+app.delete('/api/inspection-photos/:photoId', requireAuth, async (req, res) => {
     try {
         const { photoId } = req.params;
         const photo = await dbGet('SELECT photo_url FROM defect_photos WHERE id = $1', [photoId]);
@@ -1918,7 +1930,7 @@ app.delete('/api/inspection-photos/:photoId', async (req, res) => {
 });
 
 // Update an already-uploaded photo's description
-app.patch('/api/inspection-photos/:photoId', async (req, res) => {
+app.patch('/api/inspection-photos/:photoId', requireAuth, async (req, res) => {
     try {
         const { photoId } = req.params;
         const { photo_description } = req.body;
@@ -1937,19 +1949,8 @@ app.patch('/api/inspection-photos/:photoId', async (req, res) => {
 });
 
 //Authentication code.
-
-// ADD SESSION MIDDLEWARE
-app.use(session({
-    secret: 'your-secret-key-change-in-production',
-    resave: false,
-    saveUninitialized: false,
-    cookie: { 
-        maxAge: 24 * 60 * 60 * 1000,
-        httpOnly: true,
-        secure: false,
-        sameSite: 'lax'
-    }
-}));
+// (session middleware itself is registered near the top of the file,
+// before any routes - see the comment by `const app = express();`)
 
 // AUTHENTICATION MIDDLEWARE
 function requireAuth(req, res, next) {
@@ -2053,7 +2054,7 @@ app.get('/api/check-session', (req, res) => {
 });
 
 // 2. BCI Distribution - Simplified
-app.get('/api/bci-distribution', async (req, res) => {
+app.get('/api/bci-distribution', requireAuth, async (req, res) => {
     try {
         const rows = await dbAll(`
             WITH latest_inspections AS (
@@ -2112,7 +2113,7 @@ app.get('/api/bci-distribution', async (req, res) => {
 });
 
 // 3. Condition Distribution Over Time - YEARLY
-app.get('/api/condition-distribution', async (req, res) => {
+app.get('/api/condition-distribution', requireAuth, async (req, res) => {
     try {
         const rows = await dbAll(`
             WITH yearly_latest AS (
@@ -2156,7 +2157,7 @@ app.get('/api/condition-distribution', async (req, res) => {
 });
 
 // GET ALL INSPECTIONS (list for export page)
-app.get('/api/inspections', async (req, res) => {
+app.get('/api/inspections', requireAuth, async (req, res) => {
     try {
         const rows = await dbAll(`
             SELECT id, structure_id, structure_name, inspection_date,
@@ -2173,7 +2174,7 @@ app.get('/api/inspections', async (req, res) => {
 });
 
 // Critical bridges: lowest BCI per structure
-app.get('/api/dashboard/critical-bridges', async (req, res) => {
+app.get('/api/dashboard/critical-bridges', requireAuth, async (req, res) => {
     try {
         const rows = await dbAll(`
             SELECT 
@@ -2203,7 +2204,7 @@ app.get('/api/dashboard/critical-bridges', async (req, res) => {
 });
 
 // Average BCI per structure type, using each structure's latest inspection
-app.get('/api/dashboard/avg-bci-by-type', async (req, res) => {
+app.get('/api/dashboard/avg-bci-by-type', requireAuth, async (req, res) => {
     try {
         const rows = await dbAll(`
             WITH latest_inspections AS (
@@ -2238,7 +2239,7 @@ app.get('/api/dashboard/avg-bci-by-type', async (req, res) => {
 });
 
 // Recent activity feed: most recently submitted inspections
-app.get('/api/dashboard/recent-activity', async (req, res) => {
+app.get('/api/dashboard/recent-activity', requireAuth, async (req, res) => {
     try {
         const rows = await dbAll(`
             SELECT
