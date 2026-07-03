@@ -175,8 +175,8 @@
         }
     });
 
-    // Start the highlight on the first row once the table has content.
     document.addEventListener('DOMContentLoaded', function () {
+        // Start the highlight on the first row once the table has content.
         const observer = new MutationObserver(function () {
             if (!getActiveRow() && getMainRows().length) {
                 setActiveRow(getMainRows()[0]);
@@ -184,5 +184,12 @@
         });
         const tbody = document.querySelector('#inspectionElementsTable tbody');
         if (tbody) observer.observe(tbody, { childList: true });
+
+        // Clicking a row (mouse) moves the active-row highlight there too, so
+        // keyboard navigation picks up from wherever you last clicked.
+        document.getElementById('inspectionElementsTable')?.addEventListener('click', function (e) {
+            const mainRow = e.target.closest('tr.main-row');
+            if (mainRow) setActiveRow(mainRow);
+        });
     });
 })();

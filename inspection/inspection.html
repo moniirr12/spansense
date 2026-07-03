@@ -969,7 +969,7 @@
                                 </select>
                             </div>
 
-                        
+
                         </div>
                     </div>
 
@@ -1062,11 +1062,21 @@
             </div>
         </div>
 
-        <!-- Condensed severity guidance for the currently selected defect type/number -->
-        <div class="defect-guidance-panel" id="defectGuidancePanel">
-            <div class="dgp-header"><i class="fas fa-circle-info"></i> Severity Guide</div>
-            <div class="dgp-subtitle" id="dgpSubtitle">Select a defect type and number</div>
-            <div class="dgp-levels" id="dgpLevels"></div>
+        <!-- Floating side rail: live BCI impact + condensed severity guidance -->
+        <div class="modal-side-rail" id="modalSideRail">
+            <div class="bci-impact-panel" id="bciImpactPanel" style="display:none;">
+                <div class="bci-impact-header"><i class="fas fa-chart-line"></i> BCI Average Impact</div>
+                <div class="bci-impact-body">
+                    <span id="bciPreviewBefore">—</span>
+                    <i class="fas fa-arrow-right"></i>
+                    <span id="bciPreviewAfter">—</span>
+                </div>
+            </div>
+            <div class="defect-guidance-panel" id="defectGuidancePanel">
+                <div class="dgp-header"><i class="fas fa-circle-info"></i> Severity Guide</div>
+                <div class="dgp-subtitle" id="dgpSubtitle">Select a defect type and number</div>
+                <div class="dgp-levels" id="dgpLevels"></div>
+            </div>
         </div>
     </div>
 
@@ -1438,10 +1448,12 @@
     <script src="inspectionA.js"></script>
     <script src="inspection.js"></script>
     <script src="bci.js"></script>
+    <script src="bciPreview.js"></script>
     <script src="spans.js"></script>
     <script src="photo.js"></script>
     <script src="../inspection1/inspection1.js"></script>
     <script src="prevDefects.js"></script>
+    <script src="historicalCheck.js"></script>
 
     <!-- 3D defect locator -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
