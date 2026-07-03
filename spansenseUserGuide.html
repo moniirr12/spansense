@@ -208,7 +208,7 @@
   <div class="hero-text">
     <div class="hero-eyebrow">spanSense — User Guide</div>
     <h1>Everything you need<br>to run an <em>inspection.</em></h1>
-    <p class="hero-desc">A practical, step-by-step guide to finding a structure, recording an inspection, reading your BCI scores, and getting the report out the door.</p>
+    <p class="hero-desc">Find a structure, log the inspection, read the BCI score, get the report out.</p>
     <div class="hero-tags">
       <a class="hero-tag" href="#sec-map">🗺️ The Map</a>
       <a class="hero-tag" href="#sec-inspect">🔍 Inspections</a>
@@ -229,7 +229,7 @@
 </section>
 
 <div class="divider-strip" id="sec-divider">
-  <strong>Start on the map.</strong> &nbsp;Every structure you manage lives there — it's the front door to everything else in this guide.
+  <strong>Start on the map.</strong> &nbsp;Every structure lives there.
 </div>
 
 <!-- ===== THE MAP ===== -->
@@ -237,12 +237,12 @@
   <div style="margin-bottom:36px;">
     <div class="eyebrow">1 · The Map</div>
     <h2 class="section-title">Find a structure</h2>
-    <p class="section-sub">Every structure you manage is plotted on the map, colour-coded by type. Click a marker for a quick summary, or open it fully to start working.</p>
+    <p class="section-sub">Structures are colour-coded by type. Hover a marker for a quick summary, or click it to open the full card.</p>
   </div>
   <ol class="steps">
-    <li><p><strong>Click any marker</strong> to see a quick popup — name, location, span, length, and the year it was built.</p></li>
-    <li><p><strong>Click the popup again (or the structure's name)</strong> to open its full card: a photo, current <strong>BCI average score</strong> with its condition rating, and when it was last inspected.</p></li>
-    <li><p>From that card, three actions are always available: <strong>New Inspection</strong>, <strong>Previous Inspections</strong>, and <strong>Documents</strong>.</p></li>
+    <li><p><strong>Hover a marker</strong> for a quick popup — location, span, length, and year built.</p></li>
+    <li><p><strong>Click it</strong> to open the full card: photo, <strong>BCI average score</strong>, condition rating, and last inspection date.</p></li>
+    <li><p>Three actions are always there: <strong>New Inspection</strong>, <strong>Previous Inspections</strong>, and <strong>Documents</strong>.</p></li>
   </ol>
   <div class="two-up" style="margin-top:32px;">
     <div>
@@ -253,7 +253,7 @@
           <input type="file" accept="image/*" onchange="loadImg(this,'slot-map-popup')">
         </label>
       </div>
-      <p class="caption">Clicking a marker first shows this quick summary</p>
+      <p class="caption">Hovering a marker shows this quick summary</p>
     </div>
     <div>
       <div class="screen-frame screen-frame-light">
@@ -283,12 +283,12 @@
     <div class="split-text">
       <div class="eyebrow">Inspection History</div>
       <h2>Every past inspection, in one list</h2>
-      <p>Open <strong>Previous Inspections</strong> from a structure's card to see its full record: total inspections, last inspection date, and current BCI average — then drill into any one of them.</p>
+      <p><strong>Previous Inspections</strong> shows the full record: total count, last date, current BCI average.</p>
       <ul class="bullets">
-        <li>Filter by type — <strong>Principal (PI)</strong>, <strong>General (GI)</strong>, or <strong>Superficial (SI)</strong></li>
-        <li>Search across all recorded inspections</li>
-        <li>Each row shows the inspector, date, and both CRIT/AV scores</li>
-        <li>Click a row to open it in full — or use <strong>+ New Inspection</strong> to start the next one</li>
+        <li>Filter by <strong>Principal</strong>, <strong>General</strong>, or <strong>Superficial</strong></li>
+        <li>Search across every recorded inspection</li>
+        <li>Each row shows inspector, date, and both CRIT/AV scores</li>
+        <li>Click a row for full detail, or <strong>+ New Inspection</strong> to start the next one</li>
       </ul>
     </div>
   </div>
@@ -299,13 +299,13 @@
   <div style="margin-bottom:36px;">
     <div class="eyebrow">2 · Inspections</div>
     <h2 class="section-title">Record a defect, element by element</h2>
-    <p class="section-sub">Once you start a new inspection, pick the date and you'll land on the inspection workspace — every element of the structure listed as a row, ready to assess.</p>
+    <p class="section-sub">Every element of the structure is listed as a row, ready to assess.</p>
   </div>
   <ol class="steps">
-    <li><p>Click an element's row to open it, then choose one of three states: <strong>Add Defect</strong>, <strong>No Defects</strong>, or <strong>Not Inspected</strong> (with a reason).</p></li>
-    <li><p>For a defect, set <strong>Severity</strong> (1 Minor → 5 Emergency) and <strong>Extent</strong> (A isolated → E extensive) using the pill steppers — your BCI score is recalculated automatically as you go.</p></li>
-    <li><p>Mark whether <strong>Works</strong> are required — <em>No</em>, <em>Yes</em>, or <em>Monitor</em> — and add a comment if it helps the next inspector.</p></li>
-    <li><p>Hit <strong>Save</strong> on the element, then keep moving through the table. Use <strong>Save Draft</strong> at any point to come back to it later without finishing.</p></li>
+    <li><p>Click a row and choose one: <strong>Add Defect</strong>, <strong>No Defects</strong>, or <strong>Not Inspected</strong> (with a reason).</p></li>
+    <li><p>Set <strong>Severity</strong> (1 Minor → 5 Emergency) and <strong>Extent</strong> (A isolated → E extensive) — the BCI score updates as you go.</p></li>
+    <li><p>Mark <strong>Works Required</strong> — <em>No</em>, <em>Yes</em>, or <em>Monitor</em> — and add a comment for the next inspector.</p></li>
+    <li><p><strong>Save</strong> and move on, or <strong>Save Draft</strong> to finish later.</p></li>
   </ol>
   <div class="two-up" style="margin-top:32px; align-items:start;">
     <div>
@@ -316,7 +316,7 @@
           <input type="file" accept="image/*" onchange="loadImg(this,'slot-defect-modal')">
         </label>
       </div>
-      <p class="caption">Severity, Extent, Works, and a comment — that's every defect recorded</p>
+      <p class="caption">Severity, Extent, Works, and a comment — one defect, fully recorded</p>
     </div>
     <div class="key-grid" style="margin-top:0;">
       <div class="key-card"><div class="key-icon">S</div><div><h4>Severity 1–5</h4><p>Minor · Moderate · Severe · Critical · Emergency</p></div></div>
@@ -333,8 +333,8 @@
     <div class="split-text">
       <div class="eyebrow">3 · BCI Scoring</div>
       <h2>BCIav and BCIcrit, calculated for you</h2>
-      <p>Every Severity and Extent you record feeds straight into the Bridge Condition Indicator — no manual formula, no spreadsheet. <strong>BCIav</strong> is the overall average; <strong>BCIcrit</strong> reflects the single worst critical element.</p>
-      <p>Both scores fall into one of five bands:</p>
+      <p>Every Severity and Extent feeds straight into the score — no formula, no spreadsheet. <strong>BCIav</strong> is the overall average; <strong>BCIcrit</strong> is the worst critical element.</p>
+      <p>Both fall into one of five bands:</p>
     </div>
     <div class="split-visual">
       <div class="bci-bands">
@@ -344,7 +344,7 @@
         <div class="bci-band band-good"><div class="bci-band-label">Good</div><div class="bci-band-score">80–89</div><div class="bci-band-name">Maintain</div></div>
         <div class="bci-band band-excellent"><div class="bci-band-label">Very Good</div><div class="bci-band-score">90–100</div><div class="bci-band-name">No action</div></div>
       </div>
-      <p class="caption" style="margin-top:18px;">You'll see these same five bands on the Dashboard's BCI Score Distribution chart</p>
+      <p class="caption" style="margin-top:18px;">Same five bands, on the Dashboard's BCI Score Distribution chart</p>
     </div>
   </div>
 </section>
@@ -360,17 +360,17 @@
           <input type="file" accept="image/*" onchange="loadImg(this,'slot-twinview')">
         </label>
       </div>
-      <p class="caption">Orbit, zoom, and toggle Structure / Sensors / Stress / Defects layers</p>
+      <p class="caption">Orbit, zoom, and toggle Structure / Sensors / Defects / Works Required layers</p>
     </div>
     <div class="split-text">
       <div class="eyebrow">4 · Conclusions &amp; Twin View</div>
       <h2>Two shortcuts, always one click away</h2>
-      <p>While you're inside an inspection, a small floating rail sits on the left of the screen with two shortcuts:</p>
+      <p>A floating rail on the left of every inspection gives you:</p>
       <ul class="bullets">
-        <li><strong>Conclusions</strong> — write a short summary of the overall structure condition before you finish</li>
-        <li><strong>Twin View</strong> — opens a 3D model built from the structure's real span count and condition data, so you can see where defects sit in context</li>
+        <li><strong>Conclusions</strong> — a short summary of overall condition</li>
+        <li><strong>Twin View</strong> — a 3D model built from real span and condition data, so defects sit in context</li>
       </ul>
-      <p style="margin-top:16px;">When you're done: <strong>Preview</strong> the inspection, <strong>Save Draft</strong> to pause, or <strong>Save</strong> to complete it and generate the report.</p>
+      <p style="margin-top:16px;"><strong>Preview</strong>, <strong>Save Draft</strong>, or <strong>Save</strong> to complete and generate the report.</p>
     </div>
   </div>
 </section>
@@ -380,7 +380,7 @@
   <div style="margin-bottom:36px;">
     <div class="eyebrow">5 · Reports &amp; Export</div>
     <h2 class="section-title">Get the data out</h2>
-    <p class="section-sub">Once an inspection is saved, generate a PDF report or BCI proforma directly from it — or export your wider structure stock from the Database page.</p>
+    <p class="section-sub">Generate a PDF report or BCI proforma from any saved inspection, or export your whole stock from Database.</p>
   </div>
   <div class="two-up">
     <div>
@@ -408,7 +408,7 @@
   <div style="margin-bottom:36px;">
     <div class="eyebrow">6 · Inspection Planning</div>
     <h2 class="section-title">Never miss the next one</h2>
-    <p class="section-sub">Planning aligns to the standard 2-year General (GI) and 6-year Principal (PI) inspection cycles, and flags anything overdue automatically.</p>
+    <p class="section-sub">Aligns to the standard 2-year GI and 6-year PI cycles, and flags anything overdue automatically.</p>
   </div>
   <div class="two-up">
     <div>
@@ -446,12 +446,12 @@
     <div class="split-text">
       <div class="eyebrow">7 · Dashboard</div>
       <h2>Your whole stock, at a glance</h2>
-      <p>The Dashboard is the first thing you see after the map — four headline numbers and three charts summarising every structure you manage.</p>
+      <p>Four headline numbers and three charts summarising everything you manage.</p>
       <ul class="bullets">
-        <li><strong>Total Assets</strong>, <strong>High-Risk Structures</strong>, <strong>Upcoming Inspections</strong>, and <strong>Inspections Overdue</strong></li>
-        <li><strong>Asset Inventory</strong> — your stock broken down by structure type</li>
-        <li><strong>BCI Score Distribution</strong> — how many structures sit in each of the five condition bands</li>
-        <li><strong>Bridge Condition Over Time</strong> — a year-by-year trend across your whole portfolio</li>
+        <li><strong>Total Assets</strong>, <strong>High-Risk Structures</strong>, <strong>Upcoming</strong>, and <strong>Overdue</strong></li>
+        <li><strong>Asset Inventory</strong> — your stock by structure type</li>
+        <li><strong>BCI Score Distribution</strong> — structures across the five condition bands</li>
+        <li><strong>Condition Over Time</strong> — a year-by-year portfolio trend</li>
       </ul>
     </div>
     <div class="split-visual">
@@ -472,7 +472,7 @@
   <div style="margin-bottom:36px; text-align:center;">
     <div class="eyebrow" style="display:flex; justify-content:center;">8 · Your Account</div>
     <h2 class="section-title" style="text-align:center;">Profile, security, and preferences</h2>
-    <p class="section-sub" style="margin:0 auto;">Open <strong>Account</strong> from any page's navbar to update your details, change your password, or turn on Night Mode — it persists everywhere you go.</p>
+    <p class="section-sub" style="margin:0 auto;">Open <strong>Account</strong> from any navbar to update details, change your password, or toggle Night Mode.</p>
   </div>
   <div class="key-grid" style="max-width:760px; margin:0 auto;">
     <div class="key-card"><div class="key-icon">🪪</div><div><h4>Profile Details</h4><p>Name, email, phone, organisation, and job title</p></div></div>
@@ -486,7 +486,7 @@
 <footer class="footer" id="sec-footer">
   <div>
     <h2>spanSense<br><span>User Guide</span></h2>
-    <p>Stuck on something this guide didn't cover? Use Contact Us from any page's navbar — someone will get back to you.</p>
+    <p>Stuck on something this guide didn't cover? Use Contact Us — someone will get back to you.</p>
   </div>
   <div class="footer-contact">
     <div class="footer-contact-item"><strong>Web</strong> — spansense.co.uk</div>
