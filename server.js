@@ -35,8 +35,17 @@ app.use(cors({
     credentials: true
 }));
 app.options('*', cors());
+if (!process.env.SESSION_SECRET) {
+    // Never fall back to a fixed string here - that's exactly the hardcoded-
+    // secret problem this is meant to fix. A random per-boot value at least
+    // means sessions just don't survive a restart instead of being forgeable
+    // by anyone who's read the source.
+    console.warn('[WARN] SESSION_SECRET is not set in the environment - generating a random one for this run. Sessions will not persist across restarts until SESSION_SECRET is configured (in .env locally, and in your hosting provider\'s environment variables for any deployed instance).');
+}
+const sessionSecret = process.env.SESSION_SECRET || require('crypto').randomBytes(48).toString('base64');
+
 app.use(session({
-    secret: 'your-secret-key-change-in-production',
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -640,7 +649,7 @@ app.get('/api/defectsbci', requireAuth, async (req, res) => {
                 d.severity AS s,
                 d.extent AS ex,
                 d.defect_type AS def,
-                d.defect_number AS defN,
+                d.defect_number AS defn,
                 d.works_required AS w,
                 d.priority AS p,
                 d.cost,

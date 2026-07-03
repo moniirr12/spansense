@@ -561,13 +561,18 @@ function buildBCIProformaContent(bciFormData, singleSpanIdx) {
                 // "No Defects" and "Not Inspected" (Option F segmented control - see
                 // setModalSegment/saveChanges in inspectionA.js) are both saved as
                 // defect_type '0', distinguished only by defect_number ('0' vs '1').
-                var isNoDefect     = d.def === '0' && d.defN === '0';
-                var isNotInspected = d.def === '0' && d.defN === '1';
+                // NOTE: the API aliases this column "defn" (lowercase) - Postgres
+                // folds unquoted SQL aliases to lowercase, so `d.defN` here was
+                // always undefined and silently fell through to the plain-def-type
+                // branch below, e.g. showing "1" instead of "1.1", or "0" instead
+                // of blank/"NI" for the special states.
+                var isNoDefect     = d.def === '0' && d.defn === '0';
+                var isNotInspected = d.def === '0' && d.defn === '1';
 
                 var defDisplay = '-';
                 if (isNoDefect) defDisplay = '';
                 else if (isNotInspected) defDisplay = 'NI';
-                else if (d.def && d.defN) defDisplay = d.def + '.' + d.defN;
+                else if (d.def && d.defn) defDisplay = d.def + '.' + d.defn;
                 else if (d.def) defDisplay = String(d.def);
 
                 var comments = hasMulti ? 'See multiple defects table' : (d.comments_remarks && d.comments_remarks !== '-' ? d.comments_remarks : '');
@@ -800,7 +805,7 @@ function buildBCIPage2Content(bciFormData, singleSpanIdx) {
             var elNo   = multiEls[i] != null ? multiEls[i] : null;
             var elDefs = elNo !== null ? defByEl[elNo].slice(0, 3) : [];
             var getD   = function(idx) { return elDefs[idx] || {}; };
-            var fmtDef = function(d) { return !d.def ? '' : d.defN ? d.def + '.' + d.defN : String(d.def); };
+            var fmtDef = function(d) { return !d.def ? '' : d.defn ? d.def + '.' + d.defn : String(d.def); };
             var combined = elDefs
                 .map(function(d, idx) { return (d.comments_remarks && d.comments_remarks !== '-') ? 'D' + (idx+1) + ': ' + d.comments_remarks : ''; })
                 .filter(Boolean).join('; ');
