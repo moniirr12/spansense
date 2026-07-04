@@ -977,3 +977,170 @@ html.night-mode .glass-scrollbar .thumb {
         justify-content: center;
     }
 }
+
+/* ============================================================
+   PENDING REVIEW (engineer/admin only, dashboard.js)
+   ============================================================ */
+.pending-review-section {
+    margin-top: 24px;
+}
+
+.review-btn {
+    background: #eef4f2;
+    color: #5b8c8a;
+    border: 1px solid #8ab4b0 !important;
+}
+
+.review-btn:hover {
+    background: #5b8c8a;
+    color: white;
+}
+
+.night-mode .review-btn {
+    background: #2f4a48;
+    color: #8ab4b0;
+    border-color: #4a8a7e !important;
+}
+
+/* Review modal — same visual language as the confirm-style modal already
+   used elsewhere in the app (see inspection.css .modal-overlay/.modal-card),
+   copied here rather than pulling that whole stylesheet into the dashboard. */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(30, 46, 52, 0.25);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+}
+.modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+.modal-card {
+    background: #ffffff;
+    border-radius: 32px;
+    padding: 36px 40px;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    border: 1px solid #e4ebe9;
+    box-shadow:
+        0 2px 4px rgba(91, 140, 138, 0.03),
+        0 8px 24px rgba(91, 140, 138, 0.06),
+        0 24px 48px rgba(0, 0, 0, 0.04);
+    transform: scale(0.96) translateY(16px);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.modal-overlay.active .modal-card {
+    transform: scale(1) translateY(0);
+}
+.modal-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #2c4a48;
+    margin-bottom: 14px;
+    letter-spacing: -0.3px;
+}
+.modal-message {
+    font-size: 0.9rem;
+    color: #8a9ba8;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    text-align: left;
+}
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+.modal-btn {
+    padding: 13px 24px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    letter-spacing: 0.2px;
+    min-width: 100px;
+    border: none;
+    font-family: inherit;
+}
+.modal-btn.primary {
+    background: linear-gradient(135deg, #5b8c8a 0%, #7ba8a5 100%);
+    color: white;
+    box-shadow: 0 4px 16px rgba(91, 140, 138, 0.25);
+}
+.modal-btn.primary:hover {
+    background: linear-gradient(135deg, #4a7876 0%, #6a9a97 100%);
+    box-shadow: 0 6px 20px rgba(91, 140, 138, 0.35);
+    transform: translateY(-2px);
+}
+.modal-btn.secondary {
+    background: transparent;
+    border: 1px solid #e2e8f0;
+    color: #6a7c8e;
+}
+.modal-btn.secondary:hover {
+    background: #f1f5f4;
+    border-color: #c5dbd8;
+    color: #5b8c8a;
+}
+.modal-btn.danger {
+    background: linear-gradient(135deg, #c07070 0%, #a85a5a 100%);
+    color: white;
+    box-shadow: 0 4px 16px rgba(192, 112, 112, 0.2);
+}
+.modal-btn.danger:hover {
+    background: linear-gradient(135deg, #a85a5a 0%, #944848 100%);
+    box-shadow: 0 6px 20px rgba(192, 112, 112, 0.3);
+    transform: translateY(-2px);
+}
+
+.review-modal-card {
+    max-width: 440px;
+}
+.review-comments-input {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 12px 14px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    color: #2c4a48;
+    resize: vertical;
+    margin-bottom: 20px;
+}
+.review-comments-input:focus {
+    outline: none;
+    border-color: #8ab4b0;
+}
+
+.night-mode .modal-overlay { background: rgba(15, 24, 28, 0.5); }
+.night-mode .modal-card {
+    background: #232e34;
+    border-color: #2f3e45;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 24px 48px rgba(0, 0, 0, 0.15);
+}
+.night-mode .modal-title { color: #d4dfe3; }
+.night-mode .modal-message { color: #8aa4ac; }
+.night-mode .modal-btn.secondary {
+    border-color: #3a4b53;
+    color: #8aa4ac;
+}
+.night-mode .modal-btn.secondary:hover {
+    background: #2f3e45;
+    color: #d4dfe3;
+}
+.night-mode .review-comments-input {
+    background: #1e2a2f;
+    border-color: #3a4b53;
+    color: #d4dfe3;
+}

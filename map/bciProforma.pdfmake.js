@@ -378,6 +378,11 @@ function buildBCIProformaContent(bciFormData, singleSpanIdx) {
         var date       = spanData.inspection_date
             ? new Date(spanData.inspection_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
             : '';
+        var engineerName     = spanData.reviewed_by || '';
+        var engineerComments = spanData.engineer_comments || '';
+        var engineerDate = spanData.reviewed_at
+            ? new Date(spanData.reviewed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+            : '';
         var nextInsp   = spanData.next_inspection || '';
         var roadRef    = bridgeData.road_ref || bridgeData.location || '';
         var mapRef     = bridgeData.grid_reference || (bridgeData.latitude && bridgeData.longitude ? '' + Number(bridgeData.latitude).toFixed(3) + ', ' + Number(bridgeData.longitude).toFixed(3) : '');
@@ -858,16 +863,16 @@ function buildBCIPage2Content(bciFormData, singleSpanIdx) {
         ]);
 
         tableBody.push([
-            { text: '', colSpan: 20, fontSize: 7 },
+            { text: engineerComments, colSpan: 20, fontSize: 7 },
             ...Array(19).fill({ text: '' })
         ]);
 
         tableBody.push([
-            lv('Name: ', '', { colSpan: 7 }),
+            lv('Name: ', engineerName, { colSpan: 7 }),
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
-            { text: 'Signed: ', bold: true, colSpan: 8, fontSize: 7 },
+            { text: [{ text: 'Signed: ', bold: true }, { text: engineerName, italics: true }], colSpan: 8, fontSize: 7 },
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
-            lv('Date: ', date, { colSpan: 5 }),
+            lv('Date: ', engineerDate, { colSpan: 5 }),
             { text: '' }, { text: '' }, { text: '' }, { text: '' }
         ]);
 

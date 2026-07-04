@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
     fetchCriticalBridges();
     fetchRecentActivity();
     initBciChartToggle();
+    checkSessionAndInitReview();
 
     const changePageButton = document.getElementById('toHome');
     if (changePageButton) {
@@ -585,7 +586,7 @@ function renderRecentActivity(data) {
         const tier = bciTier(item.overall_bciave);
         const initials = getInitials(item.inspector_name);
         const inspector = item.inspector_name || 'Unknown';
-        const isComplete = item.overall_bciave !== null;
+        const statusBadge = reviewStatusBadge(item.status);
 
         return `
             <div class="activity-item">
@@ -595,9 +596,18 @@ function renderRecentActivity(data) {
                     <div class="activity-meta">${inspector} &nbsp;·&nbsp; ${formatRelativeTime(item.created_at)}</div>
                 </div>
                 <span class="activity-bci bci-${tier.band}">${bci}</span>
-                <span class="activity-status ${isComplete ? 'status-completed' : 'status-in-progress'}">${isComplete ? 'Done' : 'Draft'}</span>
+                <span class="activity-status ${statusBadge.cls}">${statusBadge.label}</span>
             </div>`;
     }).join('');
+}
+
+// Maps the real review-workflow status onto the existing activity-status
+// badge classes (status-completed/status-in-progress/status-overdue were
+// already defined in dashboard.css but unused before this).
+function reviewStatusBadge(status) {
+    if (status === 'approved') return { cls: 'status-completed', label: 'Approved' };
+    if (status === 'rejected') return { cls: 'status-overdue', label: 'Rejected' };
+    return { cls: 'status-in-progress', label: 'Pending' };
 }
 
 function bciTier(bciAve) {
@@ -658,3 +668,121 @@ window.downloadReport = async function downloadReport(structureId, structureName
         alert('Report generator not available.');
     }
 }
+
+// ============================================================
+// PENDING REVIEW (engineer/admin only)
+// ============================================================
+
+let pendingReviewData = [];
+let reviewingInspectionId = null;
+
+async function checkSessionAndInitReview() {
+    try {
+        const response = await fetch(API_BASE + '/api/check-session', { credentials: 'include' });
+        const result = await response.json();
+        if (result && (result.role === 'engineer' || result.role === 'admin')) {
+            document.getElementById('pending-review-section').style.display = '';
+            fetchPendingReview();
+        }
+    } catch (error) {
+        console.error('Error checking session:', error);
+    }
+}
+
+async function fetchPendingReview() {
+    try {
+        const response = await fetch(API_BASE + '/api/inspections/pending-review', { credentials: 'include' });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const result = await response.json();
+        if (result.success) {
+            pendingReviewData = result.data;
+            renderPendingReview(result.data);
+        }
+    } catch (error) {
+        console.error('Error fetching pending review:', error);
+        document.getElementById('pending-review-list').innerHTML = `
+            <div class="activity-item">
+                <div style="color: var(--text-muted); font-size: 0.8rem;">Could not load data.</div>
+            </div>`;
+    }
+}
+
+function renderPendingReview(data) {
+    const list = document.getElementById('pending-review-list');
+
+    if (!data.length) {
+        list.innerHTML = `
+            <div class="activity-item">
+                <div style="color: var(--text-muted); font-size: 0.8rem;">Nothing awaiting review.</div>
+            </div>`;
+        return;
+    }
+
+    list.innerHTML = data.map(item => {
+        const bci = item.overall_bciave !== null ? Math.round(item.overall_bciave) : '—';
+        const tier = bciTier(item.overall_bciave);
+        const initials = getInitials(item.inspector_name);
+        const inspector = item.inspector_name || 'Unknown';
+
+        return `
+            <div class="activity-item">
+                <div class="activity-avatar activity-avatar-${tier.avatarColor}">${initials}</div>
+                <div class="activity-content">
+                    <div class="activity-title">${item.structure_name || 'Structure ' + item.structure_id}</div>
+                    <div class="activity-meta">${inspector} &nbsp;·&nbsp; ${formatDate(item.inspection_date)}</div>
+                </div>
+                <span class="activity-bci bci-${tier.band}">${bci}</span>
+                <button class="action-btn review-btn" onclick="openReviewModal(${item.id})"><i class="fas fa-user-check"></i> Review</button>
+            </div>`;
+    }).join('');
+}
+
+window.openReviewModal = function openReviewModal(inspectionId) {
+    const item = pendingReviewData.find(i => i.id === inspectionId);
+    if (!item) return;
+    reviewingInspectionId = inspectionId;
+
+    const bciAv = item.overall_bciave !== null ? Math.round(item.overall_bciave) : '—';
+    const bciCrit = item.overall_bcicrit !== null ? Math.round(item.overall_bcicrit) : '—';
+    document.getElementById('reviewModalTitle').textContent = item.structure_name || 'Structure ' + item.structure_id;
+    document.getElementById('reviewModalSummary').innerHTML =
+        `Inspected by ${item.inspector_name || 'Unknown'} on ${formatDate(item.inspection_date)} &nbsp;·&nbsp; ` +
+        `BCI Avg ${bciAv} / Critical ${bciCrit}` +
+        (item.conclusions ? `<br><br>"${item.conclusions}"` : '');
+    document.getElementById('reviewCommentsInput').value = '';
+    document.getElementById('reviewModalOverlay').classList.add('active');
+};
+
+function closeReviewModal() {
+    document.getElementById('reviewModalOverlay').classList.remove('active');
+    reviewingInspectionId = null;
+}
+
+async function submitReviewDecision(decision) {
+    if (!reviewingInspectionId) return;
+    const comments = document.getElementById('reviewCommentsInput').value.trim();
+    try {
+        const response = await fetch(API_BASE + `/api/inspections/${reviewingInspectionId}/review`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ decision, comments })
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        closeReviewModal();
+        fetchPendingReview();
+        fetchRecentActivity();
+    } catch (error) {
+        console.error('Error submitting review decision:', error);
+        alert('Could not submit the review. Please try again.');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('reviewCancelBtn')?.addEventListener('click', closeReviewModal);
+    document.getElementById('reviewApproveBtn')?.addEventListener('click', () => submitReviewDecision('approved'));
+    document.getElementById('reviewRejectBtn')?.addEventListener('click', () => submitReviewDecision('rejected'));
+    document.getElementById('reviewModalOverlay')?.addEventListener('click', function (e) {
+        if (e.target === this) closeReviewModal();
+    });
+});

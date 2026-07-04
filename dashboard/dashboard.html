@@ -179,6 +179,33 @@
 
         </div>
 
+        <!-- Pending Review (engineers/admins only — see checkSessionAndInitReview() in dashboard.js) -->
+        <div class="activity-feed pending-review-section" id="pending-review-section" style="display:none;">
+            <div class="section-header">
+                <h2><i class="fas fa-user-check"></i> Pending Review</h2>
+                <span class="section-badge">Awaiting decision</span>
+            </div>
+            <div class="activity-list" id="pending-review-list">
+                <div class="activity-item">
+                    <div style="color: var(--text-muted); font-size: 0.8rem; padding: 4px 0;">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Review modal: engineer approves/rejects a submitted inspection -->
+    <div class="modal-overlay" id="reviewModalOverlay">
+        <div class="modal-card review-modal-card">
+            <h3 class="modal-title" id="reviewModalTitle">Review Inspection</h3>
+            <p class="modal-message" id="reviewModalSummary">—</p>
+            <textarea class="review-comments-input" id="reviewCommentsInput" rows="4" placeholder="Comments for the inspector..."></textarea>
+            <div class="modal-actions">
+                <button class="modal-btn secondary" id="reviewCancelBtn">Cancel</button>
+                <button class="modal-btn danger" id="reviewRejectBtn">Reject</button>
+                <button class="modal-btn primary" id="reviewApproveBtn">Approve</button>
+            </div>
+        </div>
     </div>
 
     <!-- GLASS SCROLLBAR -->
