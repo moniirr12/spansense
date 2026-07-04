@@ -725,7 +725,7 @@ function applyPendingReviewFilters() {
         if (type !== 'all' && item.inspection_type !== type) return false;
         if (criticalOnly && !(item.overall_bcicrit !== null && item.overall_bcicrit < 50)) return false;
         if (search) {
-            const haystack = ((item.structure_name || '') + ' ' + (item.inspector_name || '')).toLowerCase();
+            const haystack = ((item.structure_name || '') + ' ' + (item.inspector_name || '') + ' ' + item.structure_id).toLowerCase();
             if (!haystack.includes(search)) return false;
         }
         return true;
@@ -766,7 +766,7 @@ function renderPendingReview(data) {
                 <div class="activity-avatar activity-avatar-${tier.avatarColor}">${initials}</div>
                 <div class="activity-content">
                     <div class="activity-title">${item.structure_name || 'Structure ' + item.structure_id}</div>
-                    <div class="activity-meta">${inspector} &nbsp;·&nbsp; ${formatDate(item.inspection_date)}</div>
+                    <div class="activity-meta">STR #${item.structure_id} &nbsp;·&nbsp; ${inspector} &nbsp;·&nbsp; ${formatDate(item.inspection_date)}</div>
                 </div>
                 <span class="activity-bci bci-${tier.band}">${bci}</span>
                 <button class="action-btn review-btn" onclick="openReviewModal(${item.id})"><i class="fas fa-user-check"></i> Review</button>
@@ -781,7 +781,8 @@ window.openReviewModal = function openReviewModal(inspectionId) {
 
     const bciAv = item.overall_bciave !== null ? Math.round(item.overall_bciave) : '—';
     const bciCrit = item.overall_bcicrit !== null ? Math.round(item.overall_bcicrit) : '—';
-    document.getElementById('reviewModalTitle').textContent = item.structure_name || 'Structure ' + item.structure_id;
+    document.getElementById('reviewModalTitle').textContent =
+        (item.structure_name || 'Structure ' + item.structure_id) + ' · STR #' + item.structure_id;
     document.getElementById('reviewModalSummary').innerHTML =
         `Inspected by ${item.inspector_name || 'Unknown'} on ${formatDate(item.inspection_date)} &nbsp;·&nbsp; ` +
         `BCI Avg ${bciAv} / Critical ${bciCrit}` +
