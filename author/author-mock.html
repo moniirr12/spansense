@@ -203,6 +203,39 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 
 .bottom-nav{display:flex; align-items:center; justify-content:space-between; margin-top:24px;}
 
+/* ===== HOST PAGE PLACEHOLDER (stands in for the rest of spanSense) ===== */
+.host-placeholder{text-align:center; padding:70px 20px; color:var(--text-mute);}
+.host-placeholder i{font-size:1.6rem; color:var(--teal); display:block; margin-bottom:12px;}
+.host-placeholder p{max-width:420px; margin:0 auto; font-size:.86rem; line-height:1.6;}
+.host-placeholder b{color:var(--teal-dark);}
+
+/* ===== FLOATING AUTHOR WIDGET ===== */
+.author-widget{position:fixed; top:28px; left:28px; z-index:1200;}
+
+.aw-collapsed{display:flex; align-items:center; gap:10px; background:#fff; border:1px solid var(--border2); border-radius:30px; padding:8px 18px 8px 8px; box-shadow:0 10px 28px rgba(44,90,87,.16); cursor:pointer; transition:.2s; font-family:inherit; -webkit-appearance:none; appearance:none;}
+.aw-collapsed:hover{box-shadow:0 14px 34px rgba(44,90,87,.22); transform:translateY(-1px);}
+.aw-collapsed-icon{width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,var(--teal),var(--ai)); color:#fff; display:flex; align-items:center; justify-content:center; font-size:.9rem; flex-shrink:0;}
+.aw-collapsed-label{font-size:.84rem; font-weight:700; color:var(--green-dark);}
+
+.aw-panel{display:none; flex-direction:column; width:min(480px, calc(100vw - 56px)); max-height:calc(100vh - 56px); background:#fff; border-radius:24px; border:1px solid var(--border2); box-shadow:0 24px 60px rgba(0,0,0,.2); overflow:hidden; transform-origin:top left;}
+.author-widget.open .aw-panel{display:flex; animation:awGrow .28s ease;}
+.author-widget.open .aw-collapsed{display:none;}
+.author-widget.wide .aw-panel{width:min(920px, calc(100vw - 56px));}
+@keyframes awGrow{from{opacity:0; transform:scale(.85) translateY(-6px);} to{opacity:1; transform:scale(1) translateY(0);}}
+
+.aw-header{display:flex; align-items:center; gap:12px; padding:16px 18px; border-bottom:1px solid var(--border2); flex-shrink:0;}
+.aw-header-icon{width:38px; height:38px; border-radius:12px; background:var(--bg-mint); color:var(--teal); display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0;}
+.aw-header-text{flex:1; min-width:0;}
+.aw-title{font-size:.92rem; font-weight:800; color:var(--green-dark);}
+.aw-subtitle{font-size:.7rem; color:var(--text-mute);}
+.aw-collapse-btn{width:30px; height:30px; border-radius:50%; border:1px solid var(--border); background:#fff; color:var(--text-mute2); cursor:pointer; flex-shrink:0; font-family:inherit; -webkit-appearance:none; appearance:none;}
+.aw-collapse-btn:hover{background:var(--bg-mint); color:var(--teal-dark);}
+
+.aw-body{padding:20px; overflow-y:auto; flex:1; min-height:0;}
+.aw-body .card{box-shadow:none; border:1px solid var(--border2);}
+.aw-body .card::before{display:none;}
+.aw-panel .pane{max-height:46vh;}
+
 /* ===== NIGHT MODE ===== */
 body.night-mode{background:#1a2428; color:#d4dfe3;}
 .night-mode .navbar{background:rgba(35,46,52,.95) !important; border-color:#2f3e45;}
@@ -297,6 +330,18 @@ body.night-mode{background:#1a2428; color:#d4dfe3;}
 .night-mode .save-box .ic{background:#1e3a38; color:#8ab4b0;}
 .night-mode .save-box h3{color:#d4dfe3;}
 .night-mode .save-box p{color:#8aa4ac;}
+
+.night-mode .host-placeholder{color:#8aa4ac;}
+.night-mode .host-placeholder b{color:#8ab4b0;}
+.night-mode .aw-collapsed{background:#212f33; border-color:#2f3e45;}
+.night-mode .aw-collapsed-label{color:#d4dfe3;}
+.night-mode .aw-panel{background:#212f33; border-color:#2f3e45;}
+.night-mode .aw-header{border-color:#2f3e45;}
+.night-mode .aw-header-icon{background:#1e3a38; color:#8ab4b0;}
+.night-mode .aw-title{color:#d4dfe3;}
+.night-mode .aw-subtitle{color:#8aa4ac;}
+.night-mode .aw-collapse-btn{background:#232e34; border-color:#3a4b53; color:#9ab0b8;}
+.night-mode .aw-collapse-btn:hover{background:#2f3e45; color:#8ab4b0;}
 </style>
 </head>
 <body>
@@ -315,31 +360,40 @@ body.night-mode{background:#1a2428; color:#d4dfe3;}
 </div>
 
 <div class="page">
+  <div class="host-placeholder">
+    <i class="fas fa-arrow-up-long"></i>
+    <p>This area represents the rest of spanSense (e.g. the Inspection page). <b>Author</b> no longer takes over
+       the screen — it lives as a small floating widget, top-left. Click it to open.</p>
+  </div>
+</div>
 
-  <div class="intro-panel">
-    <div class="intro-eyebrow"><i class="fas fa-feather-pointed"></i> AI-Assisted Report Drafting</div>
-    <h1>spanSense Author</h1>
-    <p>Upload a previous inspection report once to learn a consultancy's house style — voice, photo-citation format,
-       priority banding, how it handles "not applicable" elements and year-on-year deterioration. From then on,
-       Author drafts the full narrative report from the inspection's defect data in that same style, with the
-       inspector able to edit anything before it's generated as a real Word / PDF document, styled exactly like
-       spanSense's existing report output.</p>
-    <div class="intro-bullets">
-      <div class="intro-bullet"><i class="fas fa-file-import"></i> Learn style once per client</div>
-      <div class="intro-bullet"><i class="fas fa-pen-to-square"></i> Every drafted sentence stays editable</div>
-      <div class="intro-bullet"><i class="fas fa-arrows-left-right"></i> Toggle defect data ↔ formatted report</div>
+<div class="author-widget" id="authorWidget">
+  <button type="button" class="aw-collapsed" id="awCollapsed">
+    <span class="aw-collapsed-icon"><i class="fas fa-feather-pointed"></i></span>
+    <span class="aw-collapsed-label">Author</span>
+  </button>
+
+  <div class="aw-panel" id="awPanel">
+    <div class="aw-header">
+      <div class="aw-header-icon"><i class="fas fa-feather-pointed"></i></div>
+      <div class="aw-header-text">
+        <div class="aw-title">spanSense Author</div>
+        <div class="aw-subtitle">AI-assisted report drafting</div>
+      </div>
+      <button type="button" class="aw-collapse-btn" id="awCollapseBtn" title="Minimize"><i class="fas fa-chevron-left"></i></button>
     </div>
-  </div>
 
-  <div class="wizard-steps" id="wizardSteps">
-    <div class="wizard-step" data-step="style"><span class="num">1</span>Style Source</div>
-    <div class="wizard-connector"></div>
-    <div class="wizard-step" data-step="draft"><span class="num">2</span>Draft Report</div>
-    <div class="wizard-connector"></div>
-    <div class="wizard-step" data-step="author"><span class="num">3</span>Author View</div>
-    <div class="wizard-connector"></div>
-    <div class="wizard-step" data-step="export"><span class="num">4</span>Export</div>
-  </div>
+    <div class="aw-body">
+
+      <div class="wizard-steps" id="wizardSteps">
+        <div class="wizard-step" data-step="style"><span class="num">1</span>Style Source</div>
+        <div class="wizard-connector"></div>
+        <div class="wizard-step" data-step="draft"><span class="num">2</span>Draft Report</div>
+        <div class="wizard-connector"></div>
+        <div class="wizard-step" data-step="author"><span class="num">3</span>Author View</div>
+        <div class="wizard-connector"></div>
+        <div class="wizard-step" data-step="export"><span class="num">4</span>Export</div>
+      </div>
 
   <!-- ================= SCREEN 1: STYLE SOURCE ================= -->
   <div class="screen" id="screen-style">
@@ -450,6 +504,8 @@ body.night-mode{background:#1a2428; color:#d4dfe3;}
     </div>
   </div>
 
+    </div>
+  </div>
 </div>
 
 <div class="save-overlay" id="saveOverlay">
@@ -555,9 +611,9 @@ const CATEGORY_ORDER = ['Deck Elements','Load-bearing Substructure','Durability 
 // ============================================================
 function buildNarrative(el){
   if(el.status === 'na') return 'Not applicable.';
-  if(el.status === 'ninsp') return `The ${el.name.toLowerCase()} could not be inspected due to ${el.reason}.` + STYLE_PROFILE.photoCitation(el.photos).replace(/^ /, ' ');
+  if(el.status === 'ninsp') return `The ${el.name.toLowerCase()} could not be inspected due to ${el.reason}` + STYLE_PROFILE.photoCitation(el.photos);
   if(el.status === 'good') return `The ${el.name.toLowerCase()} appeared to be in good condition${el.note ? ', with ' + el.note : ''}.`;
-  let text = el.comment.trim();
+  let text = el.comment.trim().replace(/\.+$/, '');
   if(el.prior){
     text = `Noted in the previous inspection (${el.prior.year}) as ${el.prior.notedAs}, this has since progressed: ${text}`;
   }
@@ -607,6 +663,7 @@ function goTo(step){
   document.querySelectorAll('.wizard-connector').forEach((el, i) => {
     el.classList.toggle('filled', i < idx);
   });
+  document.getElementById('authorWidget').classList.toggle('wide', step === 'author');
   if(step === 'draft') renderDraft();
   if(step === 'author') { renderDataPane(); renderReportPane(); }
   if(step === 'export') renderExport();
@@ -771,8 +828,8 @@ document.getElementById('toExportBtn').addEventListener('click', () => goTo('exp
 // ============================================================
 // SCREEN 4 — EXPORT
 // ============================================================
-function renderExport(){
-  const payload = {
+function buildPayload(){
+  return {
     structure: 'Foxhollow Footbridge', structureId: 'FX-102', span: 1,
     styleSource: STYLE_PROFILE.source,
     sections: CATEGORY_ORDER.map(cat => ({
@@ -784,25 +841,140 @@ function renderExport(){
     })),
     conclusions: { intro: buildConclusionsIntro(), priorityBands: buildPriorityBands() }
   };
-  document.getElementById('jsonPayload').textContent = JSON.stringify(payload, null, 2);
+}
+function renderExport(){
+  document.getElementById('jsonPayload').textContent = JSON.stringify(buildPayload(), null, 2);
 }
 document.getElementById('backToAuthorBtn').addEventListener('click', () => goTo('author'));
 
-function mockGenerate(label, sub){
+function loadScript(src){
+  return new Promise((resolve, reject) => {
+    if(document.querySelector('script[src="' + src + '"]')) return resolve();
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('Failed to load ' + src));
+    document.head.appendChild(s);
+  });
+}
+
+// Same brand palette/font as map/reportFull.docx.js, so this reads as the
+// same report family, not a generic Word document.
+const REPORT_FONT = 'Roboto';
+const REPORT_COLORS = { text:'2C3E44', heading:'2C3E44', subheading:'5B8C8A', muted:'888888' };
+const PRIORITY_COLORS = { h:'C0392B', m:'BA7517', l:'2D7A6E' };
+
+function buildAuthorReportDocx(payload){
+  const d = window.docx;
+
+  function para(text, opts){
+    opts = opts || {};
+    return new d.Paragraph({
+      alignment: opts.alignment,
+      spacing: { before: opts.before || 0, after: opts.after != null ? opts.after : 120 },
+      children: [new d.TextRun({ text: text != null ? String(text) : '', italics: !!opts.italics, bold: !!opts.bold, color: opts.color, size: opts.size || 18 })]
+    });
+  }
+  function heading(text, level){
+    return new d.Paragraph({ heading: level, spacing: { before: 240, after: 120 }, children: [new d.TextRun({ text })] });
+  }
+
+  const children = [];
+
+  // ── Cover ──
+  children.push(new d.Paragraph({ alignment: d.AlignmentType.CENTER, spacing: { before: 1600 }, children: [new d.TextRun({ text: 'SPANSENSE', bold: true, size: 40, color: REPORT_COLORS.subheading })] }));
+  children.push(new d.Paragraph({ alignment: d.AlignmentType.CENTER, spacing: { after: 200 }, children: [new d.TextRun({ text: 'PRINCIPAL INSPECTION REPORT', bold: true, size: 32, color: REPORT_COLORS.heading })] }));
+  children.push(new d.Paragraph({ alignment: d.AlignmentType.CENTER, spacing: { after: 100 }, children: [new d.TextRun({ text: payload.structure, bold: true, size: 28 })] }));
+  children.push(new d.Paragraph({ alignment: d.AlignmentType.CENTER, spacing: { after: 60 }, children: [new d.TextRun({ text: 'Structure ID: ' + payload.structureId + ' · Span ' + payload.span, size: 20, color: REPORT_COLORS.muted })] }));
+  children.push(new d.Paragraph({ alignment: d.AlignmentType.CENTER, spacing: { after: 500 }, children: [new d.TextRun({ text: 'Report style learned from: ' + payload.styleSource, italics: true, size: 16, color: REPORT_COLORS.muted })] }));
+  children.push(new d.Paragraph({ children: [], pageBreakBefore: true }));
+
+  // ── Section 3: Description of Defects ──
+  children.push(heading('3. Description of Defects', d.HeadingLevel.HEADING_1));
+  payload.sections.forEach((sec, ci) => {
+    children.push(heading('3.' + (ci + 1) + ' ' + sec.category, d.HeadingLevel.HEADING_2));
+    sec.elements.forEach((el, ei) => {
+      children.push(para('3.' + (ci + 1) + '.' + (ei + 1) + ' ' + el.name, { bold: true, after: 60 }));
+      children.push(para(el.narrative, { after: 160, italics: el.status === 'na', color: el.status === 'na' ? REPORT_COLORS.muted : undefined }));
+    });
+  });
+
+  // ── Section 4: Conclusions and Recommendations ──
+  children.push(new d.Paragraph({ children: [], pageBreakBefore: true }));
+  children.push(heading('4. Conclusions and Recommendations', d.HeadingLevel.HEADING_1));
+  children.push(para(payload.conclusions.intro, { after: 240 }));
+  payload.conclusions.priorityBands.forEach(band => {
+    if(!band.items.length) return;
+    children.push(para(band.label.toUpperCase(), { bold: true, after: 80, before: 100, color: PRIORITY_COLORS[band.cls] }));
+    band.items.forEach(item => children.push(para('•  ' + item, { after: 60 })));
+  });
+
+  return new d.Document({
+    styles: {
+      default: {
+        document: { run: { font: REPORT_FONT, size: 18, color: REPORT_COLORS.text } },
+        heading1: { run: { font: REPORT_FONT, size: 26, bold: true, color: REPORT_COLORS.heading } },
+        heading2: { run: { font: REPORT_FONT, size: 22, bold: true, color: REPORT_COLORS.subheading } },
+      }
+    },
+    sections: [{ properties: {}, children }]
+  });
+}
+
+function showOverlay(icon, title, body){
   const overlay = document.getElementById('saveOverlay');
   const box = document.getElementById('saveBox');
   box.classList.remove('success');
-  box.innerHTML = `<div class="ic"><i class="fas fa-cog fa-spin"></i></div><h3>${label}…</h3><p>${sub}</p>`;
+  box.innerHTML = `<div class="ic"><i class="fas ${icon}"></i></div><h3>${title}</h3><p>${body}</p>`;
   overlay.classList.add('show');
+  return { overlay, box };
+}
+function finishOverlay(box, overlay, icon, title, body, isError){
+  box.classList.toggle('success', !isError);
+  if(isError) box.querySelector('.ic').style.cssText = 'background:var(--red-bg); color:var(--red);';
+  box.innerHTML = `<div class="ic"${isError ? ' style="background:var(--red-bg);color:var(--red);"' : ''}><i class="fas ${icon}"></i></div><h3>${title}</h3><p>${body}</p>
+    <div style="margin-top:18px;"><button class="btn-mini" id="closeOverlayBtn">Close</button></div>`;
+  document.getElementById('closeOverlayBtn').addEventListener('click', () => overlay.classList.remove('show'));
+}
+
+async function generateWordReport(){
+  const { overlay, box } = showOverlay('fa-cog fa-spin', 'Generating Word report…', 'Applying the learned style to the full narrative');
+  try{
+    if(typeof window.docx === 'undefined'){
+      await loadScript('https://cdn.jsdelivr.net/npm/docx@9.7.1/dist/index.iife.js');
+    }
+    const payload = buildPayload();
+    const doc = buildAuthorReportDocx(payload);
+    const blob = await window.docx.Packer.toBlob(doc);
+    const fileName = payload.structure.replace(/[^a-z0-9]/gi, '_') + '_Author_Report.docx';
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = fileName;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    finishOverlay(box, overlay, 'fa-check', 'Downloaded', `${fileName} was generated from the drafted narrative above, styled to match spanSense's report output.`);
+  } catch(err){
+    console.error('Word generation failed:', err);
+    finishOverlay(box, overlay, 'fa-triangle-exclamation', 'Generation failed', err.message || 'Something went wrong building the document.', true);
+  }
+}
+
+function mockGeneratePdf(){
+  const { overlay, box } = showOverlay('fa-cog fa-spin', 'Generating BCI Proforma…', 'Building the per-span defect grid');
   setTimeout(() => {
-    box.classList.add('success');
-    box.innerHTML = `<div class="ic"><i class="fas fa-check"></i></div><h3>Done</h3><p>This preview doesn't write a real file — in production this hands off to spanSense's existing docx/pdf generators.</p>
-      <div style="margin-top:18px;"><button class="btn-mini" id="closeOverlayBtn">Close</button></div>`;
-    document.getElementById('closeOverlayBtn').addEventListener('click', () => overlay.classList.remove('show'));
+    finishOverlay(box, overlay, 'fa-check', 'Done', 'This one is still a mock — the real BCI Proforma is a pdfmake-built grid (map/bciProforma.pdfmake.js); the Word report above is the one now generating for real.');
   }, 1400);
 }
-document.getElementById('genWordBtn').addEventListener('click', () => mockGenerate('Generating Word report', 'Applying learned style to the full narrative'));
-document.getElementById('genPdfBtn').addEventListener('click', () => mockGenerate('Generating BCI Proforma', 'Building the per-span defect grid'));
+
+document.getElementById('genWordBtn').addEventListener('click', generateWordReport);
+document.getElementById('genPdfBtn').addEventListener('click', mockGeneratePdf);
+
+// ============================================================
+// FLOATING WIDGET — collapsed by default; expands on click
+// ============================================================
+const authorWidget = document.getElementById('authorWidget');
+document.getElementById('awCollapsed').addEventListener('click', () => authorWidget.classList.add('open'));
+document.getElementById('awCollapseBtn').addEventListener('click', () => authorWidget.classList.remove('open'));
 
 // ============================================================
 // INIT
