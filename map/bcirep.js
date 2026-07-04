@@ -272,6 +272,11 @@ async function generateBCIForm(doc) {
                 const bciCrit = spanData?.bci_crit || 'N/A';
                 const bciAv = spanData?.bci_av || 'N/A';
                 const comments = spanData?.comments || 'N/A';
+                const engineerName = spanData?.reviewed_by || '';
+                const engineerComments = spanData?.engineer_comments || '';
+                const engineerDate = spanData?.reviewed_at
+                    ? new Date(spanData.reviewed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+                    : '';
 
                 // Filter works for current span only
                 const spanWorks = worksRequired.worksRequired?.filter(item => 
@@ -435,15 +440,15 @@ async function generateBCIForm(doc) {
                                 <td colspan="18" style="text-align: center; font-weight: bold; border: 1px solid black;">ENGINEER'S COMMENTS</td>
                             </tr>
                             <tr>
-                                <td colspan="18" style="border: 1px solid black; height: 100px;"></td>
+                                <td colspan="18" style="border: 1px solid black; height: 100px;">${engineerComments}</td>
                             </tr>
                             <tr>
                                 <td colspan="2" style="border: 1px solid black;">Name:</td>
-                                <td colspan="5" style="border: 1px solid black;"> </td>
+                                <td colspan="5" style="border: 1px solid black;">${engineerName}</td>
                                 <td colspan="2" style="border: 1px solid black;">Signed:</td>
-                                <td colspan="6" style="border: 1px solid black;">[Insert sign]</td>
+                                <td colspan="6" style="border: 1px solid black;">${engineerName}</td>
                                 <td colspan="1" style="border: 1px solid black;">Date:</td>
-                                <td colspan="2" style="border: 1px solid black;">${inspectionDate}</td>
+                                <td colspan="2" style="border: 1px solid black;">${engineerDate}</td>
                             </tr>
 
                             <tr>

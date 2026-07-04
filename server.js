@@ -140,6 +140,7 @@ async function initDatabase() {
                 last_login TIMESTAMP
             )
         `);
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`);
 
         // Insert default admin user if table is empty
         const userCount = await dbGet("SELECT COUNT(*) as count FROM users");
@@ -206,6 +207,14 @@ async function initDatabase() {
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
+
+        // Review/approval workflow: an inspector's save is 'submitted' by
+        // default, an engineer then flips it to 'approved'/'rejected' and
+        // leaves a comment (see requireEngineer + /api/inspections routes).
+        await pool.query(`ALTER TABLE inspections ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'submitted'`);
+        await pool.query(`ALTER TABLE inspections ADD COLUMN IF NOT EXISTS reviewed_by TEXT`);
+        await pool.query(`ALTER TABLE inspections ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMP`);
+        await pool.query(`ALTER TABLE inspections ADD COLUMN IF NOT EXISTS engineer_comments TEXT`);
 
         // Inspection spans table
         await pool.query(`
@@ -624,7 +633,11 @@ app.get('/api/defectsbci', requireAuth, async (req, res) => {
                 s.bci_av,
                 i.inspection_date,
                 i.inspector_name,
-                i.inspection_type
+                i.inspection_type,
+                i.status,
+                i.reviewed_by,
+                i.reviewed_at,
+                i.engineer_comments
             FROM inspection_spans s
             JOIN inspections i ON s.inspection_id = i.id
             WHERE s.inspection_id IN (${placeholders})
@@ -1419,7 +1432,11 @@ app.put('/update-inspection', requireAuth, async (req, res) => {
         const overallBciAve  = parseFloat((bciAvs.reduce((a, b) => a + b, 0) / bciAvs.length).toFixed(2));
         console.log(`[INFO] Update - Overall BCI - Crit: ${overallBciCrit}, Ave: ${overallBciAve}`);
 
-        // 2. Update inspection with overall BCI
+        // 2. Update inspection with overall BCI. Editing an inspection that
+        // was already approved/rejected sends it back for re-review — the
+        // CASE expressions read the pre-update row, so this correctly
+        // resets status and clears the now-stale decision in one statement,
+        // and is a no-op for an inspection still 'submitted'.
         await client.query(
             `UPDATE inspections SET
                 structure_id = $1,
@@ -1431,6 +1448,10 @@ app.put('/update-inspection', requireAuth, async (req, res) => {
                 conclusions = $7,
                 overall_bcicrit = $8,
                 overall_bciave = $9,
+                status = CASE WHEN status IN ('approved','rejected') THEN 'submitted' ELSE status END,
+                reviewed_by = CASE WHEN status IN ('approved','rejected') THEN NULL ELSE reviewed_by END,
+                reviewed_at = CASE WHEN status IN ('approved','rejected') THEN NULL ELSE reviewed_at END,
+                engineer_comments = CASE WHEN status IN ('approved','rejected') THEN NULL ELSE engineer_comments END,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = $10`,
             [
@@ -1961,6 +1982,17 @@ function requireAuth(req, res, next) {
     }
 }
 
+// Admin is let through too: it's the only account guaranteed to exist (see
+// the seed insert above), and there's no role-management UI yet to grant
+// 'engineer' to anyone else.
+function requireEngineer(req, res, next) {
+    if (req.session && (req.session.role === 'engineer' || req.session.role === 'admin')) {
+        next();
+    } else {
+        res.status(403).json({ error: 'Forbidden - engineer role required' });
+    }
+}
+
 // LOGIN ENDPOINT
 app.post('/api/login', async (req, res) => {
     try {
@@ -2050,6 +2082,23 @@ app.get('/api/check-session', (req, res) => {
         });
     } else {
         res.json({ loggedIn: false });
+    }
+});
+
+// Fuller profile data for the account page — kept separate from
+// check-session (which only carries minimal session identity) rather than
+// growing that endpoint's payload for something only the account page needs.
+app.get('/api/me', requireAuth, async (req, res) => {
+    try {
+        const user = await dbGet(
+            'SELECT username, full_name, role, created_at FROM users WHERE id = $1',
+            [req.session.userId]
+        );
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        res.json(user);
+    } catch (err) {
+        console.error('Fetch /api/me error:', err);
+        res.status(500).json({ error: err.message });
     }
 });
 
@@ -2248,7 +2297,8 @@ app.get('/api/dashboard/recent-activity', requireAuth, async (req, res) => {
                 inspector_name,
                 created_at,
                 overall_bciave,
-                overall_bcicrit
+                overall_bcicrit,
+                status
             FROM inspections
             ORDER BY created_at DESC
             LIMIT 5
@@ -2257,6 +2307,45 @@ app.get('/api/dashboard/recent-activity', requireAuth, async (req, res) => {
         res.json({ success: true, data: rows });
     } catch (err) {
         console.error('Recent activity error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Inspections awaiting engineer review (see the review/approval workflow
+// columns added to `inspections` above).
+app.get('/api/inspections/pending-review', requireAuth, requireEngineer, async (req, res) => {
+    try {
+        const rows = await dbAll(`
+            SELECT id, structure_id, structure_name, inspection_date, inspection_type,
+                   inspector_name, conclusions, overall_bcicrit, overall_bciave, created_at
+            FROM inspections
+            WHERE status = 'submitted'
+            ORDER BY created_at ASC
+        `);
+        res.json({ success: true, data: rows });
+    } catch (err) {
+        console.error('Pending review error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Engineer's approve/reject decision on a submitted inspection.
+app.post('/api/inspections/:id/review', requireAuth, requireEngineer, async (req, res) => {
+    try {
+        const { decision, comments } = req.body;
+        if (!['approved', 'rejected'].includes(decision)) {
+            return res.status(400).json({ success: false, message: 'Invalid decision' });
+        }
+        const reviewer = await dbGet('SELECT full_name, username FROM users WHERE id = $1', [req.session.userId]);
+        const reviewedBy = reviewer?.full_name || reviewer?.username || 'Unknown';
+        await pool.query(
+            `UPDATE inspections SET status = $1, reviewed_by = $2, reviewed_at = CURRENT_TIMESTAMP,
+                                     engineer_comments = $3 WHERE id = $4`,
+            [decision, reviewedBy, comments || '', req.params.id]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Review decision error:', err);
         res.status(500).json({ success: false, error: err.message });
     }
 });

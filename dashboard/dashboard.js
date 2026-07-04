@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
     fetchCriticalBridges();
     fetchRecentActivity();
     initBciChartToggle();
+    checkSessionAndInitReview();
 
     const changePageButton = document.getElementById('toHome');
     if (changePageButton) {
@@ -585,7 +586,7 @@ function renderRecentActivity(data) {
         const tier = bciTier(item.overall_bciave);
         const initials = getInitials(item.inspector_name);
         const inspector = item.inspector_name || 'Unknown';
-        const isComplete = item.overall_bciave !== null;
+        const statusBadge = reviewStatusBadge(item.status);
 
         return `
             <div class="activity-item">
@@ -595,9 +596,18 @@ function renderRecentActivity(data) {
                     <div class="activity-meta">${inspector} &nbsp;·&nbsp; ${formatRelativeTime(item.created_at)}</div>
                 </div>
                 <span class="activity-bci bci-${tier.band}">${bci}</span>
-                <span class="activity-status ${isComplete ? 'status-completed' : 'status-in-progress'}">${isComplete ? 'Done' : 'Draft'}</span>
+                <span class="activity-status ${statusBadge.cls}">${statusBadge.label}</span>
             </div>`;
     }).join('');
+}
+
+// Maps the real review-workflow status onto the existing activity-status
+// badge classes (status-completed/status-in-progress/status-overdue were
+// already defined in dashboard.css but unused before this).
+function reviewStatusBadge(status) {
+    if (status === 'approved') return { cls: 'status-completed', label: 'Approved' };
+    if (status === 'rejected') return { cls: 'status-overdue', label: 'Rejected' };
+    return { cls: 'status-in-progress', label: 'Pending' };
 }
 
 function bciTier(bciAve) {
@@ -658,3 +668,194 @@ window.downloadReport = async function downloadReport(structureId, structureName
         alert('Report generator not available.');
     }
 }
+
+// ============================================================
+// PENDING REVIEW (engineer/admin only)
+// ============================================================
+
+let pendingReviewData = [];
+let reviewingInspectionId = null;
+
+async function checkSessionAndInitReview() {
+    try {
+        const response = await fetch(API_BASE + '/api/check-session', { credentials: 'include' });
+        const result = await response.json();
+        if (result && (result.role === 'engineer' || result.role === 'admin')) {
+            document.getElementById('pending-review-section').style.display = '';
+            fetchPendingReview();
+        }
+    } catch (error) {
+        console.error('Error checking session:', error);
+    }
+}
+
+async function fetchPendingReview() {
+    try {
+        const response = await fetch(API_BASE + '/api/inspections/pending-review', { credentials: 'include' });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const result = await response.json();
+        if (result.success) {
+            pendingReviewData = result.data;
+            applyPendingReviewFilters(); // preserves whatever search/filter was already active
+        }
+    } catch (error) {
+        console.error('Error fetching pending review:', error);
+        document.getElementById('pending-review-list').innerHTML = `
+            <div class="activity-item">
+                <div style="color: var(--text-muted); font-size: 0.8rem;">Could not load data.</div>
+            </div>`;
+    }
+}
+
+// Filtering is entirely client-side over the already-fetched list — cheap
+// (this list tops out in the hundreds, not thousands) and means every
+// keystroke/toggle is instant with no extra round trip.
+function getPendingReviewFilters() {
+    return {
+        search: (document.getElementById('pendingReviewSearch')?.value || '').trim().toLowerCase(),
+        type: document.querySelector('#pendingReviewTypeFilter .chart-toggle-btn.active')?.dataset.type || 'all',
+        criticalOnly: document.getElementById('pendingReviewCriticalToggle')?.classList.contains('active') || false
+    };
+}
+
+function applyPendingReviewFilters() {
+    const { search, type, criticalOnly } = getPendingReviewFilters();
+
+    const filtered = pendingReviewData.filter(item => {
+        if (type !== 'all' && item.inspection_type !== type) return false;
+        if (criticalOnly && !(item.overall_bcicrit !== null && item.overall_bcicrit < 50)) return false;
+        if (search) {
+            const haystack = ((item.structure_name || '') + ' ' + (item.inspector_name || '') + ' ' + item.structure_id).toLowerCase();
+            if (!haystack.includes(search)) return false;
+        }
+        return true;
+    });
+
+    renderPendingReview(filtered);
+
+    const countBadge = document.getElementById('pendingReviewCount');
+    if (countBadge) {
+        countBadge.textContent = filtered.length === pendingReviewData.length
+            ? `${pendingReviewData.length} awaiting decision`
+            : `${filtered.length} of ${pendingReviewData.length}`;
+    }
+}
+
+function renderPendingReview(data) {
+    const list = document.getElementById('pending-review-list');
+
+    if (!data.length) {
+        const message = pendingReviewData.length === 0
+            ? 'Nothing awaiting review.'
+            : 'No inspections match your filters.';
+        list.innerHTML = `
+            <div class="activity-item">
+                <div style="color: var(--text-muted); font-size: 0.8rem;">${message}</div>
+            </div>`;
+        return;
+    }
+
+    list.innerHTML = data.map(item => {
+        const bci = item.overall_bciave !== null ? Math.round(item.overall_bciave) : '—';
+        const tier = bciTier(item.overall_bciave);
+        const initials = getInitials(item.inspector_name);
+        const inspector = item.inspector_name || 'Unknown';
+
+        return `
+            <div class="activity-item">
+                <div class="activity-avatar activity-avatar-${tier.avatarColor}">${initials}</div>
+                <div class="activity-content">
+                    <div class="activity-title">${item.structure_name || 'Structure ' + item.structure_id}</div>
+                    <div class="activity-meta">STR #${item.structure_id} &nbsp;·&nbsp; ${inspector} &nbsp;·&nbsp; ${formatDate(item.inspection_date)}</div>
+                </div>
+                <span class="activity-bci bci-${tier.band}">${bci}</span>
+                <button class="action-btn review-btn" onclick="openReviewModal(${item.id})"><i class="fas fa-user-check"></i> Review</button>
+            </div>`;
+    }).join('');
+}
+
+window.openReviewModal = function openReviewModal(inspectionId) {
+    const item = pendingReviewData.find(i => i.id === inspectionId);
+    if (!item) return;
+    reviewingInspectionId = inspectionId;
+
+    const bciAv = item.overall_bciave !== null ? Math.round(item.overall_bciave) : '—';
+    const bciCrit = item.overall_bcicrit !== null ? Math.round(item.overall_bcicrit) : '—';
+    document.getElementById('reviewModalTitle').textContent =
+        (item.structure_name || 'Structure ' + item.structure_id) + ' · STR #' + item.structure_id;
+    document.getElementById('reviewModalSummary').innerHTML =
+        `Inspected by ${item.inspector_name || 'Unknown'} on ${formatDate(item.inspection_date)} &nbsp;·&nbsp; ` +
+        `BCI Avg ${bciAv} / Critical ${bciCrit}` +
+        (item.conclusions ? `<br><br>"${item.conclusions}"` : '');
+    document.getElementById('reviewCommentsInput').value = '';
+
+    // Same deep-link the existing "Edit Report" buttons use elsewhere (see
+    // bcirep.js) to jump straight into the real inspection editor — lets the
+    // engineer actually correct/adjust the inspection, not just read a
+    // summary, before coming back here to leave their comment and decide.
+    document.getElementById('reviewEditFullLink').onclick = function (e) {
+        e.preventDefault();
+        const dateOnly = (item.inspection_date || '').split('T')[0];
+        sessionStorage.setItem('inspectionStructureNumber', item.structure_id);
+        sessionStorage.setItem('inspectionDate', dateOnly);
+        sessionStorage.setItem('inspectionMode', 'edit');
+        // The existing "Edit Report" deep-link elsewhere (bcirep.js) skips
+        // these, which leaves the header stuck on "Loading..." and the
+        // sidebar showing placeholder bridge info — set them here since
+        // we already have the real values from the pending-review list.
+        sessionStorage.setItem('structureId', item.structure_id);
+        sessionStorage.setItem('structureName', item.structure_name);
+        window.open('../inspection1/inspection1.html', '_blank');
+    };
+
+    document.getElementById('reviewModalOverlay').classList.add('active');
+};
+
+function closeReviewModal() {
+    document.getElementById('reviewModalOverlay').classList.remove('active');
+    reviewingInspectionId = null;
+}
+
+async function submitReviewDecision(decision) {
+    if (!reviewingInspectionId) return;
+    const comments = document.getElementById('reviewCommentsInput').value.trim();
+    try {
+        const response = await fetch(API_BASE + `/api/inspections/${reviewingInspectionId}/review`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ decision, comments })
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        closeReviewModal();
+        fetchPendingReview();
+        fetchRecentActivity();
+    } catch (error) {
+        console.error('Error submitting review decision:', error);
+        alert('Could not submit the review. Please try again.');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('reviewCancelBtn')?.addEventListener('click', closeReviewModal);
+    document.getElementById('reviewApproveBtn')?.addEventListener('click', () => submitReviewDecision('approved'));
+    document.getElementById('reviewRejectBtn')?.addEventListener('click', () => submitReviewDecision('rejected'));
+    document.getElementById('reviewModalOverlay')?.addEventListener('click', function (e) {
+        if (e.target === this) closeReviewModal();
+    });
+
+    document.getElementById('pendingReviewSearch')?.addEventListener('input', applyPendingReviewFilters);
+
+    document.querySelectorAll('#pendingReviewTypeFilter .chart-toggle-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            document.querySelectorAll('#pendingReviewTypeFilter .chart-toggle-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            applyPendingReviewFilters();
+        });
+    });
+
+    document.getElementById('pendingReviewCriticalToggle')?.addEventListener('click', function () {
+        this.classList.toggle('active');
+        applyPendingReviewFilters();
+    });
+});

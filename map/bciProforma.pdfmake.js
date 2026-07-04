@@ -743,6 +743,9 @@ function buildBCIPage2Content(bciFormData, singleSpanIdx) {
         var inspector = spanData.inspector_name  || '';
         var date      = spanData.inspection_date ? formatDate(spanData.inspection_date) : '';
         var comments  = spanData.comments        || '';
+        var engineerName     = spanData.reviewed_by || '';
+        var engineerComments = spanData.engineer_comments || '';
+        var engineerDate = spanData.reviewed_at ? formatDate(spanData.reviewed_at) : '';
 
         content.push({ text: '', pageBreak: 'before' });
 
@@ -858,16 +861,16 @@ function buildBCIPage2Content(bciFormData, singleSpanIdx) {
         ]);
 
         tableBody.push([
-            { text: '', colSpan: 20, fontSize: 7 },
+            { text: engineerComments, colSpan: 20, fontSize: 7 },
             ...Array(19).fill({ text: '' })
         ]);
 
         tableBody.push([
-            lv('Name: ', '', { colSpan: 7 }),
+            lv('Name: ', engineerName, { colSpan: 7 }),
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
-            { text: 'Signed: ', bold: true, colSpan: 8, fontSize: 7 },
+            { text: [{ text: 'Signed: ', bold: true }, { text: engineerName, italics: true }], colSpan: 8, fontSize: 7 },
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' },
-            lv('Date: ', date, { colSpan: 5 }),
+            lv('Date: ', engineerDate, { colSpan: 5 }),
             { text: '' }, { text: '' }, { text: '' }, { text: '' }
         ]);
 
