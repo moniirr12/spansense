@@ -1,5 +1,5 @@
 // ============================================================
-// USER GREETING
+// USER GREETING (map.html only)
 //
 // A small "Hello, [name]" glass pill — Option 3 from the test.html
 // mockups (frosted glass chip), minus the avatar-initial circle — that
@@ -7,26 +7,25 @@
 // living inside it. It tracks the navbar's fixed position/size so it
 // stays put next to it on resize, but is otherwise independent markup.
 //
-// Session username is cached in localStorage under the same key
-// roleBadge.js uses, so returning to any page shows the greeting
-// instantly with no fetch delay. Only the first load on a browser, or
-// a changed username, needs to wait on /api/check-session.
+// Uses /api/me rather than /api/check-session because the session only
+// carries the login username (e.g. "admin"); /api/me's full_name is the
+// person's actual name, which is what a greeting should show.
 //
-// There's no shared header/template in this app — each page has its
-// own duplicated .navbar markup — so, like roleBadge.js, this is a
-// single script included on every page rather than a component.
+// full_name is cached in localStorage so returning to this page shows
+// the greeting instantly with no fetch delay. Only the first load on a
+// browser, or a changed name, needs to wait on the request.
 // ============================================================
 
 (function () {
-    var CACHE_KEY = 'spansenseRoleCache';
+    var CACHE_KEY = 'spansenseUserGreetingCache';
     var GAP = 14; // space between the pill and the navbar's left edge
 
     function readCache() {
         try { return JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); }
         catch (e) { return null; }
     }
-    function writeCache(username, role) {
-        try { localStorage.setItem(CACHE_KEY, JSON.stringify({ username: username, role: role })); }
+    function writeCache(displayName) {
+        try { localStorage.setItem(CACHE_KEY, JSON.stringify({ displayName: displayName })); }
         catch (e) { /* localStorage unavailable (private mode etc.) - fine, just no caching */ }
     }
 
@@ -74,34 +73,38 @@
         pill.style.top = (navRect.top + (navRect.height - pill.offsetHeight) / 2) + 'px';
     }
 
-    function render(username) {
+    function render(displayName) {
         var pill = getPill();
-        pill.textContent = 'Hello, ' + username;
+        pill.textContent = 'Hello, ' + displayName;
         reposition();
     }
 
     async function init() {
         var cached = readCache();
-        if (cached && cached.username) {
+        if (cached && cached.displayName) {
             injectStyle();
-            render(cached.username);
+            render(cached.displayName);
         }
 
         window.addEventListener('resize', reposition);
 
         try {
-            var res = await fetch('/api/check-session');
-            var data = await res.json();
-            if (!data.loggedIn || !data.username) {
+            var res = await fetch('/api/me');
+            if (!res.ok) {
+                // not logged in (401) or other failure - nothing to greet
                 var pill = document.getElementById('user-greeting');
                 if (pill) pill.remove();
                 return;
             }
+            var data = await res.json();
+            var displayName = data.full_name || data.username;
+            if (!displayName) return;
+
             injectStyle();
-            render(data.username);
-            writeCache(data.username, data.role);
+            render(displayName);
+            writeCache(displayName);
         } catch (e) {
-            console.error('User greeting: failed to load session', e);
+            console.error('User greeting: failed to load profile', e);
         }
     }
 
