@@ -18,7 +18,7 @@
 // ============================================================
 
 (function () {
-    const DWELL_DELAY = 1000;  // ms the cursor must rest on a row before the cloud shows
+    const DWELL_DELAY = 1500;  // ms the cursor must rest on a row before the cloud shows
     const HIDE_DELAY = 180;    // grace period so moving onto the cloud itself doesn't dismiss it
     const MAX_SHOWN = 3;
 
@@ -28,6 +28,7 @@
     let activeRow = null;
     let pinned = false;
     let requestToken = 0;
+    let shownDefects = []; // defects currently rendered in the cloud, indexable for the "use as template" action
 
     function apiBase() {
         return window.location.origin.includes('localhost') ? 'http://localhost:3000' : window.location.origin;
@@ -49,12 +50,45 @@
         el.className = 'row-preview-cloud';
         el.innerHTML =
             '<div class="rpc-arrow"></div>' +
-            '<div class="rpc-head"><i class="fas fa-history"></i><span class="rpc-title" id="rpcTitle">Element</span></div>' +
+            '<div class="rpc-head">' +
+                '<i class="fas fa-history"></i><span class="rpc-title" id="rpcTitle">Element</span>' +
+                '<button type="button" class="rpc-add-btn" id="rpcAddBtn"><i class="fas fa-plus"></i> Add</button>' +
+            '</div>' +
             '<div class="rpc-body" id="rpcBody"></div>';
         document.body.appendChild(el);
         el.addEventListener('mouseenter', function () { clearTimeout(hideTimer); });
         el.addEventListener('mouseleave', scheduleHide);
+
+        document.getElementById('rpcAddBtn').addEventListener('click', function () {
+            if (activeRow) addDefectFlow(activeRow, null);
+        });
+        document.getElementById('rpcBody').addEventListener('click', function (e) {
+            const card = e.target.closest('.rpc-card');
+            if (!card || !activeRow) return;
+            const d = shownDefects[parseInt(card.dataset.index, 10)];
+            if (d) addDefectFlow(activeRow, d);
+        });
         return el;
+    }
+
+    // Opens the "Add Defect" form for this element — same shortcut as
+    // expanding the row and clicking its own Add Defect button, just
+    // reachable straight from the preview. When prevRecord is given (a
+    // "use as template" click), pre-fills the form from that past entry
+    // via prevDefects.js's own loader instead of leaving it blank.
+    function addDefectFlow(row, prevRecord) {
+        if (!row.classList.contains('expanded') && typeof window.toggleButtonRow === 'function') {
+            window.toggleButtonRow(row);
+        }
+        const buttonRow = typeof window.findButtonRow === 'function' ? window.findButtonRow(row) : null;
+        const addBtn = buttonRow && buttonRow.querySelector('.btn-add-defect');
+        if (addBtn) {
+            addBtn.click();
+            if (prevRecord && typeof window.loadDefectFromPrev === 'function') {
+                window.loadDefectFromPrev(prevRecord);
+            }
+        }
+        hideCloud();
     }
 
     function buildMiniCard(d, i) {
@@ -66,7 +100,7 @@
         const works = d.works_required ? 'Y' : 'N';
         const worksCls = works === 'Y' ? 'pb-wy' : works === 'M' ? 'pb-wm' : 'pb-wn';
         const comment = (d.comments || '').trim();
-        return '<div class="rpc-card" style="animation-delay:' + (i * 0.06) + 's">' +
+        return '<div class="rpc-card" data-index="' + i + '">' +
             '<div class="rpc-card-top"><span class="rpc-code">' + display + '</span><span class="rpc-date">' + fmtDate(d.inspection_date) + '</span></div>' +
             '<div class="rpc-badges">' +
                 '<span class="pb ' + sevCls + '">Sev ' + sev + '</span>' +
@@ -74,6 +108,7 @@
                 '<span class="pb ' + worksCls + '">Works: ' + works + '</span>' +
             '</div>' +
             (comment ? '<div class="rpc-comment">' + comment.replace(/</g, '&lt;') + '</div>' : '') +
+            '<div class="rpc-use-hint"><i class="fas fa-arrow-right"></i> Use as template</div>' +
         '</div>';
     }
 
@@ -81,13 +116,15 @@
         const body = document.getElementById('rpcBody');
         if (!body) return;
         if (!defects.length) {
+            shownDefects = [];
             body.innerHTML = '<div class="rpc-empty"><i class="fas fa-inbox"></i><span>No previous defects for this element</span></div>';
             return;
         }
         const shown = defects.slice(0, MAX_SHOWN);
+        shownDefects = shown;
         const rest = defects.length - shown.length;
         body.innerHTML = shown.map(buildMiniCard).join('') +
-            (rest > 0 ? '<div class="rpc-more" style="animation-delay:' + (shown.length * 0.06) + 's">+' + rest + ' more — open the row to see all</div>' : '');
+            (rest > 0 ? '<div class="rpc-more">+' + rest + ' more — open the row to see all</div>' : '');
     }
 
     function positionCloud(row, el) {

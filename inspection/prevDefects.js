@@ -183,6 +183,10 @@
         }, 60);
     }
 
+    // Exposed so other surfaces (the row hover/click preview cloud) can load
+    // a previous defect into the form without duplicating this logic.
+    window.loadDefectFromPrev = loadDefectFromPrev;
+
     // ── Close the panel ──
     function closePrevPanel() {
         const p = panel(); if (p) p.style.display = 'none';
