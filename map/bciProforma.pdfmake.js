@@ -378,11 +378,6 @@ function buildBCIProformaContent(bciFormData, singleSpanIdx) {
         var date       = spanData.inspection_date
             ? new Date(spanData.inspection_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
             : '';
-        var engineerName     = spanData.reviewed_by || '';
-        var engineerComments = spanData.engineer_comments || '';
-        var engineerDate = spanData.reviewed_at
-            ? new Date(spanData.reviewed_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
-            : '';
         var nextInsp   = spanData.next_inspection || '';
         var roadRef    = bridgeData.road_ref || bridgeData.location || '';
         var mapRef     = bridgeData.grid_reference || (bridgeData.latitude && bridgeData.longitude ? '' + Number(bridgeData.latitude).toFixed(3) + ', ' + Number(bridgeData.longitude).toFixed(3) : '');
@@ -748,6 +743,9 @@ function buildBCIPage2Content(bciFormData, singleSpanIdx) {
         var inspector = spanData.inspector_name  || '';
         var date      = spanData.inspection_date ? formatDate(spanData.inspection_date) : '';
         var comments  = spanData.comments        || '';
+        var engineerName     = spanData.reviewed_by || '';
+        var engineerComments = spanData.engineer_comments || '';
+        var engineerDate = spanData.reviewed_at ? formatDate(spanData.reviewed_at) : '';
 
         content.push({ text: '', pageBreak: 'before' });
 
