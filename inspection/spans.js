@@ -1002,7 +1002,23 @@ function injectRetrievedRibbon(row) {
     // a row further down the page (which resizes .inspection-main and
     // re-fires this via the ResizeObserver) would compute a tiny/negative
     // value and snap the rail to the top of (or off) the viewport.
-    rail.style.top = (theadRow.getBoundingClientRect().top + window.scrollY) + 'px';
+    let top = theadRow.getBoundingClientRect().top + window.scrollY;
+
+    // Both this rail and #bciStickySidebar (above) are independently
+    // computed fixed-position elements sharing the same left gutter, so
+    // without coordination they can end up close enough to visually clash —
+    // how much room the header/stat cards take above the table varies with
+    // bridge name length and viewport width, but the sidebar's settled
+    // position doesn't. Read its actual settled box (not a duplicated
+    // constant) and keep the rail clear of it.
+    const bciSidebar = document.getElementById('bciStickySidebar');
+    if (bciSidebar) {
+      const cs = getComputedStyle(bciSidebar);
+      const settledBottom = (parseFloat(cs.top) || 0) + (parseFloat(cs.marginTop) || 0) + bciSidebar.offsetHeight;
+      top = Math.max(top, settledBottom + 24);
+    }
+
+    rail.style.top = top + 'px';
   }
 
   positionLeftRail();

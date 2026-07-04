@@ -29,7 +29,6 @@
     let pinned = false;
     let requestToken = 0;
     let shownDefects = []; // defects currently rendered in the cloud, indexable for the "use as template" action
-    let lastPointer = { x: 0, y: 0 }; // most recent cursor position over the table, used to anchor the cloud
 
     function apiBase() {
         return window.location.origin.includes('localhost') ? 'http://localhost:3000' : window.location.origin;
@@ -128,33 +127,30 @@
             (rest > 0 ? '<div class="rpc-more">+' + rest + ' more — open the row to see all</div>' : '');
     }
 
-    function positionCloud(el, anchor) {
-        // Anchored above/below the cursor position rather than the row's
-        // center — rows run nearly the full table width, so "the row" isn't
-        // a single point, but where the mouse actually is provides one, and
-        // landing the cloud there reads as a direct response to the cursor.
+    function positionCloud(el, row) {
+        // Fixed to the right of the table rather than hovering over the row
+        // itself — it never covers table content this way, which is the
+        // least intrusive place for it to live. Only its vertical position
+        // tracks which row it's for.
+        const table = document.getElementById('inspectionElementsTable');
+        const tableRect = (table || row).getBoundingClientRect();
+        const r = row.getBoundingClientRect();
         const cw = el.offsetWidth || 268;
         const ch = el.offsetHeight || 100;
         const gap = 16;
         const topGuard = 96; // clears the fixed navbar (body reserves 90px for it)
 
-        let below = false;
-        let top = anchor.y - gap - ch;
-        if (top < topGuard) {
-            top = anchor.y + gap;
-            below = true;
-        }
-        top = Math.max(topGuard, Math.min(top, window.innerHeight - ch - 12));
-
-        let left = anchor.x - cw / 2;
+        let left = tableRect.right + gap;
         left = Math.max(12, Math.min(left, window.innerWidth - cw - 12));
+
+        let top = r.top + r.height / 2 - ch / 2;
+        top = Math.max(topGuard, Math.min(top, window.innerHeight - ch - 12));
 
         el.style.left = left + 'px';
         el.style.top = top + 'px';
-        el.classList.toggle('rpc-below', below);
 
-        const arrowLeft = Math.max(16, Math.min(anchor.x - left, cw - 16));
-        el.style.setProperty('--rpc-arrow-left', arrowLeft + 'px');
+        const arrowTop = Math.max(16, Math.min(r.top + r.height / 2 - top, ch - 16));
+        el.style.setProperty('--rpc-arrow-top', arrowTop + 'px');
     }
 
     // Returns a cached promise, kicking off the request on first call for a
@@ -196,7 +192,6 @@
         const elName = row.querySelector('.description')?.textContent?.trim() || ('Element ' + elementNo);
 
         const el = ensureCloud();
-        const anchor = { x: lastPointer.x, y: lastPointer.y }; // snapshot so a re-measure below doesn't drift if the mouse moved
         document.getElementById('rpcTitle').textContent = elementNo + ' · ' + elName;
         // Almost always already resolved by now — prefetch() kicked this off
         // as soon as the cursor arrived, and the dwell delay has been running
@@ -204,12 +199,12 @@
         const pending = fetchDefects(structureId, elementNo);
         document.getElementById('rpcBody').innerHTML = '<div class="rpc-loading"><i class="fas fa-spinner fa-spin"></i></div>';
         el.classList.add('rpc-visible');
-        positionCloud(el, anchor);
+        positionCloud(el, row);
 
         const defects = await pending;
         if (myToken !== requestToken) return; // user moved on before this resolved
         renderBody(defects);
-        positionCloud(el, anchor); // re-measure now that content height changed
+        positionCloud(el, row); // re-measure now that content height changed
     }
 
     function scheduleShow(row) {
@@ -243,12 +238,7 @@
         const table = document.getElementById('inspectionElementsTable');
         if (!table) return;
 
-        table.addEventListener('mousemove', function (e) {
-            lastPointer = { x: e.clientX, y: e.clientY };
-        });
-
         table.addEventListener('mouseover', function (e) {
-            lastPointer = { x: e.clientX, y: e.clientY };
             if (pinned) return; // a clicked-open cloud holds until explicitly dismissed
             const row = e.target.closest('tr.main-row');
             if (row) scheduleShow(row);
@@ -269,7 +259,6 @@
         table.addEventListener('click', function (e) {
             const row = e.target.closest('tr.main-row');
             if (!row) return;
-            lastPointer = { x: e.clientX, y: e.clientY };
             if (activeRow === row && cloudEl()?.classList.contains('rpc-visible')) {
                 pinned = !pinned;
                 if (!pinned) scheduleHide();
@@ -290,7 +279,7 @@
         window.addEventListener('scroll', function () { if (activeRow) hideCloud(); }, true);
         window.addEventListener('resize', function () {
             const el = cloudEl();
-            if (activeRow && el && el.classList.contains('rpc-visible')) positionCloud(el, lastPointer);
+            if (activeRow && el && el.classList.contains('rpc-visible')) positionCloud(el, activeRow);
         });
     });
 })();
