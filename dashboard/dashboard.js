@@ -750,6 +750,26 @@ window.openReviewModal = function openReviewModal(inspectionId) {
         `BCI Avg ${bciAv} / Critical ${bciCrit}` +
         (item.conclusions ? `<br><br>"${item.conclusions}"` : '');
     document.getElementById('reviewCommentsInput').value = '';
+
+    // Same deep-link the existing "Edit Report" buttons use elsewhere (see
+    // bcirep.js) to jump straight into the real inspection editor — lets the
+    // engineer actually correct/adjust the inspection, not just read a
+    // summary, before coming back here to leave their comment and decide.
+    document.getElementById('reviewEditFullLink').onclick = function (e) {
+        e.preventDefault();
+        const dateOnly = (item.inspection_date || '').split('T')[0];
+        sessionStorage.setItem('inspectionStructureNumber', item.structure_id);
+        sessionStorage.setItem('inspectionDate', dateOnly);
+        sessionStorage.setItem('inspectionMode', 'edit');
+        // The existing "Edit Report" deep-link elsewhere (bcirep.js) skips
+        // these, which leaves the header stuck on "Loading..." and the
+        // sidebar showing placeholder bridge info — set them here since
+        // we already have the real values from the pending-review list.
+        sessionStorage.setItem('structureId', item.structure_id);
+        sessionStorage.setItem('structureName', item.structure_name);
+        window.open('../inspection1/inspection1.html', '_blank');
+    };
+
     document.getElementById('reviewModalOverlay').classList.add('active');
 };
 

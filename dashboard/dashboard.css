@@ -1106,6 +1106,24 @@ html.night-mode .glass-scrollbar .thumb {
 .review-modal-card {
     max-width: 440px;
 }
+.review-edit-link {
+    display: flex;
+    width: fit-content;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #5b8c8a;
+    text-decoration: none;
+    padding: 8px 12px;
+    background: #eef4f2;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    transition: background 0.15s;
+}
+.review-edit-link:hover { background: #dcebe8; }
+.night-mode .review-edit-link { background: #1e3a35; color: #8ab4b0; }
+.night-mode .review-edit-link:hover { background: #234840; }
 .review-comments-input {
     width: 100%;
     box-sizing: border-box;
