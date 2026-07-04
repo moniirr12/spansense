@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>spanSense — Author</title>
+<script>(function(){var nm=localStorage.getItem('nightMode');var dark=nm==='on'||(nm===null&&!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches));if(dark)document.documentElement.classList.add('nm-preload');})();</script>
+<style>html.nm-preload,html.nm-preload body{background-color:#1a2428!important;}</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+:root{
+  --teal:#5b8c8a; --teal-dark:#2c5a57; --green-dark:#2c4a48;
+  --text:#2c3e44; --text-mute:#8a9ba8; --text-mute2:#6a7c8e;
+  --border:#e2e8f0; --border2:#e9edf2;
+  --bg-soft:#fafbfc; --bg-mint:#eef4f2;
+  --ok:#2d7a6e; --ok-bg:#e8f5f0; --ok-border:#b8dcc8;
+  --amber:#BA7517; --amber-bg:#fff8ee; --amber-border:#e8d4b8;
+  --red:#c0392b; --red-bg:#fdecea; --red-border:#f0c4be;
+  --ai:#6c5ce7; --ai-bg:#f1efff; --ai-border:#d9d3fb;
+}
+*{box-sizing:border-box;}
+body{margin:0; font-family:'Inter','Segoe UI',Tahoma,sans-serif; color:var(--text); background:#f4f7f8; padding-top:150px; min-height:100vh; position:relative;}
+a{color:inherit;}
+
+/* ===== AMBIENT BACKGROUND ===== */
+body::before{
+  content:''; position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background:
+    radial-gradient(560px circle at 6% -4%, rgba(91,140,138,.16), transparent 60%),
+    radial-gradient(520px circle at 96% 14%, rgba(108,92,231,.11), transparent 55%),
+    radial-gradient(720px circle at 50% 110%, rgba(45,122,110,.09), transparent 60%);
+  transition:background .3s ease;
+}
+body.night-mode::before{
+  background:
+    radial-gradient(560px circle at 6% -4%, rgba(138,180,176,.14), transparent 60%),
+    radial-gradient(520px circle at 96% 14%, rgba(167,148,245,.10), transparent 55%),
+    radial-gradient(720px circle at 50% 110%, rgba(58,107,98,.14), transparent 60%);
+}
+
+/* ===== SPANSENSE-STYLE THIN SCROLLBAR ===== */
+html{scrollbar-width:thin; scrollbar-color:rgba(91,140,138,.3) transparent;}
+*::-webkit-scrollbar{width:6px; height:6px;}
+*::-webkit-scrollbar-track{background:transparent;}
+*::-webkit-scrollbar-thumb{background:rgba(91,140,138,.3); border-radius:10px;}
+*::-webkit-scrollbar-thumb:hover{background:rgba(91,140,138,.5);}
+.night-mode{scrollbar-color:rgba(138,180,176,.35) transparent;}
+.night-mode *::-webkit-scrollbar-thumb{background:rgba(138,180,176,.35);}
+.night-mode *::-webkit-scrollbar-thumb:hover{background:rgba(138,180,176,.55);}
+
+.navbar{position:fixed; top:20px; left:50%; transform:translateX(-50%); width:67%; max-width:1190px; background:rgba(255,255,255,.85); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-radius:60px; border:1px solid rgba(255,255,255,.4); box-shadow:0 8px 28px rgba(0,0,0,.08); z-index:1100; display:flex; align-items:center; justify-content:space-between; padding:0 28px; height:64px;}
+.navbar .left{display:flex; align-items:center; gap:24px;}
+.navbar .logo{font-size:1.2rem; font-weight:700; background:linear-gradient(135deg,#5b8c8a,#7ba8a5); background-clip:text; -webkit-background-clip:text; -webkit-text-fill-color:transparent;}
+.navbar .right{display:flex; align-items:center; gap:10px;}
+.night-mode-toggle{width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#8a9ba8; background:#f0f2f5; transition:all .2s;}
+.night-mode-toggle:hover{background:#e2e8f0; color:#5b8c8a;}
+.navbar .account-links{display:flex; align-items:center; gap:10px;}
+.navbar .account-links a{text-decoration:none; color:#8a9ba8; font-size:1.2rem; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; transition:color .2s, transform .15s, background .2s;}
+.navbar .account-links a:hover{background:#f0f4f8; color:#5b8c8a; transform:scale(1.1);}
+
+.page{max-width:1280px; margin:0 auto; padding:0 24px 80px;}
+
+.intro-panel{background:linear-gradient(135deg,#ffffff,#f7fbfa); border:1px solid var(--border2); border-radius:24px; padding:28px 32px; margin-bottom:28px; box-shadow:0 10px 30px rgba(44,90,87,.07); position:relative; overflow:hidden;}
+.intro-panel::after{content:''; position:absolute; top:-40%; right:-8%; width:220px; height:220px; border-radius:50%; background:radial-gradient(circle,rgba(91,140,138,.14),transparent 70%); pointer-events:none;}
+.intro-eyebrow{display:inline-flex; align-items:center; gap:7px; font-size:.7rem; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--teal-dark); background:var(--bg-mint); border:1px solid #d6e6e3; padding:6px 14px; border-radius:30px; margin-bottom:14px;}
+.intro-panel h1{font-family:'Source Serif 4',Georgia,serif; font-size:1.9rem; font-weight:700; letter-spacing:-.01em; margin:0 0 8px; background:linear-gradient(135deg,var(--green-dark),var(--teal)); background-clip:text; -webkit-background-clip:text; -webkit-text-fill-color:transparent;}
+.intro-panel p{margin:0 0 10px; color:var(--text-mute2); font-size:.92rem; line-height:1.55; max-width:800px;}
+.intro-bullets{display:flex; gap:14px; flex-wrap:wrap; margin-top:14px;}
+.intro-bullet{display:flex; align-items:center; gap:8px; font-size:.78rem; color:var(--text-mute2); background:var(--bg-soft); border:1px solid var(--border2); padding:7px 13px; border-radius:30px;}
+.intro-bullet i{color:var(--teal);}
+
+.wizard-steps{display:flex; align-items:center; justify-content:center; gap:0; margin-bottom:28px; user-select:none; flex-wrap:wrap; row-gap:8px;}
+.wizard-step{display:flex; align-items:center; gap:10px; padding:8px 18px; border-radius:30px; font-size:.8rem; font-weight:600; color:var(--text-mute); transition:.2s;}
+.wizard-step .num{width:24px; height:24px; border-radius:50%; background:#e9edf2; color:var(--text-mute); display:flex; align-items:center; justify-content:center; font-size:.74rem; font-weight:700;}
+.wizard-step.active{color:var(--green-dark); background:var(--bg-mint);}
+.wizard-step.active .num{background:var(--teal); color:#fff;}
+.wizard-step.done .num{background:var(--ok); color:#fff;}
+.wizard-step.done{color:var(--ok);}
+.wizard-connector{width:40px; height:2px; background:var(--border); margin:0 2px; border-radius:2px; transition:background .4s ease;}
+.wizard-connector.filled{background:linear-gradient(90deg,var(--ok),var(--teal));}
+
+.screen{display:none;}
+.screen.active{display:block; animation:fadeIn .25s ease;}
+@keyframes fadeIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+.card{background:#fff; border:1px solid var(--border2); border-radius:24px; box-shadow:0 10px 28px rgba(44,90,87,.06); padding:26px 28px; position:relative;}
+.card::before{content:''; position:absolute; top:0; left:28px; right:28px; height:3px; border-radius:0 0 3px 3px; background:linear-gradient(90deg,var(--teal),var(--ai)); opacity:.55;}
+.card + .card{margin-top:20px;}
+.card-title{font-size:1.08rem; font-weight:700; color:var(--green-dark); margin:0 0 4px; display:flex; align-items:center; gap:8px;}
+.card-sub{font-size:.82rem; color:var(--text-mute); margin:0 0 20px;}
+
+/* ===== STEP 1: STYLE SOURCE ===== */
+.upload-zone{border:2px dashed var(--border); border-radius:18px; padding:32px; text-align:center; cursor:pointer; transition:.2s; background:var(--bg-soft);}
+.upload-zone:hover{border-color:var(--teal); background:var(--bg-mint);}
+.upload-zone i{font-size:1.8rem; color:var(--teal); margin-bottom:10px;}
+.upload-zone .u-title{font-weight:700; color:var(--green-dark); font-size:.95rem; margin-bottom:4px;}
+.upload-zone .u-sub{font-size:.8rem; color:var(--text-mute);}
+.upload-file-chip{display:inline-flex; align-items:center; gap:10px; background:var(--bg-mint); border:1px solid #d6e6e3; border-radius:16px; padding:10px 16px; margin-top:16px; font-size:.85rem; color:var(--teal-dark); font-weight:600;}
+.upload-file-chip i{color:var(--teal);}
+
+.analyzing-wrap{display:flex; flex-direction:column; align-items:center; text-align:center; padding:30px 20px;}
+.proc-icon{width:64px; height:64px; border-radius:50%; background:var(--ai-bg); color:var(--ai); display:flex; align-items:center; justify-content:center; font-size:1.5rem; margin-bottom:18px; animation:procPulse 1.4s infinite;}
+@keyframes procPulse{0%,100%{box-shadow:0 0 0 0 rgba(108,92,231,.25);}50%{box-shadow:0 0 0 14px rgba(108,92,231,0);}}
+.proc-title{font-size:1.05rem; font-weight:700; color:var(--green-dark); margin-bottom:16px;}
+.proc-steps{list-style:none; padding:0; margin:0; width:100%; max-width:420px; text-align:left;}
+.proc-steps li{display:flex; align-items:center; gap:12px; padding:8px 4px; font-size:.84rem; color:#c7d0d6; transition:.25s;}
+.proc-steps li .chk{width:19px; height:19px; border-radius:50%; border:2px solid #e2e8f0; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:.6rem;}
+.proc-steps li.done{color:var(--text);}
+.proc-steps li.done .chk{background:var(--ok); border-color:var(--ok); color:#fff;}
+.proc-steps li.active{color:var(--green-dark); font-weight:600;}
+.proc-steps li.active .chk{border-color:var(--ai);}
+
+.profile-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin-top:6px;}
+.profile-card{background:var(--bg-soft); border:1px solid var(--border2); border-radius:16px; padding:14px 16px;}
+.profile-card .pc-label{font-size:.66rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-mute); margin-bottom:6px;}
+.profile-card .pc-val{font-size:.85rem; color:var(--text); line-height:1.45;}
+.profile-source{display:flex; align-items:center; gap:10px; background:var(--ai-bg); border:1px solid var(--ai-border); border-radius:16px; padding:12px 16px; margin-bottom:18px; font-size:.82rem; color:var(--green-dark);}
+.profile-source i{color:var(--ai);}
+
+/* ===== STEP 2: DRAFT LIST ===== */
+.cat-group{margin-bottom:18px;}
+.cat-title{font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--teal-dark); margin:0 0 10px; padding-bottom:6px; border-bottom:1px solid var(--border2);}
+.el-row{display:flex; gap:14px; align-items:flex-start; padding:12px 4px; border-bottom:1px solid var(--border2);}
+.el-row:last-child{border-bottom:none;}
+.el-name{width:200px; flex-shrink:0; font-size:.85rem; font-weight:600; color:var(--text); padding-top:2px;}
+.el-body{flex:1; min-width:0;}
+.status-pill{font-size:.64rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; padding:3px 9px; border-radius:20px; display:inline-block; margin-bottom:6px;}
+.status-pill.defect{background:var(--amber-bg); color:var(--amber);}
+.status-pill.good{background:var(--ok-bg); color:var(--ok);}
+.status-pill.na{background:#eef0f2; color:var(--text-mute2);}
+.status-pill.ninsp{background:var(--red-bg); color:var(--red);}
+.el-narrative{font-size:.84rem; color:var(--text-mute2); line-height:1.55; font-style:italic;}
+.el-narrative b{font-style:normal; color:var(--text);}
+.el-edit-btn{font-size:.7rem; font-weight:700; color:var(--teal-dark); background:none; border:1px solid var(--border); border-radius:20px; padding:5px 11px; cursor:pointer; margin-top:8px; display:inline-flex; align-items:center; gap:5px;}
+.el-edit-btn:hover{border-color:var(--teal); background:var(--bg-mint);}
+.el-editor{display:none; margin-top:10px; background:var(--bg-soft); border:1px solid var(--border2); border-radius:14px; padding:14px;}
+.el-editor.open{display:block;}
+.el-editor-row{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;}
+.el-editor textarea, .el-editor input, .el-editor select{border:1px solid var(--border); border-radius:9px; padding:7px 10px; font-size:.8rem; font-family:inherit; color:var(--text); background:#fff;}
+.el-editor textarea{width:100%; min-height:56px; resize:vertical;}
+.mini-lbl{font-size:.62rem; font-weight:700; text-transform:uppercase; color:var(--text-mute); display:block; margin-bottom:4px;}
+
+/* ===== STEP 3: AUTHOR VIEW ===== */
+.view-toolbar{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:18px;}
+.view-toggle{display:flex; background:var(--bg-soft); border:1px solid var(--border2); border-radius:30px; padding:4px;}
+.vt-btn{font-size:.8rem; font-weight:700; color:var(--text-mute2); background:none; border:none; padding:8px 18px; border-radius:26px; cursor:pointer; transition:.2s; display:flex; align-items:center; gap:7px;}
+.vt-btn.active{background:var(--teal); color:#fff;}
+.author-layout{display:grid; gap:20px;}
+.author-layout.mode-data{grid-template-columns:1fr;}
+.author-layout.mode-report{grid-template-columns:1fr;}
+.author-layout.mode-split{grid-template-columns:1fr 1fr;}
+@media (max-width:900px){.author-layout.mode-split{grid-template-columns:1fr;}}
+
+.pane{background:#fff; border:1px solid var(--border2); border-radius:20px; padding:22px 24px; max-height:720px; overflow-y:auto;}
+.pane-title{font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-mute); margin-bottom:14px; display:flex; align-items:center; gap:7px;}
+
+.data-row{display:flex; gap:10px; align-items:flex-start; padding:10px 8px; border-radius:12px; cursor:pointer; transition:.15s; border:1px solid transparent;}
+.data-row:hover{background:var(--bg-soft);}
+.data-row.highlight{background:var(--bg-mint); border-color:#cfe4e0;}
+.data-row .dr-name{width:150px; flex-shrink:0; font-size:.8rem; font-weight:600;}
+.data-row .dr-meta{font-size:.72rem; color:var(--text-mute2);}
+
+#reportPane{background:#fffdf9;}
+.doc-cover{text-align:center; padding:4px 0 26px; border-bottom:1px solid var(--border2); margin-bottom:24px; position:relative;}
+.doc-cover::before{content:''; display:block; width:52px; height:3px; margin:0 auto 18px; border-radius:3px; background:linear-gradient(90deg,var(--teal),var(--ai));}
+.doc-cover .dc-brand{font-size:.78rem; font-weight:800; color:var(--teal-dark); letter-spacing:.14em; text-transform:uppercase;}
+.doc-cover .dc-title{font-family:'Source Serif 4',Georgia,serif; font-size:1.5rem; font-weight:700; color:var(--green-dark); margin:10px 0 4px; letter-spacing:-.01em;}
+.doc-cover .dc-sub{font-size:.8rem; color:var(--text-mute); font-style:italic;}
+.doc-h1{font-family:'Source Serif 4',Georgia,serif; font-size:1.2rem; font-weight:700; color:var(--green-dark); margin:26px 0 12px; padding-bottom:8px; border-bottom:1px solid var(--border2);}
+.doc-h2{font-family:'Source Serif 4',Georgia,serif; font-size:1.02rem; font-weight:600; font-style:italic; color:var(--teal-dark); margin:20px 0 9px;}
+.doc-h3{font-size:.82rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-mute2); margin:14px 0 5px;}
+.doc-p{font-size:.9rem; line-height:1.75; color:var(--text); margin:0 0 12px;}
+.doc-p.na{color:var(--text-mute); font-style:italic;}
+.doc-p .cite{color:var(--teal-dark); font-weight:600;}
+.doc-p.linked{padding:3px 6px; margin:0 -6px 10px; border-radius:8px; transition:.3s;}
+.doc-p.linked.highlight{background:#fff6da;}
+.priority-band{margin-bottom:14px;}
+.priority-band h4{font-size:.78rem; font-weight:800; margin:0 0 6px; text-decoration:underline;}
+.priority-band h4.h{color:var(--red);}
+.priority-band h4.m{color:var(--amber);}
+.priority-band h4.l{color:var(--ok);}
+.priority-band ul{margin:0; padding-left:20px;}
+.priority-band li{font-size:.82rem; line-height:1.55; margin-bottom:4px;}
+
+/* ===== STEP 4: EXPORT ===== */
+.export-actions{display:flex; gap:14px; flex-wrap:wrap; margin-top:6px;}
+.btn-primary-lg{background:linear-gradient(135deg,var(--teal),var(--teal-dark)); color:#fff; border:none; padding:14px 26px; border-radius:30px; font-size:.9rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:10px; box-shadow:0 8px 22px rgba(91,140,138,.35); transition:.2s;}
+.btn-primary-lg:hover{transform:translateY(-1px);}
+.btn-ghost{background:#fff; border:1px solid var(--border); color:var(--text-mute2); padding:14px 22px; border-radius:30px; font-size:.9rem; font-weight:700; cursor:pointer;}
+.btn-mini{border:1px solid var(--border); background:#fff; color:var(--text-mute2); font-size:.74rem; font-weight:700; padding:7px 13px; border-radius:30px; cursor:pointer;}
+details.json-details{margin-top:22px; background:var(--bg-soft); border:1px solid var(--border2); border-radius:14px; padding:12px 16px;}
+details.json-details summary{cursor:pointer; font-size:.82rem; font-weight:700; color:var(--teal-dark);}
+details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-height:340px; background:#1e2a2f; color:#c5d3d9; padding:14px; border-radius:10px; margin-top:12px;}
+
+.save-overlay{position:fixed; inset:0; background:rgba(20,30,32,.55); display:none; align-items:center; justify-content:center; z-index:500;}
+.save-overlay.show{display:flex;}
+.save-box{background:#fff; border-radius:24px; padding:40px 46px; text-align:center; max-width:340px; box-shadow:0 20px 50px rgba(0,0,0,.25);}
+.save-box .ic{width:60px; height:60px; border-radius:50%; background:var(--bg-mint); color:var(--teal); display:flex; align-items:center; justify-content:center; font-size:1.5rem; margin:0 auto 16px;}
+.save-box.success .ic{background:var(--ok-bg); color:var(--ok);}
+.save-box h3{margin:0 0 6px; font-size:1.05rem; color:var(--green-dark);}
+.save-box p{margin:0; font-size:.82rem; color:var(--text-mute);}
+
+.bottom-nav{display:flex; align-items:center; justify-content:space-between; margin-top:24px;}
+
+/* ===== NIGHT MODE ===== */
+body.night-mode{background:#1a2428; color:#d4dfe3;}
+.night-mode .navbar{background:rgba(35,46,52,.95) !important; border-color:#2f3e45;}
+.night-mode .navbar .logo{background:linear-gradient(135deg,#8ab4b0 0%,#a0c8c4 100%); background-clip:text; -webkit-background-clip:text; -webkit-text-fill-color:transparent;}
+.night-mode .navbar .account-links a{color:#9ab0b8;}
+.night-mode .navbar .account-links a:hover{background:#2f3e45; color:#8ab4b0;}
+.night-mode .night-mode-toggle{background:#2f3e45; color:#9ab0b8;}
+.night-mode .night-mode-toggle:hover{background:#3a4b53; color:#8ab4b0;}
+
+.night-mode .intro-panel{background:linear-gradient(135deg,#212f33,#1c282c); border-color:#2f3e45; box-shadow:0 10px 30px rgba(0,0,0,.35);}
+.night-mode .intro-eyebrow{background:#1e3a38; border-color:#2f4a48; color:#8ab4b0;}
+.night-mode .intro-panel h1{background:linear-gradient(135deg,#8ab4b0,#a0c8c4); background-clip:text; -webkit-background-clip:text; -webkit-text-fill-color:transparent;}
+.night-mode .intro-panel p{color:#9ab0b8;}
+.night-mode .intro-bullet{background:#232e34; border-color:#2f3e45; color:#9ab0b8;}
+.night-mode .intro-bullet i{color:#8ab4b0;}
+
+.night-mode .wizard-step{color:#5f757d;}
+.night-mode .wizard-step .num{background:#2f3e45; color:#9ab0b8;}
+.night-mode .wizard-step.active{background:#1e3a38; color:#8ab4b0;}
+.night-mode .wizard-step.active .num{background:#3a6b62; color:#fff;}
+.night-mode .wizard-step.done{color:#7ec9ba;}
+.night-mode .wizard-step.done .num{background:#2d7a6e; color:#fff;}
+.night-mode .wizard-connector{background:#2f3e45;}
+
+.night-mode .card{background:#212f33; border-color:#2f3e45; box-shadow:0 6px 20px rgba(0,0,0,.3);}
+.night-mode .card-title{color:#d4dfe3;}
+.night-mode .card-sub{color:#8aa4ac;}
+
+.night-mode .upload-zone{background:#1a2428; border-color:#3a4b53;}
+.night-mode .upload-zone:hover{border-color:#6e9c98; background:#1e3a38;}
+.night-mode .upload-zone .u-title{color:#d4dfe3;}
+.night-mode .upload-zone .u-sub{color:#8aa4ac;}
+.night-mode .upload-file-chip{background:#1e3a38; border-color:#3a6b62; color:#a0c8c4;}
+
+.night-mode .proc-icon{background:#2a2450;}
+.night-mode .proc-steps li{color:#3a4b53;}
+.night-mode .proc-steps li.done{color:#d4dfe3;}
+.night-mode .proc-steps li.active{color:#8ab4b0;}
+.night-mode .proc-steps li .chk{border-color:#2f3e45;}
+
+.night-mode .profile-card{background:#1a2428; border-color:#2f3e45;}
+.night-mode .profile-card .pc-label{color:#7d939b;}
+.night-mode .profile-card .pc-val{color:#d4dfe3;}
+.night-mode .profile-source{background:#2a2450; border-color:#4a3f7a; color:#c9c0f5;}
+.night-mode .profile-source i{color:#a794f5;}
+
+.night-mode .cat-title{color:#8ab4b0; border-color:#2f3e45;}
+.night-mode .el-row{border-color:#2f3e45;}
+.night-mode .el-name{color:#d4dfe3;}
+.night-mode .status-pill.defect{background:#3a3020; color:#e0b060;}
+.night-mode .status-pill.good{background:#1e3a38; color:#7ec9ba;}
+.night-mode .status-pill.na{background:#2a343a; color:#7d939b;}
+.night-mode .status-pill.ninsp{background:#3a2323; color:#e57373;}
+.night-mode .el-narrative{color:#9ab0b8;}
+.night-mode .el-narrative b{color:#d4dfe3;}
+.night-mode .el-edit-btn{color:#8ab4b0; border-color:#3a4b53; background:transparent;}
+.night-mode .el-edit-btn:hover{border-color:#6e9c98; background:#1e3a38;}
+.night-mode .el-editor{background:#1a2428; border-color:#2f3e45;}
+.night-mode .el-editor textarea, .night-mode .el-editor input, .night-mode .el-editor select{background:#232e34; border-color:#3a4b53; color:#d4dfe3;}
+.night-mode .mini-lbl{color:#7d939b;}
+
+.night-mode .view-toggle{background:#1a2428; border-color:#2f3e45;}
+.night-mode .vt-btn{color:#9ab0b8;}
+.night-mode .vt-btn.active{background:#3a6b62; color:#fff;}
+
+.night-mode .pane{background:#1a2428; border-color:#2f3e45;}
+.night-mode .pane-title{color:#7d939b;}
+.night-mode .data-row:hover{background:#232e34;}
+.night-mode .data-row.highlight{background:#1e3a38; border-color:#3a6b62;}
+.night-mode .data-row .dr-name{color:#d4dfe3;}
+.night-mode .data-row .dr-meta{color:#8aa4ac;}
+
+.night-mode #reportPane{background:#1a2428;}
+.night-mode .doc-cover{border-color:#2f3e45;}
+.night-mode .doc-cover .dc-brand{color:#8ab4b0;}
+.night-mode .doc-cover .dc-title{color:#d4dfe3;}
+.night-mode .doc-cover .dc-sub{color:#8aa4ac;}
+.night-mode .doc-h1{color:#d4dfe3; border-color:#2f3e45;}
+.night-mode .doc-h2{color:#8ab4b0;}
+.night-mode .doc-h3{color:#8aa4ac;}
+.night-mode .doc-p{color:#c3d2d6;}
+.night-mode .doc-p.na{color:#7d939b;}
+.night-mode .doc-p.linked.highlight{background:#3a3020;}
+.night-mode .priority-band li{color:#c3d2d6;}
+
+.night-mode .btn-ghost{background:#232e34; border-color:#3a4b53; color:#9ab0b8;}
+.night-mode .btn-mini{background:#232e34; border-color:#3a4b53; color:#9ab0b8;}
+.night-mode details.json-details{background:#1a2428; border-color:#2f3e45;}
+.night-mode details.json-details summary{color:#8ab4b0;}
+
+.night-mode .save-box{background:#232e34;}
+.night-mode .save-box .ic{background:#1e3a38; color:#8ab4b0;}
+.night-mode .save-box h3{color:#d4dfe3;}
+.night-mode .save-box p{color:#8aa4ac;}
+</style>
+</head>
+<body>
+
+<div class="navbar">
+  <div class="left">
+    <div class="logo">spanSense</div>
+  </div>
+  <div class="right">
+    <div class="night-mode-toggle" id="nightModeToggle"><i class="fas fa-moon"></i></div>
+    <div class="account-links">
+      <a href="../accounts/accounts.html" target="_self" title="Account"><i class="fas fa-user-circle"></i></a>
+      <a href="../contacts/contacts.html" target="_self" title="Contact Us"><i class="fas fa-envelope"></i></a>
+    </div>
+  </div>
+</div>
+
+<div class="page">
+
+  <div class="intro-panel">
+    <div class="intro-eyebrow"><i class="fas fa-feather-pointed"></i> AI-Assisted Report Drafting</div>
+    <h1>spanSense Author</h1>
+    <p>Upload a previous inspection report once to learn a consultancy's house style — voice, photo-citation format,
+       priority banding, how it handles "not applicable" elements and year-on-year deterioration. From then on,
+       Author drafts the full narrative report from the inspection's defect data in that same style, with the
+       inspector able to edit anything before it's generated as a real Word / PDF document, styled exactly like
+       spanSense's existing report output.</p>
+    <div class="intro-bullets">
+      <div class="intro-bullet"><i class="fas fa-file-import"></i> Learn style once per client</div>
+      <div class="intro-bullet"><i class="fas fa-pen-to-square"></i> Every drafted sentence stays editable</div>
+      <div class="intro-bullet"><i class="fas fa-arrows-left-right"></i> Toggle defect data ↔ formatted report</div>
+    </div>
+  </div>
+
+  <div class="wizard-steps" id="wizardSteps">
+    <div class="wizard-step" data-step="style"><span class="num">1</span>Style Source</div>
+    <div class="wizard-connector"></div>
+    <div class="wizard-step" data-step="draft"><span class="num">2</span>Draft Report</div>
+    <div class="wizard-connector"></div>
+    <div class="wizard-step" data-step="author"><span class="num">3</span>Author View</div>
+    <div class="wizard-connector"></div>
+    <div class="wizard-step" data-step="export"><span class="num">4</span>Export</div>
+  </div>
+
+  <!-- ================= SCREEN 1: STYLE SOURCE ================= -->
+  <div class="screen" id="screen-style">
+    <div class="card" id="uploadCard">
+      <h2 class="card-title"><i class="fas fa-file-import" style="color:var(--teal);"></i> Learn a Report Style</h2>
+      <p class="card-sub">Upload a previous inspection report for this client. Author reads it once and reuses the extracted style for every future report — you don't need to re-upload each time.</p>
+      <div class="upload-zone" id="uploadZone">
+        <i class="fas fa-cloud-arrow-up"></i>
+        <div class="u-title">Click to choose a report, or drop it here</div>
+        <div class="u-sub">PDF or Word — e.g. last year's Principal Inspection report</div>
+      </div>
+      <input type="file" id="fileInput" accept=".pdf,.docx,.doc" hidden>
+      <div id="fileChip"></div>
+      <div class="export-actions" style="margin-top:20px;">
+        <button class="btn-primary-lg" id="analyzeBtn" style="display:none;"><i class="fas fa-wand-magic-sparkles"></i> Extract Style</button>
+      </div>
+    </div>
+
+    <div class="card" id="analyzingCard" style="display:none;">
+      <div class="analyzing-wrap">
+        <div class="proc-icon"><i class="fas fa-magnifying-glass-chart"></i></div>
+        <div class="proc-title">Reading HCC PI Inspection Report FB798.pdf…</div>
+        <ul class="proc-steps" id="procSteps">
+          <li data-step="0"><span class="chk"></span> Parsing document structure &amp; headings</li>
+          <li data-step="1"><span class="chk"></span> Extracting narrative tone &amp; sentence patterns</li>
+          <li data-step="2"><span class="chk"></span> Learning photo-citation &amp; measurement style</li>
+          <li data-step="3"><span class="chk"></span> Learning priority-banding conventions</li>
+          <li data-step="4"><span class="chk"></span> Building reusable style profile</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card" id="profileCard" style="display:none;">
+      <h2 class="card-title"><i class="fas fa-swatchbook" style="color:var(--teal);"></i> Extracted Style Profile</h2>
+      <p class="card-sub">This is what Author learned. It's reused for every future report for this client — review it once, adjust if needed.</p>
+      <div class="profile-source"><i class="fas fa-file-lines"></i> Learned from: <b>&nbsp;HCC PI Inspection Report FB798 — Millway Footbridge (Stantec, June 2025)</b></div>
+      <div class="profile-grid">
+        <div class="profile-card"><div class="pc-label">Voice</div><div class="pc-val">Third-person, factual engineering register. Moderate hedging ("appears to", "is likely to have been caused by").</div></div>
+        <div class="profile-card"><div class="pc-label">Photo citation</div><div class="pc-val">Inline at sentence end — <i>"(Photo 6, Photo 7)"</i></div></div>
+        <div class="profile-card"><div class="pc-label">Measurement style</div><div class="pc-val">Always quantify extent where known — <i>"100mm x 200mm"</i>, <i>"approximately 0.5m depth"</i></div></div>
+        <div class="profile-card"><div class="pc-label">Not applicable elements</div><div class="pc-val">Plain <i>"Not applicable"</i> — no elaboration.</div></div>
+        <div class="profile-card"><div class="pc-label">Year-on-year continuity</div><div class="pc-val">References prior findings explicitly when a defect has worsened since the last inspection.</div></div>
+        <div class="profile-card"><div class="pc-label">Priority banding</div><div class="pc-val">High (0–3 months) · Medium (4–12 months) · Low (13–60 months)</div></div>
+      </div>
+      <div class="export-actions" style="margin-top:22px;">
+        <button class="btn-primary-lg" id="toStyleDraftBtn"><i class="fas fa-arrow-right"></i> Use this style for the current inspection</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= SCREEN 2: DRAFT REPORT ================= -->
+  <div class="screen" id="screen-draft">
+    <div class="card">
+      <h2 class="card-title"><i class="fas fa-sparkles" style="color:var(--ai);"></i> Drafted Narrative — Foxhollow Footbridge</h2>
+      <p class="card-sub">Author has written one paragraph per inspected element, in the style learned above, from the defect data below. Edit anything — the report view updates live.</p>
+      <div id="draftGroups"></div>
+      <div class="bottom-nav">
+        <span class="progress-text" style="font-size:.8rem; color:var(--text-mute2);">16 elements drafted across 6 categories</span>
+        <button class="btn-primary-lg" id="toAuthorBtn"><i class="fas fa-arrow-right"></i> Continue to Author View</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= SCREEN 3: AUTHOR VIEW ================= -->
+  <div class="screen" id="screen-author">
+    <div class="card" style="padding:20px 24px;">
+      <div class="view-toolbar">
+        <div class="view-toggle" id="viewToggle">
+          <button class="vt-btn" data-mode="data"><i class="fas fa-table-list"></i> Defect Data</button>
+          <button class="vt-btn active" data-mode="split"><i class="fas fa-arrows-left-right"></i> Split View</button>
+          <button class="vt-btn" data-mode="report"><i class="fas fa-file-lines"></i> Report Visual</button>
+        </div>
+        <span style="font-size:.78rem; color:var(--text-mute);"><i class="fas fa-circle-info"></i> Click a defect to jump to its paragraph</span>
+      </div>
+      <div class="author-layout mode-split" id="authorLayout">
+        <div class="pane" id="dataPane">
+          <div class="pane-title"><i class="fas fa-table-list"></i> Defect Data</div>
+          <div id="dataRows"></div>
+        </div>
+        <div class="pane" id="reportPane">
+          <div class="pane-title"><i class="fas fa-file-lines"></i> Report Preview</div>
+          <div id="reportDoc"></div>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <button class="btn-ghost" id="backToDraftBtn"><i class="fas fa-arrow-left"></i> Back to Draft</button>
+      <button class="btn-primary-lg" id="toExportBtn"><i class="fas fa-arrow-right"></i> Continue to Export</button>
+    </div>
+  </div>
+
+  <!-- ================= SCREEN 4: EXPORT ================= -->
+  <div class="screen" id="screen-export">
+    <div class="card">
+      <h2 class="card-title"><i class="fas fa-file-export" style="color:var(--teal);"></i> Generate &amp; Export</h2>
+      <p class="card-sub">This assembled structure — categories, per-element narrative, and the priority-banded conclusions — feeds the same document generator spanSense already uses (<code>reportFull.docx.js</code> / <code>bciProforma.pdfmake.js</code>), so the output keeps spanSense's existing styling and layout.</p>
+      <div class="export-actions">
+        <button class="btn-primary-lg" id="genWordBtn"><i class="fas fa-file-word"></i> Generate Word Report</button>
+        <button class="btn-ghost" id="genPdfBtn"><i class="fas fa-file-pdf"></i> Download BCI Proforma (PDF)</button>
+      </div>
+      <details class="json-details">
+        <summary><i class="fas fa-code"></i> View assembled report JSON</summary>
+        <pre id="jsonPayload"></pre>
+      </details>
+    </div>
+    <div class="bottom-nav">
+      <button class="btn-ghost" id="backToAuthorBtn"><i class="fas fa-arrow-left"></i> Back to Author View</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="save-overlay" id="saveOverlay">
+  <div class="save-box" id="saveBox">
+    <div class="ic"><i class="fas fa-save"></i></div>
+    <h3>Generating…</h3>
+    <p>Applying the learned style to the full report</p>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// NIGHT MODE TOGGLE (same convention as the rest of spanSense)
+// ============================================================
+(function(){
+  const savedNightMode = localStorage.getItem('nightMode');
+  const systemPrefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+  document.documentElement.classList.remove('nm-preload');
+  if(savedNightMode === 'on' || (savedNightMode === null && !systemPrefersLight)){
+    document.body.classList.add('night-mode');
+  }
+  const toggleBtn = document.getElementById('nightModeToggle');
+  if(toggleBtn){
+    toggleBtn.innerHTML = document.body.classList.contains('night-mode') ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+    toggleBtn.onclick = function(){
+      document.body.classList.toggle('night-mode');
+      if(document.body.classList.contains('night-mode')){
+        this.innerHTML = '<i class="fas fa-sun"></i>';
+        localStorage.setItem('nightMode', 'on');
+      } else {
+        this.innerHTML = '<i class="fas fa-moon"></i>';
+        localStorage.setItem('nightMode', 'off');
+      }
+    };
+  }
+})();
+
+// ============================================================
+// STYLE PROFILE — extracted (mock) from an uploaded exemplar report
+// ============================================================
+const STYLE_PROFILE = {
+  source: "HCC PI Inspection Report FB798 — Millway Footbridge (Stantec, June 2025)",
+  photoCitation: (nums) => nums && nums.length ? ' (' + nums.map(n => 'Photo ' + n).join(', ') + ').' : '.',
+  priorityBands: [
+    { code: 'H', label: 'High Priority (0 to 3 months)', cls: 'h' },
+    { code: 'M', label: 'Medium Priority (4 to 12 months)', cls: 'm' },
+    { code: 'L', label: 'Low Priority (13 to 60 months)', cls: 'l' }
+  ]
+};
+
+// ============================================================
+// MOCK INSPECTION DATA — Foxhollow Footbridge, Span 1
+// (element taxonomy mirrors reportFull.docx.js's REPORT_ELEMENTS_BY_TYPE
+// so this assembled structure could feed straight into it)
+// ============================================================
+let ELEMENTS = [
+  { id:'e1', category:'Deck Elements', name:'Primary deck element', status:'good', note:null, photos:[] },
+  { id:'e2', category:'Deck Elements', name:'Transverse beams', status:'defect',
+    comment:'Localised area of approximately 150mm x 80mm of surface corrosion due to paint coating loss, mid-span towards the east side.',
+    severity:2, extent:'B', works:'Y', priority:'L', cost:'900', prior:null, photos:[1,2] },
+  { id:'e3', category:'Deck Elements', name:'Half joints', status:'na' },
+  { id:'e4', category:'Deck Elements', name:'Deck bracing', status:'na' },
+
+  { id:'e5', category:'Load-bearing Substructure', name:'Foundations', status:'good', note:'no signs of settlement or rotation observed', photos:[] },
+  { id:'e6', category:'Load-bearing Substructure', name:'Abutments', status:'ninsp', reason:'extensive vegetation and a steep embankment', photos:[3] },
+  { id:'e7', category:'Load-bearing Substructure', name:'Bearings', status:'defect',
+    comment:'Surface corrosion has progressed on the bearing plates at the north abutment, with pitting now visible across a wider area.',
+    severity:3, extent:'B', works:'Y', priority:'M', cost:'2200',
+    prior:{ year:2022, notedAs:'minor surface staining' }, photos:[4] },
+  { id:'e8', category:'Load-bearing Substructure', name:'Bearing plinth/shelf', status:'na' },
+
+  { id:'e9', category:'Durability Elements', name:'Waterproofing', status:'defect',
+    comment:'Surfacing has worn through near the north expansion joint, exposing the deck plate over a wider area.',
+    severity:4, extent:'C', works:'Y', priority:'H', cost:'9000',
+    prior:{ year:2022, notedAs:'minor localised wear' }, photos:[5,6] },
+  { id:'e10', category:'Durability Elements', name:'Movement/expansion joints', status:'defect',
+    comment:'The elastomeric joint sealant at midspan has debonded and is missing in places, allowing water to pass through onto the bearings below.',
+    severity:4, extent:'C', works:'Y', priority:'H', cost:'2500', prior:null, photos:[7] },
+  { id:'e11', category:'Durability Elements', name:'Finishes: parapets/safety fences', status:'defect',
+    comment:'Small areas of carved graffiti are present on both parapets, causing minor damage to the paint coating.',
+    severity:2, extent:'B', works:'Y', priority:'L', cost:'600', prior:null, photos:[8] },
+
+  { id:'e12', category:'Safety Elements', name:'Handrail/parapets/safety fences', status:'defect',
+    comment:'The parapet shows deformation in two locations, consistent with impact from passing vehicles or pedestrians.',
+    severity:2, extent:'C', works:'Y', priority:'M', cost:'1500', prior:null, photos:[9] },
+  { id:'e13', category:'Safety Elements', name:'Footway/verge/footbridge surfacing', status:'good', note:'only minor, localised wear', photos:[] },
+
+  { id:'e14', category:'Other Bridge Elements', name:'Embankments', status:'defect',
+    comment:'Vegetation on the east embankment obscures the abutment and prevents close inspection.',
+    severity:3, extent:'B', works:'Y', priority:'M', cost:'2000', prior:null, photos:[10] },
+
+  { id:'e15', category:'Ancillary Elements', name:'Signs', status:'defect',
+    comment:'The bridge identification sign at the north end is missing.',
+    severity:2, extent:'A', works:'Y', priority:'L', cost:'750', prior:null, photos:[] },
+  { id:'e16', category:'Ancillary Elements', name:'Lighting', status:'na' }
+];
+const CATEGORY_ORDER = ['Deck Elements','Load-bearing Substructure','Durability Elements','Safety Elements','Other Bridge Elements','Ancillary Elements'];
+
+// ============================================================
+// NARRATIVE ASSEMBLY — encodes the learned style profile.
+// In production this step is an LLM call; here it's a deterministic
+// stand-in so the concept works without any API key.
+// ============================================================
+function buildNarrative(el){
+  if(el.status === 'na') return 'Not applicable.';
+  if(el.status === 'ninsp') return `The ${el.name.toLowerCase()} could not be inspected due to ${el.reason}.` + STYLE_PROFILE.photoCitation(el.photos).replace(/^ /, ' ');
+  if(el.status === 'good') return `The ${el.name.toLowerCase()} appeared to be in good condition${el.note ? ', with ' + el.note : ''}.`;
+  let text = el.comment.trim();
+  if(el.prior){
+    text = `Noted in the previous inspection (${el.prior.year}) as ${el.prior.notedAs}, this has since progressed: ${text}`;
+  }
+  return text + STYLE_PROFILE.photoCitation(el.photos);
+}
+
+function buildConclusionsIntro(){
+  const defects = ELEMENTS.filter(e => e.status === 'defect');
+  const worst = defects.reduce((m,d) => Math.max(m, d.severity||0), 0);
+  const overall = worst >= 4 ? 'fair' : worst >= 3 ? 'fair to good' : 'good';
+  let s = `The structure was found to be overall in ${overall} condition. `;
+  const deteriorating = defects.filter(d => d.prior);
+  if(deteriorating.length){
+    s += `Defects at the ${deteriorating.map(d=>d.name.toLowerCase()).join(' and ')} previously identified in ${deteriorating[0].prior.year} have progressed further since the last inspection. `;
+  }
+  const notInspected = ELEMENTS.filter(e => e.status === 'ninsp');
+  if(notInspected.length){
+    s += `The ${notInspected.map(d=>d.name.toLowerCase()).join(', ')} could not be fully inspected due to ${notInspected[0].reason}, and should be prioritised for access at the next visit.`;
+  }
+  return s;
+}
+
+function buildPriorityBands(){
+  const bands = {};
+  STYLE_PROFILE.priorityBands.forEach(b => bands[b.code] = { ...b, items: [] });
+  ELEMENTS.filter(e => e.status === 'defect' && e.works === 'Y').forEach(e => {
+    const band = bands[e.priority] || bands.L;
+    band.items.push(`${e.comment.split('.')[0]}${e.name ? ' (' + e.name + ')' : ''}${e.cost ? ' — est. £' + e.cost : ''}`);
+  });
+  return Object.values(bands);
+}
+
+// ============================================================
+// SCREEN NAVIGATION
+// ============================================================
+function goTo(step){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + step).classList.add('active');
+  const order = ['style','draft','author','export'];
+  const idx = order.indexOf(step);
+  document.querySelectorAll('.wizard-step').forEach(el => {
+    const i = order.indexOf(el.dataset.step);
+    el.classList.remove('active','done');
+    if(i < idx) el.classList.add('done');
+    else if(i === idx) el.classList.add('active');
+  });
+  document.querySelectorAll('.wizard-connector').forEach((el, i) => {
+    el.classList.toggle('filled', i < idx);
+  });
+  if(step === 'draft') renderDraft();
+  if(step === 'author') { renderDataPane(); renderReportPane(); }
+  if(step === 'export') renderExport();
+}
+
+// ============================================================
+// SCREEN 1 — STYLE SOURCE
+// ============================================================
+document.getElementById('uploadZone').addEventListener('click', () => document.getElementById('fileInput').click());
+document.getElementById('fileInput').addEventListener('change', function(e){
+  const f = e.target.files[0];
+  if(!f) return;
+  document.getElementById('fileChip').innerHTML =
+    `<div class="upload-file-chip"><i class="fas fa-file-pdf"></i> ${f.name}</div>`;
+  document.getElementById('analyzeBtn').style.display = 'inline-flex';
+});
+document.getElementById('analyzeBtn').addEventListener('click', function(){
+  document.getElementById('uploadCard').style.display = 'none';
+  document.getElementById('analyzingCard').style.display = 'block';
+  const steps = document.querySelectorAll('#procSteps li');
+  let i = 0;
+  function next(){
+    if(i > 0) steps[i-1].classList.remove('active'), steps[i-1].classList.add('done');
+    if(i < steps.length){ steps[i].classList.add('active'); i++; setTimeout(next, 550); }
+    else {
+      setTimeout(() => {
+        document.getElementById('analyzingCard').style.display = 'none';
+        document.getElementById('profileCard').style.display = 'block';
+      }, 500);
+    }
+  }
+  setTimeout(next, 300);
+});
+document.getElementById('toStyleDraftBtn').addEventListener('click', () => goTo('draft'));
+
+// ============================================================
+// SCREEN 2 — DRAFT REPORT
+// ============================================================
+function statusInfo(status){
+  return { defect:['defect','Defect'], good:['good','Good condition'], na:['na','Not applicable'], ninsp:['ninsp','Not inspected'] }[status];
+}
+function renderDraft(){
+  const wrap = document.getElementById('draftGroups');
+  wrap.innerHTML = CATEGORY_ORDER.map(cat => {
+    const els = ELEMENTS.filter(e => e.category === cat);
+    return `<div class="cat-group">
+      <div class="cat-title">${cat}</div>
+      ${els.map(el => elRowHTML(el)).join('')}
+    </div>`;
+  }).join('');
+  attachDraftEditors();
+}
+function elRowHTML(el){
+  const [cls, label] = statusInfo(el.status);
+  const editableFields = el.status === 'defect' ? `
+    <div class="el-editor" id="editor-${el.id}">
+      <div class="el-editor-row">
+        <div><span class="mini-lbl">Severity</span><input type="number" min="1" max="5" value="${el.severity}" data-field="severity" data-id="${el.id}" style="width:60px;"></div>
+        <div><span class="mini-lbl">Extent</span><select data-field="extent" data-id="${el.id}">${['A','B','C','D','E'].map(x=>`<option ${x===el.extent?'selected':''}>${x}</option>`).join('')}</select></div>
+        <div><span class="mini-lbl">Priority</span><select data-field="priority" data-id="${el.id}">${['H','M','L'].map(x=>`<option value="${x}" ${x===el.priority?'selected':''}>${x==='H'?'High':x==='M'?'Medium':'Low'}</option>`).join('')}</select></div>
+        <div><span class="mini-lbl">Cost (£)</span><input type="number" value="${el.cost||''}" data-field="cost" data-id="${el.id}" style="width:90px;"></div>
+      </div>
+      <span class="mini-lbl">Inspector note (drives the drafted sentence)</span>
+      <textarea data-field="comment" data-id="${el.id}">${el.comment}</textarea>
+    </div>` : '';
+  return `<div class="el-row" data-el="${el.id}">
+    <div class="el-name">${el.name}</div>
+    <div class="el-body">
+      <span class="status-pill ${cls}">${label}</span>
+      <div class="el-narrative" id="narrative-${el.id}">${buildNarrative(el)}</div>
+      ${el.status === 'defect' ? `<button class="el-edit-btn" data-toggle="${el.id}"><i class="fas fa-pen"></i> Edit</button>` : ''}
+      ${editableFields}
+    </div>
+  </div>`;
+}
+function attachDraftEditors(){
+  document.querySelectorAll('[data-toggle]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('editor-' + btn.dataset.toggle).classList.toggle('open');
+    });
+  });
+  document.querySelectorAll('.el-editor [data-field]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      const el = ELEMENTS.find(x => x.id === inp.dataset.id);
+      if(!el) return;
+      el[inp.dataset.field] = inp.dataset.field === 'severity' ? parseInt(inp.value,10) : inp.value;
+      document.getElementById('narrative-' + el.id).textContent = buildNarrative(el);
+      if(document.getElementById('screen-author').classList.contains('active')){ renderDataPane(); renderReportPane(); }
+    });
+  });
+}
+document.getElementById('toAuthorBtn').addEventListener('click', () => goTo('author'));
+
+// ============================================================
+// SCREEN 3 — AUTHOR VIEW (split / data / report)
+// ============================================================
+document.getElementById('viewToggle').addEventListener('click', function(e){
+  const btn = e.target.closest('.vt-btn');
+  if(!btn) return;
+  document.querySelectorAll('.vt-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const layout = document.getElementById('authorLayout');
+  layout.className = 'author-layout mode-' + btn.dataset.mode;
+  document.getElementById('dataPane').style.display = btn.dataset.mode === 'report' ? 'none' : 'block';
+  document.getElementById('reportPane').style.display = btn.dataset.mode === 'data' ? 'none' : 'block';
+});
+
+function renderDataPane(){
+  const wrap = document.getElementById('dataRows');
+  wrap.innerHTML = ELEMENTS.map(el => `
+    <div class="data-row" data-el="${el.id}">
+      <div class="dr-name">${el.name}</div>
+      <div class="dr-meta">
+        <span class="status-pill ${statusInfo(el.status)[0]}" style="margin-bottom:2px;">${statusInfo(el.status)[1]}</span><br>
+        ${el.status === 'defect' ? `Sev ${el.severity} · Ext ${el.extent} · Priority ${el.priority}` : ''}
+      </div>
+    </div>`).join('');
+  wrap.querySelectorAll('.data-row').forEach(row => {
+    row.addEventListener('click', () => highlightPair(row.dataset.el));
+  });
+}
+
+function renderReportPane(){
+  const bands = buildPriorityBands();
+  let html = `
+    <div class="doc-cover">
+      <div class="dc-brand">spanSense</div>
+      <div class="dc-title">Foxhollow Footbridge — Principal Inspection</div>
+      <div class="dc-sub">Structure ID: FX-102 · Span 1 of 1 · Styled to client convention</div>
+    </div>
+    <div class="doc-h1">3. Description of Defects</div>`;
+  CATEGORY_ORDER.forEach((cat, ci) => {
+    html += `<div class="doc-h2">3.${ci+1} ${cat}</div>`;
+    ELEMENTS.filter(e => e.category === cat).forEach((el, ei) => {
+      const narrative = buildNarrative(el);
+      html += `<div class="doc-h3">3.${ci+1}.${ei+1} ${el.name}</div>
+        <p class="doc-p linked ${el.status === 'na' ? 'na' : ''}" data-el="${el.id}">${narrative}</p>`;
+    });
+  });
+  html += `<div class="doc-h1">4. Conclusions and Recommendations</div>
+    <p class="doc-p">${buildConclusionsIntro()}</p>`;
+  bands.forEach(b => {
+    if(!b.items.length) return;
+    html += `<div class="priority-band"><h4 class="${b.cls}">${b.label}</h4><ul>${b.items.map(i=>`<li>${i}</li>`).join('')}</ul></div>`;
+  });
+  document.getElementById('reportDoc').innerHTML = html;
+  document.querySelectorAll('.doc-p.linked').forEach(p => {
+    p.addEventListener('click', () => highlightPair(p.dataset.el));
+  });
+}
+
+function highlightPair(id){
+  document.querySelectorAll('.data-row').forEach(r => r.classList.toggle('highlight', r.dataset.el === id));
+  document.querySelectorAll('.doc-p.linked').forEach(p => p.classList.toggle('highlight', p.dataset.el === id));
+  const target = document.querySelector('.doc-p.linked[data-el="' + id + '"]');
+  if(target) target.scrollIntoView({ behavior:'smooth', block:'center' });
+}
+
+document.getElementById('backToDraftBtn').addEventListener('click', () => goTo('draft'));
+document.getElementById('toExportBtn').addEventListener('click', () => goTo('export'));
+
+// ============================================================
+// SCREEN 4 — EXPORT
+// ============================================================
+function renderExport(){
+  const payload = {
+    structure: 'Foxhollow Footbridge', structureId: 'FX-102', span: 1,
+    styleSource: STYLE_PROFILE.source,
+    sections: CATEGORY_ORDER.map(cat => ({
+      category: cat,
+      elements: ELEMENTS.filter(e => e.category === cat).map(el => ({
+        name: el.name, status: el.status, narrative: buildNarrative(el),
+        severity: el.severity||null, extent: el.extent||null, priority: el.priority||null, cost: el.cost||null
+      }))
+    })),
+    conclusions: { intro: buildConclusionsIntro(), priorityBands: buildPriorityBands() }
+  };
+  document.getElementById('jsonPayload').textContent = JSON.stringify(payload, null, 2);
+}
+document.getElementById('backToAuthorBtn').addEventListener('click', () => goTo('author'));
+
+function mockGenerate(label, sub){
+  const overlay = document.getElementById('saveOverlay');
+  const box = document.getElementById('saveBox');
+  box.classList.remove('success');
+  box.innerHTML = `<div class="ic"><i class="fas fa-cog fa-spin"></i></div><h3>${label}…</h3><p>${sub}</p>`;
+  overlay.classList.add('show');
+  setTimeout(() => {
+    box.classList.add('success');
+    box.innerHTML = `<div class="ic"><i class="fas fa-check"></i></div><h3>Done</h3><p>This preview doesn't write a real file — in production this hands off to spanSense's existing docx/pdf generators.</p>
+      <div style="margin-top:18px;"><button class="btn-mini" id="closeOverlayBtn">Close</button></div>`;
+    document.getElementById('closeOverlayBtn').addEventListener('click', () => overlay.classList.remove('show'));
+  }, 1400);
+}
+document.getElementById('genWordBtn').addEventListener('click', () => mockGenerate('Generating Word report', 'Applying learned style to the full narrative'));
+document.getElementById('genPdfBtn').addEventListener('click', () => mockGenerate('Generating BCI Proforma', 'Building the per-span defect grid'));
+
+// ============================================================
+// INIT
+// ============================================================
+goTo('style');
+</script>
+</body>
+</html>
