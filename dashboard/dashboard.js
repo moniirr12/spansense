@@ -696,7 +696,7 @@ async function fetchPendingReview() {
         const result = await response.json();
         if (result.success) {
             pendingReviewData = result.data;
-            renderPendingReview(result.data);
+            applyPendingReviewFilters(); // preserves whatever search/filter was already active
         }
     } catch (error) {
         console.error('Error fetching pending review:', error);
@@ -707,13 +707,50 @@ async function fetchPendingReview() {
     }
 }
 
+// Filtering is entirely client-side over the already-fetched list — cheap
+// (this list tops out in the hundreds, not thousands) and means every
+// keystroke/toggle is instant with no extra round trip.
+function getPendingReviewFilters() {
+    return {
+        search: (document.getElementById('pendingReviewSearch')?.value || '').trim().toLowerCase(),
+        type: document.querySelector('#pendingReviewTypeFilter .chart-toggle-btn.active')?.dataset.type || 'all',
+        criticalOnly: document.getElementById('pendingReviewCriticalToggle')?.classList.contains('active') || false
+    };
+}
+
+function applyPendingReviewFilters() {
+    const { search, type, criticalOnly } = getPendingReviewFilters();
+
+    const filtered = pendingReviewData.filter(item => {
+        if (type !== 'all' && item.inspection_type !== type) return false;
+        if (criticalOnly && !(item.overall_bcicrit !== null && item.overall_bcicrit < 50)) return false;
+        if (search) {
+            const haystack = ((item.structure_name || '') + ' ' + (item.inspector_name || '')).toLowerCase();
+            if (!haystack.includes(search)) return false;
+        }
+        return true;
+    });
+
+    renderPendingReview(filtered);
+
+    const countBadge = document.getElementById('pendingReviewCount');
+    if (countBadge) {
+        countBadge.textContent = filtered.length === pendingReviewData.length
+            ? `${pendingReviewData.length} awaiting decision`
+            : `${filtered.length} of ${pendingReviewData.length}`;
+    }
+}
+
 function renderPendingReview(data) {
     const list = document.getElementById('pending-review-list');
 
     if (!data.length) {
+        const message = pendingReviewData.length === 0
+            ? 'Nothing awaiting review.'
+            : 'No inspections match your filters.';
         list.innerHTML = `
             <div class="activity-item">
-                <div style="color: var(--text-muted); font-size: 0.8rem;">Nothing awaiting review.</div>
+                <div style="color: var(--text-muted); font-size: 0.8rem;">${message}</div>
             </div>`;
         return;
     }
@@ -804,5 +841,20 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('reviewRejectBtn')?.addEventListener('click', () => submitReviewDecision('rejected'));
     document.getElementById('reviewModalOverlay')?.addEventListener('click', function (e) {
         if (e.target === this) closeReviewModal();
+    });
+
+    document.getElementById('pendingReviewSearch')?.addEventListener('input', applyPendingReviewFilters);
+
+    document.querySelectorAll('#pendingReviewTypeFilter .chart-toggle-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            document.querySelectorAll('#pendingReviewTypeFilter .chart-toggle-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            applyPendingReviewFilters();
+        });
+    });
+
+    document.getElementById('pendingReviewCriticalToggle')?.addEventListener('click', function () {
+        this.classList.toggle('active');
+        applyPendingReviewFilters();
     });
 });

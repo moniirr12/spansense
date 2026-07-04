@@ -184,7 +184,22 @@
         <div class="activity-feed pending-review-section" id="pending-review-section" style="display:none;">
             <div class="section-header">
                 <h2><i class="fas fa-user-check"></i> Pending Review</h2>
-                <span class="section-badge">Awaiting decision</span>
+                <span class="section-badge" id="pendingReviewCount">Awaiting decision</span>
+            </div>
+            <div class="pending-review-filters">
+                <div class="pr-search-wrap">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="pendingReviewSearch" placeholder="Search bridge or inspector...">
+                </div>
+                <div class="chart-toggle" id="pendingReviewTypeFilter">
+                    <button class="chart-toggle-btn active" data-type="all">All</button>
+                    <button class="chart-toggle-btn" data-type="PI">PI</button>
+                    <button class="chart-toggle-btn" data-type="GI">GI</button>
+                    <button class="chart-toggle-btn" data-type="SI">SI</button>
+                </div>
+                <button class="pr-critical-toggle" id="pendingReviewCriticalToggle">
+                    <i class="fas fa-triangle-exclamation"></i> Critical only
+                </button>
             </div>
             <div class="activity-list" id="pending-review-list">
                 <div class="activity-item">

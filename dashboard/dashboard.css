@@ -985,6 +985,84 @@ html.night-mode .glass-scrollbar .thumb {
     margin-top: 24px;
 }
 
+.pending-review-filters {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 22px;
+    border-bottom: 1px solid #eef2f6;
+    flex-wrap: wrap;
+}
+
+.pr-search-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 180px;
+}
+
+.pr-search-wrap i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #8a9ba8;
+    font-size: 0.7rem;
+    pointer-events: none;
+}
+
+.pr-search-wrap input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 12px 8px 30px;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-family: inherit;
+    color: #2c4a48;
+    background: white;
+}
+
+.pr-search-wrap input:focus {
+    outline: none;
+    border-color: #8ab4b0;
+}
+
+.pr-critical-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    background: transparent;
+    color: #8a9ba8;
+    font-size: 0.68rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+
+.pr-critical-toggle:hover {
+    border-color: #c47070;
+    color: #c47070;
+}
+
+.pr-critical-toggle.active {
+    background: #fdf2f2;
+    border-color: #c47070;
+    color: #c47070;
+}
+
+.night-mode .pending-review-filters { border-bottom-color: #2f3e45; }
+.night-mode .pr-search-wrap input { background: #1e2a2f; border-color: #3a4b53; color: #d4dfe3; }
+.night-mode .pr-search-wrap input:focus { border-color: #8ab4b0; }
+.night-mode .pr-search-wrap i { color: #6a8090; }
+.night-mode .pr-critical-toggle { border-color: #3a4b53; color: #6a8090; }
+.night-mode .pr-critical-toggle:hover { border-color: #e57373; color: #e57373; }
+.night-mode .pr-critical-toggle.active { background: #3a2020; border-color: #e57373; color: #e8a0a0; }
+
 .review-btn {
     background: #eef4f2;
     color: #5b8c8a;
