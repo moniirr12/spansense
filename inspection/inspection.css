@@ -4316,28 +4316,54 @@ tr.main-row { cursor: pointer; }
     box-shadow: 0 16px 40px rgba(30, 50, 48, 0.16), 0 2px 8px rgba(30, 50, 48, 0.06);
     padding: 12px 12px 10px;
     opacity: 0;
-    transform: scale(0.92) translateY(6px);
+    /* Rests as an unformed wisp — small, drifted, twisted, and soft-edged —
+       before condensing into a crisp card. The rotation direction and drift
+       flip with .rpc-below so it always settles "toward" the row it points at. */
+    transform: scale(0.78) translateY(10px) rotate(-2.5deg);
+    filter: blur(9px);
     transform-origin: center bottom;
     pointer-events: none;
-    transition: opacity 0.16s ease, transform 0.24s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition:
+        opacity 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+        filter 0.38s ease-out;
 }
 /* Cloud sits below the row instead of above (not enough room above) —
-   flip the entry offset and the arrow to match. */
+   flip the entry offset, twist and arrow to match. */
 .row-preview-cloud.rpc-below {
-    transform: scale(0.92) translateY(-6px);
+    transform: scale(0.78) translateY(-10px) rotate(2.5deg);
     transform-origin: center top;
 }
 .row-preview-cloud.rpc-visible {
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: scale(1) translateY(0) rotate(0deg);
+    filter: blur(0);
     pointer-events: auto;
 }
+
+/* Soft halo that blooms in behind the card as it condenses — the "cloud"
+   made literal, and it also softens the card's silhouette against the arrow. */
+.row-preview-cloud::before {
+    content: '';
+    position: absolute;
+    inset: -20px;
+    z-index: -1;
+    border-radius: 32px;
+    background: radial-gradient(circle at 50% 100%, rgba(91, 140, 138, 0.30), transparent 72%);
+    opacity: 0;
+    transform: scale(0.85);
+    transition: opacity 0.55s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.row-preview-cloud.rpc-below::before { background: radial-gradient(circle at 50% 0%, rgba(91, 140, 138, 0.30), transparent 72%); }
+.row-preview-cloud.rpc-visible::before { opacity: 1; transform: scale(1); }
 
 .night-mode .row-preview-cloud {
     background: rgba(26, 36, 40, 0.92);
     border-color: rgba(110, 156, 152, 0.3);
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
 }
+.night-mode .row-preview-cloud::before { background: radial-gradient(circle at 50% 100%, rgba(138, 180, 176, 0.22), transparent 72%); }
+.night-mode .row-preview-cloud.rpc-below::before { background: radial-gradient(circle at 50% 0%, rgba(138, 180, 176, 0.22), transparent 72%); }
 
 /* Default: cloud above row, tail on the bottom edge pointing down at it. */
 .rpc-arrow {
@@ -4383,11 +4409,18 @@ tr.main-row { cursor: pointer; }
 .rpc-body::-webkit-scrollbar { width: 4px; }
 .rpc-body::-webkit-scrollbar-thumb { background: #c5dbd8; border-radius: 10px; }
 
+/* Cards cascade in one after another as the cloud's content settles —
+   each is a fresh element on every render, so the animation always plays. */
+@keyframes rpc-card-in {
+    from { opacity: 0; transform: translateY(7px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
 .rpc-card {
     border: 1px solid #e9edf2;
     border-radius: 12px;
     padding: 8px 9px;
     background: rgba(255, 255, 255, 0.6);
+    animation: rpc-card-in 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .night-mode .rpc-card { border-color: #2f3e45; background: rgba(255, 255, 255, 0.03); }
 .rpc-card-top { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; margin-bottom: 4px; }
@@ -4405,16 +4438,28 @@ tr.main-row { cursor: pointer; }
 .rpc-more {
     text-align: center; font-size: 10px; font-weight: 600;
     color: #8a9ba8; padding: 2px 0 0;
+    animation: rpc-card-in 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-.rpc-loading { padding: 18px; text-align: center; color: #8a9ba8; font-size: 15px; }
+.rpc-loading {
+    padding: 18px; text-align: center; color: #8a9ba8; font-size: 15px;
+    animation: rpc-card-in 0.3s ease both;
+}
 .rpc-empty {
     padding: 14px 8px; text-align: center; color: #8a9ba8;
     font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 6px;
+    animation: rpc-card-in 0.3s ease both;
 }
 .rpc-empty i { font-size: 18px; opacity: 0.4; }
 
 @media (prefers-reduced-motion: reduce) {
-    .row-preview-cloud { transition: opacity 0.12s ease; transform: none !important; }
+    .row-preview-cloud,
+    .row-preview-cloud::before,
+    .rpc-card, .rpc-more, .rpc-loading, .rpc-empty {
+        transition: opacity 0.12s ease !important;
+        animation: none !important;
+        transform: none !important;
+        filter: none !important;
+    }
 }
 @media (max-width: 640px) {
     .row-preview-cloud { display: none; }
