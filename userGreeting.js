@@ -75,7 +75,7 @@
 
     function render(displayName) {
         var pill = getPill();
-        pill.textContent = 'Hello, ' + displayName;
+        pill.textContent = 'hello, ' + displayName;
         reposition();
     }
 
@@ -97,8 +97,9 @@
                 return;
             }
             var data = await res.json();
-            var displayName = data.full_name || data.username;
-            if (!displayName) return;
+            var fullName = data.full_name || data.username;
+            if (!fullName) return;
+            var displayName = fullName.trim().split(/\s+/)[0];
 
             injectStyle();
             render(displayName);
