@@ -788,6 +788,7 @@
 <base target="_blank">
 </head>
 <body>
+<script>if(document.documentElement.classList.contains('nm-preload'))document.body.classList.add('night-mode');</script>
 
     <!-- FLOATING NAVBAR -->
     <div class="navbar">
@@ -828,14 +829,14 @@
         <!-- PROFILE HERO -->
         <div class="profile-hero">
             <div class="profile-avatar">
-                MK
+                <span id="profileAvatarInitials">··</span>
                 <div class="edit-avatar" title="Change photo"><i class="fas fa-camera"></i></div>
             </div>
             <div class="profile-info">
-                <div class="name">Monir Khan</div>
-                <div class="role">Bridge Inspector · joined March 2026</div>
+                <div class="name" id="profileName">Loading...</div>
+                <div class="role" id="profileTagline">—</div>
                 <div class="profile-badges">
-                    <span class="profile-badge admin"><i class="fas fa-shield-alt"></i> Inspector</span>
+                    <span class="profile-badge admin"><i class="fas fa-shield-alt"></i> <span id="profileRoleBadge">—</span></span>
                     <span class="profile-badge verified"><i class="fas fa-check-circle"></i> Verified</span>
                 </div>
             </div>
@@ -1017,6 +1018,46 @@
             new MutationObserver(()=>{clearTimeout(window._t);window._t=setTimeout(u,50)}).observe(document.body,{childList:true,subtree:true});
             u();[50,100,250,500,1000,2000].forEach(d=>setTimeout(u,d));
             window.updateGlassScrollbar=u;
+        })();
+
+        // ============================================
+        // PROFILE DATA (from /api/me) — replaces the hardcoded "Monir Khan /
+        // Bridge Inspector / joined March 2026" placeholder with whoever is
+        // actually logged in.
+        // ============================================
+        (function () {
+            var ROLE_LABEL = { admin: 'Admin', engineer: 'Engineer', inspector: 'Inspector' };
+
+            function initials(name) {
+                if (!name) return '?';
+                return name.split(' ').filter(Boolean).map(function (n) { return n[0]; }).join('').substring(0, 2).toUpperCase();
+            }
+
+            function formatJoined(iso) {
+                var d = new Date(iso);
+                return isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+            }
+
+            fetch('/api/me').then(function (r) { return r.ok ? r.json() : null; }).then(function (user) {
+                if (!user) return;
+                var roleLabel = ROLE_LABEL[user.role] || user.role;
+                var nameParts = (user.full_name || user.username || '').split(' ');
+
+                document.getElementById('profileAvatarInitials').textContent = initials(user.full_name || user.username);
+                document.getElementById('profileName').textContent = user.full_name || user.username;
+                document.getElementById('profileTagline').textContent =
+                    roleLabel + (user.created_at ? ' · joined ' + formatJoined(user.created_at) : '');
+                document.getElementById('profileRoleBadge').textContent = roleLabel;
+
+                var firstNameEl = document.getElementById('firstName');
+                var lastNameEl = document.getElementById('lastName');
+                var jobTitleEl = document.getElementById('role');
+                if (firstNameEl) firstNameEl.value = nameParts[0] || '';
+                if (lastNameEl) lastNameEl.value = nameParts.slice(1).join(' ') || '';
+                if (jobTitleEl) jobTitleEl.value = roleLabel;
+            }).catch(function (e) {
+                console.error('Failed to load profile:', e);
+            });
         })();
 
         // ============================================

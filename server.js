@@ -140,6 +140,7 @@ async function initDatabase() {
                 last_login TIMESTAMP
             )
         `);
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`);
 
         // Insert default admin user if table is empty
         const userCount = await dbGet("SELECT COUNT(*) as count FROM users");
@@ -2081,6 +2082,23 @@ app.get('/api/check-session', (req, res) => {
         });
     } else {
         res.json({ loggedIn: false });
+    }
+});
+
+// Fuller profile data for the account page — kept separate from
+// check-session (which only carries minimal session identity) rather than
+// growing that endpoint's payload for something only the account page needs.
+app.get('/api/me', requireAuth, async (req, res) => {
+    try {
+        const user = await dbGet(
+            'SELECT username, full_name, role, created_at FROM users WHERE id = $1',
+            [req.session.userId]
+        );
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        res.json(user);
+    } catch (err) {
+        console.error('Fetch /api/me error:', err);
+        res.status(500).json({ error: err.message });
     }
 });
 
