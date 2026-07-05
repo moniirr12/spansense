@@ -475,7 +475,6 @@
             if (!res.ok) { buildReportsFromInspections(); return; }
             reportsData = await res.json();
             if (currentCategory === 'reports') rebuildReportsTable();
-            showToast('Loaded ' + reportsData.length + ' reports', 'success');
         } catch (err) {
             buildReportsFromInspections();
         } finally {
@@ -785,8 +784,6 @@
             else if (inspectionsData.length > 0) { buildReportsFromInspections(); updateTableColumns('reports'); }
             else { fetchInspections().then(function() { buildReportsFromInspections(); updateTableColumns('reports'); }); }
         }
-
-        showToast('Switched to ' + cat.charAt(0).toUpperCase() + cat.slice(1), 'info');
     };
 
     // Add CSS for pagination controls
@@ -959,7 +956,6 @@
             bridgesData = await res.json();
             updateCardCount('bridges', bridgesData.length);
             if (currentCategory === 'bridges') { rebuildBridgesTable(); updateTableColumns('bridges'); }
-            showToast('Loaded ' + bridgesData.length + ' bridges', 'success');
         } catch (err) {
             showToast('Error loading bridges: ' + err.message, 'error');
         } finally {
@@ -981,7 +977,6 @@
             // Always rebuild reports so the card count stays current regardless of active tab
             buildReportsFromInspections();
             if (currentCategory === 'reports') { updateTableColumns('reports'); }
-            showToast('Loaded ' + inspectionsData.length + ' inspections', 'success');
         } catch (err) {
             showToast('Error loading inspections: ' + err.message, 'error');
         } finally {
@@ -1125,8 +1120,6 @@
             else if (inspectionsData.length > 0) { buildReportsFromInspections(); updateTableColumns('reports'); }
             else { fetchInspections().then(function() { buildReportsFromInspections(); updateTableColumns('reports'); }); }
         }
-
-        showToast('Switched to ' + cat.charAt(0).toUpperCase() + cat.slice(1), 'info');
     };
 
     // ============================================

@@ -190,6 +190,16 @@ async function initDatabase() {
             )
         `);
 
+        // Per-structure inspection scheduling: cycle length in years (falls back to
+        // the standard 2yr GI / 6yr PI cadence when null) and an optional one-off
+        // override for the next due date, set from the Planning page. GI and PI
+        // share a single alternating slot (every pi_cycle_years/gi_cycle_years-th
+        // occurrence is a PI instead of a GI, never both), so there's only one
+        // override date, not one per type.
+        await pool.query(`ALTER TABLE bridges ADD COLUMN IF NOT EXISTS gi_cycle_years INTEGER`);
+        await pool.query(`ALTER TABLE bridges ADD COLUMN IF NOT EXISTS pi_cycle_years INTEGER`);
+        await pool.query(`ALTER TABLE bridges ADD COLUMN IF NOT EXISTS next_inspection_override DATE`);
+
         // Inspections table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS inspections (
@@ -687,17 +697,48 @@ app.get('/api/bridges', requireAuth, async (req, res) => {
             SELECT b.id, b.name, b.location, b.latitude, b.longitude, b.span, b.length,
                     b.built_year, b.type, b.span_number, b.OSE, b.OSN,
                     b.primary_material, b.secondary_material, b.organization_id, b.bci_av,
+                    b.gi_cycle_years, b.pi_cycle_years, b.next_inspection_override,
                     MAX(i.inspection_date) as last_inspected
             FROM bridges b
             LEFT JOIN inspections i ON b.id = i.structure_id
             GROUP BY b.id, b.name, b.location, b.latitude, b.longitude, b.span, b.length,
                      b.built_year, b.type, b.span_number, b.OSE, b.OSN,
-                     b.primary_material, b.secondary_material, b.organization_id, b.bci_av
+                     b.primary_material, b.secondary_material, b.organization_id, b.bci_av,
+                     b.gi_cycle_years, b.pi_cycle_years, b.next_inspection_override
             ORDER BY b.name
         `);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+// Update a structure's inspection scheduling (Planning page "Edit Schedule").
+// Engineer/admin only, same gating as review/approve — this changes when
+// inspections are due for everyone, not just a personal preference.
+app.patch('/api/bridges/:id/schedule', requireAuth, requireEngineer, async (req, res) => {
+    try {
+        const { giCycleYears, piCycleYears, nextInspectionOverride } = req.body;
+
+        const toIntOrNull = v => (v === null || v === undefined || v === '') ? null : parseInt(v, 10);
+        const giYears = toIntOrNull(giCycleYears);
+        const piYears = toIntOrNull(piCycleYears);
+        if (giYears !== null && (!Number.isFinite(giYears) || giYears <= 0)) {
+            return res.status(400).json({ success: false, error: 'giCycleYears must be a positive number' });
+        }
+        if (piYears !== null && (!Number.isFinite(piYears) || piYears <= 0)) {
+            return res.status(400).json({ success: false, error: 'piCycleYears must be a positive number' });
+        }
+        const overrideDate = nextInspectionOverride || null;
+
+        await pool.query(
+            `UPDATE bridges SET gi_cycle_years = $1, pi_cycle_years = $2, next_inspection_override = $3 WHERE id = $4`,
+            [giYears, piYears, overrideDate, req.params.id]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Update bridge schedule error:', err);
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 
