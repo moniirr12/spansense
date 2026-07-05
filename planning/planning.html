@@ -1615,7 +1615,14 @@
 
                 const style = document.createElement('style');
                 style.textContent = `
-                    .gantt-sidebar { width: 240px; background: #f8fafc; border-right: 1px solid #e9edf2; }
+                    /* position: static overrides the live page's .gantt-sidebar
+                       { position: sticky; left: 0; z-index: 10 } (needed there
+                       so bridge names stay pinned while scrolling the on-screen
+                       timeline) - html2canvas renders position:sticky as if it
+                       were fixed/absolute instead of flowing in the flex
+                       layout, which is what was drawing the sidebar as an
+                       overlay on top of the timeline instead of beside it. */
+                    .gantt-sidebar { position: static; width: 240px; background: #f8fafc; border-right: 1px solid #e9edf2; }
                     .gantt-sidebar-header { background: #eef2f6; padding: 12px 20px; font-weight: 700; color: #5b8c8a; }
                     .gantt-bridge-row { padding: 10px 20px; border-bottom: 1px solid #e9edf2; display: flex; align-items: center; gap: 12px; }
                     .gantt-timeline-header { display: flex; background: #eef2f6; border-bottom: 1px solid #e9edf2; }
