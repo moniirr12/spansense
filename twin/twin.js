@@ -317,7 +317,8 @@ let camDistance = 58, camHeight = 13;
 camera.position.set(0, camHeight, camDistance);
 camera.lookAt(0, 1.5, 0);
 
-scene.add(new THREE.AmbientLight(0x8fa8a4, 0.7));
+const ambientLight = new THREE.AmbientLight(0x8fa8a4, 0.7);
+scene.add(ambientLight);
 const key = new THREE.DirectionalLight(0xffffff, 1.1);
 key.position.set(20, 30, 15);
 scene.add(key);
@@ -335,6 +336,7 @@ const matSensor = new THREE.MeshStandardMaterial({color: 0x6db3d8, emissive: 0x4
 const matDefect = new THREE.MeshStandardMaterial({color: 0xe06a5a, emissive: 0xc0392b, emissiveIntensity: 1.1});
 const matStone    = new THREE.MeshStandardMaterial({color: 0x8a8378, metalness: 0.0, roughness: 0.95});
 const matConcrete = new THREE.MeshStandardMaterial({color: 0x9aa39c, metalness: 0.05, roughness: 0.85});
+const matWater = new THREE.MeshStandardMaterial({color: 0x3d7f96, metalness: 0.15, roughness: 0.35, transparent: true, opacity: 0.88});
 
 // Cone marker (distinct from the octahedron defect markers) for the Works
 // Required layer. exact=false (no placed x/y/z) renders semi-transparent so
@@ -372,6 +374,101 @@ const defectGroup = new THREE.Group();
 rig.add(structureGroup, sensorGroup, worksGroup, defectGroup);
 
 let gridHelper, glowMesh;
+
+// Plain water plane, shown only for the "Realistic" skin (the default
+// twinView skin uses the grid+glow instead).
+const groundMesh = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), matWater);
+groundMesh.rotation.x = -Math.PI / 2;
+groundMesh.visible = false;
+rig.add(groundMesh);
+
+/* ============================================================
+   SKINS - swap material colors/finish and lighting at runtime,
+   applied to every structure since the materials are shared across
+   all of shapeBuilders.js's kind-specific builders.
+   ============================================================ */
+const SKINS = {
+    twinview: {
+        label: 'twinView',
+        stageClass: '',
+        fog: { color: 0x7a9490 },
+        lights: {
+            ambient: { color: 0x8fa8a4, intensity: 0.7 },
+            key: { color: 0xffffff, intensity: 1.1 },
+            rim: { color: 0x4a90b8, intensity: 0.45 },
+            teal: { color: 0x5b8c8a, intensity: 0.7 }
+        },
+        materials: {
+            steel: { color: 0x5a6b6a, roughness: 0.4, metalness: 0.6 },
+            deck: { color: 0x394645, roughness: 0.6, metalness: 0.25 },
+            pier: { color: 0x435150, roughness: 0.7, metalness: 0.15 },
+            stone: { color: 0x8a8378, roughness: 0.95, metalness: 0 },
+            concrete: { color: 0x9aa39c, roughness: 0.85, metalness: 0.05 }
+        },
+        showGridGlow: true, showGround: false
+    },
+    realistic: {
+        label: 'Realistic',
+        stageClass: 'skin-realistic',
+        fog: { color: 0xcfe0e6 },
+        lights: {
+            ambient: { color: 0xd8e6ea, intensity: 0.55 },
+            key: { color: 0xfff2df, intensity: 1.5 },
+            rim: { color: 0x8fb8cf, intensity: 0.25 },
+            teal: { color: 0x5b8c8a, intensity: 0.1 }
+        },
+        materials: {
+            steel: { color: 0x3d4446, roughness: 0.35, metalness: 0.7 },
+            deck: { color: 0x2b2f31, roughness: 0.9, metalness: 0.05 },
+            pier: { color: 0x8f8878, roughness: 0.9, metalness: 0.02 },
+            stone: { color: 0xcac2b0, roughness: 0.85, metalness: 0.02 },
+            concrete: { color: 0xb9c0ba, roughness: 0.85, metalness: 0.02 }
+        },
+        showGridGlow: false, showGround: true
+    }
+};
+const MAT_BY_KEY = { steel: matSteel, deck: matDeck, pier: matPier, stone: matStone, concrete: matConcrete };
+const stageEl = document.querySelector('.model-stage');
+let currentSkin = 'twinview';
+
+function applySkin(name) {
+    const skin = SKINS[name];
+    if (!skin) return;
+    currentSkin = name;
+
+    Object.keys(skin.materials).forEach(function(matKey) {
+        var mat = MAT_BY_KEY[matKey];
+        var def = skin.materials[matKey];
+        mat.color.setHex(def.color);
+        mat.roughness = def.roughness;
+        mat.metalness = def.metalness;
+    });
+
+    scene.fog.color.setHex(skin.fog.color);
+
+    ambientLight.color.setHex(skin.lights.ambient.color);
+    ambientLight.intensity = skin.lights.ambient.intensity;
+    key.color.setHex(skin.lights.key.color);
+    key.intensity = skin.lights.key.intensity;
+    rim.color.setHex(skin.lights.rim.color);
+    rim.intensity = skin.lights.rim.intensity;
+    teal.color.setHex(skin.lights.teal.color);
+    teal.intensity = skin.lights.teal.intensity;
+
+    if (gridHelper) gridHelper.visible = skin.showGridGlow;
+    if (glowMesh) glowMesh.visible = skin.showGridGlow;
+    groundMesh.visible = skin.showGround;
+
+    if (stageEl) stageEl.className = 'model-stage' + (skin.stageClass ? ' ' + skin.stageClass : '');
+
+    document.querySelectorAll('.skin-pill').forEach(function(btn) {
+        btn.classList.toggle('on', btn.dataset.skin === name);
+    });
+}
+
+document.querySelectorAll('.skin-pill').forEach(function(btn) {
+    btn.addEventListener('click', function() { applySkin(btn.dataset.skin); });
+});
 
 /* Shape builders (addBeam, addDeck, addPiers, archPoint, catenaryY,
    buildTrussPanelRun, all 9 build*Structure functions, BUILDERS) now
@@ -430,6 +527,18 @@ function rebuildModel(bridge) {
     glowMesh.rotation.x = -Math.PI / 2;
     glowMesh.position.y = -8.3;
     rig.add(glowMesh);
+
+    // Water plane (Realistic skin only) - sized/positioned to match this
+    // bridge's scale the same way the grid/glow above are.
+    var groundSize = Math.min(Math.max(160, TOTAL_LEN + 60), 420);
+    groundMesh.geometry.dispose();
+    groundMesh.geometry = new THREE.PlaneGeometry(groundSize, groundSize);
+    groundMesh.position.y = -8.35;
+
+    var skin = SKINS[currentSkin];
+    gridHelper.visible = skin.showGridGlow;
+    glowMesh.visible = skin.showGridGlow;
+    groundMesh.visible = skin.showGround;
 
     // Structure - dispatch on the per-bridge model kind (computed above)
     var builder = BUILDERS[kind] || buildTrussStructure;
@@ -594,3 +703,4 @@ if (savedNightMode === 'on' || (savedNightMode === null && !systemPrefersLight))
 onResize();
 animate();
 loadBridgeList();
+applySkin('twinview');
