@@ -161,7 +161,7 @@ body {
 
 .metrics {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
     gap: 20px;
     margin-bottom: 32px;
 }
@@ -233,11 +233,6 @@ body {
     color: #c28b5a;
 }
 
-.metric-icon-purple {
-    background: #f5f1fc;
-    color: #7c6fc4;
-}
-
 .metric-content {
     flex: 1;
     min-width: 0;
@@ -256,6 +251,41 @@ body {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
+}
+
+/* BCI(ave) / BCI(crit) combined card — two number+label pairs side by side
+   in place of the single h3/p a normal metric card has. */
+.metric-content-split {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.metric-split-item h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2c4a48;
+    line-height: 1.2;
+}
+
+.metric-split-item p {
+    font-size: 0.7rem;
+    color: #8a9ba8;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.metric-split-item p sub {
+    font-size: 0.85em;
+    bottom: -0.2em;
+}
+
+.metric-split-divider {
+    width: 1px;
+    height: 30px;
+    background: #e9edf2;
+    flex-shrink: 0;
 }
 
 /* ============================================
@@ -757,6 +787,14 @@ body {
     color: #d4dfe3;
 }
 
+.night-mode .metric-split-item h3 {
+    color: #d4dfe3;
+}
+
+.night-mode .metric-split-divider {
+    background: #2f3e45;
+}
+
 .night-mode .metric-icon-green {
     background: #1e3a3e;
     color: #8ab4b0;
@@ -775,11 +813,6 @@ body {
 .night-mode .metric-icon-yellow {
     background: #3a3020;
     color: #d4a84a;
-}
-
-.night-mode .metric-icon-purple {
-    background: #2a2440;
-    color: #a99add;
 }
 
 .night-mode .metric-arrow {

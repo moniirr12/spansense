@@ -72,23 +72,20 @@
                 </div>
                 <i class="fas fa-chevron-right metric-arrow"></i>
             </div>
-            <div class="metric metric-clickable" onclick="scrollToDashboardSection('avgBciByTypeChartCard')">
+            <div class="metric metric-clickable" onclick="scrollToDashboardSection('bciDistributionChartCard')">
                 <div class="metric-icon metric-icon-blue">
                     <i class="fas fa-gauge"></i>
                 </div>
-                <div class="metric-content">
-                    <h3 id="avgBciMetricValue">—</h3>
-                    <p>Avg BCI</p>
-                </div>
-                <i class="fas fa-chevron-right metric-arrow"></i>
-            </div>
-            <div class="metric metric-clickable" onclick="scrollToDashboardSection('bciDistributionChartCard')">
-                <div class="metric-icon metric-icon-purple">
-                    <i class="fas fa-gauge-high"></i>
-                </div>
-                <div class="metric-content">
-                    <h3 id="criticalBciMetricValue">—</h3>
-                    <p>Critical BCI</p>
+                <div class="metric-content metric-content-split">
+                    <div class="metric-split-item">
+                        <h3 id="avgBciMetricValue">—</h3>
+                        <p>BCI<sub>ave</sub></p>
+                    </div>
+                    <div class="metric-split-divider"></div>
+                    <div class="metric-split-item">
+                        <h3 id="criticalBciMetricValue">—</h3>
+                        <p>BCI<sub>crit</sub></p>
+                    </div>
                 </div>
                 <i class="fas fa-chevron-right metric-arrow"></i>
             </div>
