@@ -330,6 +330,12 @@
         });
         html += '<th></th></tr>';
         thead.innerHTML = html;
+        // This replaces the header - including the #selectAll checkbox - with
+        // a brand new node, orphaning whatever listener rebuildXTable() had
+        // just attached to the old one via bindCheckboxEvents(). Every caller
+        // here runs updateTableColumns() after rebuildXTable(), so re-bind
+        // here too rather than relying on call order at each site.
+        bindCheckboxEvents();
     }
 
     window.sortTable = function(columnKey) {
@@ -1656,7 +1662,3 @@
     fetchInspections();
 
 })();
-
-document.getElementById('toIndex').addEventListener('click', function() {
-    window.location.href = '../map/map.html';
-});

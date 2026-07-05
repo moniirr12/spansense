@@ -413,15 +413,15 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-height: 300px;
+    min-height: 200px;
 }
 
 .wide-chart .chart-body {
-    min-height: 420px;
+    min-height: 220px;
 }
 
 .wide-chart .chart-body canvas {
-    max-height: 400px;
+    max-height: 220px;
 }
 
 .bci-legend {
