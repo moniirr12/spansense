@@ -513,7 +513,11 @@
 
         .gantt-body {
             display: flex;
-            width: 100%;
+            width: calc(100% - 48px);
+            margin: 20px 24px 24px;
+            border: 1px solid #eef2f6;
+            border-radius: 16px;
+            overflow: hidden;
         }
         .gantt-sidebar {
             width: 240px;
@@ -924,6 +928,7 @@
            (every cell in every row), so left un-recolored they read as a wall
            of bright white lines against the dark background. */
         .night-mode .gantt-toolbar { border-color: #2f3e45; }
+        .night-mode .gantt-body { border-color: #2f3e45; }
         .night-mode .gantt-row { border-color: #2f3e45; }
         .night-mode .gantt-cell { border-right-color: #28343a; }
         .night-mode .schedule-edit-btn { color: #5c6f78; }
