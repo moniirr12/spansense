@@ -138,11 +138,12 @@ async function generateSimplePDFReport(doc, mode = 'download') {
         showToast('Generating report...', 'info');
 
         // FIRST: Fetch all data
-        const [bridgeData, fullInspectionData, photosResponse, bciFormData] = await Promise.all([
+        const [bridgeData, fullInspectionData, photosResponse, bciFormData, nextDueData] = await Promise.all([
             fetch(`${API_BASE}/api/bridges/${structureId}`).then(res => res.json()).catch(() => ({})),
             fetch(`${API_BASE}/api/inspection/full?structure_id=${structureId}&date=${inspectionDate}`).then(res => res.ok ? res.json() : null).catch(() => null),
             fetch(`${API_BASE}/api/bridges/${structureId}/inspection-photos?inspectionDate=${encodeURIComponent(inspectionDate)}`).then(res => res.ok ? res.json() : { success: false, photos: [] }).catch(() => ({ success: false, photos: [] })),
-            generateBCIFormForPDF(doc)
+            generateBCIFormForPDF(doc),
+            fetch(`${API_BASE}/api/inspection/next-due?structure_id=${structureId}&date=${inspectionDate}`).then(res => res.ok ? res.json() : null).catch(() => null)
         ]);
 
         console.log('Bridge data received:', bridgeData);
@@ -1036,10 +1037,15 @@ async function generateSimplePDFReport(doc, mode = 'download') {
                 {
                     text: (() => {
                         const highSeverity = severityCounts[5] + severityCounts[4];
-                        if (highSeverity > 0) return 'It is recommended that the next general inspection be carried out within 6 months.\n\nNote: Interim safety inspections should be conducted monthly due to identified severe/critical defects.';
-                        if (severityCounts[3] > 0) return 'It is recommended that the next general inspection be carried out within 12 months.';
-                        if (defectsData.length > 0) return 'It is recommended that the next general inspection be carried out within 24 months.';
-                        return 'It is recommended that the next general inspection be carried out within 24-36 months.';
+                        let scheduleLine;
+                        if (nextDueData && nextDueData.date) {
+                            const formatted = new Date(nextDueData.date).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+                            scheduleLine = `The next inspection (${nextDueData.type}) is scheduled for ${formatted}, in line with this structure's inspection cycle.`;
+                        } else {
+                            scheduleLine = 'The next inspection date could not be determined from this structure\'s inspection history.';
+                        }
+                        if (highSeverity > 0) return scheduleLine + '\n\nNote: Interim safety inspections should be conducted monthly due to identified severe/critical defects.';
+                        return scheduleLine;
                     })(),
                     color: (severityCounts[5] + severityCounts[4]) > 0 ? '#dc2626' : '#2c3e44',
                     margin: [15, 0, 0, 15]
