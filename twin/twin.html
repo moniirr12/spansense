@@ -533,29 +533,29 @@ body {
 }
 .skin-pill:hover { color: #5b8c8a; }
 .skin-pill.on { background: white; color: #2c5a57; font-weight: 600; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
-.vc-layer-toggles { display: flex; gap: 8px; flex-wrap: wrap; }
+/* Compact icon-only layer toggles (tooltip via title=) - much narrower
+   than the old text pills so the whole vc-head fits on one line. */
+.vc-layer-toggles { display: flex; gap: 6px; }
 .vc-pill {
-    font-size: 0.72rem;
-    font-weight: 500;
-    color: #6a7c8e;
-    padding: 6px 13px;
-    border-radius: 30px;
-    border: 1px solid #e2e8f0;
-    background: #fafbfc;
-    cursor: pointer;
-    transition: all 0.2s;
+    width: 34px;
+    height: 34px;
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-family: inherit;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid #e2e8f0;
+    background: #fafbfc;
+    color: #8a9ba8;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
 }
-.vc-pill .sw { width: 6px; height: 6px; border-radius: 50%; background: #b8c4cc; }
 .vc-pill:hover { border-color: #8ab4b0; color: #5b8c8a; }
-.vc-pill.on { background: #eef4f2; border-color: #8ab4b0; color: #2c5a57; }
-.vc-pill.on .sw { background: #5b8c8a; box-shadow: 0 0 6px rgba(91,140,138,0.5); }
-.vc-pill[data-layer="works"].on .sw { background: #c28b5a; box-shadow: 0 0 6px rgba(194,139,90,0.5); }
-.vc-pill[data-layer="defects"].on .sw { background: #c0392b; box-shadow: 0 0 6px rgba(192,57,43,0.5); }
-.vc-pill[data-layer="sensors"].on .sw { background: #4a90b8; box-shadow: 0 0 6px rgba(74,144,184,0.5); }
+.vc-pill.on { background: #eef4f2; border-color: #8ab4b0; color: #5b8c8a; }
+.vc-pill[data-layer="works"].on { background: rgba(194,139,90,0.14); border-color: #c28b5a; color: #c28b5a; }
+.vc-pill[data-layer="defects"].on { background: rgba(192,57,43,0.14); border-color: #c0392b; color: #c0392b; }
+.vc-pill[data-layer="sensors"].on { background: rgba(74,144,184,0.14); border-color: #4a90b8; color: #4a90b8; }
 
 .model-stage {
     position: relative;
@@ -933,10 +933,10 @@ body.night-mode .glass-scrollbar .thumb {
                         </div>
                     </div>
                     <div class="vc-layer-toggles">
-                        <div class="vc-pill on" data-layer="structure"><span class="sw"></span>Structure</div>
-                        <div class="vc-pill on" data-layer="sensors"><span class="sw"></span>Sensors</div>
-                        <div class="vc-pill" data-layer="defects"><span class="sw"></span>Defects</div>
-                        <div class="vc-pill" data-layer="works"><span class="sw"></span>Works Required</div>
+                        <div class="vc-pill on" data-layer="structure" title="Structure"><i class="fa-solid fa-cube"></i></div>
+                        <div class="vc-pill on" data-layer="sensors" title="Sensors"><i class="fa-solid fa-satellite-dish"></i></div>
+                        <div class="vc-pill" data-layer="defects" title="Defects"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                        <div class="vc-pill" data-layer="works" title="Works Required"><i class="fa-solid fa-hard-hat"></i></div>
                     </div>
                 </div>
 
