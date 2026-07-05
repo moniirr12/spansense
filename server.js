@@ -2225,7 +2225,7 @@ app.get('/api/check-session', (req, res) => {
 app.get('/api/me', requireAuth, async (req, res) => {
     try {
         const user = await dbGet(
-            'SELECT username, full_name, role, created_at FROM users WHERE id = $1',
+            'SELECT username, full_name, role, created_at, email, phone FROM users WHERE id = $1',
             [req.session.userId]
         );
         if (!user) return res.status(404).json({ error: 'User not found' });
