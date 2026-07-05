@@ -11,8 +11,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1490,9 +1490,10 @@
         // comprehensive decade-span, unfiltered version for the PDF without
         // touching (or flickering) whatever span/filter/year is on screen -
         // see the comment in exportGanttToPDF() for why that matters.
-        function buildGanttHTML(isDecade, startYear, filter) {
-            const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-            const numCols = isDecade ? 10 : 12;
+        // Shared by buildGanttHTML() (live on-screen view) and
+        // buildGanttPdfDocDefinition() (PDF export) so both group the same
+        // inspections-by-bridge data the same way.
+        function computeGanttBridgesList(isDecade, startYear, filter) {
             const rangeInspections = isDecade
                 ? calculatePlannedInspectionsForRange(startYear, startYear + 9)
                 : calculatePlannedInspectionsForYear(startYear);
@@ -1511,7 +1512,13 @@
                 }
                 bridgeInspections[insp.bridgeId].inspections.push(insp);
             }
-            const bridgesList = Object.values(bridgeInspections);
+            return Object.values(bridgeInspections);
+        }
+
+        function buildGanttHTML(isDecade, startYear, filter) {
+            const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            const numCols = isDecade ? 10 : 12;
+            const bridgesList = computeGanttBridgesList(isDecade, startYear, filter);
 
             let sidebarHtml = '<div class="gantt-sidebar-header">Bridge</div>';
             let timelineHeader = '<div class="gantt-timeline-header">';
@@ -1586,10 +1593,106 @@
         // programme. Instead this builds its own always-comprehensive
         // 10-year/all-filter view via buildGanttHTML(), independent of
         // (and without disturbing) whatever span/filter/year is on screen.
+        // One badge per inspection due in `year` for `bridge`, stacked in a
+        // single table cell (a bridge can have both a GI and a PI land in
+        // the same year). Colour-coded to match the on-screen gantt-bar
+        // classes (.gi / .pi / .overdue).
+        function ganttPdfYearCell(bridge, year) {
+            const matches = bridge.inspections.filter(i => i.dueDate && i.dueDate.getFullYear() === year);
+            if (matches.length === 0) return { text: '', border: [false, false, false, false] };
+
+            const anyOverdue = matches.some(i => i.position === 'Overdue');
+            const anyPI = matches.some(i => i.type === 'PI');
+            return {
+                stack: matches.map(insp => ({
+                    text: insp.position === 'Overdue' ? `${insp.type} (overdue)` : insp.type,
+                    bold: true,
+                    fontSize: 7.5,
+                    alignment: 'center',
+                    color: insp.position === 'Overdue' ? '#c0392b' : (insp.type === 'PI' ? '#a8524f' : '#5b8c8a'),
+                    margin: [0, 1, 0, 1]
+                })),
+                fillColor: anyOverdue ? '#fdf2f2' : (anyPI ? '#faf0ef' : '#eef4f2')
+            };
+        }
+
+        // Builds a real, vector, multi-page pdfMake table for the full
+        // decade/all-filter inspection programme, independent of whatever
+        // span/filter/year is on screen (see the comment that used to sit
+        // on the old html2canvas-based exporter for why that independence
+        // matters). Replaced the old screenshot approach entirely: a single
+        // html2canvas image embedded via jsPDF's addImage() is never
+        // paginated, so once the grid grew taller than one A4 page's usable
+        // height, every row past that point was simply cut off - which is
+        // exactly why the export kept showing only a handful of structures
+        // regardless of how comprehensive the underlying data was. A real
+        // pdfMake table with headerRows:1 flows across as many pages as it
+        // needs and repeats the header on each one, and renders crisp
+        // vector text instead of a blurry raster screenshot.
+        function buildGanttPdfDocDefinition(startYear) {
+            const bridgesList = computeGanttBridgesList(true, startYear, 'all').sort((a, b) => a.id - b.id);
+            const years = Array.from({ length: 10 }, (_, i) => startYear + i);
+
+            const body = [
+                [
+                    { text: 'Bridge', style: 'tableHeader', fillColor: '#1a2e38' },
+                    ...years.map(y => ({ text: String(y), style: 'tableHeader', alignment: 'center', fillColor: '#1a2e38' }))
+                ],
+                ...bridgesList.map(bridge => [
+                    {
+                        stack: [
+                            { text: bridge.name, bold: true, fontSize: 9 },
+                            { text: `ID ${bridge.id} · ${bridge.inspections.length} inspection${bridge.inspections.length !== 1 ? 's' : ''} due`, fontSize: 7, color: '#8a9ba8' }
+                        ]
+                    },
+                    ...years.map(y => ganttPdfYearCell(bridge, y))
+                ])
+            ];
+
+            return {
+                pageSize: 'A4',
+                pageOrientation: 'landscape',
+                pageMargins: [30, 40, 30, 30],
+                content: bridgesList.length === 0
+                    ? [
+                        { text: 'spanSense Inspection Programme', style: 'title' },
+                        { text: `Years: ${startYear}–${startYear + 9}  |  Generated: ${new Date().toLocaleDateString()}`, style: 'subtitle' },
+                        { text: 'No inspections due in this period', alignment: 'center', color: '#8a9ba8', margin: [0, 60, 0, 0] }
+                    ]
+                    : [
+                        { text: 'spanSense Inspection Programme', style: 'title' },
+                        { text: `Years: ${startYear}–${startYear + 9}  |  Generated: ${new Date().toLocaleDateString()}`, style: 'subtitle' },
+                        {
+                            table: {
+                                headerRows: 1,
+                                widths: [130, ...years.map(() => '*')],
+                                body
+                            },
+                            layout: {
+                                hLineWidth: () => 0.5,
+                                vLineWidth: () => 0.5,
+                                hLineColor: () => '#d8e0e7',
+                                vLineColor: () => '#d8e0e7',
+                                paddingLeft: () => 5,
+                                paddingRight: () => 5,
+                                paddingTop: () => 4,
+                                paddingBottom: () => 4
+                            },
+                            margin: [0, 14, 0, 0]
+                        }
+                    ],
+                styles: {
+                    title: { fontSize: 16, bold: true, color: '#2c5a57' },
+                    subtitle: { fontSize: 9, color: '#6a7c8e' },
+                    tableHeader: { bold: true, color: 'white', fontSize: 9 }
+                },
+                defaultStyle: { font: 'Roboto' }
+            };
+        }
+
         async function exportGanttToPDF() {
             const exportYear = currentDisplayYear;
-            const { sidebarHtml, timelineHeader, gridRows, bridgeCount } = buildGanttHTML(true, exportYear, 'all');
-            if (bridgeCount === 0) { alert('No data to export'); return; }
+            const docDefinition = buildGanttPdfDocDefinition(exportYear);
 
             const loadingToast = document.createElement('div');
             loadingToast.textContent = 'Generating PDF...';
@@ -1597,66 +1700,7 @@
             document.body.appendChild(loadingToast);
 
             try {
-                const cloneContainer = document.createElement('div');
-                cloneContainer.style.cssText = 'background: white; padding: 20px; font-family: "Inter", sans-serif;';
-                cloneContainer.innerHTML = `
-                    <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #5b8c8a; padding-bottom: 10px;">
-                        <h1 style="color: #2c5a57; margin: 0;">spanSense Inspection Programme</h1>
-                        <p style="color: #6a7c8e; margin: 5px 0 0;">Years: ${exportYear}–${exportYear + 9} | Generated: ${new Date().toLocaleDateString()}</p>
-                    </div>
-                `;
-
-                const ganttClone = document.createElement('div');
-                ganttClone.style.cssText = 'display: flex; width: 100%;';
-                ganttClone.innerHTML = `
-                    <div class="gantt-sidebar">${sidebarHtml}</div>
-                    <div class="gantt-timeline">${timelineHeader}<div class="gantt-grid">${gridRows}</div></div>`;
-                cloneContainer.appendChild(ganttClone);
-
-                const style = document.createElement('style');
-                style.textContent = `
-                    /* position: static overrides the live page's .gantt-sidebar
-                       { position: sticky; left: 0; z-index: 10 } (needed there
-                       so bridge names stay pinned while scrolling the on-screen
-                       timeline) - html2canvas renders position:sticky as if it
-                       were fixed/absolute instead of flowing in the flex
-                       layout, which is what was drawing the sidebar as an
-                       overlay on top of the timeline instead of beside it. */
-                    .gantt-sidebar { position: static; width: 240px; background: #f8fafc; border-right: 1px solid #e9edf2; }
-                    .gantt-sidebar-header { background: #eef2f6; padding: 12px 20px; font-weight: 700; color: #5b8c8a; }
-                    .gantt-bridge-row { padding: 10px 20px; border-bottom: 1px solid #e9edf2; display: flex; align-items: center; gap: 12px; }
-                    .gantt-timeline-header { display: flex; background: #eef2f6; border-bottom: 1px solid #e9edf2; }
-                    .gantt-month { flex: 1; padding: 12px 2px; text-align: center; font-weight: 700; font-size: 11px; border-right: 1px solid #e9edf2; }
-                    .gantt-row { display: flex; height: 52px; border-bottom: 1px solid #e9edf2; position: relative; }
-                    .gantt-cell { flex: 1; border-right: 1px dashed #e9edf2; }
-                    .gantt-bar { position: absolute; height: 28px; border-radius: 8px; top: 12px; display: flex; align-items: center; padding: 0 8px; font-size: 10px; font-weight: 700; }
-                    .gantt-bar.gi { background: #eef4f2; color: #5b8c8a; border: 1px solid #5b8c8a; }
-                    .gantt-bar.pi { background: #faf0ef; color: #a8524f; border: 1px solid #a8524f; }
-                    .gantt-bar.overdue { background: #fdf2f2; color: #c47070; border: 1px solid #c47070; }
-                    .bridge-id { font-size: 11px; font-weight: 700; color: #8a9ba8; min-width: 36px; }
-                    .bridge-name { font-size: 12px; font-weight: 600; }
-                    .bridge-meta { font-size: 10px; color: #8a9ba8; }
-                    .bridge-status { width: 8px; height: 8px; border-radius: 50%; }
-                    .bridge-status.good { background: #5b8c8a; }
-                    .bridge-status.poor { background: #c47070; }
-                `;
-                cloneContainer.appendChild(style);
-                
-                document.body.appendChild(cloneContainer);
-                cloneContainer.style.position = 'absolute';
-                cloneContainer.style.left = '-9999px';
-                cloneContainer.style.top = '0';
-                
-                const canvas = await html2canvas(cloneContainer, { scale: 2, backgroundColor: '#ffffff' });
-                const imgData = canvas.toDataURL('image/png');
-                const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF('landscape', 'mm', 'a4');
-                const imgWidth = 280;
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
-                pdf.save(`Inspection_Programme_${exportYear}-${exportYear + 9}.pdf`);
-                
-                document.body.removeChild(cloneContainer);
+                pdfMake.createPdf(docDefinition).download(`Inspection_Programme_${exportYear}-${exportYear + 9}.pdf`);
             } catch (error) {
                 console.error('PDF export failed:', error);
                 alert('Failed to generate PDF');
