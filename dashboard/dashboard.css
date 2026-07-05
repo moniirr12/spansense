@@ -42,6 +42,18 @@ body {
     padding: 0 28px;
     height: 64px;
 }
+
+/* Metric-card clicks (scrollToDashboardSection in dashboard.js) use
+   scrollIntoView, which respects scroll-margin-top — without this, "start"
+   lands the section flush with the viewport top, right under the fixed
+   navbar (20px top + 64px tall = 84px), covering its heading. */
+#assetInventoryChartCard,
+#avgBciByTypeChartCard,
+#bciDistributionChartCard,
+#criticalStructuresSection,
+#pending-review-section {
+    scroll-margin-top: 108px;
+}
 .navbar .left { display: flex; align-items: center; gap: 24px; }
 .navbar .logo {
     font-size: 1.2rem;
