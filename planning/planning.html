@@ -337,7 +337,7 @@
             gap: 6px;
         }
         .day-cell {
-            min-height: 100px;
+            min-height: 112px;
             background: #fafbfc;
             border-radius: 12px;
             padding: 8px;
@@ -363,12 +363,12 @@
         }
         .day-cell.today .day-number { color: #5b8c8a; }
 
-        .day-events { display: flex; flex-direction: column; gap: 3px; }
+        .day-events { display: flex; flex-direction: column; gap: 5px; }
         .event-chip {
-            font-size: 0.65rem;
+            font-size: 0.72rem;
             font-weight: 600;
-            padding: 3px 8px;
-            border-radius: 6px;
+            padding: 7px 10px;
+            border-radius: 7px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -377,7 +377,7 @@
         }
         .event-chip:hover { transform: scale(1.02); }
         .event-chip.gi { background: #eef4f2; color: #5b8c8a; border-left: 3px solid #5b8c8a; }
-        .event-chip.pi { background: #eef2f8; color: #2c5f8a; border-left: 3px solid #2c5f8a; }
+        .event-chip.pi { background: #faf0ef; color: #a8524f; border-left: 3px solid #a8524f; }
         .event-chip.overdue { background: #fdf2f2; color: #c47070; border-left: 3px solid #c47070; animation: pulse 2s infinite; }
 
         @keyframes pulse {
@@ -435,21 +435,24 @@
         }
         .month-events {
             padding: 12px;
-            min-height: 100px;
+            min-height: 112px;
         }
         .month-event {
-            font-size: 0.7rem;
-            padding: 4px 8px;
-            margin-bottom: 4px;
-            border-radius: 6px;
+            font-size: 0.76rem;
+            padding: 8px 10px;
+            margin-bottom: 6px;
+            border-radius: 7px;
             background: #fafbfc;
             color: #6a7c8e;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            cursor: pointer;
+            transition: transform 0.15s;
         }
+        .month-event:hover { transform: scale(1.02); }
         .month-event.gi { background: #eef4f2; color: #5b8c8a; border-left: 3px solid #5b8c8a; }
-        .month-event.pi { background: #eef2f8; color: #2c5f8a; border-left: 3px solid #2c5f8a; }
+        .month-event.pi { background: #faf0ef; color: #a8524f; border-left: 3px solid #a8524f; }
         .month-event.overdue { background: #fdf2f2; color: #c47070; border-left: 3px solid #c47070; }
         .month-count {
             font-size: 0.65rem;
@@ -705,9 +708,9 @@
             border-color: #5b8c8a;
         }
         .gantt-bar.pi {
-            background: linear-gradient(90deg, #eef2f8, #c8dae8);
-            color: #2c5f8a;
-            border-color: #2c5f8a;
+            background: linear-gradient(90deg, #faf0ef, #f0d8d6);
+            color: #a8524f;
+            border-color: #a8524f;
         }
         .gantt-bar.overdue {
             background: linear-gradient(90deg, #fdf2f2, #f5e0e0);
@@ -807,7 +810,7 @@
             text-transform: uppercase;
         }
         .inspection-type.gi { background: #eef4f2; color: #5b8c8a; }
-        .inspection-type.pi { background: #eef2f8; color: #2c5f8a; }
+        .inspection-type.pi { background: #faf0ef; color: #a8524f; }
         .inspection-type.od { background: #fdf2f2; color: #c47070; }
 
         /* Loading Spinner */
@@ -897,11 +900,13 @@
         .night-mode .view-btn { color: #9ab0b8; }
         .night-mode .view-btn.active { background: #2f4a48; color: #8ab4b0; }
         .night-mode .event-chip.gi { background: #1e3a3e; color: #8ab4b0; }
-        .night-mode .event-chip.pi { background: #1a2a3a; color: #6a9ac0; }
+        .night-mode .event-chip.pi { background: #3a2422; color: #d99a97; }
         .night-mode .calendar-legend { background: #2a3a40; border-color: #2f3e45; }
         .night-mode .inspection-item:hover { background: #2a3a40; }
         .night-mode .month-header { background: #2a3a40; border-color: #2f3e45; }
         .night-mode .month-event { background: #2a3a40; color: #9ab0b8; }
+        .night-mode .month-event.gi { background: #1e3a3e; color: #8ab4b0; }
+        .night-mode .month-event.pi { background: #3a2422; color: #d99a97; }
         .night-mode .month-count { border-color: #2f3e45; color: #8aa4ac; }
         .night-mode .gantt-bridge-row { border-color: #2f3e45; }
         .night-mode .gantt-bridge-row:hover { background: #32454d; }
@@ -909,7 +914,18 @@
         .night-mode .filter-chip { background: #2a3a40; border-color: #3a4b53; color: #9ab0b8; }
         .night-mode .filter-chip.active { background: #2f4a48; border-color: #3a6b62; color: #8ab4b0; }
         .night-mode .gantt-bar.gi { background: linear-gradient(90deg, #1e3a3e, #2a4a4e); border-color: #3a6b62; color: #8ab4b0; }
-        .night-mode .gantt-bar.pi { background: linear-gradient(90deg, #1a2a3a, #2a3a4a); border-color: #3a6a8a; color: #7aa0c0; }
+        .night-mode .gantt-bar.pi { background: linear-gradient(90deg, #3a2422, #4a2e2c); border-color: #7a4442; color: #d99a97; }
+        .night-mode .inspection-type.gi { background: #1e3a3e; color: #8ab4b0; }
+        .night-mode .inspection-type.pi { background: #3a2422; color: #d99a97; }
+        .night-mode .inspection-type.od { background: #3a2020; color: #e8a0a0; }
+
+        /* These were the only borders left at their light-mode #eef2f6/#e9edf2
+           value in dark mode - a Gantt grid is a LOT of repeated hairlines
+           (every cell in every row), so left un-recolored they read as a wall
+           of bright white lines against the dark background. */
+        .night-mode .gantt-toolbar { border-color: #2f3e45; }
+        .night-mode .gantt-row { border-color: #2f3e45; }
+        .night-mode .gantt-cell { border-right-color: #28343a; }
         .night-mode .schedule-edit-btn { color: #5c6f78; }
         .night-mode .schedule-edit-btn:hover { background: #2f4a48; color: #8ab4b0; }
         .night-mode .modal-overlay { background: rgba(15, 24, 28, 0.5); }
@@ -952,7 +968,7 @@
         
         <div class="page-header">
             <h1>Inspection Planning</h1>
-            <p>Schedule and coordinate bridge inspections across your network (2-year GI cycle, 6-year PI cycle)</p>
+            <p>Schedule and coordinate bridge inspections across your network (2-year GI / 6-year PI cycle by default, editable per structure)</p>
         </div>
 
         <div class="stats-row">
@@ -1000,7 +1016,7 @@
             </div>
             <div class="calendar-legend">
                 <div class="legend-item"><div class="legend-dot" style="background: #eef4f2; border: 2px solid #5b8c8a;"></div>General Inspection (GI) — Every 2 years</div>
-                <div class="legend-item"><div class="legend-dot" style="background: #eef2f8; border: 2px solid #2c5f8a;"></div>Principal Inspection (PI) — Every 6 years</div>
+                <div class="legend-item"><div class="legend-dot" style="background: #faf0ef; border: 2px solid #a8524f;"></div>Principal Inspection (PI) — Every 6 years</div>
                 <div class="legend-item"><div class="legend-dot" style="background: #fdf2f2; border: 2px solid #c47070;"></div>Overdue</div>
                 <div class="legend-item"><div class="legend-dot" style="background: #eef4f2; border: 2px dashed #5b8c8a;"></div>Today</div>
             </div>
@@ -1211,13 +1227,17 @@
             const currentYear = today.getFullYear();
             const currentQuarter = Math.floor(today.getMonth() / 3);
             let plannedCurrentYear = 0, overdue = 0, thisQuarter = 0;
-            const yearEnd = new Date(currentYear + 1, 0, 1);
+            // Two different horizons on purpose: "is the next inspection overdue"
+            // needs to actually reach that next occurrence (which can be years out
+            // for a bridge inspected recently), while "planned this year" only
+            // cares whether an occurrence lands within the current year.
+            const farHorizon = new Date(currentYear + 10, 0, 1);
 
             for (const bridge of bridgesData) {
                 const insp = inspectionsData[bridge.id];
                 if (!insp || !insp.hasInspections || !insp.latest) { overdue++; continue; }
 
-                const schedule = projectSchedule(bridge, insp, today, yearEnd);
+                const schedule = projectSchedule(bridge, insp, today, farHorizon);
                 if (schedule.length === 0) { overdue++; continue; }
                 if (schedule[0].position === 'Overdue') overdue++;
 
@@ -1342,7 +1362,7 @@
                 let eventsHtml = '';
                 dueInspections.slice(0, 2).forEach(insp => {
                     const chipClass = insp.position === 'Overdue' ? 'overdue' : (insp.type === 'PI' ? 'pi' : 'gi');
-                    eventsHtml += `<div class="event-chip ${chipClass}">${insp.bridgeName.substring(0, 12)} — ${insp.type}</div>`;
+                    eventsHtml += `<div class="event-chip ${chipClass}" onclick="event.stopPropagation(); openScheduleModal(${insp.bridgeId})">${insp.bridgeName.substring(0, 12)} — ${insp.type}</div>`;
                 });
                 if (dueInspections.length > 2) eventsHtml += `<div class="event-more">+${dueInspections.length - 2} more</div>`;
                 gridHtml += `<div class="day-cell ${isToday ? 'today' : ''}"><div class="day-number">${d}</div><div class="day-events">${eventsHtml}</div></div>`;
@@ -1358,7 +1378,7 @@
                 let eventsHtml = '';
                 dueThisMonth.slice(0, 3).forEach(insp => {
                     const cls = insp.position === 'Overdue' ? 'overdue' : (insp.type === 'PI' ? 'pi' : 'gi');
-                    eventsHtml += `<div class="month-event ${cls}">${insp.bridgeName.substring(0, 20)} — ${insp.type}</div>`;
+                    eventsHtml += `<div class="month-event ${cls}" onclick="event.stopPropagation(); openScheduleModal(${insp.bridgeId})">${insp.bridgeName.substring(0, 20)} — ${insp.type}</div>`;
                 });
                 yearHtml += `<div class="month-card" onclick="switchToMonth(${m})">
                     <div class="month-header">${months[m]} ${year}</div>
@@ -1484,7 +1504,7 @@
                     .gantt-cell { flex: 1; border-right: 1px dashed #e9edf2; }
                     .gantt-bar { position: absolute; height: 28px; border-radius: 8px; top: 12px; display: flex; align-items: center; padding: 0 8px; font-size: 10px; font-weight: 700; }
                     .gantt-bar.gi { background: #eef4f2; color: #5b8c8a; border: 1px solid #5b8c8a; }
-                    .gantt-bar.pi { background: #eef2f8; color: #2c5f8a; border: 1px solid #2c5f8a; }
+                    .gantt-bar.pi { background: #faf0ef; color: #a8524f; border: 1px solid #a8524f; }
                     .gantt-bar.overdue { background: #fdf2f2; color: #c47070; border: 1px solid #c47070; }
                     .bridge-id { font-size: 11px; font-weight: 700; color: #8a9ba8; min-width: 36px; }
                     .bridge-name { font-size: 12px; font-weight: 600; }
