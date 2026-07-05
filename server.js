@@ -691,14 +691,23 @@ app.get('/api/bridges', requireAuth, async (req, res) => {
         const rows = await dbAll(`
             SELECT b.id, b.name, b.location, b.latitude, b.longitude, b.span, b.length,
                     b.built_year, b.type, b.span_number, b.OSE, b.OSN,
-                    b.primary_material, b.secondary_material, b.organization_id, b.bci_av,
+                    b.primary_material, b.secondary_material, b.organization_id,
+                    latest_insp.overall_bciave AS bci_av,
                     b.gi_cycle_years, b.pi_cycle_years, b.next_inspection_override,
                     MAX(i.inspection_date) as last_inspected
             FROM bridges b
             LEFT JOIN inspections i ON b.id = i.structure_id
+            LEFT JOIN LATERAL (
+                SELECT overall_bciave
+                FROM inspections
+                WHERE structure_id = b.id
+                ORDER BY inspection_date DESC
+                LIMIT 1
+            ) latest_insp ON true
             GROUP BY b.id, b.name, b.location, b.latitude, b.longitude, b.span, b.length,
                      b.built_year, b.type, b.span_number, b.OSE, b.OSN,
-                     b.primary_material, b.secondary_material, b.organization_id, b.bci_av,
+                     b.primary_material, b.secondary_material, b.organization_id,
+                     latest_insp.overall_bciave,
                      b.gi_cycle_years, b.pi_cycle_years, b.next_inspection_override
             ORDER BY b.name
         `);
