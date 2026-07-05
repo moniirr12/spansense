@@ -402,16 +402,20 @@ const SKINS = {
         label: 'Realistic',
         lights: {
             ambient: { color: 0x8fa8a4, intensity: 0.7 },
-            key: { color: 0xfff2df, intensity: 1.15 },
+            key: { color: 0xffe9c7, intensity: 1.3 },
             rim: { color: 0x4a90b8, intensity: 0.45 },
             teal: { color: 0x5b8c8a, intensity: 0.7 }
         },
+        // Deliberately high contrast (dark tarmac deck against light stone/
+        // concrete piers) - the twinView skin's fairly uniform dark teal-grey
+        // across every part read as "barely different" from twinView at a
+        // glance, unlike this same contrast on the Caversham page.
         materials: {
-            steel: { color: 0x3d4446, roughness: 0.35, metalness: 0.7 },
-            deck: { color: 0x2b2f31, roughness: 0.9, metalness: 0.05 },
-            pier: { color: 0x8f8878, roughness: 0.9, metalness: 0.02 },
-            stone: { color: 0xa89e8c, roughness: 0.85, metalness: 0.02 },
-            concrete: { color: 0x9aa39c, roughness: 0.85, metalness: 0.02 }
+            steel: { color: 0x2e3a42, roughness: 0.35, metalness: 0.65 },
+            deck: { color: 0x23272a, roughness: 0.95, metalness: 0.03 },
+            pier: { color: 0xb0a790, roughness: 0.88, metalness: 0.02 },
+            stone: { color: 0xcbb99e, roughness: 0.85, metalness: 0.02 },
+            concrete: { color: 0xc2bcae, roughness: 0.88, metalness: 0.02 }
         }
     }
 };

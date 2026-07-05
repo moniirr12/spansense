@@ -691,14 +691,23 @@ app.get('/api/bridges', requireAuth, async (req, res) => {
         const rows = await dbAll(`
             SELECT b.id, b.name, b.location, b.latitude, b.longitude, b.span, b.length,
                     b.built_year, b.type, b.span_number, b.OSE, b.OSN,
-                    b.primary_material, b.secondary_material, b.organization_id, b.bci_av,
+                    b.primary_material, b.secondary_material, b.organization_id,
+                    latest_insp.overall_bciave AS bci_av,
                     b.gi_cycle_years, b.pi_cycle_years, b.next_inspection_override,
                     MAX(i.inspection_date) as last_inspected
             FROM bridges b
             LEFT JOIN inspections i ON b.id = i.structure_id
+            LEFT JOIN LATERAL (
+                SELECT overall_bciave
+                FROM inspections
+                WHERE structure_id = b.id
+                ORDER BY inspection_date DESC
+                LIMIT 1
+            ) latest_insp ON true
             GROUP BY b.id, b.name, b.location, b.latitude, b.longitude, b.span, b.length,
                      b.built_year, b.type, b.span_number, b.OSE, b.OSN,
-                     b.primary_material, b.secondary_material, b.organization_id, b.bci_av,
+                     b.primary_material, b.secondary_material, b.organization_id,
+                     latest_insp.overall_bciave,
                      b.gi_cycle_years, b.pi_cycle_years, b.next_inspection_override
             ORDER BY b.name
         `);
@@ -1533,6 +1542,26 @@ app.put('/update-inspection', requireAuth, async (req, res) => {
         );
 
         // 3. Delete existing spans and defects
+        //
+        // Every defect gets a brand-new id below regardless of whether it
+        // changed, so defect_photos.defect_id (which has no FK, and is set
+        // once at upload time to whatever the defect's id was *then*) would
+        // otherwise silently point at a row that no longer exists after
+        // every single save - the photo is still stored, but orphaned and
+        // invisible. Capture each defect's business identity (span/element/
+        // type/number) -> its current id here, before it's deleted, so the
+        // insert loop below can reattach photos to the new id instead.
+        const oldDefectsResult = await client.query(
+            `SELECT id, span_number, element_no, defect_type, defect_number
+             FROM defects WHERE inspection_id = $1`,
+            [inspectionId]
+        );
+        const oldDefectIdByIdentity = {};
+        oldDefectsResult.rows.forEach(row => {
+            const identity = `${row.span_number}-${row.element_no}-${row.defect_type}-${row.defect_number}`;
+            oldDefectIdByIdentity[identity] = row.id;
+        });
+
         await client.query('DELETE FROM defects WHERE inspection_id = $1', [inspectionId]);
         await client.query('DELETE FROM inspection_spans WHERE inspection_id = $1', [inspectionId]);
 
@@ -1571,22 +1600,23 @@ app.put('/update-inspection', requireAuth, async (req, res) => {
         for (const defect of defects) {
             const key = `${defect.spanNumber}-${defect.elementNumber}`;
             defectCounts[key] = (defectCounts[key] || 0) + 1;
+            const defectNumber = defect.defectNumber || '1';
 
-            await client.query(
+            const insertedDefect = await client.query(
                 `INSERT INTO defects (
                     inspection_id, span_number, element_no, defect_no,
                     defect_type, defect_number, severity,
                     extent, works_required, priority,
                     cost, comments, remedial_works, timestamp,
                     pos_x, pos_y, pos_z, is_primary
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) RETURNING id`,
                 [
                     inspectionId,
                     defect.spanNumber,
                     defect.elementNumber,
                     defectCounts[key],
                     defect.defectType,
-                    defect.defectNumber || '1',
+                    defectNumber,
                     defect.severity,
                     defect.extent,
                     defect.worksRequired || '',
@@ -1600,6 +1630,31 @@ app.put('/update-inspection', requireAuth, async (req, res) => {
                     defect.posZ ?? null,
                     defect.isPrimary === true
                 ]
+            );
+
+            // Same identity this defect had before (if any) - reattach its
+            // existing photos to the new id, and mark it claimed so the
+            // cleanup below doesn't delete them as belonging to a removed
+            // defect.
+            const identity = `${defect.spanNumber}-${defect.elementNumber}-${defect.defectType}-${defectNumber}`;
+            const oldDefectId = oldDefectIdByIdentity[identity];
+            if (oldDefectId != null) {
+                await client.query(
+                    'UPDATE defect_photos SET defect_id = $1 WHERE defect_id = $2',
+                    [insertedDefect.rows[0].id, oldDefectId]
+                );
+                delete oldDefectIdByIdentity[identity];
+            }
+        }
+
+        // Any old defect identity not claimed above was actually removed
+        // during this edit (not just re-saved) - its photos would otherwise
+        // sit orphaned forever pointing at an id that no longer exists.
+        const removedDefectIds = Object.values(oldDefectIdByIdentity);
+        if (removedDefectIds.length > 0) {
+            await client.query(
+                'DELETE FROM defect_photos WHERE defect_id = ANY($1::int[])',
+                [removedDefectIds]
             );
         }
 
@@ -1622,9 +1677,16 @@ app.put('/update-inspection', requireAuth, async (req, res) => {
 app.post('/find-inspection-id', requireAuth, async (req, res) => {
     try {
         const { structure_id, inspection_date } = req.body;
+        // ORDER BY + LIMIT: without a UNIQUE(structure_id, inspection_date)
+        // constraint, a race (e.g. a double-click on Save) can leave two
+        // inspection rows for the same date - without this, which one comes
+        // back is undefined/inconsistent, so a later edit could silently
+        // load and overwrite the wrong row. Picking the most recent one
+        // deterministically matches what an editor would expect.
         const row = await dbGet(
-            `SELECT id FROM inspections 
-             WHERE structure_id = $1 AND inspection_date = $2`,
+            `SELECT id FROM inspections
+             WHERE structure_id = $1 AND inspection_date = $2
+             ORDER BY id DESC LIMIT 1`,
             [structure_id, inspection_date]
         );
 
@@ -2163,7 +2225,7 @@ app.get('/api/check-session', (req, res) => {
 app.get('/api/me', requireAuth, async (req, res) => {
     try {
         const user = await dbGet(
-            'SELECT username, full_name, role, created_at FROM users WHERE id = $1',
+            'SELECT username, full_name, role, created_at, email, phone FROM users WHERE id = $1',
             [req.session.userId]
         );
         if (!user) return res.status(404).json({ error: 'User not found' });

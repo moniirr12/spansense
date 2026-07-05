@@ -896,7 +896,7 @@ function loadDefectsFromSession(currentSpan) {
     document.querySelectorAll("tr.expandable-row").forEach(row => row.remove());
     const processedMainRows = new Set();
     defectsData
-      .filter(defect => defect.spanNumber === currentSpan)
+      .filter(defect => defect.spanNumber == currentSpan)
       .forEach(defect => {
         const mainRow = document.querySelector(`tr.main-row[data-row-id="${defect.elementNumber}"]`);
         if (mainRow) {
@@ -1262,6 +1262,10 @@ function addDefectToTable(mainRow, defectData, isRetrieved, isEditable = false) 
 
 document.addEventListener("DOMContentLoaded", function () {
   console.log("DOM fully loaded. Initializing event listeners...");
+  // inspection.js is also loaded on map.html (for shared report helpers),
+  // which has no inspection-element-table UI - skip the rest of this
+  // inspection-editor-specific setup there instead of throwing.
+  if (!document.getElementById('inspectionElementsTable')) return;
   document.getElementById('inspectionElementsTable').addEventListener('click', function (event) {
     const target = event.target;
     const mainRow = target.closest('tr.main-row');
@@ -1567,20 +1571,25 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
-document.getElementById('works').addEventListener('change', function() {
-    const showFields = this.value === 'Y';
-    const remedialWorksGroup = document.getElementById('remedialWorksGroup');
-    const priorityGroup = document.getElementById('priorityGroup');
-    const costGroup = document.getElementById('costGroup');
-    if (remedialWorksGroup) remedialWorksGroup.style.display = showFields ? 'flex' : 'none';
-    if (priorityGroup) priorityGroup.style.display = showFields ? 'flex' : 'none';
-    if (costGroup) costGroup.style.display = showFields ? 'flex' : 'none';
-    if (!showFields) {
-        if (document.getElementById('remedialWorks')) document.getElementById('remedialWorks').value = '';
-        if (document.getElementById('priority')) document.getElementById('priority').value = '';
-        if (document.getElementById('cost')) document.getElementById('cost').value = '';
-    }
-});
+// Guarded the same way as the DOMContentLoaded block above - this script
+// also loads on map.html, which has no 'works' field.
+const worksFieldEl = document.getElementById('works');
+if (worksFieldEl) {
+    worksFieldEl.addEventListener('change', function() {
+        const showFields = this.value === 'Y';
+        const remedialWorksGroup = document.getElementById('remedialWorksGroup');
+        const priorityGroup = document.getElementById('priorityGroup');
+        const costGroup = document.getElementById('costGroup');
+        if (remedialWorksGroup) remedialWorksGroup.style.display = showFields ? 'flex' : 'none';
+        if (priorityGroup) priorityGroup.style.display = showFields ? 'flex' : 'none';
+        if (costGroup) costGroup.style.display = showFields ? 'flex' : 'none';
+        if (!showFields) {
+            if (document.getElementById('remedialWorks')) document.getElementById('remedialWorks').value = '';
+            if (document.getElementById('priority')) document.getElementById('priority').value = '';
+            if (document.getElementById('cost')) document.getElementById('cost').value = '';
+        }
+    });
+}
 
 (function() {
     const toggleBtn = document.getElementById('nightModeToggle');

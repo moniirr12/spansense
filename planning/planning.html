@@ -10,8 +10,10 @@
     <title>spanSense — Inspection Planning</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -644,6 +646,95 @@
         .schedule-field input:focus { outline: none; border-color: #8ab4b0; }
         .schedule-field .hint { font-size: 0.68rem; color: #8a9ba8; margin-top: 4px; font-weight: 400; }
 
+        /* ============================================
+           FLATPICKR CALENDAR - spanSense theme (light + night mode),
+           reused from inspection1.css so "Next inspection due" gets
+           the same styled calendar instead of the browser-native one.
+           ============================================ */
+        .flatpickr-calendar .flatpickr-day {
+            border: none !important;
+            border-radius: 8px !important;
+            background: transparent !important;
+        }
+        .flatpickr-calendar .flatpickr-day.selected,
+        .flatpickr-calendar .flatpickr-day.startRange,
+        .flatpickr-calendar .flatpickr-day.endRange {
+            background: #5b8c8a !important;
+            color: white !important;
+            border-radius: 8px !important;
+        }
+        .flatpickr-calendar .flatpickr-day.today {
+            font-weight: 700 !important;
+            color: #5b8c8a !important;
+            position: relative;
+        }
+        .flatpickr-calendar .flatpickr-day.today::after {
+            content: ''; position: absolute; bottom: 2px; left: 50%;
+            transform: translateX(-50%); width: 4px; height: 4px;
+            background: #5b8c8a; border-radius: 50%;
+        }
+        .flatpickr-calendar .flatpickr-day.today.selected::after { background: white; }
+        .flatpickr-calendar .flatpickr-day.flatpickr-disabled,
+        .flatpickr-calendar .flatpickr-day.flatpickr-disabled:hover,
+        .flatpickr-calendar .flatpickr-day.notAllowed,
+        .flatpickr-calendar .flatpickr-day.notAllowed:hover {
+            color: #b8c4cc !important; background: transparent !important;
+            opacity: 0.5 !important; cursor: not-allowed !important; text-decoration: line-through !important;
+        }
+        .flatpickr-calendar .flatpickr-day:hover:not(.flatpickr-disabled):not(.notAllowed):not(.selected) {
+            background: #eef4f2 !important; border-radius: 8px !important; color: #2c5a57 !important;
+        }
+        .flatpickr-calendar .flatpickr-day.prevMonthDay,
+        .flatpickr-calendar .flatpickr-day.nextMonthDay { color: #b0c0c8 !important; opacity: 0.6 !important; }
+        .flatpickr-calendar .flatpickr-months { background: #f8fafc !important; border-bottom: 1px solid #e9edf2 !important; }
+        .flatpickr-calendar .flatpickr-month { background: #f8fafc !important; color: #2c4a48 !important; }
+        .flatpickr-calendar .flatpickr-current-month { background: #f8fafc !important; color: #2c4a48 !important; }
+        .flatpickr-calendar .flatpickr-prev-month,
+        .flatpickr-calendar .flatpickr-next-month { fill: #8a9ba8 !important; }
+        .flatpickr-calendar .flatpickr-prev-month:hover,
+        .flatpickr-calendar .flatpickr-next-month:hover {
+            fill: #5b8c8a !important; background: rgba(91, 140, 138, 0.1) !important; border-radius: 50% !important;
+        }
+
+        .night-mode .flatpickr-calendar { background: #232e34 !important; border-color: #2f3e45 !important; box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3) !important; }
+        .night-mode .flatpickr-calendar .flatpickr-months { background: #1e2a2f !important; border-bottom: 1px solid #2f3e45 !important; border-radius: 8px 8px 0 0 !important; }
+        .night-mode .flatpickr-calendar .flatpickr-prev-month,
+        .night-mode .flatpickr-calendar .flatpickr-next-month { fill: #8ab4b0 !important; }
+        .night-mode .flatpickr-calendar .flatpickr-prev-month:hover,
+        .night-mode .flatpickr-calendar .flatpickr-next-month:hover { fill: #a0c8c4 !important; background: rgba(138, 180, 176, 0.1) !important; border-radius: 50% !important; }
+        .night-mode .flatpickr-calendar .flatpickr-month { background: #1e2a2f !important; color: #d4dfe3 !important; }
+        .night-mode .flatpickr-calendar .flatpickr-current-month { background: #1e2a2f !important; color: #d4dfe3 !important; }
+        .night-mode .flatpickr-calendar .flatpickr-current-month .flatpickr-monthDropdown-months { background: #1e2a2f !important; color: #d4dfe3 !important; }
+        .night-mode .flatpickr-calendar .flatpickr-current-month input.cur-year { background: #1e2a2f !important; color: #d4dfe3 !important; }
+        .night-mode .flatpickr-monthDropdown-months .flatpickr-monthDropdown-month { background: #232e34 !important; color: #c5d3d9 !important; }
+        .night-mode .flatpickr-monthDropdown-months .flatpickr-monthDropdown-month:hover { background: #2f4a48 !important; color: white !important; }
+        .night-mode .flatpickr-calendar .flatpickr-weekdays { background: #232e34 !important; }
+        .night-mode .flatpickr-calendar .flatpickr-weekday { color: #8aa4ac !important; background: #232e34 !important; }
+        .night-mode .flatpickr-calendar .flatpickr-day { color: #c5d3d9 !important; background: transparent !important; border: none !important; border-radius: 8px !important; box-shadow: none !important; }
+        .night-mode .flatpickr-calendar .flatpickr-day.selected,
+        .night-mode .flatpickr-calendar .flatpickr-day.startRange,
+        .night-mode .flatpickr-calendar .flatpickr-day.endRange { background: #5b8c8a !important; color: white !important; }
+        .night-mode .flatpickr-calendar .flatpickr-day.today { color: #8ab4b0 !important; font-weight: 700 !important; position: relative; }
+        .night-mode .flatpickr-calendar .flatpickr-day.today::after {
+            content: ''; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%);
+            width: 4px; height: 4px; background: #8ab4b0; border-radius: 50%;
+        }
+        .night-mode .flatpickr-calendar .flatpickr-day.today.selected::after { background: white; }
+        .night-mode .flatpickr-calendar .flatpickr-day.flatpickr-disabled,
+        .night-mode .flatpickr-calendar .flatpickr-day.flatpickr-disabled:hover,
+        .night-mode .flatpickr-calendar .flatpickr-day.notAllowed,
+        .night-mode .flatpickr-calendar .flatpickr-day.notAllowed:hover {
+            color: #5a6a78 !important; background: transparent !important; opacity: 0.35 !important;
+            cursor: not-allowed !important; text-decoration: line-through !important;
+        }
+        .night-mode .flatpickr-calendar .flatpickr-day:hover:not(.flatpickr-disabled):not(.notAllowed):not(.selected) { background: #2f4a48 !important; color: white !important; }
+        .night-mode .flatpickr-calendar .flatpickr-day.prevMonthDay,
+        .night-mode .flatpickr-calendar .flatpickr-day.nextMonthDay { color: #6a8090 !important; opacity: 0.5 !important; }
+        .night-mode .flatpickr-input,
+        .night-mode input.flatpickr-input { background: #1e2a2f !important; border-color: #3a4b53 !important; color: #c5d3d9 !important; }
+        .night-mode .flatpickr-input:focus,
+        .night-mode input.flatpickr-input:focus { background: #2a3a40 !important; border-color: #8ab4b0 !important; color: #d4dfe3 !important; }
+
         .gantt-timeline {
             flex: 1;
             min-width: 0;
@@ -1077,7 +1168,7 @@
             </label>
             <label class="schedule-field">
                 <span>Next inspection due</span>
-                <input type="date" id="scheduleNextDate">
+                <input type="text" id="scheduleNextDate" placeholder="Select a date" autocomplete="off">
                 <div class="hint">Leave blank to use the date calculated from the last inspection and frequency above.</div>
             </label>
             <div class="modal-actions">
@@ -1395,19 +1486,22 @@
             document.getElementById('yearGrid').innerHTML = yearHtml;
         }
 
-        function generateGanttView() {
+        // Pulled out of generateGanttView() so exportGanttToPDF() can build a
+        // comprehensive decade-span, unfiltered version for the PDF without
+        // touching (or flickering) whatever span/filter/year is on screen -
+        // see the comment in exportGanttToPDF() for why that matters.
+        function buildGanttHTML(isDecade, startYear, filter) {
             const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-            const isDecade = ganttSpan === 10;
             const numCols = isDecade ? 10 : 12;
             const rangeInspections = isDecade
-                ? calculatePlannedInspectionsForRange(currentDisplayYear, currentDisplayYear + 9)
-                : plannedInspectionsForCalendar;
+                ? calculatePlannedInspectionsForRange(startYear, startYear + 9)
+                : calculatePlannedInspectionsForYear(startYear);
 
             let filteredInspections = rangeInspections;
-            if (currentGanttFilter === 'overdue') {
+            if (filter === 'overdue') {
                 filteredInspections = rangeInspections.filter(i => i.position === 'Overdue');
-            } else if (currentGanttFilter !== 'all') {
-                filteredInspections = rangeInspections.filter(i => i.type === currentGanttFilter);
+            } else if (filter !== 'all') {
+                filteredInspections = rangeInspections.filter(i => i.type === filter);
             }
 
             const bridgeInspections = {};
@@ -1421,7 +1515,7 @@
 
             let sidebarHtml = '<div class="gantt-sidebar-header">Bridge</div>';
             let timelineHeader = '<div class="gantt-timeline-header">';
-            for (let c = 0; c < numCols; c++) timelineHeader += `<div class="gantt-month">${isDecade ? currentDisplayYear + c : months[c]}</div>`;
+            for (let c = 0; c < numCols; c++) timelineHeader += `<div class="gantt-month">${isDecade ? startYear + c : months[c]}</div>`;
             timelineHeader += '</div>';
 
             let gridRows = '';
@@ -1448,12 +1542,12 @@
                         if (!insp.dueDate) continue;
                         let leftPct, widthPct;
                         if (isDecade) {
-                            const yearIndex = insp.dueDate.getFullYear() - currentDisplayYear;
+                            const yearIndex = insp.dueDate.getFullYear() - startYear;
                             if (yearIndex < 0 || yearIndex > 9) continue;
                             leftPct = (yearIndex / 10 * 100).toFixed(2);
                             widthPct = (1 / 10 * 100 - 1).toFixed(2);
                         } else {
-                            if (insp.dueDate.getFullYear() !== currentDisplayYear) continue;
+                            if (insp.dueDate.getFullYear() !== startYear) continue;
                             const month = insp.dueDate.getMonth();
                             leftPct = (month / 12 * 100).toFixed(2);
                             widthPct = (1 / 12 * 100 - 1).toFixed(2);
@@ -1468,6 +1562,13 @@
                 }
             }
 
+            return { sidebarHtml, timelineHeader, gridRows, bridgeCount: bridgesList.length };
+        }
+
+        function generateGanttView() {
+            const isDecade = ganttSpan === 10;
+            const { sidebarHtml, timelineHeader, gridRows } = buildGanttHTML(isDecade, currentDisplayYear, currentGanttFilter);
+
             document.getElementById('ganttBody').innerHTML = `
                 <div class="gantt-sidebar">${sidebarHtml}</div>
                 <div class="gantt-timeline">${timelineHeader}<div class="gantt-grid">${gridRows}</div></div>`;
@@ -1476,32 +1577,52 @@
         }
 
         // Improved PDF Export with header and better styling
+        //
+        // This deliberately does NOT clone whatever the live #ganttBody
+        // currently shows - it only ever displays a single year (or a single
+        // filter, e.g. "Overdue" only) at a time, so exporting it directly
+        // silently produced a PDF covering just that narrow slice (as few as
+        // 3-6 of the ~20 structures) while looking like a complete
+        // programme. Instead this builds its own always-comprehensive
+        // 10-year/all-filter view via buildGanttHTML(), independent of
+        // (and without disturbing) whatever span/filter/year is on screen.
         async function exportGanttToPDF() {
-            const ganttElement = document.getElementById('ganttBody');
-            if (!ganttElement || ganttElement.innerHTML.trim() === '') { alert('No data to export'); return; }
-            
+            const exportYear = currentDisplayYear;
+            const { sidebarHtml, timelineHeader, gridRows, bridgeCount } = buildGanttHTML(true, exportYear, 'all');
+            if (bridgeCount === 0) { alert('No data to export'); return; }
+
             const loadingToast = document.createElement('div');
             loadingToast.textContent = 'Generating PDF...';
             loadingToast.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#5b8c8a;color:white;padding:10px 20px;border-radius:8px;z-index:10000;';
             document.body.appendChild(loadingToast);
-            
+
             try {
                 const cloneContainer = document.createElement('div');
                 cloneContainer.style.cssText = 'background: white; padding: 20px; font-family: "Inter", sans-serif;';
                 cloneContainer.innerHTML = `
                     <div style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #5b8c8a; padding-bottom: 10px;">
                         <h1 style="color: #2c5a57; margin: 0;">spanSense Inspection Programme</h1>
-                        <p style="color: #6a7c8e; margin: 5px 0 0;">${ganttSpan === 10 ? `Years: ${currentDisplayYear}–${currentDisplayYear + 9}` : `Year: ${currentDisplayYear}`} | Generated: ${new Date().toLocaleDateString()}</p>
+                        <p style="color: #6a7c8e; margin: 5px 0 0;">Years: ${exportYear}–${exportYear + 9} | Generated: ${new Date().toLocaleDateString()}</p>
                     </div>
                 `;
-                
-                const ganttClone = ganttElement.cloneNode(true);
+
+                const ganttClone = document.createElement('div');
                 ganttClone.style.cssText = 'display: flex; width: 100%;';
+                ganttClone.innerHTML = `
+                    <div class="gantt-sidebar">${sidebarHtml}</div>
+                    <div class="gantt-timeline">${timelineHeader}<div class="gantt-grid">${gridRows}</div></div>`;
                 cloneContainer.appendChild(ganttClone);
-                
+
                 const style = document.createElement('style');
                 style.textContent = `
-                    .gantt-sidebar { width: 240px; background: #f8fafc; border-right: 1px solid #e9edf2; }
+                    /* position: static overrides the live page's .gantt-sidebar
+                       { position: sticky; left: 0; z-index: 10 } (needed there
+                       so bridge names stay pinned while scrolling the on-screen
+                       timeline) - html2canvas renders position:sticky as if it
+                       were fixed/absolute instead of flowing in the flex
+                       layout, which is what was drawing the sidebar as an
+                       overlay on top of the timeline instead of beside it. */
+                    .gantt-sidebar { position: static; width: 240px; background: #f8fafc; border-right: 1px solid #e9edf2; }
                     .gantt-sidebar-header { background: #eef2f6; padding: 12px 20px; font-weight: 700; color: #5b8c8a; }
                     .gantt-bridge-row { padding: 10px 20px; border-bottom: 1px solid #e9edf2; display: flex; align-items: center; gap: 12px; }
                     .gantt-timeline-header { display: flex; background: #eef2f6; border-bottom: 1px solid #e9edf2; }
@@ -1533,7 +1654,7 @@
                 const imgWidth = 280;
                 const imgHeight = (canvas.height * imgWidth) / canvas.width;
                 pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
-                pdf.save(`Inspection_Programme_${ganttSpan === 10 ? `${currentDisplayYear}-${currentDisplayYear + 9}` : currentDisplayYear}.pdf`);
+                pdf.save(`Inspection_Programme_${exportYear}-${exportYear + 9}.pdf`);
                 
                 document.body.removeChild(cloneContainer);
             } catch (error) {
@@ -1633,6 +1754,13 @@
         // ============================================
         let scheduleEditBridgeId = null;
 
+        // spanSense-styled calendar (matches the theme used in inspection1.js)
+        // instead of the browser-native <input type="date"> popup.
+        const scheduleDatePicker = flatpickr('#scheduleNextDate', {
+            dateFormat: 'Y-m-d',
+            allowInput: true
+        });
+
         window.openScheduleModal = function(bridgeId) {
             const bridge = bridgesData.find(b => b.id === bridgeId);
             if (!bridge) return;
@@ -1642,7 +1770,8 @@
             document.getElementById('scheduleGiYears').value = bridge.gi_cycle_years || '';
             document.getElementById('schedulePiYears').value = bridge.pi_cycle_years || '';
             const overrideDate = bridge.next_inspection_override ? String(bridge.next_inspection_override).split('T')[0] : '';
-            document.getElementById('scheduleNextDate').value = overrideDate;
+            if (overrideDate) scheduleDatePicker.setDate(overrideDate, true);
+            else scheduleDatePicker.clear();
             document.getElementById('scheduleModalOverlay').classList.add('active');
         };
 

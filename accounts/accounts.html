@@ -1052,9 +1052,13 @@
                 var firstNameEl = document.getElementById('firstName');
                 var lastNameEl = document.getElementById('lastName');
                 var jobTitleEl = document.getElementById('role');
+                var emailEl = document.getElementById('email');
+                var phoneEl = document.getElementById('phone');
                 if (firstNameEl) firstNameEl.value = nameParts[0] || '';
                 if (lastNameEl) lastNameEl.value = nameParts.slice(1).join(' ') || '';
                 if (jobTitleEl) jobTitleEl.value = roleLabel;
+                if (emailEl) emailEl.value = user.email || '';
+                if (phoneEl) phoneEl.value = user.phone || '';
             }).catch(function (e) {
                 console.error('Failed to load profile:', e);
             });

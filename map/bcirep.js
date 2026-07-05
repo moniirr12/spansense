@@ -621,6 +621,13 @@ function createActionButtons(doc) {
     editButton.classList.add('normal-btn');
     editButton.title = 'Edit Report';
     editButton.onclick = function () {
+        // A new tab opened via window.open() inherits the opener's
+        // sessionStorage, so any defects left over from an inspection open
+        // in this tab would otherwise leak into the one being edited here.
+        sessionStorage.removeItem('inspectionData');
+        sessionStorage.removeItem('defects');
+        sessionStorage.removeItem('photoData');
+        sessionStorage.removeItem('selectedSpan');
         sessionStorage.setItem('inspectionStructureNumber', doc.structure_id);
         sessionStorage.setItem('inspectionDate', doc.date);
         sessionStorage.setItem('inspectionMode', 'edit');
