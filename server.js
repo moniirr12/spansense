@@ -2252,6 +2252,38 @@ app.get('/api/dashboard/critical-bridges', requireAuth, async (req, res) => {
     }
 });
 
+// Portfolio-wide BCI average and critical average, over each structure's
+// latest inspection (same latest-inspection join as critical-bridges above).
+app.get('/api/dashboard/bci-summary', requireAuth, async (req, res) => {
+    try {
+        const row = await dbGet(`
+            WITH latest_inspections AS (
+                SELECT i.overall_bciave, i.overall_bcicrit
+                FROM inspections i
+                INNER JOIN (
+                    SELECT structure_id, MAX(inspection_date) as latest_date
+                    FROM inspections
+                    GROUP BY structure_id
+                ) latest ON i.structure_id = latest.structure_id
+                       AND i.inspection_date = latest.latest_date
+            )
+            SELECT
+                ROUND(AVG(overall_bciave)::numeric, 1) as avg_bci,
+                ROUND(AVG(overall_bcicrit)::numeric, 1) as avg_bci_crit
+            FROM latest_inspections
+        `);
+
+        res.json({
+            success: true,
+            avgBci: row && row.avg_bci !== null ? parseFloat(row.avg_bci) : null,
+            avgBciCrit: row && row.avg_bci_crit !== null ? parseFloat(row.avg_bci_crit) : null
+        });
+    } catch (err) {
+        console.error('BCI summary error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 // Average BCI per structure type, using each structure's latest inspection
 app.get('/api/dashboard/avg-bci-by-type', requireAuth, async (req, res) => {
     try {

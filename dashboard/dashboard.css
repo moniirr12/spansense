@@ -166,10 +166,6 @@ body {
     margin-bottom: 32px;
 }
 
-.metric-pending-review {
-    cursor: pointer;
-}
-
 .metric {
     background: white;
     border-radius: 24px;
@@ -187,6 +183,25 @@ body {
     border-color: #c5dbd8;
 }
 
+/* Every metric card is clickable and jumps to the section it summarizes
+   (see scrollToDashboardSection() in dashboard.js) — the chevron is the
+   affordance that tells you so, since cursor:pointer alone is too easy to miss. */
+.metric-clickable {
+    cursor: pointer;
+}
+
+.metric-arrow {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    color: #c5d0d8;
+    transition: transform 0.25s ease, color 0.25s ease;
+}
+
+.metric:hover .metric-arrow {
+    color: #5b8c8a;
+    transform: translateX(3px);
+}
+
 .metric-icon {
     width: 52px;
     height: 52px;
@@ -195,6 +210,7 @@ body {
     align-items: center;
     justify-content: center;
     font-size: 1.5rem;
+    flex-shrink: 0;
 }
 
 .metric-icon-green {
@@ -215,6 +231,16 @@ body {
 .metric-icon-yellow {
     background: #fff7ed;
     color: #c28b5a;
+}
+
+.metric-icon-purple {
+    background: #f5f1fc;
+    color: #7c6fc4;
+}
+
+.metric-content {
+    flex: 1;
+    min-width: 0;
 }
 
 .metric-content h3 {
@@ -749,6 +775,19 @@ body {
 .night-mode .metric-icon-yellow {
     background: #3a3020;
     color: #d4a84a;
+}
+
+.night-mode .metric-icon-purple {
+    background: #2a2440;
+    color: #a99add;
+}
+
+.night-mode .metric-arrow {
+    color: #3f4d54;
+}
+
+.night-mode .metric:hover .metric-arrow {
+    color: #8ab4b0;
 }
 
 .night-mode .chart-header,

@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', function () {
     fetchBCIDistribution();
     fetchConditionDistribution();
     fetchCriticalBridges();
+    fetchBciSummary();
     fetchRecentActivity();
     initBciChartToggle();
     checkSessionAndInitReview();
@@ -511,6 +512,30 @@ function updateHighRiskMetric(count) {
         metricValue.textContent = count;
     }
 }
+
+async function fetchBciSummary() {
+    const avgEl = document.getElementById('avgBciMetricValue');
+    const critEl = document.getElementById('criticalBciMetricValue');
+    try {
+        const response = await fetch(API_BASE + '/api/dashboard/bci-summary', { credentials: 'include' });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const result = await response.json();
+        if (result.success) {
+            if (avgEl) avgEl.textContent = result.avgBci !== null ? Math.round(result.avgBci) : '—';
+            if (critEl) critEl.textContent = result.avgBciCrit !== null ? Math.round(result.avgBciCrit) : '—';
+        }
+    } catch (error) {
+        console.error('Error fetching BCI summary:', error);
+        if (avgEl) avgEl.textContent = '—';
+        if (critEl) critEl.textContent = '—';
+    }
+}
+
+// Every metric card jumps to the section it summarizes on click.
+window.scrollToDashboardSection = function scrollToDashboardSection(id) {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
 
 function renderCriticalBridges(data) {
     const tbody = document.getElementById('critical-bridges-body');
