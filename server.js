@@ -69,7 +69,10 @@ function latLonToOSGB(lat, lon) {
 }
 
 
-app.get('/api/routes', requireAuth, (req, res) => {
+// Full API route table - not called by any page in the app, just an
+// introspection helper, so no reason for it to be readable by every logged-in
+// account rather than admins specifically.
+app.get('/api/routes', requireAuth, requireAdmin, (req, res) => {
     const routes = [];
     app._router.stack.forEach(middleware => {
         if (middleware.route) {
@@ -2051,6 +2054,14 @@ function requireEngineer(req, res, next) {
         next();
     } else {
         res.status(403).json({ error: 'Forbidden - engineer role required' });
+    }
+}
+
+function requireAdmin(req, res, next) {
+    if (req.session && req.session.role === 'admin') {
+        next();
+    } else {
+        res.status(403).json({ error: 'Forbidden - admin role required' });
     }
 }
 
