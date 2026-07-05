@@ -49,9 +49,10 @@
             <p>Live KPIs, condition charts, and critical structure alerts across your portfolio</p>
         </div>
 
-        <!-- Metrics Cards - 4 cards matching spanSense style -->
+        <!-- Metrics Cards - matching spanSense style. Every card is clickable
+             and jumps to the section it summarizes (see .metric-arrow / scrollToDashboardSection in dashboard.js). -->
         <div class="metrics">
-            <div class="metric">
+            <div class="metric metric-clickable" onclick="scrollToDashboardSection('assetInventoryChartCard')">
                 <div class="metric-icon metric-icon-green">
                     <i class="fas fa-archway"></i>
                 </div>
@@ -59,8 +60,9 @@
                     <h3 id="bridge-count">243</h3>
                     <p>Total Assets</p>
                 </div>
+                <i class="fas fa-chevron-right metric-arrow"></i>
             </div>
-            <div class="metric">
+            <div class="metric metric-clickable" onclick="scrollToDashboardSection('criticalStructuresSection')">
                 <div class="metric-icon metric-icon-red">
                     <i class="fas fa-exclamation-triangle"></i>
                 </div>
@@ -68,24 +70,34 @@
                     <h3>0</h3>  <!-- Will be updated by JS -->
                     <p>High-Risk Structures</p>
                 </div>
+                <i class="fas fa-chevron-right metric-arrow"></i>
             </div>
-            <div class="metric">
+            <div class="metric metric-clickable" onclick="scrollToDashboardSection('bciDistributionChartCard')">
                 <div class="metric-icon metric-icon-blue">
-                    <i class="fas fa-calendar-alt"></i>
+                    <i class="fas fa-gauge"></i>
                 </div>
-                <div class="metric-content">
-                    <h3>8</h3>
-                    <p>Upcoming Inspections</p>
+                <div class="metric-content metric-content-split">
+                    <div class="metric-split-item">
+                        <h3 id="avgBciMetricValue">—</h3>
+                        <p>BCI<sub>ave</sub></p>
+                    </div>
+                    <div class="metric-split-divider"></div>
+                    <div class="metric-split-item">
+                        <h3 id="criticalBciMetricValue">—</h3>
+                        <p>BCI<sub>crit</sub></p>
+                    </div>
                 </div>
+                <i class="fas fa-chevron-right metric-arrow"></i>
             </div>
-            <div class="metric">
+            <div class="metric metric-clickable" id="pendingReviewMetric" style="display:none;" onclick="scrollToDashboardSection('pending-review-section')">
                 <div class="metric-icon metric-icon-yellow">
-                    <i class="fas fa-clock"></i>
+                    <i class="fas fa-user-check"></i>
                 </div>
                 <div class="metric-content">
-                    <h3>4</h3>
-                    <p>Inspections Overdue</p>
+                    <h3 id="pendingReviewMetricCount">0</h3>
+                    <p>Pending Review</p>
                 </div>
+                <i class="fas fa-chevron-right metric-arrow"></i>
             </div>
         </div>
 
@@ -96,7 +108,7 @@
             </div>
             <div class="charts">
                 <!-- Chart 1: Asset Inventory -->
-                <div class="chart-card">
+                <div class="chart-card" id="assetInventoryChartCard">
                     <div class="chart-header">
                         <h3>Asset Inventory</h3>
                         <span class="chart-badge">By Type</span>
@@ -107,7 +119,7 @@
                 </div>
 
                 <!-- Chart 2: Average BCI by Structure Type -->
-                <div class="chart-card">
+                <div class="chart-card" id="avgBciByTypeChartCard">
                     <div class="chart-header">
                         <h3>Average BCI by Type</h3>
                         <span class="chart-badge">Condition</span>
@@ -118,7 +130,7 @@
                 </div>
 
                 <!-- Chart 3: BCI Score Distribution (Current snapshot / By Year, via toggle) -->
-                <div class="chart-card wide-chart">
+                <div class="chart-card wide-chart" id="bciDistributionChartCard">
                     <div class="chart-header">
                         <h3>BCI Score Distribution</h3>
                         <div class="chart-toggle">
@@ -144,7 +156,7 @@
         <div class="dashboard-bottom-row">
 
             <!-- Critical Bridges (left) -->
-            <div class="critical-bridges-section">
+            <div class="critical-bridges-section" id="criticalStructuresSection">
                 <div class="section-header">
                     <h2><i class="fas fa-exclamation-triangle"></i> Critical Structures</h2>
                     <span class="section-badge">BCI &lt; 55</span>
@@ -207,6 +219,7 @@
                     <div style="color: var(--text-muted); font-size: 0.8rem; padding: 4px 0;">Loading...</div>
                 </div>
             </div>
+            <div id="pending-review-pagination"></div>
         </div>
 
     </div>

@@ -337,7 +337,7 @@
             gap: 6px;
         }
         .day-cell {
-            min-height: 100px;
+            min-height: 112px;
             background: #fafbfc;
             border-radius: 12px;
             padding: 8px;
@@ -363,12 +363,12 @@
         }
         .day-cell.today .day-number { color: #5b8c8a; }
 
-        .day-events { display: flex; flex-direction: column; gap: 3px; }
+        .day-events { display: flex; flex-direction: column; gap: 5px; }
         .event-chip {
-            font-size: 0.65rem;
+            font-size: 0.72rem;
             font-weight: 600;
-            padding: 3px 8px;
-            border-radius: 6px;
+            padding: 7px 10px;
+            border-radius: 7px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -377,7 +377,7 @@
         }
         .event-chip:hover { transform: scale(1.02); }
         .event-chip.gi { background: #eef4f2; color: #5b8c8a; border-left: 3px solid #5b8c8a; }
-        .event-chip.pi { background: #eef2f8; color: #2c5f8a; border-left: 3px solid #2c5f8a; }
+        .event-chip.pi { background: #faf0ef; color: #a8524f; border-left: 3px solid #a8524f; }
         .event-chip.overdue { background: #fdf2f2; color: #c47070; border-left: 3px solid #c47070; animation: pulse 2s infinite; }
 
         @keyframes pulse {
@@ -435,21 +435,24 @@
         }
         .month-events {
             padding: 12px;
-            min-height: 100px;
+            min-height: 112px;
         }
         .month-event {
-            font-size: 0.7rem;
-            padding: 4px 8px;
-            margin-bottom: 4px;
-            border-radius: 6px;
+            font-size: 0.76rem;
+            padding: 8px 10px;
+            margin-bottom: 6px;
+            border-radius: 7px;
             background: #fafbfc;
             color: #6a7c8e;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            cursor: pointer;
+            transition: transform 0.15s;
         }
+        .month-event:hover { transform: scale(1.02); }
         .month-event.gi { background: #eef4f2; color: #5b8c8a; border-left: 3px solid #5b8c8a; }
-        .month-event.pi { background: #eef2f8; color: #2c5f8a; border-left: 3px solid #2c5f8a; }
+        .month-event.pi { background: #faf0ef; color: #a8524f; border-left: 3px solid #a8524f; }
         .month-event.overdue { background: #fdf2f2; color: #c47070; border-left: 3px solid #c47070; }
         .month-count {
             font-size: 0.65rem;
@@ -510,7 +513,11 @@
 
         .gantt-body {
             display: flex;
-            width: 100%;
+            width: calc(100% - 48px);
+            margin: 20px 24px 24px;
+            border: 1px solid #eef2f6;
+            border-radius: 16px;
+            overflow: hidden;
         }
         .gantt-sidebar {
             width: 240px;
@@ -566,6 +573,76 @@
         .bridge-status.good { background: #5b8c8a; }
         .bridge-status.fair { background: #e8a87c; }
         .bridge-status.poor { background: #c47070; }
+
+        .schedule-edit-btn {
+            flex-shrink: 0;
+            width: 24px;
+            height: 24px;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            color: #b8c4cc;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            transition: all 0.15s;
+        }
+        .schedule-edit-btn:hover { background: #eef4f2; color: #5b8c8a; }
+
+        /* Edit Inspection Schedule modal — same visual language as the review
+           modal on dashboard.html (see dashboard.css .modal-overlay/.modal-card),
+           copied here rather than pulling that stylesheet into planning. */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(30, 46, 52, 0.25);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.35s ease;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal-card {
+            background: #ffffff;
+            border-radius: 32px;
+            padding: 36px 40px;
+            width: 90%;
+            max-width: 400px;
+            border: 1px solid #e4ebe9;
+            box-shadow: 0 2px 4px rgba(91, 140, 138, 0.03), 0 8px 24px rgba(91, 140, 138, 0.06), 0 24px 48px rgba(0, 0, 0, 0.04);
+            transform: scale(0.96) translateY(16px);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .modal-overlay.active .modal-card { transform: scale(1) translateY(0); }
+        .modal-title { font-size: 1.15rem; font-weight: 700; color: #2c4a48; margin-bottom: 18px; letter-spacing: -0.3px; }
+        .modal-actions { display: flex; gap: 12px; justify-content: center; margin-top: 22px; }
+        .modal-btn { padding: 13px 24px; border-radius: 50px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.25s ease; min-width: 100px; border: none; font-family: inherit; }
+        .modal-btn.primary { background: linear-gradient(135deg, #5b8c8a 0%, #7ba8a5 100%); color: white; box-shadow: 0 4px 16px rgba(91, 140, 138, 0.25); }
+        .modal-btn.primary:hover { background: linear-gradient(135deg, #4a7876 0%, #6a9a97 100%); transform: translateY(-2px); }
+        .modal-btn.secondary { background: transparent; border: 1px solid #e2e8f0; color: #6a7c8e; }
+        .modal-btn.secondary:hover { background: #f1f5f4; border-color: #c5dbd8; color: #5b8c8a; }
+
+        .schedule-field { display: block; text-align: left; margin-bottom: 16px; }
+        .schedule-field span { display: block; font-size: 0.75rem; font-weight: 600; color: #6a7c8e; margin-bottom: 6px; }
+        .schedule-field input {
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            color: #2c4a48;
+        }
+        .schedule-field input:focus { outline: none; border-color: #8ab4b0; }
+        .schedule-field .hint { font-size: 0.68rem; color: #8a9ba8; margin-top: 4px; font-weight: 400; }
 
         .gantt-timeline {
             flex: 1;
@@ -635,9 +712,9 @@
             border-color: #5b8c8a;
         }
         .gantt-bar.pi {
-            background: linear-gradient(90deg, #eef2f8, #c8dae8);
-            color: #2c5f8a;
-            border-color: #2c5f8a;
+            background: linear-gradient(90deg, #faf0ef, #f0d8d6);
+            color: #a8524f;
+            border-color: #a8524f;
         }
         .gantt-bar.overdue {
             background: linear-gradient(90deg, #fdf2f2, #f5e0e0);
@@ -737,7 +814,7 @@
             text-transform: uppercase;
         }
         .inspection-type.gi { background: #eef4f2; color: #5b8c8a; }
-        .inspection-type.pi { background: #eef2f8; color: #2c5f8a; }
+        .inspection-type.pi { background: #faf0ef; color: #a8524f; }
         .inspection-type.od { background: #fdf2f2; color: #c47070; }
 
         /* Loading Spinner */
@@ -827,11 +904,13 @@
         .night-mode .view-btn { color: #9ab0b8; }
         .night-mode .view-btn.active { background: #2f4a48; color: #8ab4b0; }
         .night-mode .event-chip.gi { background: #1e3a3e; color: #8ab4b0; }
-        .night-mode .event-chip.pi { background: #1a2a3a; color: #6a9ac0; }
+        .night-mode .event-chip.pi { background: #3a2422; color: #d99a97; }
         .night-mode .calendar-legend { background: #2a3a40; border-color: #2f3e45; }
         .night-mode .inspection-item:hover { background: #2a3a40; }
         .night-mode .month-header { background: #2a3a40; border-color: #2f3e45; }
         .night-mode .month-event { background: #2a3a40; color: #9ab0b8; }
+        .night-mode .month-event.gi { background: #1e3a3e; color: #8ab4b0; }
+        .night-mode .month-event.pi { background: #3a2422; color: #d99a97; }
         .night-mode .month-count { border-color: #2f3e45; color: #8aa4ac; }
         .night-mode .gantt-bridge-row { border-color: #2f3e45; }
         .night-mode .gantt-bridge-row:hover { background: #32454d; }
@@ -839,7 +918,30 @@
         .night-mode .filter-chip { background: #2a3a40; border-color: #3a4b53; color: #9ab0b8; }
         .night-mode .filter-chip.active { background: #2f4a48; border-color: #3a6b62; color: #8ab4b0; }
         .night-mode .gantt-bar.gi { background: linear-gradient(90deg, #1e3a3e, #2a4a4e); border-color: #3a6b62; color: #8ab4b0; }
-        .night-mode .gantt-bar.pi { background: linear-gradient(90deg, #1a2a3a, #2a3a4a); border-color: #3a6a8a; color: #7aa0c0; }
+        .night-mode .gantt-bar.pi { background: linear-gradient(90deg, #3a2422, #4a2e2c); border-color: #7a4442; color: #d99a97; }
+        .night-mode .inspection-type.gi { background: #1e3a3e; color: #8ab4b0; }
+        .night-mode .inspection-type.pi { background: #3a2422; color: #d99a97; }
+        .night-mode .inspection-type.od { background: #3a2020; color: #e8a0a0; }
+
+        /* These were the only borders left at their light-mode #eef2f6/#e9edf2
+           value in dark mode - a Gantt grid is a LOT of repeated hairlines
+           (every cell in every row), so left un-recolored they read as a wall
+           of bright white lines against the dark background. */
+        .night-mode .gantt-toolbar { border-color: #2f3e45; }
+        .night-mode .gantt-body { border-color: #2f3e45; }
+        .night-mode .gantt-row { border-color: #2f3e45; }
+        .night-mode .gantt-cell { border-right-color: #28343a; }
+        .night-mode .panel-header { border-color: #2f3e45; }
+        .night-mode .schedule-edit-btn { color: #5c6f78; }
+        .night-mode .schedule-edit-btn:hover { background: #2f4a48; color: #8ab4b0; }
+        .night-mode .modal-overlay { background: rgba(15, 24, 28, 0.5); }
+        .night-mode .modal-card { background: #232e34; border-color: #2f3e45; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 24px 48px rgba(0, 0, 0, 0.15); }
+        .night-mode .modal-title { color: #d4dfe3; }
+        .night-mode .modal-btn.secondary { border-color: #3a4b53; color: #8aa4ac; }
+        .night-mode .modal-btn.secondary:hover { background: #2f3e45; color: #d4dfe3; }
+        .night-mode .schedule-field span { color: #8aa4ac; }
+        .night-mode .schedule-field input { background: #1e2a2f; border-color: #3a4b53; color: #d4dfe3; }
+        .night-mode .schedule-field .hint { color: #6a8090; }
     </style>
     <base target="_self">
 </head>
@@ -872,7 +974,7 @@
         
         <div class="page-header">
             <h1>Inspection Planning</h1>
-            <p>Schedule and coordinate bridge inspections across your network (2-year GI cycle, 6-year PI cycle)</p>
+            <p>Schedule and coordinate bridge inspections across your network (2-year GI / 6-year PI cycle by default, editable per structure)</p>
         </div>
 
         <div class="stats-row">
@@ -920,7 +1022,7 @@
             </div>
             <div class="calendar-legend">
                 <div class="legend-item"><div class="legend-dot" style="background: #eef4f2; border: 2px solid #5b8c8a;"></div>General Inspection (GI) — Every 2 years</div>
-                <div class="legend-item"><div class="legend-dot" style="background: #eef2f8; border: 2px solid #2c5f8a;"></div>Principal Inspection (PI) — Every 6 years</div>
+                <div class="legend-item"><div class="legend-dot" style="background: #faf0ef; border: 2px solid #a8524f;"></div>Principal Inspection (PI) — Every 6 years</div>
                 <div class="legend-item"><div class="legend-dot" style="background: #fdf2f2; border: 2px solid #c47070;"></div>Overdue</div>
                 <div class="legend-item"><div class="legend-dot" style="background: #eef4f2; border: 2px dashed #5b8c8a;"></div>Today</div>
             </div>
@@ -960,6 +1062,31 @@
 
     <div class="glass-scrollbar" id="glassScrollbar"><div class="thumb" id="glassThumb"></div></div>
 
+    <!-- Edit Inspection Schedule modal (opened from the pencil icon on each Gantt bridge row) -->
+    <div class="modal-overlay" id="scheduleModalOverlay">
+        <div class="modal-card">
+            <h3 class="modal-title" id="scheduleModalTitle">Edit Inspection Schedule</h3>
+            <label class="schedule-field">
+                <span>GI frequency (years)</span>
+                <input type="number" id="scheduleGiYears" min="1" step="1" placeholder="2">
+            </label>
+            <label class="schedule-field">
+                <span>PI frequency (years)</span>
+                <input type="number" id="schedulePiYears" min="1" step="1" placeholder="6">
+                <div class="hint">One inspection every cycle alternates GI/PI — e.g. 2 &amp; 6 means every 3rd inspection is a PI.</div>
+            </label>
+            <label class="schedule-field">
+                <span>Next inspection due</span>
+                <input type="date" id="scheduleNextDate">
+                <div class="hint">Leave blank to use the date calculated from the last inspection and frequency above.</div>
+            </label>
+            <div class="modal-actions">
+                <button class="modal-btn secondary" id="scheduleCancelBtn">Cancel</button>
+                <button class="modal-btn primary" id="scheduleSaveBtn">Save</button>
+            </div>
+        </div>
+    </div>
+
     <script>
 
         const API_BASE = window.location.hostname === 'localhost' 
@@ -989,6 +1116,73 @@
         let currentDisplayYear = new Date().getFullYear();
         let currentGanttFilter = 'all';
         let ganttSpan = 1;
+
+        // ============================================
+        // INSPECTION SCHEDULING
+        //
+        // GI and PI share one alternating slot, not two independent recurring
+        // series — every pi_cycle_years/gi_cycle_years-th inspection is a PI
+        // instead of a GI (e.g. 6yr/2yr = every 3rd), so the sequence reads
+        // GI, GI, PI, GI, GI, PI, ... rather than a GI and a PI both landing
+        // in the same year. Per-bridge gi_cycle_years/pi_cycle_years (Planning
+        // page "Edit Schedule") override the 2yr/6yr default; next_inspection_override
+        // rebases the whole future sequence onto a manually-set date.
+        // ============================================
+        function getGiCycleYears(bridge) {
+            const v = bridge && bridge.gi_cycle_years;
+            return (v && v > 0) ? v : 2;
+        }
+        function getPiEveryNth(bridge) {
+            const gi = getGiCycleYears(bridge);
+            const piRaw = bridge && bridge.pi_cycle_years;
+            const pi = (piRaw && piRaw > 0) ? piRaw : 6;
+            return Math.max(1, Math.round(pi / gi));
+        }
+        function getNextInspectionOverride(bridge) {
+            return safeDate(bridge && bridge.next_inspection_override);
+        }
+
+        // Overdue/Due/Upcoming based on how long ago the due date itself passed
+        // (not years-since-last-inspection) so it works the same whether the
+        // date came from the normal cycle or from a manual override.
+        function classifyDueStatus(dueDate, today) {
+            const monthsPastDue = (today - dueDate) / (1000 * 60 * 60 * 24 * 30.44);
+            if (monthsPastDue > 6) return 'Overdue';
+            if (monthsPastDue > 0) return 'Due';
+            return 'Upcoming';
+        }
+
+        // Projects every future occurrence for one bridge (up to `untilDate`) as
+        // { dueDate, type, position }. Shared by the upcoming list, the single-year
+        // calendar view, and the multi-year Gantt view so all three agree on the
+        // same schedule instead of three separately hand-rolled ones.
+        function projectSchedule(bridge, insp, today, untilDate) {
+            if (!insp || !insp.hasInspections || !insp.latest) return [];
+            const lastDate = safeDate(insp.latest.date);
+            if (!lastDate) return [];
+
+            const giCycle = getGiCycleYears(bridge);
+            const piEveryNth = getPiEveryNth(bridge);
+            const historyCount = insp.history.length;
+            const overrideDate = getNextInspectionOverride(bridge);
+
+            const results = [];
+            for (let n = 1; n <= 200; n++) {
+                let dueDate;
+                if (overrideDate) {
+                    dueDate = new Date(overrideDate);
+                    dueDate.setFullYear(dueDate.getFullYear() + giCycle * (n - 1));
+                } else {
+                    dueDate = new Date(lastDate);
+                    dueDate.setFullYear(dueDate.getFullYear() + giCycle * n);
+                }
+                if (dueDate > untilDate) break;
+                const stepIndex = historyCount + n;
+                const type = (stepIndex % piEveryNth === 0) ? 'PI' : 'GI';
+                results.push({ dueDate, type, position: classifyDueStatus(dueDate, today) });
+            }
+            return results;
+        }
 
         function safeDate(dateStr) {
             if (!dateStr) return null;
@@ -1039,19 +1233,25 @@
             const currentYear = today.getFullYear();
             const currentQuarter = Math.floor(today.getMonth() / 3);
             let plannedCurrentYear = 0, overdue = 0, thisQuarter = 0;
+            // Two different horizons on purpose: "is the next inspection overdue"
+            // needs to actually reach that next occurrence (which can be years out
+            // for a bridge inspected recently), while "planned this year" only
+            // cares whether an occurrence lands within the current year.
+            const farHorizon = new Date(currentYear + 10, 0, 1);
 
             for (const bridge of bridgesData) {
                 const insp = inspectionsData[bridge.id];
                 if (!insp || !insp.hasInspections || !insp.latest) { overdue++; continue; }
-                const lastDate = safeDate(insp.latest.date);
-                if (!lastDate) { overdue++; continue; }
-                const yearsSince = (today - lastDate) / (1000 * 60 * 60 * 24 * 365);
-                if (yearsSince > 2.5) overdue++;
-                let nextDate = new Date(lastDate);
-                nextDate.setFullYear(nextDate.getFullYear() + 2);
-                if (nextDate.getFullYear() === currentYear) {
-                    plannedCurrentYear++;
-                    if (Math.floor(nextDate.getMonth() / 3) === currentQuarter) thisQuarter++;
+
+                const schedule = projectSchedule(bridge, insp, today, farHorizon);
+                if (schedule.length === 0) { overdue++; continue; }
+                if (schedule[0].position === 'Overdue') overdue++;
+
+                for (const s of schedule) {
+                    if (s.dueDate.getFullYear() === currentYear) {
+                        plannedCurrentYear++;
+                        if (Math.floor(s.dueDate.getMonth() / 3) === currentQuarter) thisQuarter++;
+                    }
                 }
             }
 
@@ -1071,21 +1271,11 @@
 
             for (const bridge of bridgesData) {
                 const insp = inspectionsData[bridge.id];
-                if (!insp || !insp.hasInspections || !insp.latest) continue;
-                const lastDate = safeDate(insp.latest.date);
-                if (!lastDate) continue;
-                let nextDate = new Date(lastDate);
-                nextDate.setFullYear(nextDate.getFullYear() + 2);
-                const yearsSince = (today - lastDate) / (1000 * 60 * 60 * 24 * 365);
-                const position = yearsSince > 2.5 ? 'Overdue' : (yearsSince > 2 ? 'Due' : 'Upcoming');
-                if (nextDate >= today && nextDate <= ninetyDaysLater) {
-                    upcoming.push({ bridgeName: bridge.name, type: 'GI', dueDate: nextDate, position });
-                }
-                let nextPI = new Date(lastDate);
-                nextPI.setFullYear(nextPI.getFullYear() + 6);
-                while (nextPI < today) nextPI.setFullYear(nextPI.getFullYear() + 6);
-                if (nextPI >= today && nextPI <= ninetyDaysLater) {
-                    upcoming.push({ bridgeName: bridge.name, type: 'PI', dueDate: nextPI, position: 'Upcoming' });
+                const schedule = projectSchedule(bridge, insp, today, ninetyDaysLater);
+                for (const s of schedule) {
+                    if (s.dueDate >= today && s.dueDate <= ninetyDaysLater) {
+                        upcoming.push({ bridgeName: bridge.name, type: s.type, dueDate: s.dueDate, position: s.position });
+                    }
                 }
             }
 
@@ -1107,6 +1297,7 @@
 
         function calculatePlannedInspectionsForYear(year) {
             const yearPlannedInspections = [], today = new Date();
+            const untilDate = new Date(year + 1, 0, 1); // walk far enough to cover all of `year`
 
             for (const bridge of bridgesData) {
                 const insp = inspectionsData[bridge.id];
@@ -1117,32 +1308,23 @@
                     }
                     continue;
                 }
-                const lastDate = safeDate(insp.latest.date);
-                if (!lastDate) continue;
 
-                let nextGI = new Date(lastDate);
-                nextGI.setFullYear(nextGI.getFullYear() + 2);
-                while (nextGI.getFullYear() < year) nextGI.setFullYear(nextGI.getFullYear() + 2);
-                if (nextGI.getFullYear() === year) {
-                    const yearsSince = (today - lastDate) / (1000 * 60 * 60 * 24 * 365);
-                    yearPlannedInspections.push({ bridgeId: bridge.id, bridgeName: bridge.name, type: 'GI', dueDate: nextGI, position: yearsSince > 2.5 ? 'Overdue' : (yearsSince > 2 ? 'Due' : 'Upcoming') });
-                }
-
-                let nextPI = new Date(lastDate);
-                nextPI.setFullYear(nextPI.getFullYear() + 6);
-                while (nextPI.getFullYear() < year) nextPI.setFullYear(nextPI.getFullYear() + 6);
-                if (nextPI.getFullYear() === year) {
-                    yearPlannedInspections.push({ bridgeId: bridge.id, bridgeName: bridge.name, type: 'PI', dueDate: nextPI, position: 'Upcoming' });
+                const schedule = projectSchedule(bridge, insp, today, untilDate);
+                for (const s of schedule) {
+                    if (s.dueDate.getFullYear() === year) {
+                        yearPlannedInspections.push({ bridgeId: bridge.id, bridgeName: bridge.name, type: s.type, dueDate: s.dueDate, position: s.position });
+                    }
                 }
             }
             return yearPlannedInspections;
         }
 
-        // Same recurrence logic as calculatePlannedInspectionsForYear, but walks every
-        // GI (2yr) / PI (6yr) occurrence across a multi-year span instead of just the
-        // single occurrence that lands in one target year — needed for the 10-year gantt view.
+        // Same projectSchedule() as calculatePlannedInspectionsForYear, but walks the
+        // full multi-year span instead of just the occurrences landing in one target
+        // year — needed for the 10-year gantt view.
         function calculatePlannedInspectionsForRange(startYear, endYear) {
             const rangePlannedInspections = [], today = new Date();
+            const untilDate = new Date(endYear + 1, 0, 1);
 
             for (const bridge of bridgesData) {
                 const insp = inspectionsData[bridge.id];
@@ -1154,24 +1336,12 @@
                     }
                     continue;
                 }
-                const lastDate = safeDate(insp.latest.date);
-                if (!lastDate) continue;
 
-                let nextGI = new Date(lastDate);
-                nextGI.setFullYear(nextGI.getFullYear() + 2);
-                while (nextGI.getFullYear() < startYear) nextGI.setFullYear(nextGI.getFullYear() + 2);
-                while (nextGI.getFullYear() <= endYear) {
-                    const yearsPastDue = (today - nextGI) / (1000 * 60 * 60 * 24 * 365);
-                    rangePlannedInspections.push({ bridgeId: bridge.id, bridgeName: bridge.name, type: 'GI', dueDate: new Date(nextGI), position: yearsPastDue > 0.5 ? 'Overdue' : (yearsPastDue > 0 ? 'Due' : 'Upcoming') });
-                    nextGI.setFullYear(nextGI.getFullYear() + 2);
-                }
-
-                let nextPI = new Date(lastDate);
-                nextPI.setFullYear(nextPI.getFullYear() + 6);
-                while (nextPI.getFullYear() < startYear) nextPI.setFullYear(nextPI.getFullYear() + 6);
-                while (nextPI.getFullYear() <= endYear) {
-                    rangePlannedInspections.push({ bridgeId: bridge.id, bridgeName: bridge.name, type: 'PI', dueDate: new Date(nextPI), position: 'Upcoming' });
-                    nextPI.setFullYear(nextPI.getFullYear() + 6);
+                const schedule = projectSchedule(bridge, insp, today, untilDate);
+                for (const s of schedule) {
+                    if (s.dueDate.getFullYear() >= startYear && s.dueDate.getFullYear() <= endYear) {
+                        rangePlannedInspections.push({ bridgeId: bridge.id, bridgeName: bridge.name, type: s.type, dueDate: s.dueDate, position: s.position });
+                    }
                 }
             }
             return rangePlannedInspections;
@@ -1198,7 +1368,7 @@
                 let eventsHtml = '';
                 dueInspections.slice(0, 2).forEach(insp => {
                     const chipClass = insp.position === 'Overdue' ? 'overdue' : (insp.type === 'PI' ? 'pi' : 'gi');
-                    eventsHtml += `<div class="event-chip ${chipClass}">${insp.bridgeName.substring(0, 12)} — ${insp.type}</div>`;
+                    eventsHtml += `<div class="event-chip ${chipClass}" onclick="event.stopPropagation(); openScheduleModal(${insp.bridgeId})">${insp.bridgeName.substring(0, 12)} — ${insp.type}</div>`;
                 });
                 if (dueInspections.length > 2) eventsHtml += `<div class="event-more">+${dueInspections.length - 2} more</div>`;
                 gridHtml += `<div class="day-cell ${isToday ? 'today' : ''}"><div class="day-number">${d}</div><div class="day-events">${eventsHtml}</div></div>`;
@@ -1214,7 +1384,7 @@
                 let eventsHtml = '';
                 dueThisMonth.slice(0, 3).forEach(insp => {
                     const cls = insp.position === 'Overdue' ? 'overdue' : (insp.type === 'PI' ? 'pi' : 'gi');
-                    eventsHtml += `<div class="month-event ${cls}">${insp.bridgeName.substring(0, 20)} — ${insp.type}</div>`;
+                    eventsHtml += `<div class="month-event ${cls}" onclick="event.stopPropagation(); openScheduleModal(${insp.bridgeId})">${insp.bridgeName.substring(0, 20)} — ${insp.type}</div>`;
                 });
                 yearHtml += `<div class="month-card" onclick="switchToMonth(${m})">
                     <div class="month-header">${months[m]} ${year}</div>
@@ -1267,6 +1437,9 @@
                             <div class="bridge-meta">${bridge.inspections.length} inspection${bridge.inspections.length !== 1 ? 's' : ''} due</div>
                         </div>
                         <span class="bridge-status ${hasOverdue ? 'poor' : 'good'}"></span>
+                        <button class="schedule-edit-btn" onclick="openScheduleModal(${bridge.id})" title="Edit inspection schedule">
+                            <i class="fas fa-pen"></i>
+                        </button>
                     </div>`;
 
                     let rowHtml = '<div class="gantt-row">';
@@ -1337,7 +1510,7 @@
                     .gantt-cell { flex: 1; border-right: 1px dashed #e9edf2; }
                     .gantt-bar { position: absolute; height: 28px; border-radius: 8px; top: 12px; display: flex; align-items: center; padding: 0 8px; font-size: 10px; font-weight: 700; }
                     .gantt-bar.gi { background: #eef4f2; color: #5b8c8a; border: 1px solid #5b8c8a; }
-                    .gantt-bar.pi { background: #eef2f8; color: #2c5f8a; border: 1px solid #2c5f8a; }
+                    .gantt-bar.pi { background: #faf0ef; color: #a8524f; border: 1px solid #a8524f; }
                     .gantt-bar.overdue { background: #fdf2f2; color: #c47070; border: 1px solid #c47070; }
                     .bridge-id { font-size: 11px; font-weight: 700; color: #8a9ba8; min-width: 36px; }
                     .bridge-name { font-size: 12px; font-weight: 600; }
@@ -1454,6 +1627,70 @@
             currentView = 'month';
             updateViewTitle();
         }
+
+        // ============================================
+        // EDIT INSPECTION SCHEDULE MODAL
+        // ============================================
+        let scheduleEditBridgeId = null;
+
+        window.openScheduleModal = function(bridgeId) {
+            const bridge = bridgesData.find(b => b.id === bridgeId);
+            if (!bridge) return;
+            scheduleEditBridgeId = bridgeId;
+
+            document.getElementById('scheduleModalTitle').textContent = 'Edit Inspection Schedule — ' + bridge.name;
+            document.getElementById('scheduleGiYears').value = bridge.gi_cycle_years || '';
+            document.getElementById('schedulePiYears').value = bridge.pi_cycle_years || '';
+            const overrideDate = bridge.next_inspection_override ? String(bridge.next_inspection_override).split('T')[0] : '';
+            document.getElementById('scheduleNextDate').value = overrideDate;
+            document.getElementById('scheduleModalOverlay').classList.add('active');
+        };
+
+        function closeScheduleModal() {
+            document.getElementById('scheduleModalOverlay').classList.remove('active');
+            scheduleEditBridgeId = null;
+        }
+
+        async function saveScheduleModal() {
+            if (!scheduleEditBridgeId) return;
+            const giYears = document.getElementById('scheduleGiYears').value.trim();
+            const piYears = document.getElementById('schedulePiYears').value.trim();
+            const nextDate = document.getElementById('scheduleNextDate').value;
+
+            try {
+                const res = await fetch(`${API_BASE}/api/bridges/${scheduleEditBridgeId}/schedule`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        giCycleYears: giYears || null,
+                        piCycleYears: piYears || null,
+                        nextInspectionOverride: nextDate || null
+                    })
+                });
+                if (!res.ok) throw new Error('Failed to save schedule');
+
+                // Patch local state so calendar/gantt/upcoming reflect the change
+                // immediately, without a full refetch of every bridge+inspection.
+                const bridge = bridgesData.find(b => b.id === scheduleEditBridgeId);
+                if (bridge) {
+                    bridge.gi_cycle_years = giYears ? parseInt(giYears, 10) : null;
+                    bridge.pi_cycle_years = piYears ? parseInt(piYears, 10) : null;
+                    bridge.next_inspection_override = nextDate || null;
+                }
+                closeScheduleModal();
+                generateUpcomingInspections();
+                updateCalendarViews();
+            } catch (err) {
+                alert('Could not save schedule: ' + err.message);
+            }
+        }
+
+        document.getElementById('scheduleCancelBtn').addEventListener('click', closeScheduleModal);
+        document.getElementById('scheduleSaveBtn').addEventListener('click', saveScheduleModal);
+        document.getElementById('scheduleModalOverlay').addEventListener('click', function(e) {
+            if (e.target === this) closeScheduleModal();
+        });
 
         document.getElementById('prevYearBtn').addEventListener('click', () => currentView === 'month' ? changeMonth(-1) : changeYear(-1));
         document.getElementById('nextYearBtn').addEventListener('click', () => currentView === 'month' ? changeMonth(1) : changeYear(1));

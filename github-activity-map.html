@@ -80,12 +80,12 @@
 
 <div class="stats">
   <div class="stat"><div class="num">221</div><div class="label">Commits on main</div></div>
-  <div class="stat"><div class="num">2</div><div class="label">Pending on major</div></div>
+  <div class="stat"><div class="num">24</div><div class="label">Pending on major</div></div>
   <div class="stat"><div class="num">30</div><div class="label">Pull Requests</div></div>
   <div class="stat"><div class="num">29</div><div class="label">Merged</div></div>
   <div class="stat"><div class="num">4</div><div class="label">Branches</div></div>
-  <div class="stat"><div class="num">18</div><div class="label">Days Active</div></div>
-  <div class="stat"><div class="num">Jun 14 → Jul 3</div><div class="label">Date Range</div></div>
+  <div class="stat"><div class="num">19</div><div class="label">Days Active</div></div>
+  <div class="stat"><div class="num">Jun 14 → Jul 4</div><div class="label">Date Range</div></div>
 </div>
 
 <section>
@@ -336,9 +336,31 @@ gitGraph
   checkout major
   commit id: "Active-row highlight style refinement"
   commit id: "Live BCI preview + historical anomaly check"
+  commit id: "Activity map refresh (commit/PR stats)"
+  commit id: "BCI impact preview: floating panel"
+  commit id: "BCI impact panel: avg-impact header wording"
+  commit id: "author-react prototype (added, same-day revert)"
+  commit id: "Floating author widget + defects hover cloud"
+  commit id: "Defects cloud: animation + fetch fixes"
+  commit id: "Defects cloud: add-defect flow + dwell delay"
+  commit id: "Defects cloud: cursor-based positioning"
+  commit id: "Playwright script: inspection table test"
+  commit id: "Remove previous-defects cloud feature"
+  commit id: "Pending-review workflow: dashboard + modal"
+  commit id: "Pending-review: edit link from modal"
+  commit id: "BCI proforma: restore engineer details"
+  commit id: "Role badge script (navbar account icon)"
+  commit id: "Role badge script on remaining pages"
+  commit id: "Pending-review filters"
+  commit id: "Pending-review search + structure ID display"
+  commit id: "Accounts page: real profile via /api/me"
+  commit id: "User greeting pill on navbar"
+  commit id: "User greeting: positioning fix"
+  commit id: "User greeting: map.html only, real name"
+  commit id: "User greeting: lowercase + first name only"
     </pre>
     <div class="note recent">
-      <strong>2 commits pending on <span class="branch-tag">major</span></strong> (7/3 17:44 → 18:05, on top of PR #30) aren't in a merged PR yet — refining the keyboard-navigation active-row highlight from a heavier per-cell border/background treatment down to a quiet colour swap on just the item-number badge, then adding two inspection-workflow features on top: a live "BCI Average: X → Y" impact preview inside the Add Defect modal that recalculates as Severity/Extent change, and a historical-anomaly confirmation prompt that pauses a save when an element's new rating is a sharp improvement over its most recently recorded condition.
+      <strong>24 commits pending on <span class="branch-tag">major</span></strong> (7/3 17:44 → 7/4 16:08, on top of PR #30) aren't in a merged PR yet. It starts with the keyboard-navigation active-row polish and a new live "BCI Average: X → Y" impact preview in the Add Defect modal (<span class="branch-tag">bciPreview.js</span>) alongside a historical-anomaly confirmation check, both refined further the same evening (a floating panel layout, clearer "average impact" header wording). A short-lived <span class="branch-tag">author-react</span> Vite/React prototype was added and then reverted hours later in favour of a floating author widget plus a hover-triggered "previous defects" cloud on the inspection table (<span class="branch-tag">prevDefectsCloud.js</span>) — which itself went through several iterations (animation/fetch fixes, an add-defect flow with a dwell delay, cursor-based positioning) before being removed entirely, along with a one-off Playwright script used to test its layout. Attention then shifted to a new pending-review workflow: a dashboard section and modal for reviewing inspections, a direct edit link back into the inspection modal, restored engineer details in the BCI Pro Forma output, a <span class="branch-tag">roleBadge.js</span> script that swaps the navbar's account icon for a role-specific glyph (rolled out across every page), and filter/search functionality plus structure-ID display for the pending-review list. The batch closes out with the accounts page pulling real profile data from <span class="branch-tag">/api/me</span> instead of a hardcoded placeholder name, and a new "hello, [first name]" glass-pill greeting that was iterated from a navbar-embedded chip, to a floating element positioned beside the navbar, to a <span class="branch-tag">map.html</span>-only pill showing the person's actual first name (lowercased greeting) rather than their login username.
     </div>
     <div class="note">
       <strong>PR #30</strong> (7/2 22:55 → 7/3 17:37) — a mixed bag of consistency and cleanup work: two passes of modal style refinement, a <span class="branch-tag">fetch-credentials.js</span> fix so session cookies are sent with every request, a defect-number/API-alias fix alongside session-secret handling improvements, replacing the older <span class="branch-tag">spansenseGuide.html</span> with an updated, more concise user guide plus a new architecture/feature-report PDF, and three separate dead-code removal passes (outdated modal-update functions consolidated into <span class="branch-tag">bcirep.js</span>, redundant duplicate functions delegated to <span class="branch-tag">spans.js</span>/<span class="branch-tag">inspection.js</span>, and an unused endpoint merged into an existing route) — capped off with a <span class="branch-tag">package-lock.json</span> dependency update and a new keyboard-navigation feature for the inspection element table.
@@ -392,7 +414,7 @@ gitGraph
   </div>
 </section>
 
-<footer>Generated by Claude Code from GitHub's PR API (github.com/moniirr12/spansense) and local git history for moniirr12/spansense. Manually refreshed — last updated 2026-07-03.</footer>
+<footer>Generated by Claude Code from GitHub's PR API (github.com/moniirr12/spansense) and local git history for moniirr12/spansense. Manually refreshed — last updated 2026-07-04.</footer>
 
 <script>
 mermaid.initialize({ startOnLoad: true, theme: 'dark' });
@@ -445,8 +467,8 @@ for (const [num, title, flow, opened, closed, status] of prData) {
   tbody.appendChild(tr);
 }
 
-const days = ['Jun 14','Jun 15','Jun 16','Jun 17','Jun 18','Jun 19','Jun 20','Jun 21','Jun 22','Jun 23','Jun 24','Jun 25','Jun 26','Jun 27','Jun 28','Jun 29','Jun 30','Jul 1','Jul 2','Jul 3'];
-const commits = [48,0,7,0,1,6,14,13,10,3,19,12,2,1,25,9,10,13,18,10];
+const days = ['Jun 14','Jun 15','Jun 16','Jun 17','Jun 18','Jun 19','Jun 20','Jun 21','Jun 22','Jun 23','Jun 24','Jun 25','Jun 26','Jun 27','Jun 28','Jun 29','Jun 30','Jul 1','Jul 2','Jul 3','Jul 4'];
+const commits = [48,0,7,0,1,6,14,13,10,3,19,12,2,1,25,9,10,13,18,10,19];
 
 new Chart(document.getElementById('activityChart'), {
   type: 'bar',

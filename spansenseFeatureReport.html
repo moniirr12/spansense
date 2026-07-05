@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>spanSense — Platform Feature &amp; Architecture Report</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    color: #2c3e44;
+    font-size: 13.5px;
+    line-height: 1.55;
+    background: #dfe6e6;
+  }
+  @page { size: A4; margin: 0; }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 20mm 22mm;
+    background: white;
+    position: relative;
+    page-break-after: always;
+    break-after: page;
+  }
+  .page:last-child { page-break-after: auto; break-after: auto; }
+
+  /* ===== COVER ===== */
+  .cover {
+    background: linear-gradient(150deg, #101f1c 0%, #1e3432 45%, #2c4a48 75%, #3d6462 100%);
+    color: white;
+    display: flex;
+    flex-direction: column;
+  }
+  .cover .brand { font-size: 12px; font-weight: 700; letter-spacing: 0.14em; color: #8ab4b0; margin-bottom: 26px; }
+  .cover h1 { font-size: 38px; font-weight: 800; line-height: 1.18; letter-spacing: -0.02em; margin-bottom: 20px; max-width: 480px; }
+  .cover .desc { font-size: 14.5px; color: rgba(255,255,255,0.68); line-height: 1.7; max-width: 430px; margin-bottom: 40px; }
+  .cover .bridge-art { width: 100%; margin-top: 10px; }
+  .cover .meta { margin-top: auto; padding-top: 60px; display: flex; gap: 28px; font-size: 11.5px; color: rgba(255,255,255,0.5); }
+  .cover .meta strong { color: rgba(255,255,255,0.8); }
+
+  /* ===== TOC ===== */
+  .toc h1 { font-size: 26px; font-weight: 800; color: #1e3432; margin-bottom: 6px; }
+  .toc .sub { font-size: 13px; color: #8a9ba8; margin-bottom: 34px; }
+  .toc-row { display: flex; align-items: baseline; gap: 16px; padding: 13px 0; border-bottom: 1px solid #eef2f6; }
+  .toc-num { font-size: 12.5px; font-weight: 800; color: #5b8c8a; min-width: 22px; }
+  .toc-title { flex: 1; font-size: 14px; color: #2c3e44; }
+  .toc-page { font-size: 13px; color: #8a9ba8; }
+
+  /* ===== SECTION HEADER ===== */
+  .sec-head { margin-bottom: 18px; }
+  .sec-head h2 { font-size: 19px; font-weight: 800; color: #1e3432; border-left: 4px solid #5b8c8a; padding-left: 12px; line-height: 1.3; }
+  .sec-head p.lede { margin-top: 8px; color: #4a5b64; font-size: 12.5px; line-height: 1.5; }
+
+  .footer-bar { position: absolute; left: 22mm; right: 22mm; bottom: 12mm; display: flex; justify-content: space-between; font-size: 10px; color: #a0aeb5; border-top: 1px solid #eef2f6; padding-top: 8px; }
+
+  /* ===== STAT TILES ===== */
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 22px 0 28px; }
+  .stat-tile { background: #eef4f2; border-radius: 12px; padding: 16px 16px 14px; }
+  .stat-tile .num { font-size: 26px; font-weight: 800; color: #2c4a48; line-height: 1; }
+  .stat-tile .lbl { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #6b8685; margin-top: 6px; }
+
+  h3.subhead { font-size: 14px; font-weight: 700; color: #1e3432; margin: 15px 0 7px; }
+  p.body-text { color: #3d4a4f; font-size: 12.5px; line-height: 1.55; margin-bottom: 8px; }
+  p.body-text strong { color: #1e3432; }
+  code.mono { font-family: 'Consolas', monospace; background: #f0f4f4; padding: 1px 5px; border-radius: 4px; font-size: 11.5px; color: #2c4a48; }
+
+  /* ===== ARCH DIAGRAM ===== */
+  .arch-box { border: 1.5px solid #cfe0dd; border-radius: 10px; padding: 10px 20px; text-align: center; margin-bottom: 5px; }
+  .arch-box .cap { font-size: 9.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #5b8c8a; margin-bottom: 3px; }
+  .arch-box .l1 { font-size: 13px; font-weight: 600; color: #1e3432; }
+  .arch-box .l2 { font-size: 11.5px; color: #7a8e93; margin-top: 2px; }
+  .arch-arrow { text-align: center; color: #a8bcb9; font-size: 12px; padding: 4px 0; }
+  .arch-split { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 5px; }
+
+  table.data-tbl { width: 100%; border-collapse: collapse; margin-top: 6px; }
+  table.data-tbl th { text-align: left; font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #6b8685; background: #f2f6f5; padding: 6px 12px; }
+  table.data-tbl td { padding: 7px 12px; font-size: 12px; color: #3d4a4f; border-bottom: 1px solid #eef2f6; }
+  table.data-tbl td strong { color: #1e3432; }
+  table.data-tbl tr:last-child td { border-bottom: none; }
+
+  .callout { background: #fbf3e7; border-left: 4px solid #c2914a; border-radius: 0 10px 10px 0; padding: 10px 16px; font-size: 12px; color: #5c4526; line-height: 1.5; }
+  .callout strong { color: #8a5d1f; }
+  .callout.good { background: #eef4f2; border-left-color: #5b8c8a; color: #2c4a48; }
+  .callout.good strong { color: #2c4a48; }
+
+  /* ===== BAR CHART ===== */
+  .bar-chart { display: flex; align-items: flex-end; gap: 14px; height: 180px; margin: 16px 0 8px; }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
+  .bar-col .n { font-size: 12px; font-weight: 800; color: #1e3432; margin-bottom: 4px; }
+  .bar-col .bar { width: 70%; background: #6f9d9a; border-radius: 4px 4px 0 0; }
+  .bar-col .lbl { font-size: 10px; color: #6b8685; margin-top: 8px; text-align: center; }
+
+  /* ===== FRONTEND TOUR ===== */
+  .badge-pill { display: inline-block; font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; background: #eef4f2; color: #5b8c8a; padding: 4px 12px; border-radius: 20px; margin-bottom: 8px; }
+  ul.feat-list { list-style: none; margin: 10px 0 4px; }
+  ul.feat-list li { font-size: 12.5px; color: #3d4a4f; padding: 5px 0 5px 18px; position: relative; line-height: 1.5; }
+  ul.feat-list li::before { content: '•'; position: absolute; left: 2px; color: #5b8c8a; font-weight: 800; }
+  ul.feat-list li strong { color: #1e3432; }
+
+  .shot { border: 1px solid #e6edec; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(30,52,50,0.06); }
+  .shot img { width: 100%; display: block; }
+  .cap-text { font-size: 10.5px; color: #8a9ba8; text-align: center; margin-top: 7px; font-style: italic; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+  .col-text { }
+  .col-shot { }
+
+  /* ===== OBSERVATIONS ===== */
+  ul.obs-list { list-style: none; margin: 8px 0 20px; }
+  ul.obs-list li { font-size: 12.5px; color: #3d4a4f; padding: 7px 0 7px 20px; position: relative; line-height: 1.55; border-bottom: 1px solid #f3f6f6; }
+  ul.obs-list li::before { content: '▸'; position: absolute; left: 0; color: #5b8c8a; font-weight: 800; }
+  ul.obs-list li strong { color: #1e3432; }
+  ul.obs-list.fixed li::before { content: '✓'; color: #3f9d7a; }
+
+  @media print {
+    body { background: white; }
+    .page { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= COVER ================= -->
+<div class="page cover">
+  <div class="brand">SPANSENSE</div>
+  <h1>Platform Feature &amp; Architecture Report</h1>
+  <p class="desc">A complete inventory of the frontend and backend functionality powering spanSense — a bridge and structure asset-management platform covering inspections, BCI condition scoring, inspection scheduling, 3D digital twins, and reporting.</p>
+  <svg class="bridge-art" viewBox="0 0 760 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M20 110 C 120 10, 260 10, 380 70 C 500 10, 640 10, 740 110" stroke="#7ba8a5" stroke-width="2" opacity="0.8"/>
+    <line x1="160" y1="35" x2="160" y2="112" stroke="#7ba8a5" stroke-width="3"/>
+    <line x1="600" y1="35" x2="600" y2="112" stroke="#7ba8a5" stroke-width="3"/>
+    <line x1="220" y1="52" x2="220" y2="112" stroke="#7ba8a5" stroke-width="1"/>
+    <line x1="280" y1="63" x2="280" y2="112" stroke="#7ba8a5" stroke-width="1"/>
+    <line x1="480" y1="63" x2="480" y2="112" stroke="#7ba8a5" stroke-width="1"/>
+    <line x1="540" y1="52" x2="540" y2="112" stroke="#7ba8a5" stroke-width="1"/>
+    <circle cx="380" cy="70" r="4" fill="white"/>
+    <line x1="20" y1="112" x2="740" y2="112" stroke="#7ba8a5" stroke-width="2"/>
+  </svg>
+  <div class="meta">
+    <div><strong>Prepared 5 July 2026</strong></div>
+    <div>Codebase snapshot · branch "major"</div>
+  </div>
+</div>
+
+<!-- ================= TOC ================= -->
+<div class="page toc">
+  <h1>Contents</h1>
+  <p class="sub">A map of this report.</p>
+
+  <div class="toc-row"><span class="toc-num">01</span><span class="toc-title">Executive Summary</span><span class="toc-page">3</span></div>
+  <div class="toc-row"><span class="toc-num">02</span><span class="toc-title">System Architecture &amp; Technology Stack</span><span class="toc-page">4</span></div>
+  <div class="toc-row"><span class="toc-num">03</span><span class="toc-title">Backend API Catalog</span><span class="toc-page">5</span></div>
+  <div class="toc-row"><span class="toc-num">04</span><span class="toc-title">Data Model</span><span class="toc-page">6</span></div>
+  <div class="toc-row"><span class="toc-num">05</span><span class="toc-title">Frontend Modules — Map &amp; Dashboard</span><span class="toc-page">7</span></div>
+  <div class="toc-row"><span class="toc-num">06</span><span class="toc-title">Frontend Modules — Database, Planning &amp; twinView</span><span class="toc-page">8</span></div>
+  <div class="toc-row"><span class="toc-num">07</span><span class="toc-title">Frontend Modules — Accounts, Contacts &amp; Inspection</span><span class="toc-page">9</span></div>
+  <div class="toc-row"><span class="toc-num">08</span><span class="toc-title">The BCI Condition-Scoring Engine</span><span class="toc-page">10</span></div>
+  <div class="toc-row"><span class="toc-num">09</span><span class="toc-title">Inspection Scheduling &amp; Review Pipeline</span><span class="toc-page">11</span></div>
+  <div class="toc-row"><span class="toc-num">10</span><span class="toc-title">Recent Platform Changes (since 3 July)</span><span class="toc-page">12</span></div>
+  <div class="toc-row"><span class="toc-num">11</span><span class="toc-title">Notable Observations &amp; Recommendations</span><span class="toc-page">13</span></div>
+
+  <div class="footer-bar"><span>spanSense — Platform Feature &amp; Architecture Report</span><span>Contents</span></div>
+</div>
+
+<!-- ================= 01 EXEC SUMMARY ================= -->
+<div class="page">
+  <div class="sec-head">
+    <h2>01 — Executive Summary</h2>
+  </div>
+  <p class="body-text">spanSense is a multi-page web application for managing the inspection and condition assessment of civil structures (bridges, retaining walls, culverts, footbridges, and sign gantries). It combines a geographic asset map, a field-inspection workflow built around the Bridge Condition Index (BCI), a 3D digital twin viewer, a per-structure inspection scheduler, an engineer review pipeline, and a suite of PDF/Word/Excel reporting tools — on top of an Express + PostgreSQL backend with Supabase-hosted file storage.</p>
+
+  <div class="stat-grid">
+    <div class="stat-tile"><div class="num">9</div><div class="lbl">Frontend pages / modules</div></div>
+    <div class="stat-tile"><div class="num">~46</div><div class="lbl">Backend API endpoints</div></div>
+    <div class="stat-tile"><div class="num">9</div><div class="lbl">Core database tables</div></div>
+    <div class="stat-tile"><div class="num">5</div><div class="lbl">Structure types supported</div></div>
+    <div class="stat-tile"><div class="num">16</div><div class="lbl">Defect type categories</div></div>
+    <div class="stat-tile"><div class="num">5×5</div><div class="lbl">Severity × extent scoring grid</div></div>
+    <div class="stat-tile"><div class="num">GI / PI</div><div class="lbl">Alternating inspection cycle</div></div>
+    <div class="stat-tile"><div class="num">4</div><div class="lbl">Export formats (PDF/DOCX/XLSX/CSV)</div></div>
+  </div>
+
+  <h3 class="subhead">What the platform does, in one paragraph</h3>
+  <p class="body-text">An inspector logs in, finds a structure on the map, opens the inspection wizard, and logs defects element by element, attaching photos and optionally locating each defect on a 3D model of the structure. The backend computes BCI average and critical scores from the logged defects; those scores flow into the dashboard, the planning calendar (which now projects a single alternating GI/PI schedule per structure, editable per structure), the 3D twin — where the condition panel shows the trend against the previous inspection — and a family of exportable report documents. A submitted inspection enters a review queue that an engineer or admin can approve or reject before it's considered final.</p>
+
+  <h3 class="subhead">Read this report as…</h3>
+  <p class="body-text">Section 03 is the backend reference; sections 05–07 are the frontend tour with real screenshots of the current build; section 09 covers the scheduling engine and review pipeline added since the last snapshot; section 10 summarizes everything else that's changed; section 11 lists the technical-debt items worth knowing about before making changes.</p>
+
+  <div class="footer-bar"><span>spanSense — Platform Feature &amp; Architecture Report</span><span>Executive Summary</span></div>
+</div>
+
+<!-- ================= 02 ARCHITECTURE ================= -->
+<div class="page">
+  <div class="sec-head">
+    <h2>02 — System Architecture &amp; Technology Stack</h2>
+  </div>
+
+  <div class="arch-box">
+    <div class="cap">Frontend</div>
+    <div class="l1">9 multi-page HTML/CSS/vanilla-JS modules</div>
+    <div class="l2">Map · Dashboard · Database · Planning · Inspection ×2 · Twin · Accounts · Contacts</div>
+  </div>
+  <div class="arch-arrow">↓ fetch (session cookie) ↓</div>
+  <div class="arch-box">
+    <div class="cap">API Server</div>
+    <div class="l1">Express 4 · express-session (cookie auth)</div>
+    <div class="l2">~46 REST-style routes under <code class="mono">/api/*</code>, all static assets self-hosted</div>
+  </div>
+  <div class="arch-arrow">↓</div>
+  <div class="arch-split">
+    <div class="arch-box"><div class="cap">Data</div><div class="l1">PostgreSQL</div><div class="l2">raw parameterized SQL, no ORM</div></div>
+    <div class="arch-box"><div class="cap">Files</div><div class="l1">Supabase Storage</div><div class="l2">private bucket, signed URLs (1hr)</div></div>
+  </div>
+
+  <h3 class="subhead">Technology stack</h3>
+  <table class="data-tbl">
+    <tr><th>Layer</th><th>Technology</th></tr>
+    <tr><td><strong>Server</strong></td><td>Express 4, express-session, CORS</td></tr>
+    <tr><td><strong>Database</strong></td><td>PostgreSQL via node-pg (raw SQL, parameterized, no ORM)</td></tr>
+    <tr><td><strong>File storage</strong></td><td>Supabase Storage (private bucket, signed URLs)</td></tr>
+    <tr><td><strong>Auth</strong></td><td>Cookie session + bcryptjs password hashing</td></tr>
+    <tr><td><strong>Uploads</strong></td><td>Multer (memory storage, MIME whitelist, 15MB cap)</td></tr>
+    <tr><td><strong>Geo</strong></td><td>proj4 (WGS84 → OSGB36 British National Grid)</td></tr>
+    <tr><td><strong>Frontend</strong></td><td>Multi-page HTML/CSS/vanilla JS (no framework/bundler)</td></tr>
+    <tr><td><strong>3D</strong></td><td>Three.js (digital twin + in-inspection defect locator)</td></tr>
+    <tr><td><strong>Reporting</strong></td><td>pdfmake, jsPDF + autotable, docx.js, html2canvas, SheetJS</td></tr>
+    <tr><td><strong>Mapping UI</strong></td><td>Leaflet + Fuse.js (fuzzy search)</td></tr>
+    <tr><td><strong>Charts</strong></td><td>Chart.js (dashboard KPIs)</td></tr>
+  </table>
+
+  <div style="margin-top:22px;" class="callout good">
+    <strong>Auth model update:</strong> session cookie only (httpOnly) — still no JWT or email/SMTP integration anywhere in the codebase. A <code class="mono">role</code> field is stored per user, and is now enforced by three routes added since the last report — pending-review, review-decision, and bridge-schedule updates all require <code class="mono">engineer</code> or <code class="mono">admin</code>. Every other route remains logged-in-or-not; broader role enforcement would still need new middleware.
+  </div>
+
+  <div class="footer-bar"><span>spanSense — Platform Feature &amp; Architecture Report</span><span>Architecture</span></div>
+</div>
+
+<!-- ================= 03 API CATALOG ================= -->
+<div class="page">
+  <div class="sec-head">
+    <h2>03 — Backend API Catalog</h2>
+    <p class="lede">Endpoints grouped by domain area (approximate count per group):</p>
+  </div>
+
+  <div class="bar-chart">
+    <div class="bar-col"><div class="n">13</div><div class="bar" style="height:100%; background:#5b8c8a;"></div><div class="lbl">Inspections</div></div>
+    <div class="bar-col"><div class="n">8</div><div class="bar" style="height:62%;"></div><div class="lbl">Dashboard</div></div>
+    <div class="bar-col"><div class="n">7</div><div class="bar" style="height:54%;"></div><div class="lbl">Documents</div></div>
+    <div class="bar-col"><div class="n">5</div><div class="bar" style="height:38%;"></div><div class="lbl">Bridges</div></div>
+    <div class="bar-col"><div class="n">4</div><div class="bar" style="height:31%;"></div><div class="lbl">Photos</div></div>
+    <div class="bar-col"><div class="n">4</div><div class="bar" style="height:31%;"></div><div class="lbl">Auth</div></div>
+    <div class="bar-col"><div class="n">1</div><div class="bar" style="height:8%;"></div><div class="lbl">Elements</div></div>
+    <div class="bar-col"><div class="n">1</div><div class="bar" style="height:8%;"></div><div class="lbl">Twin</div></div>
+  </div>
+
+  <h3 class="subhead">Endpoint groups, in brief</h3>
+  <table class="data-tbl">
+    <tr><th>Group</th><th>What it covers</th></tr>
+    <tr><td><strong>Auth</strong></td><td>Login, logout, session check, bcrypt hashing, <code class="mono">/api/me</code> profile lookup</td></tr>
+    <tr><td><strong>Bridges</strong></td><td>Structure CRUD, type distribution, OS grid-reference backfill via proj4, per-structure schedule (gi/pi cycle years + next-due override)</td></tr>
+    <tr><td><strong>Elements</strong></td><td>Standard inspectable-element checklist per structure type</td></tr>
+    <tr><td><strong>Inspections</strong></td><td>History, full payload retrieval, transactional save/update, defect roll-ups, next-due-date calculation, pending-review queue and approve/reject decisions</td></tr>
+    <tr><td><strong>Photos</strong></td><td>Upload/list/delete/describe defect photos, stored in Supabase, signed on read</td></tr>
+    <tr><td><strong>Documents</strong></td><td>Per-bridge hierarchical folder/file manager with breadcrumb path resolution</td></tr>
+    <tr><td><strong>Twin</strong></td><td>Single aggregation endpoint feeding the 3D digital twin viewer, including BCI trend vs. the previous inspection</td></tr>
+    <tr><td><strong>Dashboard</strong></td><td>Activity feed, BCI distribution, condition-by-year, critical structures, portfolio-wide BCI average/critical summary</td></tr>
+  </table>
+
+  <div class="footer-bar"><span>spanSense — Platform Feature &amp; Architecture Report</span><span>Backend API</span></div>
+</div>
+
+<!-- ================= 04 DATA MODEL ================= -->
+<div class="page">
+  <div class="sec-head">
+    <h2>04 — Data Model</h2>
+    <p class="lede">Nine core tables, plain foreign keys (no ORM-managed relations).</p>
+  </div>
+
+  <table class="data-tbl">
+    <tr><th>Table</th><th>Purpose</th></tr>
+    <tr><td><strong>users</strong></td><td>Accounts, bcrypt password hash, role (admin/engineer/inspector)</td></tr>
+    <tr><td><strong>bridges</strong></td><td>Structure records — location, type, material, BCI snapshot, and (new) per-structure <code class="mono">gi_cycle_years</code> / <code class="mono">pi_cycle_years</code> / <code class="mono">next_inspection_override</code></td></tr>
+    <tr><td><strong>inspections</strong></td><td>One row per inspection event — type (GI/PI/SI), overall BCI average/critical, review <code class="mono">status</code>, <code class="mono">reviewed_by</code>, <code class="mono">reviewed_at</code>, engineer comments</td></tr>
+    <tr><td><strong>inspection_spans</strong></td><td>Per-span BCI average/critical breakdown within one inspection</td></tr>
+    <tr><td><strong>defects</strong></td><td>Per-element defect record — severity, extent, works-required flag, 3D position, tied to one inspection</td></tr>
+    <tr><td><strong>defect_photos</strong></td><td>Uploaded photo references per defect, stored in Supabase Storage</td></tr>
+    <tr><td><strong>elements</strong></td><td>Standard inspectable-element checklist, keyed by structure type</td></tr>
+    <tr><td><strong>folders</strong></td><td>Per-bridge document folder tree</td></tr>
+    <tr><td><strong>files</strong></td><td>Uploaded documents within a bridge's folder tree</td></tr>
+  </table>
+
+  <h3 class="subhead">Notable relationship</h3>
+  <p class="body-text">A defect never outlives the inspection it was logged in — there's no cross-inspection "open until resolved" status anywhere in the schema. A structure's condition history is really a sequence of independent snapshots; anything that reads as "current state" (e.g. twinView's condition panel) is really "as of the most recently selected inspection."</p>
+
+  <div class="footer-bar"><span>spanSense — Platform Feature &amp; Architecture Report</span><span>Data Model</span></div>
+</div>
+
+<!-- ================= 05 FRONTEND: MAP + DASHBOARD ================= -->
+<div class="page">
+  <div class="sec-head">
+    <h2>05 — Frontend: Map &amp; Dashboard</h2>
+  </div>
+
+  <div class="badge-pill">Default landing page</div>
+  <h3 class="subhead" style="margin-top:0;">Map — the structure hub</h3>
+  <p class="body-text">An interactive Leaflet map is the app's home screen after login. Structures are plotted with type-coded icon shapes and BCI-condition-coded rings; a sidebar lets the user filter by structure type or condition band, and a fuzzy-search bar (Fuse.js) jumps straight to a named structure. Clicking a marker opens a structure detail modal with photo, BCI score, and buttons for New Inspection, Previous Inspections, and Documents.</p>
+
+  <h3 class="subhead">Dashboard — portfolio KPIs, now clickable</h3>
+  <p class="body-text">Every metric card jumps straight to the section it summarizes when clicked (a small chevron makes this discoverable), and the two hardcoded placeholder cards from the previous snapshot ("Upcoming"/"Overdue") have been replaced with live, API-backed figures:</p>
+  <ul class="feat-list">
+    <li><strong>Total Assets</strong> and <strong>High-Risk Structures</strong> — unchanged, still live counts</li>
+    <li><strong>BCI Average / Critical</strong> — a new combined card, portfolio-wide, computed from each structure's latest inspection</li>
+    <li><strong>Pending Review</strong> — replaces the old placeholder cards; jumps to the review queue and now paginates once the list grows past 8 items</li>
+  </ul>
+
+  <div class="shot" style="margin-top:14px;">
+    <img src="reportAssets/dashboard-metrics.png" alt="Dashboard metrics and charts">
+  </div>
+  <p class="cap-text">The refreshed metrics row — four live, clickable cards, and the Analytics &amp; Insights charts below</p>
+
+  <div class="footer-bar"><span>spanSense — Platform Feature &amp; Architecture Report</span><span>Frontend — Map &amp; Dashboard</span></div>
+</div>
+
+<!-- ================= 06 FRONTEND: DATABASE, PLANNING, TWIN ================= -->
+<div class="page">
+  <div class="sec-head">
+    <h2>06 — Frontend: Database, Planning &amp; twinView</h2>
+  </div>
+
+  <div class="badge-pill">Export &amp; records</div>
+  <h3 class="subhead" style="margin-top:0;">Database — bridges, inspections, reports</h3>
+  <p class="body-text">A three-category export panel (Bridges / Inspections / Reports) with a filterable, paginated, sortable table underneath, and per-column format choice (CSV/JSON/XML for structures; CSV/PDF/XLSX for inspections; PDF/DOCX for reports). Routine "Loaded N records" and "Switched to X" toasts were removed this session — they added noise without adding information.</p>
+
+  <div class="badge-pill" style="margin-top:10px;">Rebuilt this session</div>
+  <h3 class="subhead" style="margin-top:0;">Planning — a real inspection scheduler</h3>
+  <p class="body-text">GI and PI no longer recur as two independent series. They now share a single alternating slot — every <code class="mono">pi_cycle_years / gi_cycle_years</code>-th occurrence is a PI instead of a GI (2yr/6yr default → every 3rd) — fixing a bug where the old model could project a GI and a PI landing in the same year, or miss a GI for a structure only ever inspected as PI. Frequency and the next-due date are editable per structure; the Gantt view now sits in its own framed card.</p>
+
+  <div class="two-col" style="margin-top:8px;">
+    <div class="col-shot">
+      <div class="shot"><img src="reportAssets/planning-gantt.png" alt="Planning Gantt view"></div>
+      <p class="cap-text">Gantt view — GI in teal, PI in red (swapped this session — PI is the more serious type), with an edit pencil per structure</p>
+    </div>
+    <div class="col-shot" style="display:flex; flex-direction:column; align-items:center;">
+      <div class="shot" style="max-width:44mm;"><img src="reportAssets/planning-schedule-modal-tight.png" alt="Edit inspection schedule modal"></div>
+      <p class="cap-text">The new per-structure schedule editor</p>
+    </div>
+  </div>
+
+  <div class="badge-pill" style="margin-top:10px;">Condition trend, not a snapshot count</div>
+  <h3 class="subhead" style="margin-top:0;">twinView — 3D digital twin</h3>
+  <p class="body-text">The "Inspection status" panel's third stat used to be a raw "Open Defects" count — misleading, since defects have no open/closed lifecycle in the schema, just a per-inspection snapshot. It now shows BCI average and critical <strong>trend</strong> against the previous inspection instead — a genuinely more useful "is this getting better or worse" signal.</p>
+
+  <div class="shot" style="max-width:52mm; margin-top:6px;">
+    <img src="reportAssets/twin-status.png" alt="twinView inspection status with BCI trend">
+  </div>
+  <p class="cap-text">Declining BCI in red with the before → after numbers; improving/stable in green</p>
+
+  <div class="footer-bar"><span>spanSense — Platform Feature &amp; Architecture Report</span><span>Frontend — Database, Planning, twinView</span></div>
+</div>
+
+<!-- ================= 07 FRONTEND: ACCOUNTS, CONTACTS, INSPECTION ================= -->
+<div class="page">
+  <div class="sec-head">
+    <h2>07 — Frontend: Accounts, Contacts &amp; Inspection</h2>
+  </div>
+
+  <h3 class="subhead" style="margin-top:0;">Accounts</h3>
+  <p class="body-text">Previously showed a hardcoded placeholder name/role/join-date. Now loads the real logged-in user's profile from <code class="mono">/api/me</code> — name, role badge, avatar initials, and join date all reflect whoever is actually signed in.</p>
+
+  <h3 class="subhead">Navbar — role badge &amp; greeting</h3>
+  <p class="body-text">Two small additions roll out across every page's navbar: the account icon now morphs into a role-specific glyph (magnifying glass for inspector, checked user for engineer, shield for admin) cached in localStorage for an instant repaint on navigation; and map.html carries a "hello, [first name]" pill sourced from the same session profile lookup.</p>
+
+  <h3 class="subhead">Contacts</h3>
+  <p class="body-text">A simple contact form/details page — unchanged this cycle.</p>
+
+  <h3 class="subhead">Inspection (2-step wizard)</h3>
+  <p class="body-text">Metadata first, then per-span/per-element defect logging with photo attachment and optional 3D-model defect placement. A live "BCI impact preview" panel now recalculates the average-impact delta as Severity/Extent change, before the defect is even saved, and a historical-anomaly check pauses a save when a new rating is a sharp improvement over the element's last recorded condition — both added since the last report.</p>
+
+  <h3 class="subhead">inspection1 — the review-focused variant</h3>
+  <p class="body-text">A second inspection-detail layout, used as the deep-link target when an engineer opens "Review &amp; edit" from the dashboard's pending-review queue — same underlying data, laid out for a reviewer skimming a submitted report rather than an inspector filling one in from scratch.</p>
+
+  <div class="footer-bar"><span>spanSense — Platform Feature &amp; Architecture Report</span><span>Frontend — Accounts, Contacts, Inspection</span></div>
+</div>
+
+<!-- ================= 08 BCI ENGINE ================= -->
+<div class="page">
+  <div class="sec-head">
+    <h2>08 — The BCI Condition-Scoring Engine</h2>
+    <p class="lede">Every Severity × Extent pair feeds directly into a score — no manual formula, no spreadsheet.</p>
+  </div>
+
+  <table class="data-tbl">
+    <tr><th>Term</th><th>Meaning</th></tr>
+    <tr><td><strong>BCI avg</strong></td><td>The overall average condition across all elements in an inspection</td></tr>
+    <tr><td><strong>BCI crit</strong></td><td>The score of the single worst-condition element — the one that actually drives risk decisions</td></tr>
+    <tr><td><strong>Severity (1–5)</strong></td><td>Minor · Moderate · Severe · Critical · Emergency</td></tr>
+    <tr><td><strong>Extent (A–E)</strong></td><td>How much of the element is affected, isolated to extensive</td></tr>
+  </table>
+
+  <h3 class="subhead">Five condition bands</h3>
+  <p class="body-text">Both BCI avg and BCI crit fall into the same five bands used everywhere in the app — the dashboard's distribution chart, the map's marker rings, and every report document: <strong>Critical (0–39)</strong>, <strong>Poor (40–64)</strong>, <strong>Fair (65–79)</strong>, <strong>Good (80–89)</strong>, <strong>Very Good (90–100)</strong>.</p>
+
+  <h3 class="subhead">What's new: a live impact preview</h3>
+  <p class="body-text">Inside the Add Defect modal, an inline panel now shows the projected BCI average before/after impact as Severity and Extent are changed, so an inspector sees the consequence of a rating before committing it — previously the score only updated after the defect was saved.</p>
+
+  <div class="footer-bar"><span>spanSense — Platform Feature &amp; Architecture Report</span><span>BCI Scoring Engine</span></div>
+</div>
+
+<!-- ================= 09 SCHEDULING + REVIEW ================= -->
+<div class="page">
+  <div class="sec-head">
+    <h2>09 — Inspection Scheduling &amp; Review Pipeline</h2>
+    <p class="lede">Two features built this session, both new end-to-end: a real scheduling engine and an approval workflow.</p>
+  </div>
+
+  <h3 class="subhead" style="margin-top:0;">Scheduling engine</h3>
+  <p class="body-text">Replaces three separately hand-rolled recurrence calculations (the upcoming-inspections list, the single-year calendar, and the multi-year Gantt view) with one shared projector. GI and PI share a single alternating slot rather than recurring independently — a structure's own <code class="mono">gi_cycle_years</code> / <code class="mono">pi_cycle_years</code> (defaulting to 2/6) determine the cadence, and every <code class="mono">pi_cycle_years/gi_cycle_years</code>-th occurrence becomes a PI. A <code class="mono">next_inspection_override</code> date, editable from Planning, rebases the entire future sequence onto a manually-set date without needing to touch history.</p>
+
+  <table class="data-tbl">
+    <tr><th>Endpoint</th><th>Behaviour</th></tr>
+    <tr><td><code class="mono">GET /api/bridges</code></td><td>Now also returns each structure's cycle-years and override columns</td></tr>
+    <tr><td><code class="mono">PATCH /api/bridges/:id/schedule</code></td><td>Updates cycle-years and override date — engineer/admin only</td></tr>
+    <tr><td><code class="mono">GET /api/twin/:id</code></td><td>"Next due" now uses the same shared alternating-sequence logic, fixing a case where a structure with only PI history was projected 2027-PI instead of the correct 2023-GI</td></tr>
+  </table>
+
+  <h3 class="subhead">Review pipeline</h3>
+  <p class="body-text">Submitted inspections now carry a <code class="mono">status</code> (submitted / approved / rejected), <code class="mono">reviewed_by</code>, and engineer comments. The dashboard's Pending Review section — search, type filter, critical-only toggle, and pagination — surfaces anything awaiting a decision to engineer/admin accounts, with a modal that deep-links straight into the full inspection editor for a closer look before approving or rejecting.</p>
+
+  <div class="footer-bar"><span>spanSense — Platform Feature &amp; Architecture Report</span><span>Scheduling &amp; Review</span></div>
+</div>
+
+<!-- ================= 10 RECENT CHANGES ================= -->
+<div class="page">
+  <div class="sec-head">
+    <h2>10 — Recent Platform Changes (since 3 July)</h2>
+    <p class="lede">A condensed changelog of everything covered in more detail elsewhere in this report.</p>
+  </div>
+
+  <ul class="obs-list fixed">
+    <li><strong>Dashboard metrics rebuilt</strong> — two hardcoded placeholder cards replaced with live BCI average/critical and pending-review figures, every card now clickable</li>
+    <li><strong>Planning scheduling engine</strong> — GI/PI unified into one alternating sequence; per-structure frequency and next-due override, editable from a new modal</li>
+    <li><strong>twinView BCI trend</strong> — replaced a not-very-meaningful "open defects" count with a trend comparison against the previous inspection</li>
+    <li><strong>Pending-review workflow</strong> — dashboard section, search/filter/pagination, and an approve/reject modal deep-linking into the full editor</li>
+    <li><strong>Role badge &amp; user greeting</strong> — navbar account icon reflects role; map.html greets the signed-in user by first name</li>
+    <li><strong>Accounts page</strong> — now loads the real signed-in user's profile instead of a hardcoded placeholder</li>
+    <li><strong>Live BCI impact preview + historical-anomaly check</strong> — added to the Add Defect modal</li>
+    <li><strong>Dark-mode contrast pass</strong> — several borders (Gantt grid lines, section headers, database table framing) were left at their light-mode color and read as bright white hairlines against dark backgrounds; corrected across dashboard, planning, and database</li>
+    <li><strong>Housekeeping</strong> — removed two orphaned legacy files (an early BCI prototype and an untracked generator script) and several unused dependencies from <code class="mono">package.json</code>; added a project README</li>
+  </ul>
+
+  <div class="footer-bar"><span>spanSense — Platform Feature &amp; Architecture Report</span><span>Recent Changes</span></div>
+</div>
+
+<!-- ================= 11 OBSERVATIONS ================= -->
+<div class="page">
+  <div class="sec-head">
+    <h2>11 — Notable Observations &amp; Recommendations</h2>
+  </div>
+
+  <h3 class="subhead" style="margin-top:0;">Resolved since the last report</h3>
+  <ul class="obs-list fixed">
+    <li><strong>Orphaned legacy files</strong> — the early BCI prototype and an untracked generator script are both gone</li>
+    <li><strong>Unused dependencies</strong> — sqlite3, canvas, fs-extra, and the static-map packages have been removed from <code class="mono">package.json</code></li>
+    <li><strong>Binary authorization</strong> — partially addressed: three routes (pending-review, review-decision, schedule-update) now require engineer/admin specifically, rather than just "logged in"</li>
+  </ul>
+
+  <h3 class="subhead">Still worth knowing about</h3>
+  <ul class="obs-list">
+    <li><strong>Duplicated report/modal logic</strong> between <code class="mono">map/bcirep.js</code> and <code class="mono">map.js</code> — both still define overlapping modal-data helpers</li>
+    <li><strong>Seed credentials are hardcoded</strong> — the default account (<code class="mono">admin</code> / <code class="mono">admin123</code>) is created and logged to console on first boot; worth rotating before any real deployment</li>
+    <li><strong>Session store is in-memory</strong> — express-session's MemoryStore is fine for local development but will leak memory and doesn't scale past one process, as the server's own boot log already warns</li>
+    <li><strong>No automated test suite</strong> — this session's changes were verified with ad hoc Playwright scripts rather than a committed test suite; a real one is the single biggest gap between "working" and "trustworthy"</li>
+    <li><strong>Most routes remain binary</strong> — beyond the three now-gated routes, authorization elsewhere is still just "logged in or not"</li>
+  </ul>
+
+  <h3 class="subhead">Strengths worth preserving</h3>
+  <ul class="obs-list fixed">
+    <li>Inspection saves are properly transactional — a failed write can't leave a half-saved inspection</li>
+    <li>The BCI scoring engine is cleanly parameterized per structure type, making it straightforward to onboard a new asset type</li>
+    <li>The new scheduling engine is a single shared function reused by three different views instead of three parallel implementations — the kind of consolidation the previous report's technical-debt section was asking for</li>
+    <li>Client-side report generation (PDF/DOCX/XLSX) means no server-side rendering dependency or extra infrastructure to operate</li>
+  </ul>
+
+  <p style="font-size:11px; color:#a0aeb5; margin-top:24px;">This report was generated by inspecting the codebase directly (routes, schema, and page markup/scripts) and by driving the running application with Playwright for real screenshots, rather than from documentation, and reflects the repository state as of the date on the cover page.</p>
+
+  <div class="footer-bar"><span>spanSense — Platform Feature &amp; Architecture Report</span><span>Recommendations</span></div>
+</div>
+
+</body>
+</html>

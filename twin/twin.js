@@ -65,6 +65,33 @@ function getBciClass(bci) {
     return 'good';
 }
 
+// Shows the selected inspection's BCI against the one immediately before it
+// (e.g. "↓ 6 (78 → 72)") rather than a flat count, so the "Inspection status"
+// card answers "is this getting better or worse" instead of just "what's the
+// backlog right now" - the previous "Open defects" count didn't mean much
+// since defects have no open/closed lifecycle in the data, just a per-
+// inspection snapshot.
+function renderBciTrend(elId, current, previous) {
+    var el = document.getElementById(elId);
+    if (current == null) {
+        el.textContent = '—';
+        el.className = 'status-badge completed';
+        return;
+    }
+    if (previous == null) {
+        // Could be a genuinely first-ever inspection, or an earlier one that
+        // just never had a BCI score recorded - either way there's nothing
+        // to compare against, so don't claim a specific reason.
+        el.textContent = 'No prior score';
+        el.className = 'status-badge completed';
+        return;
+    }
+    var delta = Math.round(current) - Math.round(previous);
+    var arrow = delta > 0 ? '↑' : (delta < 0 ? '↓' : '→');
+    el.textContent = arrow + ' ' + Math.abs(delta) + ' (' + Math.round(previous) + ' → ' + Math.round(current) + ')';
+    el.className = 'status-badge ' + (delta < 0 ? 'error' : 'completed');
+}
+
 function renderDropdownList(filter) {
     filter = filter || '';
     var term = filter.toLowerCase().trim();
@@ -188,9 +215,8 @@ async function selectBridge(bridgeId, inspectionId) {
         document.getElementById('nextInsp').textContent = bridge.nextInspection || '—';
         document.getElementById('nextInsp').className = 'status-badge ' + (bridge.isOverdue ? 'error' : 'pending');
 
-        var defectsEl = document.getElementById('openDefects');
-        defectsEl.textContent = bridge.openDefects > 0 ? bridge.openDefects + ' flagged' : 'None';
-        defectsEl.className = 'status-badge ' + (bridge.openDefects > 0 ? 'error' : 'completed');
+        renderBciTrend('bciAvgTrend', bridge.bciAvg, bridge.prevBciAvg);
+        renderBciTrend('bciCritTrend', bridge.bciCrit, bridge.prevBciCrit);
 
         document.getElementById('timelineRange').textContent = bridge.timelineRange || '—';
         renderTimeline(bridge.inspections || [], bridge.selectedInspectionId, bridge.id);
@@ -291,7 +317,8 @@ let camDistance = 58, camHeight = 13;
 camera.position.set(0, camHeight, camDistance);
 camera.lookAt(0, 1.5, 0);
 
-scene.add(new THREE.AmbientLight(0x8fa8a4, 0.7));
+const ambientLight = new THREE.AmbientLight(0x8fa8a4, 0.7);
+scene.add(ambientLight);
 const key = new THREE.DirectionalLight(0xffffff, 1.1);
 key.position.set(20, 30, 15);
 scene.add(key);
@@ -346,6 +373,81 @@ const defectGroup = new THREE.Group();
 rig.add(structureGroup, sensorGroup, worksGroup, defectGroup);
 
 let gridHelper, glowMesh;
+
+/* ============================================================
+   SKINS - swap only the structure's material colors/finish (plus a
+   mild lighting warmth on the structure itself). The stage backdrop,
+   fog and grid/glow stay exactly as twinView always looks - applied
+   to every structure since the materials are shared across all of
+   shapeBuilders.js's kind-specific builders.
+   ============================================================ */
+const SKINS = {
+    twinview: {
+        label: 'twinView',
+        lights: {
+            ambient: { color: 0x8fa8a4, intensity: 0.7 },
+            key: { color: 0xffffff, intensity: 1.1 },
+            rim: { color: 0x4a90b8, intensity: 0.45 },
+            teal: { color: 0x5b8c8a, intensity: 0.7 }
+        },
+        materials: {
+            steel: { color: 0x5a6b6a, roughness: 0.4, metalness: 0.6 },
+            deck: { color: 0x394645, roughness: 0.6, metalness: 0.25 },
+            pier: { color: 0x435150, roughness: 0.7, metalness: 0.15 },
+            stone: { color: 0x8a8378, roughness: 0.95, metalness: 0 },
+            concrete: { color: 0x9aa39c, roughness: 0.85, metalness: 0.05 }
+        }
+    },
+    realistic: {
+        label: 'Realistic',
+        lights: {
+            ambient: { color: 0x8fa8a4, intensity: 0.7 },
+            key: { color: 0xfff2df, intensity: 1.15 },
+            rim: { color: 0x4a90b8, intensity: 0.45 },
+            teal: { color: 0x5b8c8a, intensity: 0.7 }
+        },
+        materials: {
+            steel: { color: 0x3d4446, roughness: 0.35, metalness: 0.7 },
+            deck: { color: 0x2b2f31, roughness: 0.9, metalness: 0.05 },
+            pier: { color: 0x8f8878, roughness: 0.9, metalness: 0.02 },
+            stone: { color: 0xa89e8c, roughness: 0.85, metalness: 0.02 },
+            concrete: { color: 0x9aa39c, roughness: 0.85, metalness: 0.02 }
+        }
+    }
+};
+const MAT_BY_KEY = { steel: matSteel, deck: matDeck, pier: matPier, stone: matStone, concrete: matConcrete };
+let currentSkin = 'twinview';
+
+function applySkin(name) {
+    const skin = SKINS[name];
+    if (!skin) return;
+    currentSkin = name;
+
+    Object.keys(skin.materials).forEach(function(matKey) {
+        var mat = MAT_BY_KEY[matKey];
+        var def = skin.materials[matKey];
+        mat.color.setHex(def.color);
+        mat.roughness = def.roughness;
+        mat.metalness = def.metalness;
+    });
+
+    ambientLight.color.setHex(skin.lights.ambient.color);
+    ambientLight.intensity = skin.lights.ambient.intensity;
+    key.color.setHex(skin.lights.key.color);
+    key.intensity = skin.lights.key.intensity;
+    rim.color.setHex(skin.lights.rim.color);
+    rim.intensity = skin.lights.rim.intensity;
+    teal.color.setHex(skin.lights.teal.color);
+    teal.intensity = skin.lights.teal.intensity;
+
+    document.querySelectorAll('.skin-pill').forEach(function(btn) {
+        btn.classList.toggle('on', btn.dataset.skin === name);
+    });
+}
+
+document.querySelectorAll('.skin-pill').forEach(function(btn) {
+    btn.addEventListener('click', function() { applySkin(btn.dataset.skin); });
+});
 
 /* Shape builders (addBeam, addDeck, addPiers, archPoint, catenaryY,
    buildTrussPanelRun, all 9 build*Structure functions, BUILDERS) now
@@ -568,3 +670,4 @@ if (savedNightMode === 'on' || (savedNightMode === null && !systemPrefersLight))
 onResize();
 animate();
 loadBridgeList();
+applySkin('twinview');

@@ -493,7 +493,7 @@ body {
     justify-content: space-between;
     padding: 4px 8px 0 10px;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 10px 16px;
 }
 .viewer-card .vc-head h2 {
     font-size: 1rem;
@@ -502,31 +502,60 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
+    white-space: nowrap;
 }
 .viewer-card .vc-head h2 i { color: #8ab4b0; }
-.vc-layer-toggles { display: flex; gap: 8px; flex-wrap: wrap; }
-.vc-pill {
+.vc-head-title { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+/* Compact segmented toggle (twinView / Realistic) sitting right next to
+   the title, instead of two separate pills, so the whole vc-head - title,
+   skin toggle, layer toggles - fits on one line. */
+.skin-switcher {
+    display: inline-flex;
+    background: #f0f2f5;
+    border-radius: 20px;
+    padding: 3px;
+    gap: 2px;
+    flex-shrink: 0;
+}
+.skin-pill {
+    font-family: inherit;
     font-size: 0.72rem;
     font-weight: 500;
     color: #6a7c8e;
-    padding: 6px 13px;
-    border-radius: 30px;
-    border: 1px solid #e2e8f0;
-    background: #fafbfc;
+    padding: 5px 13px;
+    border-radius: 16px;
+    border: none;
+    background: transparent;
     cursor: pointer;
     transition: all 0.2s;
+    white-space: nowrap;
+}
+.skin-pill:hover { color: #5b8c8a; }
+.skin-pill.on { background: white; color: #2c5a57; font-weight: 600; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+/* Compact icon-only layer toggles (tooltip via title=) - much narrower
+   than the old text pills so the whole vc-head fits on one line. */
+.vc-layer-toggles { display: flex; gap: 6px; }
+.vc-pill {
+    width: 34px;
+    height: 34px;
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-family: inherit;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid #e2e8f0;
+    background: #fafbfc;
+    color: #8a9ba8;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
 }
-.vc-pill .sw { width: 6px; height: 6px; border-radius: 50%; background: #b8c4cc; }
 .vc-pill:hover { border-color: #8ab4b0; color: #5b8c8a; }
-.vc-pill.on { background: #eef4f2; border-color: #8ab4b0; color: #2c5a57; }
-.vc-pill.on .sw { background: #5b8c8a; box-shadow: 0 0 6px rgba(91,140,138,0.5); }
-.vc-pill[data-layer="works"].on .sw { background: #c28b5a; box-shadow: 0 0 6px rgba(194,139,90,0.5); }
-.vc-pill[data-layer="defects"].on .sw { background: #c0392b; box-shadow: 0 0 6px rgba(192,57,43,0.5); }
-.vc-pill[data-layer="sensors"].on .sw { background: #4a90b8; box-shadow: 0 0 6px rgba(74,144,184,0.5); }
+.vc-pill.on { background: #eef4f2; border-color: #8ab4b0; color: #5b8c8a; }
+.vc-pill[data-layer="works"].on { background: rgba(194,139,90,0.14); border-color: #c28b5a; color: #c28b5a; }
+.vc-pill[data-layer="defects"].on { background: rgba(192,57,43,0.14); border-color: #c0392b; color: #c0392b; }
+.vc-pill[data-layer="sensors"].on { background: rgba(74,144,184,0.14); border-color: #4a90b8; color: #4a90b8; }
 
 .model-stage {
     position: relative;
@@ -733,6 +762,9 @@ body.night-mode .glass-scrollbar .thumb {
 .night-mode .fact-row, .night-mode .panel-header { border-color: #2a3a40; }
 .night-mode .vc-pill { background:#1e2a2f; border-color:#3a4b53; color:#9ab0b8; }
 .night-mode .vc-pill.on { background:#2f4a48; border-color:#6e9c98; color:#d4dfe3; }
+.night-mode .skin-switcher { background: #1a2428; }
+.night-mode .skin-pill { color:#9ab0b8; }
+.night-mode .skin-pill.on { background:#2f4a48; color:#d4dfe3; box-shadow: none; }
 .night-mode .timeline-track { border-color: #2a3a40; }
 .night-mode .tl-label, .night-mode .legend .item { color:#8aa4ac; }
 .night-mode .status-badge.completed { background: #1e3a3e; color: #8ab4b0; }
@@ -878,8 +910,12 @@ body.night-mode .glass-scrollbar .thumb {
                         <span class="status-badge pending" id="nextInsp">—</span>
                     </div>
                     <div class="status-line">
-                        <span class="sl-label">Open defects</span>
-                        <span class="status-badge error" id="openDefects">—</span>
+                        <span class="sl-label">BCI avg</span>
+                        <span class="status-badge completed" id="bciAvgTrend">—</span>
+                    </div>
+                    <div class="status-line">
+                        <span class="sl-label">BCI crit</span>
+                        <span class="status-badge completed" id="bciCritTrend">—</span>
                     </div>
                 </div>
             </div>
@@ -889,12 +925,18 @@ body.night-mode .glass-scrollbar .thumb {
         <div class="right-col">
             <div class="viewer-card">
                 <div class="vc-head">
-                    <h2><i class="fa-solid fa-cube"></i>Structure model</h2>
+                    <div class="vc-head-title">
+                        <h2><i class="fa-solid fa-cube"></i>Structure model</h2>
+                        <div class="skin-switcher" id="skinSwitcher">
+                            <button type="button" class="skin-pill on" data-skin="twinview">twinView</button>
+                            <button type="button" class="skin-pill" data-skin="realistic">Realistic</button>
+                        </div>
+                    </div>
                     <div class="vc-layer-toggles">
-                        <div class="vc-pill on" data-layer="structure"><span class="sw"></span>Structure</div>
-                        <div class="vc-pill on" data-layer="sensors"><span class="sw"></span>Sensors</div>
-                        <div class="vc-pill" data-layer="defects"><span class="sw"></span>Defects</div>
-                        <div class="vc-pill" data-layer="works"><span class="sw"></span>Works Required</div>
+                        <div class="vc-pill on" data-layer="structure" title="Structure"><i class="fa-solid fa-cube"></i></div>
+                        <div class="vc-pill on" data-layer="sensors" title="Sensors"><i class="fa-solid fa-satellite-dish"></i></div>
+                        <div class="vc-pill" data-layer="defects" title="Defects"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                        <div class="vc-pill" data-layer="works" title="Works Required"><i class="fa-solid fa-hard-hat"></i></div>
                     </div>
                 </div>
 

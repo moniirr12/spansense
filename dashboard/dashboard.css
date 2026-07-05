@@ -42,6 +42,18 @@ body {
     padding: 0 28px;
     height: 64px;
 }
+
+/* Metric-card clicks (scrollToDashboardSection in dashboard.js) use
+   scrollIntoView, which respects scroll-margin-top — without this, "start"
+   lands the section flush with the viewport top, right under the fixed
+   navbar (20px top + 64px tall = 84px), covering its heading. */
+#assetInventoryChartCard,
+#avgBciByTypeChartCard,
+#bciDistributionChartCard,
+#criticalStructuresSection,
+#pending-review-section {
+    scroll-margin-top: 108px;
+}
 .navbar .left { display: flex; align-items: center; gap: 24px; }
 .navbar .logo {
     font-size: 1.2rem;
@@ -161,7 +173,7 @@ body {
 
 .metrics {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
     gap: 20px;
     margin-bottom: 32px;
 }
@@ -183,6 +195,25 @@ body {
     border-color: #c5dbd8;
 }
 
+/* Every metric card is clickable and jumps to the section it summarizes
+   (see scrollToDashboardSection() in dashboard.js) — the chevron is the
+   affordance that tells you so, since cursor:pointer alone is too easy to miss. */
+.metric-clickable {
+    cursor: pointer;
+}
+
+.metric-arrow {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    color: #c5d0d8;
+    transition: transform 0.25s ease, color 0.25s ease;
+}
+
+.metric:hover .metric-arrow {
+    color: #5b8c8a;
+    transform: translateX(3px);
+}
+
 .metric-icon {
     width: 52px;
     height: 52px;
@@ -191,6 +222,7 @@ body {
     align-items: center;
     justify-content: center;
     font-size: 1.5rem;
+    flex-shrink: 0;
 }
 
 .metric-icon-green {
@@ -213,6 +245,11 @@ body {
     color: #c28b5a;
 }
 
+.metric-content {
+    flex: 1;
+    min-width: 0;
+}
+
 .metric-content h3 {
     font-size: 1.8rem;
     font-weight: 700;
@@ -226,6 +263,41 @@ body {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
+}
+
+/* BCI(ave) / BCI(crit) combined card — two number+label pairs side by side
+   in place of the single h3/p a normal metric card has. */
+.metric-content-split {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.metric-split-item h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2c4a48;
+    line-height: 1.2;
+}
+
+.metric-split-item p {
+    font-size: 0.7rem;
+    color: #8a9ba8;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.metric-split-item p sub {
+    font-size: 0.85em;
+    bottom: -0.2em;
+}
+
+.metric-split-divider {
+    width: 1px;
+    height: 30px;
+    background: #e9edf2;
+    flex-shrink: 0;
 }
 
 /* ============================================
@@ -727,6 +799,14 @@ body {
     color: #d4dfe3;
 }
 
+.night-mode .metric-split-item h3 {
+    color: #d4dfe3;
+}
+
+.night-mode .metric-split-divider {
+    background: #2f3e45;
+}
+
 .night-mode .metric-icon-green {
     background: #1e3a3e;
     color: #8ab4b0;
@@ -746,6 +826,20 @@ body {
     background: #3a3020;
     color: #d4a84a;
 }
+
+.night-mode .metric-arrow {
+    color: #3f4d54;
+}
+
+.night-mode .metric:hover .metric-arrow {
+    color: #8ab4b0;
+}
+
+/* Generic fallback so every .section-header (e.g. "Analytics & Insights",
+   which isn't inside .critical-bridges-section or .activity-feed) gets its
+   border-bottom recolored, not just the two call sites styled below with
+   their own background bar. */
+.night-mode .section-header { border-color: #2f3e45; }
 
 .night-mode .chart-header,
 .night-mode .critical-bridges-section .section-header,
@@ -1078,6 +1172,76 @@ html.night-mode .glass-scrollbar .thumb {
     background: #2f4a48;
     color: #8ab4b0;
     border-color: #4a8a7e !important;
+}
+
+/* Pending review pagination — same visual language as database.html's table
+   pagination, reimplemented here since that one lives in injected JS styles
+   scoped to that page. */
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    padding: 14px 22px 4px;
+    flex-wrap: wrap;
+}
+
+.pagination-btn {
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    color: #6a7c8e;
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: inherit;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: #eef4f2;
+    border-color: #8ab4b0;
+    color: #5b8c8a;
+}
+
+.pagination-btn.active {
+    background: #5b8c8a;
+    border-color: #5b8c8a;
+    color: white;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.pagination-ellipsis {
+    padding: 0 4px;
+    color: #8a9ba8;
+}
+
+.night-mode .pagination-btn {
+    background: #1e2a2f;
+    border-color: #3a4b53;
+    color: #9ab0b8;
+}
+
+.night-mode .pagination-btn:hover:not(:disabled) {
+    background: #2f4a48;
+    border-color: #6e9c98;
+    color: #8ab4b0;
+}
+
+.night-mode .pagination-btn.active {
+    background: #5b8c8a;
+    border-color: #5b8c8a;
+    color: white;
 }
 
 /* Review modal — same visual language as the confirm-style modal already

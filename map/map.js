@@ -34,12 +34,22 @@ function updateLabelVisibility() {
 }
 
 // Returns a condition-ring border color based on BCI score
+// Single source of truth for "BCI value -> condition band" across this page.
+// bcirep.js's modal score display uses this too (map.js loads first, so it's
+// already defined) - previously each defined its own thresholds/colors
+// independently and could disagree on the same structure's condition.
+function bciTier(bci) {
+    if (bci === null || bci === undefined) return { band: 'fair', label: 'Fair', color: '#9aa8c2' };
+    if (bci >= 90) return { band: 'excellent', label: 'Very Good', color: '#22c55e' };
+    if (bci >= 80) return { band: 'good', label: 'Good', color: '#84cc16' };
+    if (bci >= 65) return { band: 'fair', label: 'Fair', color: '#eab308' };
+    if (bci >= 40) return { band: 'poor', label: 'Poor', color: '#f97316' };
+    return { band: 'critical', label: 'Critical', color: '#ef4444' };
+}
+
 function condRing(bci) {
     if (bci === null || bci === undefined) return '#9aa8c2';
-    if (bci >= 80) return '#2d7a6e';
-    if (bci >= 65) return '#a8740f';
-    if (bci >= 40) return '#c0703f';
-    return '#c0392b';
+    return bciTier(bci).color;
 }
 
 const typeIcons = {

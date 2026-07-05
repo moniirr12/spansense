@@ -69,7 +69,10 @@ function latLonToOSGB(lat, lon) {
 }
 
 
-app.get('/api/routes', requireAuth, (req, res) => {
+// Full API route table - not called by any page in the app, just an
+// introspection helper, so no reason for it to be readable by every logged-in
+// account rather than admins specifically.
+app.get('/api/routes', requireAuth, requireAdmin, (req, res) => {
     const routes = [];
     app._router.stack.forEach(middleware => {
         if (middleware.route) {
@@ -189,6 +192,16 @@ async function initDatabase() {
                 last_inspection DATE
             )
         `);
+
+        // Per-structure inspection scheduling: cycle length in years (falls back to
+        // the standard 2yr GI / 6yr PI cadence when null) and an optional one-off
+        // override for the next due date, set from the Planning page. GI and PI
+        // share a single alternating slot (every pi_cycle_years/gi_cycle_years-th
+        // occurrence is a PI instead of a GI, never both), so there's only one
+        // override date, not one per type.
+        await pool.query(`ALTER TABLE bridges ADD COLUMN IF NOT EXISTS gi_cycle_years INTEGER`);
+        await pool.query(`ALTER TABLE bridges ADD COLUMN IF NOT EXISTS pi_cycle_years INTEGER`);
+        await pool.query(`ALTER TABLE bridges ADD COLUMN IF NOT EXISTS next_inspection_override DATE`);
 
         // Inspections table
         await pool.query(`
@@ -590,31 +603,23 @@ app.get('/api/defectsbci', requireAuth, async (req, res) => {
             return res.json([]);
         }
 
-        // Next inspection due, following the GI/PI cycle: GI every 2 years,
-        // PI every 6 years - since 6 = 3*2, a PI lands on what would
-        // otherwise be a GI date and supersedes it, giving the repeating
-        // GI, GI, PI pattern used in planning.html and /api/twin. Computed
-        // relative to *this* inspection's date (using only history up to
-        // and including it) so reprinting an older form still shows what
-        // was next due at that point, not relative to today.
+        // Next inspection due (see computeNextDue - GI/PI share one alternating
+        // slot). Computed relative to *this* inspection's date (using only
+        // history up to and including it) so reprinting an older form still
+        // shows what was next due at that point, not relative to today - so
+        // no next_inspection_override here, that's a "right now" correction.
         const allInspections = await dbAll(
             `SELECT inspection_date, inspection_type FROM inspections
              WHERE structure_id = $1 ORDER BY inspection_date ASC`,
             [structureId]
         );
+        const bridgeSchedule = await dbGet(
+            'SELECT gi_cycle_years, pi_cycle_years FROM bridges WHERE id = $1',
+            [structureId]
+        );
         const thisInspectionDate = new Date(inspections[0].inspection_date);
         const priorInspections = allInspections.filter(i => new Date(i.inspection_date) <= thisInspectionDate);
-        function lastDateOf(type) {
-            const matches = priorInspections.filter(i => i.inspection_type === type);
-            return matches.length ? new Date(matches[matches.length - 1].inspection_date) : null;
-        }
-        const lastGI = lastDateOf('GI');
-        const lastPI = lastDateOf('PI');
-        const dueDates = [];
-        if (lastGI) dueDates.push({ type: 'GI', date: new Date(lastGI.getFullYear() + GI_CYCLE_YEARS, lastGI.getMonth(), lastGI.getDate()) });
-        if (lastPI) dueDates.push({ type: 'PI', date: new Date(lastPI.getFullYear() + PI_CYCLE_YEARS, lastPI.getMonth(), lastPI.getDate()) });
-        dueDates.sort((a, b) => a.date - b.date);
-        const nextDue = dueDates[0] || null;
+        const nextDue = computeNextDue(bridgeSchedule, priorInspections, null);
         const nextInspection = nextDue
             ? `${nextDue.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} ${nextDue.type}`
             : null;
@@ -687,17 +692,48 @@ app.get('/api/bridges', requireAuth, async (req, res) => {
             SELECT b.id, b.name, b.location, b.latitude, b.longitude, b.span, b.length,
                     b.built_year, b.type, b.span_number, b.OSE, b.OSN,
                     b.primary_material, b.secondary_material, b.organization_id, b.bci_av,
+                    b.gi_cycle_years, b.pi_cycle_years, b.next_inspection_override,
                     MAX(i.inspection_date) as last_inspected
             FROM bridges b
             LEFT JOIN inspections i ON b.id = i.structure_id
             GROUP BY b.id, b.name, b.location, b.latitude, b.longitude, b.span, b.length,
                      b.built_year, b.type, b.span_number, b.OSE, b.OSN,
-                     b.primary_material, b.secondary_material, b.organization_id, b.bci_av
+                     b.primary_material, b.secondary_material, b.organization_id, b.bci_av,
+                     b.gi_cycle_years, b.pi_cycle_years, b.next_inspection_override
             ORDER BY b.name
         `);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+// Update a structure's inspection scheduling (Planning page "Edit Schedule").
+// Engineer/admin only, same gating as review/approve — this changes when
+// inspections are due for everyone, not just a personal preference.
+app.patch('/api/bridges/:id/schedule', requireAuth, requireEngineer, async (req, res) => {
+    try {
+        const { giCycleYears, piCycleYears, nextInspectionOverride } = req.body;
+
+        const toIntOrNull = v => (v === null || v === undefined || v === '') ? null : parseInt(v, 10);
+        const giYears = toIntOrNull(giCycleYears);
+        const piYears = toIntOrNull(piCycleYears);
+        if (giYears !== null && (!Number.isFinite(giYears) || giYears <= 0)) {
+            return res.status(400).json({ success: false, error: 'giCycleYears must be a positive number' });
+        }
+        if (piYears !== null && (!Number.isFinite(piYears) || piYears <= 0)) {
+            return res.status(400).json({ success: false, error: 'piCycleYears must be a positive number' });
+        }
+        const overrideDate = nextInspectionOverride || null;
+
+        await pool.query(
+            `UPDATE bridges SET gi_cycle_years = $1, pi_cycle_years = $2, next_inspection_override = $3 WHERE id = $4`,
+            [giYears, piYears, overrideDate, req.params.id]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Update bridge schedule error:', err);
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 
@@ -765,6 +801,34 @@ app.get('/api/bridges/:id', requireAuth, async (req, res) => {
 const SEVERITY_LABELS = { 1: 'Minor', 2: 'Moderate', 3: 'Severe', 4: 'Critical', 5: 'Emergency' };
 const GI_CYCLE_YEARS = 2;
 const PI_CYCLE_YEARS = 6;
+
+// Same alternating-slot model as planning.html's projectSchedule(): GI and PI
+// share one recurring slot rather than two independent series - every
+// pi_cycle_years/gi_cycle_years-th inspection is a PI instead of a GI (e.g.
+// 6yr/2yr = every 3rd), so the sequence reads GI, GI, PI, GI, GI, PI, ...
+// The old "most recent GI + 2yr vs most recent PI + 6yr, take the earlier"
+// approach broke down whenever a bridge's history didn't yet contain one of
+// the two types (e.g. only ever inspected as PI) - with no GI entry to
+// compare against, the PI date won by default even when a GI was actually
+// due first. `bridge` supplies per-structure overrides (falls back to the
+// 2yr/6yr default); `nextInspectionOverride`, if given, rebases the due date
+// onto a manually-set date - only meaningful for "what's next as of today",
+// not when reprinting a past inspection's historical context.
+function computeNextDue(bridge, historyUpToNow, nextInspectionOverride) {
+    if (!historyUpToNow || !historyUpToNow.length) return null;
+    const giCycle = (bridge && bridge.gi_cycle_years > 0) ? bridge.gi_cycle_years : GI_CYCLE_YEARS;
+    const piCycle = (bridge && bridge.pi_cycle_years > 0) ? bridge.pi_cycle_years : PI_CYCLE_YEARS;
+    const piEveryNth = Math.max(1, Math.round(piCycle / giCycle));
+
+    const lastDate = new Date(historyUpToNow[historyUpToNow.length - 1].inspection_date);
+    const dueDate = nextInspectionOverride
+        ? new Date(nextInspectionOverride)
+        : new Date(lastDate.getFullYear() + giCycle, lastDate.getMonth(), lastDate.getDate());
+
+    const stepIndex = historyUpToNow.length + 1;
+    const type = (stepIndex % piEveryNth === 0) ? 'PI' : 'GI';
+    return { type, date: dueDate };
+}
 
 // Aggregated data for the twinView 3D digital twin (twin/twin.html + twin.js).
 // 3D geometry (deck width/truss height/panels per span) is NOT here - it's
@@ -839,21 +903,20 @@ app.get('/api/twin/:structureId', requireAuth, async (req, res) => {
             ? parseFloat(selectedInspection.overall_bcicrit)
             : (critSpan ? parseFloat(critSpan.bci_crit) : null);
 
-        const openDefects = defects.filter(d => d.worksRequired).length;
-
-        // Next-due / overdue, following the 2yr GI / 6yr PI cycle used in planning.html
-        function lastDateOf(type) {
-            const matches = allInspections.filter(i => i.inspection_type === type);
-            return matches.length ? new Date(matches[matches.length - 1].inspection_date) : null;
-        }
-        const lastGI = lastDateOf('GI');
-        const lastPI = lastDateOf('PI');
-        const dueDates = [];
-        if (lastGI) dueDates.push({ type: 'GI', date: new Date(lastGI.getFullYear() + GI_CYCLE_YEARS, lastGI.getMonth(), lastGI.getDate()) });
-        if (lastPI) dueDates.push({ type: 'PI', date: new Date(lastPI.getFullYear() + PI_CYCLE_YEARS, lastPI.getMonth(), lastPI.getDate()) });
-        dueDates.sort((a, b) => a.date - b.date);
-        const nextDue = dueDates[0] || null;
+        // Next-due / overdue (see computeNextDue - GI/PI share one alternating
+        // slot, using this bridge's own cycle-years/override from Planning).
+        const nextDue = computeNextDue(bridge, allInspections, bridge.next_inspection_override);
         const isOverdue = nextDue ? nextDue.date < new Date() : false;
+
+        // BCI trend: selected inspection's scores vs. the one immediately
+        // before it chronologically (not necessarily the latest, since the
+        // timeline panel lets the user pick an older inspection to view).
+        const selectedIndex = selectedInspection
+            ? allInspections.findIndex(i => i.id === selectedInspection.id)
+            : -1;
+        const previousInspection = selectedIndex > 0 ? allInspections[selectedIndex - 1] : null;
+        const prevBciAvg = previousInspection?.overall_bciave != null ? parseFloat(previousInspection.overall_bciave) : null;
+        const prevBciCrit = previousInspection?.overall_bcicrit != null ? parseFloat(previousInspection.overall_bcicrit) : null;
 
         const dateFmt = d => d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
         const monthYearFmt = d => d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
@@ -891,6 +954,8 @@ app.get('/api/twin/:structureId', requireAuth, async (req, res) => {
             yearBuilt: bridge.built_year,
             bciAvg,
             bciCrit,
+            prevBciAvg,
+            prevBciCrit,
             bciCritLocation: critSpan ? `span ${critSpan.span_number}` : null,
             spanBCI,
             defects,
@@ -899,7 +964,6 @@ app.get('/api/twin/:structureId', requireAuth, async (req, res) => {
             lastInspection: lastInspectionLabel,
             nextInspection: nextInspectionLabel,
             isOverdue,
-            openDefects,
             selectedInspectionId: selectedInspection ? selectedInspection.id : null,
             latestInspectionId: latestInspection ? latestInspection.id : null
         });
@@ -1993,6 +2057,14 @@ function requireEngineer(req, res, next) {
     }
 }
 
+function requireAdmin(req, res, next) {
+    if (req.session && req.session.role === 'admin') {
+        next();
+    } else {
+        res.status(403).json({ error: 'Forbidden - admin role required' });
+    }
+}
+
 // LOGIN ENDPOINT
 app.post('/api/login', async (req, res) => {
     try {
@@ -2248,6 +2320,38 @@ app.get('/api/dashboard/critical-bridges', requireAuth, async (req, res) => {
         res.json({ success: true, data: rows });
     } catch (err) {
         console.error('Critical bridges error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Portfolio-wide BCI average and critical average, over each structure's
+// latest inspection (same latest-inspection join as critical-bridges above).
+app.get('/api/dashboard/bci-summary', requireAuth, async (req, res) => {
+    try {
+        const row = await dbGet(`
+            WITH latest_inspections AS (
+                SELECT i.overall_bciave, i.overall_bcicrit
+                FROM inspections i
+                INNER JOIN (
+                    SELECT structure_id, MAX(inspection_date) as latest_date
+                    FROM inspections
+                    GROUP BY structure_id
+                ) latest ON i.structure_id = latest.structure_id
+                       AND i.inspection_date = latest.latest_date
+            )
+            SELECT
+                ROUND(AVG(overall_bciave)::numeric, 1) as avg_bci,
+                ROUND(AVG(overall_bcicrit)::numeric, 1) as avg_bci_crit
+            FROM latest_inspections
+        `);
+
+        res.json({
+            success: true,
+            avgBci: row && row.avg_bci !== null ? parseFloat(row.avg_bci) : null,
+            avgBciCrit: row && row.avg_bci_crit !== null ? parseFloat(row.avg_bci_crit) : null
+        });
+    } catch (err) {
+        console.error('BCI summary error:', err);
         res.status(500).json({ success: false, error: err.message });
     }
 });

@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>spanSense — User Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    color: #2c3e44;
+    font-size: 13.5px;
+    line-height: 1.55;
+    background: #dfe6e6;
+  }
+  @page { size: A4; margin: 0; }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 20mm 22mm;
+    background: white;
+    position: relative;
+    page-break-after: always;
+    break-after: page;
+  }
+  .page:last-child { page-break-after: auto; break-after: auto; }
+
+  /* ===== COVER ===== */
+  .cover {
+    background: linear-gradient(150deg, #101f1c 0%, #1e3432 45%, #2c4a48 75%, #3d6462 100%);
+    color: white;
+    display: flex;
+    flex-direction: column;
+  }
+  .cover .brand { font-size: 12px; font-weight: 700; letter-spacing: 0.14em; color: #8ab4b0; margin-bottom: 26px; }
+  .cover h1 { font-size: 38px; font-weight: 800; line-height: 1.18; letter-spacing: -0.02em; margin-bottom: 20px; max-width: 480px; }
+  .cover .desc { font-size: 14.5px; color: rgba(255,255,255,0.68); line-height: 1.7; max-width: 430px; margin-bottom: 40px; }
+  .cover .bridge-art { width: 100%; margin-top: 10px; }
+  .cover .meta { margin-top: auto; padding-top: 60px; display: flex; gap: 28px; font-size: 11.5px; color: rgba(255,255,255,0.5); }
+  .cover .meta strong { color: rgba(255,255,255,0.8); }
+
+  /* ===== TOC ===== */
+  .toc h1 { font-size: 26px; font-weight: 800; color: #1e3432; margin-bottom: 6px; }
+  .toc .sub { font-size: 13px; color: #8a9ba8; margin-bottom: 34px; }
+  .toc-row { display: flex; align-items: baseline; gap: 16px; padding: 13px 0; border-bottom: 1px solid #eef2f6; }
+  .toc-num { font-size: 12.5px; font-weight: 800; color: #5b8c8a; min-width: 22px; }
+  .toc-title { flex: 1; font-size: 14px; color: #2c3e44; }
+  .toc-page { font-size: 13px; color: #8a9ba8; }
+
+  /* ===== SECTION HEADER ===== */
+  .sec-head { margin-bottom: 18px; }
+  .sec-head h2 { font-size: 19px; font-weight: 800; color: #1e3432; border-left: 4px solid #5b8c8a; padding-left: 12px; line-height: 1.3; }
+  .sec-head p.lede { margin-top: 8px; color: #4a5b64; font-size: 12.5px; line-height: 1.5; }
+
+  .footer-bar { position: absolute; left: 22mm; right: 22mm; bottom: 12mm; display: flex; justify-content: space-between; font-size: 10px; color: #a0aeb5; border-top: 1px solid #eef2f6; padding-top: 8px; }
+
+  h3.subhead { font-size: 14px; font-weight: 700; color: #1e3432; margin: 15px 0 7px; }
+  p.body-text { color: #3d4a4f; font-size: 12.5px; line-height: 1.55; margin-bottom: 8px; }
+  p.body-text strong { color: #1e3432; }
+  code.mono { font-family: 'Consolas', monospace; background: #f0f4f4; padding: 1px 5px; border-radius: 4px; font-size: 11.5px; color: #2c4a48; }
+
+  .badge-pill { display: inline-block; font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; background: #eef4f2; color: #5b8c8a; padding: 4px 12px; border-radius: 20px; margin-bottom: 8px; }
+
+  ul.feat-list { list-style: none; margin: 8px 0 4px; }
+  ul.feat-list li { font-size: 12.5px; color: #3d4a4f; padding: 5px 0 5px 18px; position: relative; line-height: 1.5; }
+  ul.feat-list li::before { content: '•'; position: absolute; left: 2px; color: #5b8c8a; font-weight: 800; }
+  ul.feat-list li strong { color: #1e3432; }
+
+  /* ===== NUMBERED STEPS ===== */
+  ol.steps { list-style: none; counter-reset: stepnum; margin: 10px 0 6px; }
+  ol.steps li { counter-increment: stepnum; display: flex; gap: 12px; align-items: flex-start; padding: 7px 0; }
+  ol.steps li::before {
+    content: counter(stepnum);
+    flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%;
+    background: #5b8c8a; color: white; font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; margin-top: 1px;
+  }
+  ol.steps li p { font-size: 12.5px; color: #3d4a4f; line-height: 1.5; }
+  ol.steps li p strong { color: #1e3432; }
+
+  .shot { border: 1px solid #e6edec; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 10px rgba(30,52,50,0.06); }
+  .shot img { width: 100%; display: block; }
+  .cap-text { font-size: 10.5px; color: #8a9ba8; text-align: center; margin-top: 7px; font-style: italic; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+
+  table.data-tbl { width: 100%; border-collapse: collapse; margin-top: 6px; }
+  table.data-tbl th { text-align: left; font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #6b8685; background: #f2f6f5; padding: 6px 12px; }
+  table.data-tbl td { padding: 7px 12px; font-size: 12px; color: #3d4a4f; border-bottom: 1px solid #eef2f6; }
+  table.data-tbl td strong { color: #1e3432; }
+  table.data-tbl tr:last-child td { border-bottom: none; }
+
+  .callout { background: #fbf3e7; border-left: 4px solid #c2914a; border-radius: 0 10px 10px 0; padding: 10px 16px; font-size: 12px; color: #5c4526; line-height: 1.5; }
+  .callout strong { color: #8a5d1f; }
+  .callout.good { background: #eef4f2; border-left-color: #5b8c8a; color: #2c4a48; }
+  .callout.good strong { color: #2c4a48; }
+
+  /* ===== BCI BANDS ===== */
+  .bci-bands { display: flex; gap: 10px; margin: 14px 0 8px; }
+  .bci-band { flex: 1; border-radius: 10px; padding: 12px 10px; }
+  .bci-band .lbl { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.7; margin-bottom: 4px; }
+  .bci-band .score { font-size: 16px; font-weight: 800; }
+  .bci-band .name { font-size: 10.5px; font-weight: 600; margin-top: 2px; }
+  .band-critical { background: rgba(239,68,68,0.13); color: #ef4444; }
+  .band-poor { background: rgba(249,115,22,0.13); color: #f97316; }
+  .band-fair { background: rgba(234,179,8,0.15); color: #b3860c; }
+  .band-good { background: rgba(132,204,22,0.15); color: #65a30d; }
+  .band-excellent { background: rgba(34,197,94,0.13); color: #22c55e; }
+
+  .key-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+  .key-card { background: #fafbfc; border: 1px solid #eef2f6; border-radius: 10px; padding: 10px 12px; display: flex; gap: 10px; align-items: flex-start; }
+  .key-card .key-icon { flex-shrink: 0; width: 24px; height: 24px; border-radius: 7px; background: #eef4f2; color: #5b8c8a; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 11px; }
+  .key-card h4 { font-size: 12px; font-weight: 700; color: #1e3432; margin-bottom: 2px; }
+  .key-card p { font-size: 11px; color: #6b8685; line-height: 1.4; }
+
+  @media print {
+    body { background: white; }
+    .page { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= COVER ================= -->
+<div class="page cover">
+  <div class="brand">SPANSENSE</div>
+  <h1>User Guide</h1>
+  <p class="desc">Find a structure, run an inspection, read the BCI score, and get the report out — everything you need to use spanSense day to day, walked through step by step with real screenshots of the current app.</p>
+  <svg class="bridge-art" viewBox="0 0 760 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M20 110 C 120 10, 260 10, 380 70 C 500 10, 640 10, 740 110" stroke="#7ba8a5" stroke-width="2" opacity="0.8"/>
+    <line x1="160" y1="35" x2="160" y2="112" stroke="#7ba8a5" stroke-width="3"/>
+    <line x1="600" y1="35" x2="600" y2="112" stroke="#7ba8a5" stroke-width="3"/>
+    <line x1="220" y1="52" x2="220" y2="112" stroke="#7ba8a5" stroke-width="1"/>
+    <line x1="280" y1="63" x2="280" y2="112" stroke="#7ba8a5" stroke-width="1"/>
+    <line x1="480" y1="63" x2="480" y2="112" stroke="#7ba8a5" stroke-width="1"/>
+    <line x1="540" y1="52" x2="540" y2="112" stroke="#7ba8a5" stroke-width="1"/>
+    <circle cx="380" cy="70" r="4" fill="white"/>
+    <line x1="20" y1="112" x2="740" y2="112" stroke="#7ba8a5" stroke-width="2"/>
+  </svg>
+  <div class="meta">
+    <div><strong>Updated 5 July 2026</strong></div>
+    <div>spanSense v1.01</div>
+  </div>
+</div>
+
+<!-- ================= TOC ================= -->
+<div class="page toc">
+  <h1>Contents</h1>
+  <p class="sub">A map of this guide.</p>
+
+  <div class="toc-row"><span class="toc-num">01</span><span class="toc-title">Getting Started</span><span class="toc-page">3</span></div>
+  <div class="toc-row"><span class="toc-num">02</span><span class="toc-title">The Map — Finding a Structure</span><span class="toc-page">4</span></div>
+  <div class="toc-row"><span class="toc-num">03</span><span class="toc-title">Viewing Previous Inspections</span><span class="toc-page">5</span></div>
+  <div class="toc-row"><span class="toc-num">04</span><span class="toc-title">Running an Inspection, Step by Step</span><span class="toc-page">6</span></div>
+  <div class="toc-row"><span class="toc-num">05</span><span class="toc-title">Understanding BCI Scores</span><span class="toc-page">7</span></div>
+  <div class="toc-row"><span class="toc-num">06</span><span class="toc-title">twinView — 3D Digital Twin</span><span class="toc-page">8</span></div>
+  <div class="toc-row"><span class="toc-num">07</span><span class="toc-title">Reports &amp; Exporting Data</span><span class="toc-page">9</span></div>
+  <div class="toc-row"><span class="toc-num">08</span><span class="toc-title">Inspection Planning &amp; Scheduling</span><span class="toc-page">10</span></div>
+  <div class="toc-row"><span class="toc-num">09</span><span class="toc-title">Dashboard — Portfolio Overview</span><span class="toc-page">11</span></div>
+  <div class="toc-row"><span class="toc-num">10</span><span class="toc-title">Your Account &amp; Preferences</span><span class="toc-page">12</span></div>
+
+  <div class="footer-bar"><span>spanSense — User Guide</span><span>Contents</span></div>
+</div>
+
+<!-- ================= 01 GETTING STARTED ================= -->
+<div class="page">
+  <div class="sec-head">
+    <h2>01 — Getting Started</h2>
+    <p class="lede">A quick orientation before your first inspection.</p>
+  </div>
+
+  <p class="body-text">Log in with the account your admin gave you. Every page shares the same floating navbar at the top — <strong>Map</strong>, <strong>Dashboard</strong>, <strong>Database</strong>, <strong>Planning</strong>, and <strong>twinView</strong> — plus a night-mode toggle, your account icon, and Contact Us on the right. The account icon's shape tells you your role at a glance: a magnifying glass for inspectors, a checked user for engineers, a shield for admins.</p>
+
+  <h3 class="subhead">Your role decides what you can do</h3>
+  <table class="data-tbl">
+    <tr><th>Role</th><th>Can do</th></tr>
+    <tr><td><strong>Inspector</strong></td><td>Find structures, run inspections, upload photos, view reports and planning</td></tr>
+    <tr><td><strong>Engineer</strong></td><td>Everything an inspector can, plus approve/reject submitted inspections and edit a structure's inspection schedule</td></tr>
+    <tr><td><strong>Admin</strong></td><td>Everything an engineer can, plus full system access</td></tr>
+  </table>
+
+  <h3 class="subhead">The general workflow</h3>
+  <ol class="steps">
+    <li><p><strong>Find</strong> your structure on the Map</p></li>
+    <li><p><strong>Run</strong> a new inspection, or open an existing one from Previous Inspections</p></li>
+    <li><p><strong>Save</strong> it — the BCI score is calculated automatically as you go</p></li>
+    <li><p>An <strong>engineer reviews</strong> it from the Dashboard's Pending Review queue</p></li>
+    <li><p><strong>Export</strong> a report whenever you need one, from the structure card or Database</p></li>
+  </ol>
+
+  <div class="callout good" style="margin-top:14px;">
+    <strong>Tip:</strong> you don't need to finish an inspection in one sitting — every wizard step has a <strong>Save Draft</strong> option that picks up right where you left off.
+  </div>
+
+  <div class="footer-bar"><span>spanSense — User Guide</span><span>Getting Started</span></div>
+</div>
+
+<!-- ================= 02 THE MAP ================= -->
+<div class="page">
+  <div class="sec-head">
+    <h2>02 — The Map — Finding a Structure</h2>
+    <p class="lede">The map is your home screen after login, and the starting point for almost everything.</p>
+  </div>
+
+  <p class="body-text">Structures are plotted with a type-coded icon (bridge, footbridge, culvert, retaining wall, or sign gantry) and a condition-coded ring color — the same colors used everywhere else in the app, so a glance at the map already tells you which structures need attention.</p>
+
+  <ol class="steps">
+    <li><p>Use the <strong>search bar</strong> at the top to jump straight to a named structure, or the sidebar filters on the left to narrow by type or condition</p></li>
+    <li><p><strong>Click a marker</strong> to open its structure card: photo, BCI average score, last inspected date, span/length/year/type</p></li>
+    <li><p>From the card, choose <strong>New Inspection</strong>, <strong>Previous Inspections</strong>, or <strong>Documents</strong></p></li>
+  </ol>
+
+  <div class="shot" style="max-width:70mm; margin:12px auto 0;">
+    <img src="reportAssets/guide-structure-card-tight.png" alt="Structure detail card">
+  </div>
+  <p class="cap-text">The structure card — your starting point for everything about one structure</p>
+
+  <div class="footer-bar"><span>spanSense — User Guide</span><span>The Map</span></div>
+</div>
+
+<!-- ================= 03 PREVIOUS INSPECTIONS ================= -->
+<div class="page">
+  <div class="sec-head">
+    <h2>03 — Viewing Previous Inspections</h2>
+    <p class="lede">Every past inspection for a structure, in one searchable list.</p>
+  </div>
+
+  <p class="body-text"><strong>Previous Inspections</strong> (opened from the structure card) shows the full record for that structure: total inspection count, the last inspection date, and the current BCI average with its trend against the one before it.</p>
+
+  <ul class="feat-list">
+    <li>Filter by <strong>Principal (PI)</strong>, <strong>General (GI)</strong>, or <strong>Superficial (SI)</strong></li>
+    <li>Search across every recorded inspection for that structure</li>
+    <li>Each row shows the inspector, date, and both <strong>CRIT</strong> and <strong>AV</strong> scores</li>
+    <li>Use the row's icons to download the <strong>PDF report</strong>, <strong>edit</strong> the inspection, or view the <strong>full record</strong></li>
+    <li>Click <strong>+ New Inspection</strong> to start the next one straight from here</li>
+  </ul>
+
+  <div class="shot" style="margin-top:12px;">
+    <img src="reportAssets/guide-previous-inspections-tight.png" alt="Previous Inspections list">
+  </div>
+  <p class="cap-text">Filter, search, and act on any past inspection for this structure</p>
+
+  <div class="footer-bar"><span>spanSense — User Guide</span><span>Previous Inspections</span></div>
+</div>
+
+<!-- ================= 04 RUNNING AN INSPECTION ================= -->
+<div class="page">
+  <div class="sec-head">
+    <h2>04 — Running an Inspection, Step by Step</h2>
+    <p class="lede">The wizard is two steps: metadata, then defect logging element by element.</p>
+  </div>
+
+  <h3 class="subhead" style="margin-top:0;">Step 1 — Metadata</h3>
+  <p class="body-text">Confirm the inspection type (GI/PI/SI), date, and inspector, then move on to the element checklist.</p>
+
+  <h3 class="subhead">Step 2 — Log each element</h3>
+  <ol class="steps">
+    <li><p>Every inspectable element is listed as a row. Click one and choose <strong>Add Defect</strong>, <strong>No Defects</strong>, or <strong>Not Inspected</strong> (with a reason)</p></li>
+    <li><p>For a defect, set <strong>Severity</strong> (1 Minor → 5 Emergency) and <strong>Extent</strong> (A isolated → E extensive) — a live preview shows the BCI impact as you adjust them, before you save</p></li>
+    <li><p>Mark <strong>Works Required</strong> — No, Yes, or Monitor — and attach a photo if useful</p></li>
+    <li><p>If a rating is a big improvement over what was last recorded for that element, a confirmation prompt double-checks it before saving — a quick safeguard against typos</p></li>
+    <li><p><strong>Save</strong> the defect and move to the next row, or <strong>Save Draft</strong> at any point to finish later</p></li>
+  </ol>
+
+  <div class="key-grid">
+    <div class="key-card"><div class="key-icon">S</div><div><h4>Severity 1–5</h4><p>Minor · Moderate · Severe · Critical · Emergency</p></div></div>
+    <div class="key-card"><div class="key-icon">E</div><div><h4>Extent A–E</h4><p>How much of the element is affected, isolated to extensive</p></div></div>
+    <div class="key-card"><div class="key-icon">W</div><div><h4>Works Required</h4><p>No, Yes, or Monitor — flags it for the planning programme</p></div></div>
+    <div class="key-card"><div class="key-icon">✓</div><div><h4>Conclusions</h4><p>A short written summary once every element is done</p></div></div>
+  </div>
+
+  <h3 class="subhead">Finishing up</h3>
+  <p class="body-text">Once every element is logged, add your <strong>Conclusions</strong> and hit <strong>Save</strong> — the BCI average and critical scores are calculated automatically from what you've logged, no manual math required. The inspection then enters the review queue for an engineer to approve.</p>
+
+  <div class="footer-bar"><span>spanSense — User Guide</span><span>Running an Inspection</span></div>
+</div>
+
+<!-- ================= 05 BCI SCORES ================= -->
+<div class="page">
+  <div class="sec-head">
+    <h2>05 — Understanding BCI Scores</h2>
+    <p class="lede">BCIav and BCIcrit are calculated for you — no formula, no spreadsheet.</p>
+  </div>
+
+  <p class="body-text"><strong>BCI avg</strong> is the overall average condition across every element in the inspection. <strong>BCI crit</strong> is the score of the single worst-condition element — the one that actually drives risk decisions. Both fall into the same five bands used everywhere in the app:</p>
+
+  <div class="bci-bands">
+    <div class="bci-band band-critical"><div class="lbl">Critical</div><div class="score">0–39</div><div class="name">Immediate action</div></div>
+    <div class="bci-band band-poor"><div class="lbl">Poor</div><div class="score">40–64</div><div class="name">Investigate</div></div>
+    <div class="bci-band band-fair"><div class="lbl">Fair</div><div class="score">65–79</div><div class="name">Monitor</div></div>
+    <div class="bci-band band-good"><div class="lbl">Good</div><div class="score">80–89</div><div class="name">Maintain</div></div>
+    <div class="bci-band band-excellent"><div class="lbl">Very Good</div><div class="score">90–100</div><div class="name">No action</div></div>
+  </div>
+
+  <p class="body-text" style="margin-top:12px;">You'll see this exact banding in four places: the structure card, the Add Defect modal's live impact preview, the Dashboard's BCI Score Distribution chart, and twinView's condition panel — so a score always means the same thing wherever you see it.</p>
+
+  <div class="callout good">
+    <strong>Where to find it:</strong> the structure card shows the current average; Previous Inspections shows CRIT and AV per inspection; twinView shows both, plus how they've changed since the last inspection.
+  </div>
+
+  <div class="footer-bar"><span>spanSense — User Guide</span><span>BCI Scores</span></div>
+</div>
+
+<!-- ================= 06 TWINVIEW ================= -->
+<div class="page">
+  <div class="sec-head">
+    <h2>06 — twinView — 3D Digital Twin</h2>
+    <p class="lede">A 3D model of the structure, built from real span and condition data.</p>
+  </div>
+
+  <ol class="steps">
+    <li><p>Pick a structure from the <strong>Live Twin</strong> selector at the top left</p></li>
+    <li><p><strong>Drag to orbit</strong>, scroll to zoom — toggle <strong>Structure</strong>, <strong>Sensors</strong>, <strong>Defects</strong>, and <strong>Works Required</strong> layers on or off</p></li>
+    <li><p>The <strong>Condition</strong> card shows current BCI avg/crit; <strong>Inspection Status</strong> below it shows the trend against the previous inspection</p></li>
+    <li><p>Use the <strong>Inspection History</strong> timeline to jump to any past inspection and see the model as it was then</p></li>
+  </ol>
+
+  <div class="shot" style="margin-top:12px;">
+    <img src="reportAssets/guide-twinview.png" alt="twinView page">
+  </div>
+  <p class="cap-text">Orbit and zoom the 3D model; the condition trend is right there in Inspection Status</p>
+
+  <div class="footer-bar"><span>spanSense — User Guide</span><span>twinView</span></div>
+</div>
+
+<!-- ================= 07 REPORTS & EXPORT ================= -->
+<div class="page">
+  <div class="sec-head">
+    <h2>07 — Reports &amp; Exporting Data</h2>
+    <p class="lede">Generate a report from one inspection, or export your whole stock from Database.</p>
+  </div>
+
+  <ul class="feat-list">
+    <li><strong>Inspection PDF / BCI Proforma</strong> — generated straight from a saved inspection, in Previous Inspections or the inspection itself</li>
+    <li><strong>Structure records</strong> — CSV, JSON, or XML from Database, filterable by structure type</li>
+    <li><strong>Inspection records</strong> — CSV, PDF, or XLSX, with a column picker so you only export what you need</li>
+    <li><strong>Report files</strong> — PDF or DOCX summary documents</li>
+  </ul>
+
+  <div class="shot" style="margin-top:12px;">
+    <img src="reportAssets/guide-export.png" alt="Database export panel">
+  </div>
+  <p class="cap-text">Choose a category, pick a format, and export — filters and a column picker are below</p>
+
+  <div class="footer-bar"><span>spanSense — User Guide</span><span>Reports &amp; Export</span></div>
+</div>
+
+<!-- ================= 08 PLANNING ================= -->
+<div class="page">
+  <div class="sec-head">
+    <h2>08 — Inspection Planning &amp; Scheduling</h2>
+    <p class="lede">Never miss the next inspection — and it's tailored per structure.</p>
+  </div>
+
+  <p class="body-text">By default, every structure follows a 2-year General Inspection / 6-year Principal Inspection cycle, alternating GI, GI, PI. Planning shows this as a <strong>Month</strong> calendar, a <strong>Year</strong> grid, or a multi-year <strong>Gantt</strong> view — click any inspection chip in any view to jump straight to it.</p>
+
+  <h3 class="subhead">Editing a structure's schedule</h3>
+  <ol class="steps">
+    <li><p>Click the <strong>pencil icon</strong> next to any structure in the Gantt view (or an inspection chip in Month/Year view)</p></li>
+    <li><p>Set a custom <strong>GI</strong> or <strong>PI frequency</strong> in years if this structure needs a different cycle than the default</p></li>
+    <li><p>Or set a <strong>next inspection due</strong> date directly, if you need to move just the next one without changing the ongoing cycle</p></li>
+    <li><p><strong>Save</strong> — every calendar view updates immediately</p></li>
+  </ol>
+
+  <div class="shot" style="margin-top:12px;">
+    <img src="reportAssets/guide-planning-month.png" alt="Planning year view">
+  </div>
+  <p class="cap-text">Year view — overdue inspections in red, upcoming in teal, principal inspections stand out separately</p>
+
+  <div class="footer-bar"><span>spanSense — User Guide</span><span>Planning &amp; Scheduling</span></div>
+</div>
+
+<!-- ================= 09 DASHBOARD ================= -->
+<div class="page">
+  <div class="sec-head">
+    <h2>09 — Dashboard — Portfolio Overview</h2>
+    <p class="lede">Your whole stock at a glance — every card is clickable.</p>
+  </div>
+
+  <ul class="feat-list">
+    <li><strong>Total Assets</strong> and <strong>High-Risk Structures</strong> — live counts, click to jump to the relevant chart or table</li>
+    <li><strong>BCI Avg / Crit</strong> — portfolio-wide condition, computed from every structure's latest inspection</li>
+    <li><strong>Pending Review</strong> — engineers and admins only; click to jump straight to the review queue</li>
+    <li><strong>Asset Inventory</strong>, <strong>Average BCI by Type</strong>, and <strong>BCI Score Distribution</strong> charts below</li>
+  </ul>
+
+  <div class="shot" style="margin-top:12px;">
+    <img src="reportAssets/dashboard-metrics.png" alt="Dashboard metrics and charts">
+  </div>
+  <p class="cap-text">Four live metric cards and the Analytics &amp; Insights charts below</p>
+
+  <h3 class="subhead">If you're an engineer or admin</h3>
+  <p class="body-text">The <strong>Pending Review</strong> section further down lists every inspection awaiting a decision. Search, filter by type, or toggle "Critical only," then click <strong>Review</strong> to approve or reject with a comment — or open the full inspection first if you want to check the detail before deciding.</p>
+
+  <div class="footer-bar"><span>spanSense — User Guide</span><span>Dashboard</span></div>
+</div>
+
+<!-- ================= 10 ACCOUNT ================= -->
+<div class="page">
+  <div class="sec-head">
+    <h2>10 — Your Account &amp; Preferences</h2>
+    <p class="lede">Open Account from any navbar to update your details or preferences.</p>
+  </div>
+
+  <div class="key-grid">
+    <div class="key-card"><div class="key-icon">🪪</div><div><h4>Profile Details</h4><p>Name, email, and organisation details</p></div></div>
+    <div class="key-card"><div class="key-icon">🔒</div><div><h4>Security</h4><p>Change your password from here</p></div></div>
+    <div class="key-card"><div class="key-icon">🌙</div><div><h4>Night Mode</h4><p>Toggle from any navbar — your choice is remembered</p></div></div>
+    <div class="key-card"><div class="key-icon">👋</div><div><h4>Greeting</h4><p>The Map greets you by name once you're signed in</p></div></div>
+  </div>
+
+  <div class="shot" style="margin-top:14px;">
+    <img src="reportAssets/guide-account.png" alt="Account page">
+  </div>
+  <p class="cap-text">Your real profile, role, and join date — loaded from your account, not a placeholder</p>
+
+  <p class="body-text" style="margin-top:14px;">Stuck on something this guide didn't cover? Use <strong>Contact Us</strong> from any navbar — someone will get back to you.</p>
+
+  <div class="footer-bar"><span>spanSense — User Guide</span><span>Account &amp; Preferences</span></div>
+</div>
+
+</body>
+</html>

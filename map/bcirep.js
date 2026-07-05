@@ -727,29 +727,11 @@ async function updateBridgeModalData(structureId) {
             if (bciScoreElement && latestDoc.bci_av !== null && latestDoc.bci_av !== undefined) {
                 const bciValue = Math.round(parseFloat(latestDoc.bci_av));
                 console.log('BCI Value:', bciValue);
-                
-                let category = '';
-                let color = '';
-                
-                if (bciValue >= 90) {
-                    category = 'Very Good';
-                    color = '#22c55e';
-                } else if (bciValue >= 80) {
-                    category = 'Good';
-                    color = '#8ab4b0';
-                } else if (bciValue >= 65) {
-                    category = 'Fair';
-                    color = '#eab308';
-                } else if (bciValue >= 40) {
-                    category = 'Poor';
-                    color = '#f97316';
-                } else {
-                    category = 'Critical';
-                    color = '#dc2626';
-                }
-                
-                bciScoreElement.innerHTML = `${bciValue} - ${category}`;
-                bciScoreElement.style.color = color;
+
+                const tier = bciTier(bciValue); // shared with map.js's marker-ring coloring - see condRing there
+
+                bciScoreElement.innerHTML = `${bciValue} - ${tier.label}`;
+                bciScoreElement.style.color = tier.color;
                 console.log('BCI set to:', bciScoreElement.innerHTML);
             } else if (bciScoreElement) {
                 console.log('No bci_av found in latest inspection');
