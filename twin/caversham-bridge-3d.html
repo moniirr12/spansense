@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Caversham Bridge · 3D twinView concept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f7fb;
+    color: #2c3e44;
+}
+
+.page-wrapper {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 24px 60px;
+}
+
+.back-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    border-radius: 30px;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(138, 180, 176, 0.3);
+    color: #5b8c8a;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 12px rgba(91, 140, 138, 0.1);
+}
+.back-pill:hover { background: #5b8c8a; color: white; border-color: #5b8c8a; }
+
+.page-header { margin-bottom: 24px; }
+.page-header h1 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: #2c5a57;
+    border-left: 4px solid #8ab4b0;
+    padding-left: 14px;
+    margin-bottom: 8px;
+}
+.page-header p { color: #8a9ba8; font-size: 0.85rem; padding-left: 18px; }
+
+.facts-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.fact-tile {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid #e9edf2;
+    padding: 14px 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+}
+.fact-tile .ft-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #8a9ba8;
+    margin-bottom: 6px;
+}
+.fact-tile .ft-value { font-size: 0.92rem; font-weight: 600; color: #2c4a48; }
+
+.viewer-card {
+    background: white;
+    border-radius: 24px;
+    border: 1px solid #e9edf2;
+    padding: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+}
+.viewer-card .vc-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 8px 14px 10px;
+}
+.viewer-card .vc-head h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #2c4a48;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.viewer-card .vc-head h2 i { color: #8ab4b0; }
+.vc-note { font-size: 0.72rem; color: #b8c4cc; }
+
+.model-stage {
+    position: relative;
+    border-radius: 18px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(36px) saturate(160%);
+    -webkit-backdrop-filter: blur(36px) saturate(160%);
+    border: 1px solid rgba(91, 140, 138, 0.18);
+    height: 560px;
+}
+.stage-tint {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 600px 360px at 30% 8%, rgba(91,140,138,0.16), transparent 60%),
+      radial-gradient(ellipse 600px 360px at 80% 100%, rgba(74,144,184,0.10), transparent 60%);
+    pointer-events: none;
+}
+#twin-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; }
+#twin-canvas:active { cursor: grabbing; }
+
+.stage-hud { position: absolute; inset: 0; pointer-events: none; }
+.stage-bracket { position: absolute; width: 26px; height: 26px; border: 1.5px solid rgba(44,74,72,0.22); }
+.stage-bracket.tl { top: 16px; left: 16px; border-right: none; border-bottom: none; border-radius: 6px 0 0 0; }
+.stage-bracket.tr { top: 16px; right: 16px; border-left: none; border-bottom: none; border-radius: 0 6px 0 0; }
+.stage-bracket.bl { bottom: 16px; left: 16px; border-right: none; border-top: none; border-radius: 0 0 0 6px; }
+.stage-bracket.br { bottom: 16px; right: 16px; border-left: none; border-top: none; border-radius: 0 0 6px 0; }
+
+.stage-readout {
+    position: absolute; bottom: 16px; left: 48px;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-size: 11px; color: rgba(44,74,72,0.55);
+    display: flex; gap: 16px;
+}
+.stage-readout b { color: #2c5a57; font-weight: 500; }
+.stage-hint {
+    position: absolute; bottom: 16px; right: 48px;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-size: 10.5px; color: rgba(44,74,72,0.4); text-align: right;
+}
+.stage-title-chip {
+    position: absolute; top: 16px; left: 48px;
+    background: rgba(10,16,16,0.55);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 12px;
+    padding: 8px 14px;
+    backdrop-filter: blur(6px);
+}
+.stage-title-chip .lbl { font-size: 9.5px; color: rgba(255,255,255,0.5); letter-spacing: .08em; font-family: 'SFMono-Regular', Consolas, monospace; }
+.stage-title-chip .val { font-size: 15px; font-weight: 600; color: #e8f4f2; margin-top: 2px; }
+
+@media (max-width: 860px) {
+    .facts-row { grid-template-columns: repeat(2, 1fr); }
+    .model-stage { height: 420px; }
+}
+</style>
+</head>
+<body>
+
+<div class="page-wrapper">
+    <a class="back-pill" href="twin.html"><i class="fa-solid fa-arrow-left"></i> Back to twinView</a>
+
+    <div class="page-header">
+        <h1>Caversham Bridge — 3D concept</h1>
+        <p>Standalone illustrative digital-twin model of Caversham Bridge, Reading — not wired into live inspection data.</p>
+    </div>
+
+    <div class="facts-row">
+        <div class="fact-tile"><div class="ft-label">Location</div><div class="ft-value">Reading, Berkshire (River Thames)</div></div>
+        <div class="fact-tile"><div class="ft-label">Opened</div><div class="ft-value">1926</div></div>
+        <div class="fact-tile"><div class="ft-label">Form</div><div class="ft-value">2-span arch, central river pier</div></div>
+        <div class="fact-tile"><div class="ft-label">Material</div><div class="ft-value">Reinforced concrete, granite-faced</div></div>
+        <div class="fact-tile"><div class="ft-label">Carries</div><div class="ft-value">A4155 road over the Thames</div></div>
+    </div>
+
+    <div class="viewer-card">
+        <div class="vc-head">
+            <h2><i class="fa-solid fa-cube"></i>Structure model</h2>
+            <div class="vc-note">Illustrative geometry — approximate proportions, not survey data</div>
+        </div>
+        <div class="model-stage">
+            <div class="stage-tint"></div>
+            <canvas id="twin-canvas"></canvas>
+            <div class="stage-hud">
+                <div class="stage-bracket tl"></div>
+                <div class="stage-bracket tr"></div>
+                <div class="stage-bracket bl"></div>
+                <div class="stage-bracket br"></div>
+            </div>
+            <div class="stage-title-chip">
+                <div class="lbl">STRUCTURE</div>
+                <div class="val">Caversham Bridge</div>
+            </div>
+            <div class="stage-readout">
+                <span>YAW <b id="yaw-readout">000.0°</b></span>
+                <span>TILT <b id="tilt-readout">000.0°</b></span>
+                <span>ZOOM <b id="zoom-readout">1.00x</b></span>
+            </div>
+            <div class="stage-hint">drag to orbit · scroll to zoom</div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ============================================================
+   CAVERSHAM BRIDGE - STANDALONE 3D MODEL
+   Self-contained page: does not import/modify any other project
+   file. Just the structure, rendered in the same stylised
+   grid+glow "twinview" stage used by twin/twin.js.
+
+   Real-world reference (Wikipedia, Reading Museum): opened 1926,
+   TWO segmental arches meeting at a single central river pier
+   (not three arches/two piers), reinforced concrete faced in
+   granite, six concrete ribs per arch, ~30ft (9.1m) deck (20ft
+   carriageway + two 5ft footpaths), semicircular granite-
+   balustraded promenade bays over the central pier.
+   ============================================================ */
+
+var SPAN_LEN = 30, NUM_SPANS = 2, TOTAL_LEN = SPAN_LEN * NUM_SPANS; // ~60 units
+var X0 = -TOTAL_LEN / 2;
+var DECK_W = 9.2; // ~30ft: 20ft carriageway + 2x5ft footpaths
+var RIB_COUNT = 6; // "six concrete ribs forming the river arches"
+var deckY = 0, deckThickness = 1.1;
+var springY = -4.2, archRise = 3.2, archThickness = 0.7; // shallow segmental arch
+var riverbedY = -8;
+var pierXs = [X0, 0, X0 + TOTAL_LEN]; // abutment, central river pier, abutment
+
+var canvas = document.getElementById('twin-canvas');
+var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+var scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x7a9490, 0.011);
+
+var camera = new THREE.PerspectiveCamera(38, 1, 0.1, 3000);
+var camDistance = 62, camHeight = 15;
+camera.position.set(0, camHeight, camDistance);
+camera.lookAt(0, 1, 0);
+
+scene.add(new THREE.AmbientLight(0x8fa8a4, 0.7));
+var key = new THREE.DirectionalLight(0xffffff, 1.1);
+key.position.set(20, 30, 15);
+scene.add(key);
+var rim = new THREE.DirectionalLight(0x4a90b8, 0.45);
+rim.position.set(-25, 10, -20);
+scene.add(rim);
+var teal = new THREE.PointLight(0x5b8c8a, 0.7, 80);
+teal.position.set(-28, 8, 10);
+scene.add(teal);
+
+var matStone = new THREE.MeshStandardMaterial({ color: 0x8a8378, metalness: 0.0, roughness: 0.95 });
+var matStoneDark = new THREE.MeshStandardMaterial({ color: 0x6f6a5f, metalness: 0.0, roughness: 0.95 });
+var matDeck = new THREE.MeshStandardMaterial({ color: 0x394645, metalness: 0.25, roughness: 0.6 });
+var matLine = new THREE.MeshStandardMaterial({ color: 0xd9d4c4, metalness: 0, roughness: 0.8 });
+var matMetal = new THREE.MeshStandardMaterial({ color: 0x5a6b6a, metalness: 0.6, roughness: 0.4 });
+var matLamp = new THREE.MeshStandardMaterial({ color: 0xffdca8, emissive: 0xffb763, emissiveIntensity: 1.2 });
+
+var rig = new THREE.Group();
+scene.add(rig);
+var bridgeGroup = new THREE.Group();
+rig.add(bridgeGroup);
+var gridHelper, glowMesh;
+
+function addBeam(x1, y1, z1, x2, y2, z2, thickness, material) {
+    var dx = x2 - x1, dy = y2 - y1, dz = z2 - z1;
+    var len = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    if (len < 1e-4) return;
+    var geo = new THREE.BoxGeometry(len, thickness, thickness);
+    var mesh = new THREE.Mesh(geo, material);
+    mesh.position.set((x1 + x2) / 2, (y1 + y2) / 2, (z1 + z2) / 2);
+    mesh.lookAt(x2, y2, z2);
+    mesh.rotateY(Math.PI / 2);
+    bridgeGroup.add(mesh);
+}
+
+function addBox(x, y, z, w, h, d, material) {
+    var mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
+    mesh.position.set(x, y, z);
+    bridgeGroup.add(mesh);
+    return mesh;
+}
+
+// Rib z-positions spread evenly across the deck width (6 ribs, matching the
+// real bridge's "six concrete ribs forming the river arches").
+function ribZs() {
+    var zs = [];
+    for (var i = 0; i < RIB_COUNT; i++) zs.push(-DECK_W / 2 + (i + 0.5) * (DECK_W / RIB_COUNT));
+    return zs;
+}
+
+// Stadium-shaped (rounded-end) central river pier: box + two end-cap
+// cylinders, long axis along Z (flow direction) so the rounded ends read
+// as cutwaters facing up/downstream.
+function addRiverPier(x, capDepthZ, widthX) {
+    var boxLen = Math.max(0.2, capDepthZ - widthX);
+    var pierH = springY - riverbedY;
+    addBox(x, riverbedY + pierH / 2, 0, widthX, pierH, boxLen, matStoneDark);
+    [-1, 1].forEach(function (dir) {
+        var cyl = new THREE.Mesh(new THREE.CylinderGeometry(widthX / 2, widthX / 2, pierH, 16), matStoneDark);
+        cyl.position.set(x, riverbedY + pierH / 2, dir * boxLen / 2);
+        bridgeGroup.add(cyl);
+    });
+}
+
+function addAbutment(x) {
+    var h = springY - riverbedY;
+    addBox(x, riverbedY + h / 2, 0, 5, h, DECK_W + 1.5, matStoneDark);
+}
+
+// One shallow segmental arch spanning [xa, xb], as a ring of ribs across
+// the deck width, plus open-spandrel columns up to the deck soffit.
+function buildSpanArch(xa, xb) {
+    var samples = 16;
+    ribZs().forEach(function (z) {
+        var prev = null;
+        for (var i = 0; i <= samples; i++) {
+            var t = i / samples;
+            var x = xa + t * (xb - xa);
+            var y = springY + archRise * 4 * t * (1 - t);
+            if (prev) addBeam(prev.x, prev.y, z, x, y, z, archThickness, matStone);
+            prev = { x: x, y: y };
+        }
+        [0.2, 0.35, 0.5, 0.65, 0.8].forEach(function (t) {
+            var x = xa + t * (xb - xa);
+            var archTopY = springY + archRise * 4 * t * (1 - t) + archThickness / 2;
+            var deckSoffitY = deckY - deckThickness / 2;
+            if (deckSoffitY - archTopY > 0.12) addBeam(x, archTopY, z, x, deckSoffitY, z, 0.22, matStoneDark);
+        });
+    });
+}
+
+// Semicircular granite-balustraded promenade bay over the central pier,
+// bulging outward on one side (dir = +1 for the +Z side, -1 for -Z).
+function addPromenadeBay(x, dir) {
+    var bayRadius = 2.0, parapetH = 0.9;
+    // CylinderGeometry parametrizes its cap/side angle as x=sin(theta), z=cos(theta)
+    // (verified empirically, not the cos/sin most code assumes) - thetaStart=-PI/2
+    // sweeps (-r,0)->(0,r)->(r,0), i.e. a flat chord along local X bulging toward +Z.
+    var thetaStart = dir > 0 ? -Math.PI / 2 : Math.PI / 2;
+    var floor = new THREE.Mesh(
+        new THREE.CylinderGeometry(bayRadius, bayRadius, deckThickness, 24, 1, false, thetaStart, Math.PI),
+        matDeck
+    );
+    floor.position.set(x, deckY, dir * DECK_W / 2);
+    bridgeGroup.add(floor);
+    var wall = new THREE.Mesh(
+        new THREE.CylinderGeometry(bayRadius, bayRadius, parapetH, 24, 1, true, thetaStart, Math.PI),
+        matStone
+    );
+    wall.position.set(x, deckY + deckThickness / 2 + parapetH / 2, dir * DECK_W / 2);
+    bridgeGroup.add(wall);
+    var lamp = new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 12), matLamp);
+    lamp.position.set(x, deckY + deckThickness / 2 + parapetH + 0.3, dir * (DECK_W / 2 + bayRadius));
+    bridgeGroup.add(lamp);
+}
+
+function buildDeck() {
+    addBox(0, deckY, 0, TOTAL_LEN, deckThickness, DECK_W, matDeck);
+    addBox(0, deckY + deckThickness / 2 + 0.01, 0, TOTAL_LEN, 0.02, 0.3, matLine);
+
+    // Parapets + lamp posts along both edges (skipping the central-pier
+    // bay where the balustrade curves outward instead).
+    [DECK_W / 2 - 0.15, -(DECK_W / 2 - 0.15)].forEach(function (z) {
+        addBox(0, deckY + deckThickness / 2 + 0.45, z, TOTAL_LEN, 0.9, 0.28, matStone);
+        [X0 + 1.4, X0 + TOTAL_LEN - 1.4].forEach(function (x) {
+            var postBaseY = deckY + deckThickness / 2 + 0.9;
+            var post = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.5, 10), matMetal);
+            post.position.set(x, postBaseY + 0.75, z);
+            bridgeGroup.add(post);
+            var lamp = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 12), matLamp);
+            lamp.position.set(x, postBaseY + 1.55, z);
+            bridgeGroup.add(lamp);
+        });
+    });
+
+    [1, -1].forEach(function (dir) { addPromenadeBay(pierXs[1], dir); });
+}
+
+function buildBridge() {
+    while (bridgeGroup.children.length) bridgeGroup.remove(bridgeGroup.children[0]);
+
+    addAbutment(pierXs[0]);
+    addRiverPier(pierXs[1], DECK_W * 0.75, 2.4);
+    addAbutment(pierXs[2]);
+
+    for (var s = 0; s < NUM_SPANS; s++) buildSpanArch(pierXs[s], pierXs[s + 1]);
+
+    buildDeck();
+
+    if (gridHelper) rig.remove(gridHelper);
+    if (glowMesh) rig.remove(glowMesh);
+    var gridSize = Math.min(Math.max(80, TOTAL_LEN + 30), 260);
+    gridHelper = new THREE.GridHelper(gridSize, Math.floor(gridSize / 2.5), 0x2a3a38, 0x1a2625);
+    gridHelper.position.y = riverbedY + 0.4;
+    gridHelper.material.transparent = true;
+    gridHelper.material.opacity = 0.4;
+    rig.add(gridHelper);
+
+    var glowRadius = Math.min(Math.max(26, TOTAL_LEN / 2 + 6), 140);
+    glowMesh = new THREE.Mesh(
+        new THREE.CircleGeometry(glowRadius, 48),
+        new THREE.MeshBasicMaterial({ color: 0x5b8c8a, transparent: true, opacity: 0.07 })
+    );
+    glowMesh.rotation.x = -Math.PI / 2;
+    glowMesh.position.y = riverbedY + 0.5;
+    rig.add(glowMesh);
+}
+buildBridge();
+
+/* ---------- interaction (orbit / zoom / auto-rotate), mirroring twinView ---------- */
+var rotY = 0.5, rotX = 0.2, autoRotate = true, idleTimer = null;
+var dragging = false, lastX = 0, lastY = 0;
+
+function onResize() {
+    var w = canvas.clientWidth, h = canvas.clientHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', onResize);
+new ResizeObserver(onResize).observe(canvas);
+
+canvas.addEventListener('pointerdown', function (e) {
+    dragging = true; autoRotate = false;
+    lastX = e.clientX; lastY = e.clientY;
+    clearTimeout(idleTimer);
+});
+window.addEventListener('pointerup', function () {
+    dragging = false;
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(function () { autoRotate = true; }, 3000);
+});
+window.addEventListener('pointermove', function (e) {
+    if (!dragging) return;
+    var dx = e.clientX - lastX, dy = e.clientY - lastY;
+    rotY += dx * 0.006;
+    rotX += dy * 0.006;
+    rotX = Math.max(-0.15, Math.min(0.9, rotX));
+    lastX = e.clientX; lastY = e.clientY;
+});
+canvas.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    camDistance = Math.min(160, Math.max(22, camDistance + e.deltaY * 0.05));
+}, { passive: false });
+
+var yawReadout = document.getElementById('yaw-readout');
+var tiltReadout = document.getElementById('tilt-readout');
+var zoomReadout = document.getElementById('zoom-readout');
+
+function animate() {
+    requestAnimationFrame(animate);
+    if (autoRotate && !dragging) rotY += 0.0018;
+    rig.rotation.set(rotX, rotY, 0);
+    camera.position.set(0, camHeight, camDistance);
+    camera.lookAt(0, 1, 0);
+    var yawDeg = ((rotY * 180 / Math.PI) % 360 + 360) % 360;
+    var tiltDeg = ((rotX * 180 / Math.PI) % 360 + 360) % 360;
+    yawReadout.textContent = yawDeg.toFixed(1).padStart(5, '0') + '°';
+    tiltReadout.textContent = tiltDeg.toFixed(1).padStart(5, '0') + '°';
+    zoomReadout.textContent = (62 / camDistance).toFixed(2) + 'x';
+    renderer.render(scene, camera);
+}
+onResize();
+animate();
+</script>
+</body>
+</html>

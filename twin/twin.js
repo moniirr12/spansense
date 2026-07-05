@@ -65,6 +65,33 @@ function getBciClass(bci) {
     return 'good';
 }
 
+// Shows the selected inspection's BCI against the one immediately before it
+// (e.g. "↓ 6 (78 → 72)") rather than a flat count, so the "Inspection status"
+// card answers "is this getting better or worse" instead of just "what's the
+// backlog right now" - the previous "Open defects" count didn't mean much
+// since defects have no open/closed lifecycle in the data, just a per-
+// inspection snapshot.
+function renderBciTrend(elId, current, previous) {
+    var el = document.getElementById(elId);
+    if (current == null) {
+        el.textContent = '—';
+        el.className = 'status-badge completed';
+        return;
+    }
+    if (previous == null) {
+        // Could be a genuinely first-ever inspection, or an earlier one that
+        // just never had a BCI score recorded - either way there's nothing
+        // to compare against, so don't claim a specific reason.
+        el.textContent = 'No prior score';
+        el.className = 'status-badge completed';
+        return;
+    }
+    var delta = Math.round(current) - Math.round(previous);
+    var arrow = delta > 0 ? '↑' : (delta < 0 ? '↓' : '→');
+    el.textContent = arrow + ' ' + Math.abs(delta) + ' (' + Math.round(previous) + ' → ' + Math.round(current) + ')';
+    el.className = 'status-badge ' + (delta < 0 ? 'error' : 'completed');
+}
+
 function renderDropdownList(filter) {
     filter = filter || '';
     var term = filter.toLowerCase().trim();
@@ -188,9 +215,8 @@ async function selectBridge(bridgeId, inspectionId) {
         document.getElementById('nextInsp').textContent = bridge.nextInspection || '—';
         document.getElementById('nextInsp').className = 'status-badge ' + (bridge.isOverdue ? 'error' : 'pending');
 
-        var defectsEl = document.getElementById('openDefects');
-        defectsEl.textContent = bridge.openDefects > 0 ? bridge.openDefects + ' flagged' : 'None';
-        defectsEl.className = 'status-badge ' + (bridge.openDefects > 0 ? 'error' : 'completed');
+        renderBciTrend('bciAvgTrend', bridge.bciAvg, bridge.prevBciAvg);
+        renderBciTrend('bciCritTrend', bridge.bciCrit, bridge.prevBciCrit);
 
         document.getElementById('timelineRange').textContent = bridge.timelineRange || '—';
         renderTimeline(bridge.inspections || [], bridge.selectedInspectionId, bridge.id);

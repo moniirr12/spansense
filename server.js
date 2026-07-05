@@ -900,12 +900,20 @@ app.get('/api/twin/:structureId', requireAuth, async (req, res) => {
             ? parseFloat(selectedInspection.overall_bcicrit)
             : (critSpan ? parseFloat(critSpan.bci_crit) : null);
 
-        const openDefects = defects.filter(d => d.worksRequired).length;
-
         // Next-due / overdue (see computeNextDue - GI/PI share one alternating
         // slot, using this bridge's own cycle-years/override from Planning).
         const nextDue = computeNextDue(bridge, allInspections, bridge.next_inspection_override);
         const isOverdue = nextDue ? nextDue.date < new Date() : false;
+
+        // BCI trend: selected inspection's scores vs. the one immediately
+        // before it chronologically (not necessarily the latest, since the
+        // timeline panel lets the user pick an older inspection to view).
+        const selectedIndex = selectedInspection
+            ? allInspections.findIndex(i => i.id === selectedInspection.id)
+            : -1;
+        const previousInspection = selectedIndex > 0 ? allInspections[selectedIndex - 1] : null;
+        const prevBciAvg = previousInspection?.overall_bciave != null ? parseFloat(previousInspection.overall_bciave) : null;
+        const prevBciCrit = previousInspection?.overall_bcicrit != null ? parseFloat(previousInspection.overall_bcicrit) : null;
 
         const dateFmt = d => d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
         const monthYearFmt = d => d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
@@ -943,6 +951,8 @@ app.get('/api/twin/:structureId', requireAuth, async (req, res) => {
             yearBuilt: bridge.built_year,
             bciAvg,
             bciCrit,
+            prevBciAvg,
+            prevBciCrit,
             bciCritLocation: critSpan ? `span ${critSpan.span_number}` : null,
             spanBCI,
             defects,
@@ -951,7 +961,6 @@ app.get('/api/twin/:structureId', requireAuth, async (req, res) => {
             lastInspection: lastInspectionLabel,
             nextInspection: nextInspectionLabel,
             isOverdue,
-            openDefects,
             selectedInspectionId: selectedInspection ? selectedInspection.id : null,
             latestInspectionId: latestInspection ? latestInspection.id : null
         });
