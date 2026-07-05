@@ -49,7 +49,7 @@
             <p>Live KPIs, condition charts, and critical structure alerts across your portfolio</p>
         </div>
 
-        <!-- Metrics Cards - 4 cards matching spanSense style -->
+        <!-- Metrics Cards - matching spanSense style -->
         <div class="metrics">
             <div class="metric">
                 <div class="metric-icon metric-icon-green">
@@ -69,22 +69,13 @@
                     <p>High-Risk Structures</p>
                 </div>
             </div>
-            <div class="metric">
-                <div class="metric-icon metric-icon-blue">
-                    <i class="fas fa-calendar-alt"></i>
-                </div>
-                <div class="metric-content">
-                    <h3>8</h3>
-                    <p>Upcoming Inspections</p>
-                </div>
-            </div>
-            <div class="metric">
+            <div class="metric metric-pending-review" id="pendingReviewMetric" style="display:none;" onclick="document.getElementById('pending-review-section').scrollIntoView({behavior:'smooth', block:'start'})">
                 <div class="metric-icon metric-icon-yellow">
-                    <i class="fas fa-clock"></i>
+                    <i class="fas fa-user-check"></i>
                 </div>
                 <div class="metric-content">
-                    <h3>4</h3>
-                    <p>Inspections Overdue</p>
+                    <h3 id="pendingReviewMetricCount">0</h3>
+                    <p>Pending Review</p>
                 </div>
             </div>
         </div>
@@ -207,6 +198,7 @@
                     <div style="color: var(--text-muted); font-size: 0.8rem; padding: 4px 0;">Loading...</div>
                 </div>
             </div>
+            <div id="pending-review-pagination"></div>
         </div>
 
     </div>

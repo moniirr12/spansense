@@ -161,9 +161,13 @@ body {
 
 .metrics {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 20px;
     margin-bottom: 32px;
+}
+
+.metric-pending-review {
+    cursor: pointer;
 }
 
 .metric {
@@ -1078,6 +1082,76 @@ html.night-mode .glass-scrollbar .thumb {
     background: #2f4a48;
     color: #8ab4b0;
     border-color: #4a8a7e !important;
+}
+
+/* Pending review pagination — same visual language as database.html's table
+   pagination, reimplemented here since that one lives in injected JS styles
+   scoped to that page. */
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    padding: 14px 22px 4px;
+    flex-wrap: wrap;
+}
+
+.pagination-btn {
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    color: #6a7c8e;
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: inherit;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: #eef4f2;
+    border-color: #8ab4b0;
+    color: #5b8c8a;
+}
+
+.pagination-btn.active {
+    background: #5b8c8a;
+    border-color: #5b8c8a;
+    color: white;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.pagination-ellipsis {
+    padding: 0 4px;
+    color: #8a9ba8;
+}
+
+.night-mode .pagination-btn {
+    background: #1e2a2f;
+    border-color: #3a4b53;
+    color: #9ab0b8;
+}
+
+.night-mode .pagination-btn:hover:not(:disabled) {
+    background: #2f4a48;
+    border-color: #6e9c98;
+    color: #8ab4b0;
+}
+
+.night-mode .pagination-btn.active {
+    background: #5b8c8a;
+    border-color: #5b8c8a;
+    color: white;
 }
 
 /* Review modal — same visual language as the confirm-style modal already

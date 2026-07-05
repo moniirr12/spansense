@@ -674,6 +674,9 @@ window.downloadReport = async function downloadReport(structureId, structureName
 // ============================================================
 
 let pendingReviewData = [];
+let pendingReviewFiltered = [];
+let pendingReviewPage = 1;
+const PENDING_REVIEW_PAGE_SIZE = 8;
 let reviewingInspectionId = null;
 
 async function checkSessionAndInitReview() {
@@ -682,6 +685,7 @@ async function checkSessionAndInitReview() {
         const result = await response.json();
         if (result && (result.role === 'engineer' || result.role === 'admin')) {
             document.getElementById('pending-review-section').style.display = '';
+            document.getElementById('pendingReviewMetric').style.display = '';
             fetchPendingReview();
         }
     } catch (error) {
@@ -731,7 +735,9 @@ function applyPendingReviewFilters() {
         return true;
     });
 
-    renderPendingReview(filtered);
+    pendingReviewFiltered = filtered;
+    pendingReviewPage = 1; // filters changed - back to the first page
+    renderPendingReviewPage();
 
     const countBadge = document.getElementById('pendingReviewCount');
     if (countBadge) {
@@ -739,7 +745,61 @@ function applyPendingReviewFilters() {
             ? `${pendingReviewData.length} awaiting decision`
             : `${filtered.length} of ${pendingReviewData.length}`;
     }
+
+    const metricCount = document.getElementById('pendingReviewMetricCount');
+    if (metricCount) metricCount.textContent = pendingReviewData.length;
 }
+
+// Slices pendingReviewFiltered to the current page and renders both the
+// list and the page-number strip beneath it. Kept separate from
+// applyPendingReviewFilters() so paging doesn't re-run filtering or reset
+// itself back to page 1.
+function renderPendingReviewPage() {
+    const totalPages = Math.max(1, Math.ceil(pendingReviewFiltered.length / PENDING_REVIEW_PAGE_SIZE));
+    pendingReviewPage = Math.min(Math.max(1, pendingReviewPage), totalPages);
+
+    const start = (pendingReviewPage - 1) * PENDING_REVIEW_PAGE_SIZE;
+    renderPendingReview(pendingReviewFiltered.slice(start, start + PENDING_REVIEW_PAGE_SIZE));
+    renderPendingReviewPagination(totalPages);
+}
+
+function renderPendingReviewPagination(totalPages) {
+    const container = document.getElementById('pending-review-pagination');
+    if (!container) return;
+
+    if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+    }
+
+    let html = '<div class="pagination-container">';
+    html += `<button class="pagination-btn" onclick="goToPendingReviewPage(${pendingReviewPage - 1})" ${pendingReviewPage === 1 ? 'disabled' : ''}><i class="fas fa-angle-left"></i></button>`;
+
+    const startPage = Math.max(1, pendingReviewPage - 2);
+    const endPage = Math.min(totalPages, pendingReviewPage + 2);
+
+    if (startPage > 1) {
+        html += `<button class="pagination-btn" onclick="goToPendingReviewPage(1)">1</button>`;
+        if (startPage > 2) html += '<span class="pagination-ellipsis">...</span>';
+    }
+    for (let i = startPage; i <= endPage; i++) {
+        html += `<button class="pagination-btn ${i === pendingReviewPage ? 'active' : ''}" onclick="goToPendingReviewPage(${i})">${i}</button>`;
+    }
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) html += '<span class="pagination-ellipsis">...</span>';
+        html += `<button class="pagination-btn" onclick="goToPendingReviewPage(${totalPages})">${totalPages}</button>`;
+    }
+
+    html += `<button class="pagination-btn" onclick="goToPendingReviewPage(${pendingReviewPage + 1})" ${pendingReviewPage === totalPages ? 'disabled' : ''}><i class="fas fa-angle-right"></i></button>`;
+    html += '</div>';
+
+    container.innerHTML = html;
+}
+
+window.goToPendingReviewPage = function goToPendingReviewPage(page) {
+    pendingReviewPage = page;
+    renderPendingReviewPage();
+};
 
 function renderPendingReview(data) {
     const list = document.getElementById('pending-review-list');
