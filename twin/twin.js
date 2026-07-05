@@ -82,7 +82,7 @@ function renderBciTrend(elId, current, previous) {
         // Could be a genuinely first-ever inspection, or an earlier one that
         // just never had a BCI score recorded - either way there's nothing
         // to compare against, so don't claim a specific reason.
-        el.textContent = 'No prior score';
+        el.textContent = 'First inspection - no trend yet';
         el.className = 'status-badge completed';
         return;
     }
