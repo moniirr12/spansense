@@ -448,6 +448,13 @@ if (addInspectionBtn) {
         sessionStorage.removeItem('inspectionData');
         sessionStorage.removeItem('inspectionDate');
         sessionStorage.removeItem('inspectionStructureNumber');
+        // Without these, defects left over from whatever inspection was last
+        // open (a different bridge/date entirely) get picked up by
+        // loadDefectsFromSession() in inspection.js and folded into this
+        // brand-new inspection's BCI score.
+        sessionStorage.removeItem('defects');
+        sessionStorage.removeItem('photoData');
+        sessionStorage.removeItem('selectedSpan');
         window.location.href = "../inspection1/inspection1.html";
     });
 }
@@ -737,6 +744,12 @@ function populateDocumentsQuickStats(documents) {
 
         } else if (action === 'edit') {
           sessionStorage.removeItem('inspectionData');
+          // Same reasoning as addInspectionBtn above - otherwise defects
+          // from whatever inspection was previously open leak into this
+          // edit and get merged into its BCI score.
+          sessionStorage.removeItem('defects');
+          sessionStorage.removeItem('photoData');
+          sessionStorage.removeItem('selectedSpan');
           sessionStorage.setItem('inspectionMode', 'edit');
           sessionStorage.setItem('inspectionDate', date);
           sessionStorage.setItem('inspectionStructureNumber', structureId);
@@ -876,6 +889,10 @@ function populateDocumentsQuickStats(documents) {
         sessionStorage.removeItem('inspectionData');
         sessionStorage.removeItem('inspectionDate');
         sessionStorage.removeItem('inspectionStructureNumber');
+        // See addInspectionBtn above - same leftover-defects risk.
+        sessionStorage.removeItem('defects');
+        sessionStorage.removeItem('photoData');
+        sessionStorage.removeItem('selectedSpan');
         window.location.href = '../inspection1/inspection1.html';
       });
     }

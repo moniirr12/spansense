@@ -881,6 +881,13 @@ window.openReviewModal = function openReviewModal(inspectionId) {
     document.getElementById('reviewEditFullLink').onclick = function (e) {
         e.preventDefault();
         const dateOnly = (item.inspection_date || '').split('T')[0];
+        // A new tab opened via window.open() inherits the opener's
+        // sessionStorage, so any defects left over from an inspection open
+        // in this tab would otherwise leak into the one being edited here.
+        sessionStorage.removeItem('inspectionData');
+        sessionStorage.removeItem('defects');
+        sessionStorage.removeItem('photoData');
+        sessionStorage.removeItem('selectedSpan');
         sessionStorage.setItem('inspectionStructureNumber', item.structure_id);
         sessionStorage.setItem('inspectionDate', dateOnly);
         sessionStorage.setItem('inspectionMode', 'edit');

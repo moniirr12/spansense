@@ -1631,9 +1631,16 @@ app.put('/update-inspection', requireAuth, async (req, res) => {
 app.post('/find-inspection-id', requireAuth, async (req, res) => {
     try {
         const { structure_id, inspection_date } = req.body;
+        // ORDER BY + LIMIT: without a UNIQUE(structure_id, inspection_date)
+        // constraint, a race (e.g. a double-click on Save) can leave two
+        // inspection rows for the same date - without this, which one comes
+        // back is undefined/inconsistent, so a later edit could silently
+        // load and overwrite the wrong row. Picking the most recent one
+        // deterministically matches what an editor would expect.
         const row = await dbGet(
-            `SELECT id FROM inspections 
-             WHERE structure_id = $1 AND inspection_date = $2`,
+            `SELECT id FROM inspections
+             WHERE structure_id = $1 AND inspection_date = $2
+             ORDER BY id DESC LIMIT 1`,
             [structure_id, inspection_date]
         );
 
