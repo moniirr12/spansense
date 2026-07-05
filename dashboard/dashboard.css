@@ -835,6 +835,12 @@ body {
     color: #8ab4b0;
 }
 
+/* Generic fallback so every .section-header (e.g. "Analytics & Insights",
+   which isn't inside .critical-bridges-section or .activity-feed) gets its
+   border-bottom recolored, not just the two call sites styled below with
+   their own background bar. */
+.night-mode .section-header { border-color: #2f3e45; }
+
 .night-mode .chart-header,
 .night-mode .critical-bridges-section .section-header,
 .night-mode .activity-feed .section-header {

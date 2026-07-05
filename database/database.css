@@ -804,6 +804,7 @@ body {
 }
 .night-mode .option-group { background: #1e2a2f; border-color: #2f3e45; }
 .night-mode .option-group h3 { color: #d4dfe3; }
+.night-mode .data-table-wrap { border-color: #2f3e45; }
 .night-mode .data-table thead tr { background: #1e2a2f; }
 .night-mode .data-table th { color: #8aa4ac; border-color: #2f3e45; }
 .night-mode .data-table td { color: #c5d3d9; border-color: #2a3a40; }

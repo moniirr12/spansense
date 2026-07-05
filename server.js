@@ -600,31 +600,23 @@ app.get('/api/defectsbci', requireAuth, async (req, res) => {
             return res.json([]);
         }
 
-        // Next inspection due, following the GI/PI cycle: GI every 2 years,
-        // PI every 6 years - since 6 = 3*2, a PI lands on what would
-        // otherwise be a GI date and supersedes it, giving the repeating
-        // GI, GI, PI pattern used in planning.html and /api/twin. Computed
-        // relative to *this* inspection's date (using only history up to
-        // and including it) so reprinting an older form still shows what
-        // was next due at that point, not relative to today.
+        // Next inspection due (see computeNextDue - GI/PI share one alternating
+        // slot). Computed relative to *this* inspection's date (using only
+        // history up to and including it) so reprinting an older form still
+        // shows what was next due at that point, not relative to today - so
+        // no next_inspection_override here, that's a "right now" correction.
         const allInspections = await dbAll(
             `SELECT inspection_date, inspection_type FROM inspections
              WHERE structure_id = $1 ORDER BY inspection_date ASC`,
             [structureId]
         );
+        const bridgeSchedule = await dbGet(
+            'SELECT gi_cycle_years, pi_cycle_years FROM bridges WHERE id = $1',
+            [structureId]
+        );
         const thisInspectionDate = new Date(inspections[0].inspection_date);
         const priorInspections = allInspections.filter(i => new Date(i.inspection_date) <= thisInspectionDate);
-        function lastDateOf(type) {
-            const matches = priorInspections.filter(i => i.inspection_type === type);
-            return matches.length ? new Date(matches[matches.length - 1].inspection_date) : null;
-        }
-        const lastGI = lastDateOf('GI');
-        const lastPI = lastDateOf('PI');
-        const dueDates = [];
-        if (lastGI) dueDates.push({ type: 'GI', date: new Date(lastGI.getFullYear() + GI_CYCLE_YEARS, lastGI.getMonth(), lastGI.getDate()) });
-        if (lastPI) dueDates.push({ type: 'PI', date: new Date(lastPI.getFullYear() + PI_CYCLE_YEARS, lastPI.getMonth(), lastPI.getDate()) });
-        dueDates.sort((a, b) => a.date - b.date);
-        const nextDue = dueDates[0] || null;
+        const nextDue = computeNextDue(bridgeSchedule, priorInspections, null);
         const nextInspection = nextDue
             ? `${nextDue.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} ${nextDue.type}`
             : null;
@@ -807,6 +799,34 @@ const SEVERITY_LABELS = { 1: 'Minor', 2: 'Moderate', 3: 'Severe', 4: 'Critical',
 const GI_CYCLE_YEARS = 2;
 const PI_CYCLE_YEARS = 6;
 
+// Same alternating-slot model as planning.html's projectSchedule(): GI and PI
+// share one recurring slot rather than two independent series - every
+// pi_cycle_years/gi_cycle_years-th inspection is a PI instead of a GI (e.g.
+// 6yr/2yr = every 3rd), so the sequence reads GI, GI, PI, GI, GI, PI, ...
+// The old "most recent GI + 2yr vs most recent PI + 6yr, take the earlier"
+// approach broke down whenever a bridge's history didn't yet contain one of
+// the two types (e.g. only ever inspected as PI) - with no GI entry to
+// compare against, the PI date won by default even when a GI was actually
+// due first. `bridge` supplies per-structure overrides (falls back to the
+// 2yr/6yr default); `nextInspectionOverride`, if given, rebases the due date
+// onto a manually-set date - only meaningful for "what's next as of today",
+// not when reprinting a past inspection's historical context.
+function computeNextDue(bridge, historyUpToNow, nextInspectionOverride) {
+    if (!historyUpToNow || !historyUpToNow.length) return null;
+    const giCycle = (bridge && bridge.gi_cycle_years > 0) ? bridge.gi_cycle_years : GI_CYCLE_YEARS;
+    const piCycle = (bridge && bridge.pi_cycle_years > 0) ? bridge.pi_cycle_years : PI_CYCLE_YEARS;
+    const piEveryNth = Math.max(1, Math.round(piCycle / giCycle));
+
+    const lastDate = new Date(historyUpToNow[historyUpToNow.length - 1].inspection_date);
+    const dueDate = nextInspectionOverride
+        ? new Date(nextInspectionOverride)
+        : new Date(lastDate.getFullYear() + giCycle, lastDate.getMonth(), lastDate.getDate());
+
+    const stepIndex = historyUpToNow.length + 1;
+    const type = (stepIndex % piEveryNth === 0) ? 'PI' : 'GI';
+    return { type, date: dueDate };
+}
+
 // Aggregated data for the twinView 3D digital twin (twin/twin.html + twin.js).
 // 3D geometry (deck width/truss height/panels per span) is NOT here - it's
 // hand-authored per bridge id in twin/bridgeModels.js, not stored in the DB.
@@ -882,18 +902,9 @@ app.get('/api/twin/:structureId', requireAuth, async (req, res) => {
 
         const openDefects = defects.filter(d => d.worksRequired).length;
 
-        // Next-due / overdue, following the 2yr GI / 6yr PI cycle used in planning.html
-        function lastDateOf(type) {
-            const matches = allInspections.filter(i => i.inspection_type === type);
-            return matches.length ? new Date(matches[matches.length - 1].inspection_date) : null;
-        }
-        const lastGI = lastDateOf('GI');
-        const lastPI = lastDateOf('PI');
-        const dueDates = [];
-        if (lastGI) dueDates.push({ type: 'GI', date: new Date(lastGI.getFullYear() + GI_CYCLE_YEARS, lastGI.getMonth(), lastGI.getDate()) });
-        if (lastPI) dueDates.push({ type: 'PI', date: new Date(lastPI.getFullYear() + PI_CYCLE_YEARS, lastPI.getMonth(), lastPI.getDate()) });
-        dueDates.sort((a, b) => a.date - b.date);
-        const nextDue = dueDates[0] || null;
+        // Next-due / overdue (see computeNextDue - GI/PI share one alternating
+        // slot, using this bridge's own cycle-years/override from Planning).
+        const nextDue = computeNextDue(bridge, allInspections, bridge.next_inspection_override);
         const isOverdue = nextDue ? nextDue.date < new Date() : false;
 
         const dateFmt = d => d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
