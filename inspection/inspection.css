@@ -3769,10 +3769,19 @@ body.contracted-rows #inspectionElementsTable tr.expandable-row .aligned-grid {
     box-shadow: 0 1px 4px rgba(0,0,0,0.03);
 }
 
-/* 2. Badges — deliberately NOT overridden for contracted mode: same fixed
-   square size and same column arrangement (label on top, value below) as
-   bulky mode, so this is the one part of the row that doesn't change
-   between densities. */
+/* 2. Badges — same fixed square size and same internal column arrangement
+   (label on top, value below) as bulky mode; only the pair's own layout
+   changes, from stacked (severity above extent) to side-by-side (severity
+   left, extent right), so contracted rows don't spend as much vertical
+   space on them. */
+body.contracted-rows #inspectionElementsTable tr.expandable-row .grid-badges {
+    flex-direction: row;
+    /* Row-direction flex children stretch to fill the container's height
+       by default - center (rather than stretch) keeps them at their
+       square 70x70 size and centers the pair within the (often taller)
+       content column next to them. */
+    align-items: center;
+}
 
 /* 3. Content rows — tighter spacing */
 body.contracted-rows #inspectionElementsTable tr.expandable-row .content-row {
