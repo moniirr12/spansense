@@ -974,7 +974,9 @@ app.get('/api/twin/:structureId', requireAuth, async (req, res) => {
             id: i.id,
             type: i.inspection_type || 'GI',
             date: monthYearFmt(new Date(i.inspection_date)),
-            timestamp: new Date(i.inspection_date).getTime()
+            timestamp: new Date(i.inspection_date).getTime(),
+            bciAvg: i.overall_bciave != null ? parseFloat(i.overall_bciave) : null,
+            bciCrit: i.overall_bcicrit != null ? parseFloat(i.overall_bcicrit) : null
         }));
 
         const spanNumber = bridge.span_number || spans.length || 1;

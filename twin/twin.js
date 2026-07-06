@@ -92,6 +92,145 @@ function renderBciTrend(elId, current, previous) {
     el.className = 'status-badge ' + (delta < 0 ? 'error' : 'completed');
 }
 
+// Small per-tile history line (BCI avg tile / BCI crit tile) - just that one
+// metric, oldest to newest, coloured to match the tile's own good/fair/
+// critical band via the CSS classes in twin.html rather than a hardcoded hex,
+// so it also picks up the night-mode variant automatically.
+function renderSparkline(elId, inspections, key, bandClass) {
+    var el = document.getElementById(elId);
+    var valid = (inspections || []).filter(function(i) { return i[key] != null; });
+    el.className = 'spark-row ' + bandClass;
+    if (valid.length < 2) { el.innerHTML = ''; return; }
+
+    var width = 74, height = 24, min = 30, max = 100;
+    var pts = valid.map(function(i, idx) {
+        var x = (idx / (valid.length - 1)) * width;
+        var v = Math.max(min, Math.min(max, i[key]));
+        var y = height - ((v - min) / (max - min)) * height;
+        return { x: x, y: y };
+    });
+    var path = pts.map(function(p, i) { return (i === 0 ? 'M' : 'L') + p.x.toFixed(1) + ',' + p.y.toFixed(1); }).join(' ');
+    var last = pts[pts.length - 1];
+
+    el.innerHTML = '<svg width="' + width + '" height="' + height + '" viewBox="0 0 ' + width + ' ' + height + '">' +
+        '<path d="' + path + '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>' +
+        '<circle cx="' + last.x.toFixed(1) + '" cy="' + last.y.toFixed(1) + '" r="2.6" fill="currentColor"/>' +
+        '</svg>';
+}
+
+// Dedicated "BCI trend" card: both BCI avg and BCI crit plotted against every
+// inspection on record (not just the previous one - see renderBciTrend above
+// for that flat delta). The two series get fixed identity colours (avg =
+// brand teal, crit = the warm tone already used for the 3D stage's BCI
+// readout chip) since colour here means "which metric", not a condition band;
+// the 65/50 band thresholds are shown as reference lines instead, and hovering
+// an inspection shows both scores together as text so colour is never the
+// only signal.
+function renderBciTrendChart(inspections) {
+    var wrap = document.getElementById('bciTrendChart');
+    var sub = document.getElementById('trendSub');
+    var valid = (inspections || []).filter(function(i) { return i.bciAvg != null || i.bciCrit != null; });
+
+    if (valid.length < 2) {
+        sub.textContent = valid.length ? '1 inspection' : '—';
+        wrap.innerHTML = '<div class="trend-empty"><i class="fa-solid fa-chart-line"></i>Not enough inspection history yet</div>';
+        return;
+    }
+
+    sub.textContent = valid.length + ' inspections · ' + valid[0].date + ' – ' + valid[valid.length - 1].date;
+
+    var width = 296, height = 140, padL = 4, padR = 4, padT = 10, padB = 20;
+    var innerW = width - padL - padR, innerH = height - padT - padB;
+    var minV = 30, maxV = 100;
+
+    var timestamps = valid.map(function(i) { return i.timestamp; });
+    var minT = Math.min.apply(null, timestamps), maxT = Math.max.apply(null, timestamps);
+    var spanT = Math.max(1, maxT - minT);
+
+    function xAt(t) { return padL + ((t - minT) / spanT) * innerW; }
+    function yAt(v) {
+        var clamped = Math.max(minV, Math.min(maxV, v));
+        return padT + innerH - ((clamped - minV) / (maxV - minV)) * innerH;
+    }
+
+    function seriesPoints(key) {
+        var pts = [];
+        valid.forEach(function(i) {
+            if (i[key] == null) return;
+            pts.push({ x: xAt(i.timestamp), y: yAt(i[key]) });
+        });
+        return pts;
+    }
+    function pathFor(pts) {
+        return pts.map(function(p, idx) { return (idx === 0 ? 'M' : 'L') + p.x.toFixed(1) + ',' + p.y.toFixed(1); }).join(' ');
+    }
+
+    var avgPts = seriesPoints('bciAvg');
+    var critPts = seriesPoints('bciCrit');
+    var goodY = yAt(65), critY = yAt(50);
+
+    var svg = '<svg viewBox="0 0 ' + width + ' ' + height + '" width="100%" height="' + height + '">';
+
+    svg += '<line class="trend-ref-line" x1="0" y1="' + goodY.toFixed(1) + '" x2="' + width + '" y2="' + goodY.toFixed(1) + '"/>';
+    svg += '<line class="trend-ref-line" x1="0" y1="' + critY.toFixed(1) + '" x2="' + width + '" y2="' + critY.toFixed(1) + '"/>';
+    svg += '<text class="trend-axis-label" x="' + (width - 2) + '" y="' + (goodY - 3).toFixed(1) + '" font-size="8" text-anchor="end">65</text>';
+    svg += '<text class="trend-axis-label" x="' + (width - 2) + '" y="' + (critY - 3).toFixed(1) + '" font-size="8" text-anchor="end">50</text>';
+
+    if (avgPts.length > 1) {
+        svg += '<g class="trend-avg-color"><path d="' + pathFor(avgPts) + '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+            avgPts.map(function(p) { return '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="3"/>'; }).join('') +
+            '</g>';
+    }
+    if (critPts.length > 1) {
+        svg += '<g class="trend-crit-color"><path d="' + pathFor(critPts) + '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+            critPts.map(function(p) { return '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="3"/>'; }).join('') +
+            '</g>';
+    }
+
+    svg += '<line class="trend-crosshair" id="trendCrosshair" x1="0" y1="' + padT + '" x2="0" y2="' + (padT + innerH) + '"/>';
+
+    svg += '<text class="trend-date-label" x="' + xAt(valid[0].timestamp).toFixed(1) + '" y="' + height + '" font-size="9" text-anchor="start">' + valid[0].date + '</text>';
+    svg += '<text class="trend-date-label" x="' + xAt(valid[valid.length - 1].timestamp).toFixed(1) + '" y="' + height + '" font-size="9" text-anchor="end">' + valid[valid.length - 1].date + '</text>';
+
+    // One hit column per inspection, wide enough to hover even when
+    // inspections are bunched close together on the time axis.
+    var hitWidth = Math.max(10, innerW / valid.length);
+    valid.forEach(function(i) {
+        var x = xAt(i.timestamp);
+        svg += '<rect class="thit" data-t="' + i.timestamp + '" x="' + (x - hitWidth / 2).toFixed(1) + '" y="0" width="' + hitWidth.toFixed(1) + '" height="' + height + '" fill="transparent" style="cursor:pointer"/>';
+    });
+
+    svg += '</svg>';
+    wrap.innerHTML = svg;
+
+    var tooltip = document.createElement('div');
+    tooltip.className = 'chart-tooltip';
+    wrap.appendChild(tooltip);
+    var crosshair = wrap.querySelector('#trendCrosshair');
+
+    wrap.querySelectorAll('.thit').forEach(function(hit) {
+        hit.addEventListener('mouseenter', function() {
+            var t = +hit.getAttribute('data-t');
+            var insp = valid.find(function(i) { return i.timestamp === t; });
+            if (!insp) return;
+            var rows = [];
+            if (insp.bciAvg != null) rows.push('Avg ' + Math.round(insp.bciAvg));
+            if (insp.bciCrit != null) rows.push('Crit ' + Math.round(insp.bciCrit));
+            tooltip.innerHTML = '<b>' + insp.type + ' · ' + insp.date + '</b>' + rows.join('<br>');
+            var x = xAt(t);
+            tooltip.style.left = ((x / width) * 100) + '%';
+            tooltip.style.opacity = '1';
+            crosshair.setAttribute('x1', x.toFixed(1));
+            crosshair.setAttribute('x2', x.toFixed(1));
+            crosshair.style.opacity = '1';
+        });
+        hit.addEventListener('mouseleave', function() {
+            tooltip.style.opacity = '0';
+            crosshair.style.opacity = '0';
+        });
+    });
+}
+
 function renderDropdownList(filter) {
     filter = filter || '';
     var term = filter.toLowerCase().trim();
@@ -205,6 +344,10 @@ async function selectBridge(bridgeId, inspectionId) {
 
         document.getElementById('bciAvg').textContent = bridge.bciAvg != null ? Math.round(bridge.bciAvg) : '—';
         document.getElementById('bciCrit').textContent = bridge.bciCrit != null ? Math.round(bridge.bciCrit) : '—';
+
+        renderSparkline('sparkAvg', bridge.inspections, 'bciAvg', 'spark-' + avgClass);
+        renderSparkline('sparkCrit', bridge.inspections, 'bciCrit', 'spark-' + critClass);
+        renderBciTrendChart(bridge.inspections || []);
 
         document.getElementById('factSpan').textContent = bridge.spanLength ? (bridge.spanLength * bridge.spans).toFixed(1) + ' m' : '—';
         document.getElementById('factSpans').textContent = bridge.spans;
