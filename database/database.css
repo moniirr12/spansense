@@ -243,13 +243,13 @@ body {
 }
 
 /* ---------- EXPORT PANEL ---------- */
+/* No card/box here on purpose - the header, filters and table sit directly
+   on the page background (matching inspection.html's pill rows), rather
+   than nested inside another white box on top of it. The pieces that
+   still read as distinct groupings (.option-group, each format/column-
+   visibility block) already have their own small card - see below. */
 .export-panel {
-    background: white;
-    border-radius: 28px;
-    border: 1px solid #e9edf2;
-    padding: 32px;
     margin-bottom: 24px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
 }
 .panel-header {
     display: flex;
@@ -314,10 +314,10 @@ body {
 .filter-chip i { font-size: 0.75rem; }
 
 /* ---------- DATA TABLE ---------- */
+/* No wrapping box here either (see .export-panel above) - pagination.js
+   still needs this element to exist in the DOM (addPaginationControls()
+   inserts the pager right after it), so it stays, just visually plain. */
 .data-table-wrap {
-    border-radius: 16px;
-    border: 1px solid #e9edf2;
-    overflow: hidden;
     margin-bottom: 20px;
 }
 .data-table {
@@ -401,6 +401,22 @@ body {
    tr.main-row) but keeps every column inline - no expand/collapse. */
 .data-table.bridges-cards { border-collapse: separate; border-spacing: 0 8px; }
 .data-table.bridges-cards thead tr { background: transparent; }
+.data-table.bridges-cards thead th {
+    background: #eef2f6;
+    border-top: 1px solid #e3e9ef;
+    border-bottom: 1px solid #e3e9ef;
+    color: #6a7c8e;
+}
+.data-table.bridges-cards thead th:first-child {
+    border-left: 1px solid #e3e9ef;
+    border-top-left-radius: 30px;
+    border-bottom-left-radius: 30px;
+}
+.data-table.bridges-cards thead th:last-child {
+    border-right: 1px solid #e3e9ef;
+    border-top-right-radius: 30px;
+    border-bottom-right-radius: 30px;
+}
 .data-table.bridges-cards tbody tr td {
     background: #f8fafc;
     border-top: 1px solid #e9edf2;
@@ -443,6 +459,7 @@ body {
     transform: translate(-50%, -50%);
 }
 
+.night-mode .data-table.bridges-cards thead th { background: #1e2a2f; border-color: #2f3e45; color: #8aa4ac; }
 .night-mode .data-table.bridges-cards tbody tr td { background: #232e34; border-color: #2f3e45; }
 .night-mode .data-table.bridges-cards tbody tr:hover td { background: #2a3a40; border-color: #3a4b53; }
 .night-mode .data-table.bridges-cards .col-check input[type="checkbox"] {
