@@ -769,7 +769,6 @@ body {
     min-width: 70px;
     min-height: 70px;
     display: flex;
-    flex: 1;
     flex-direction: column;
     justify-content: center;
     /* Only hover feedback animates - explicitly excludes padding/border-
@@ -3766,16 +3765,20 @@ body.contracted-rows #inspectionElementsTable tr.expandable-row .aligned-grid {
     box-shadow: 0 1px 4px rgba(0,0,0,0.03);
 }
 
-/* 2. Badges — horizontal inline strip */
+/* 2. Badges — horizontal inline strip. align-items: stretch (rather than
+   center) so each badge fills the row's actual height instead of floating
+   in the middle of it with visible empty space above/below - the row is
+   often taller than a 40px pill (e.g. when WORKS/comment stack up next to
+   it), and centering just left that extra height as dead space either
+   side. */
 body.contracted-rows #inspectionElementsTable tr.expandable-row .grid-badges {
     flex-direction: row;
     gap: 6px;
     min-width: 0;
-    align-items: center;
+    align-items: stretch;
 }
 
 body.contracted-rows #inspectionElementsTable tr.expandable-row .badge {
-    flex: 0 1 auto;
     flex-direction: row;
     align-items: center;
     gap: 10px;
