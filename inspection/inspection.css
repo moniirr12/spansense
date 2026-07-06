@@ -769,9 +769,16 @@ body {
     min-width: 70px;
     min-height: 70px;
     display: flex;
+    flex: 1;
     flex-direction: column;
     justify-content: center;
-    transition: all 0.2s;
+    /* Only hover feedback animates - explicitly excludes padding/border-
+       radius/flex-direction (which the bulky<->contracted row-density
+       toggle also changes via body.contracted-rows) so switching density
+       snaps those cleanly instead of interpolating them out of sync with
+       non-animatable properties like flex-direction, which was causing
+       buttons/badges to visibly overflow their card mid-"transition". */
+    transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 #inspectionElementsTable tr.expandable-row .badge:hover {
     border-color: #5b8c8a;
@@ -875,7 +882,13 @@ body {
     font-weight: 500;
     cursor: pointer;
     border: none;
-    transition: all 0.2s;
+    /* Excludes width/padding/border-radius - the contracted-rows override
+       below changes those from "full width, pill-shaped" to "32px square
+       icon", and letting those animate out of step with grid-buttons'
+       non-animatable flex-direction switch (column -> row) is what made
+       buttons visibly spill outside the card while the density toggle
+       "transitioned". */
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.2s;
     font-family: inherit;
     text-align: center;
     width: 100%;
@@ -888,6 +901,14 @@ body {
 #inspectionElementsTable tr.expandable-row .grid-buttons .btn-photo:hover {
     background: #e9ecef;
     color: #4a5b6e;
+}
+/* .btn-edit is (despite the name) the "Copy" button - title="Copy", copy
+   icon, and its click handler only ever does anything on a .retrieved-defect
+   row (copies a prior inspection's comparison row into a new editable
+   defect on this one) - so it has no function at all on this inspection's
+   own already-editable rows and shouldn't show there. */
+#inspectionElementsTable tr.expandable-row:not(.retrieved-defect) .grid-buttons .btn-edit {
+    display: none;
 }
 #inspectionElementsTable tr.expandable-row .grid-buttons .btn-edit {
     background: #5b8c8a;
@@ -977,10 +998,14 @@ body {
 }
 /* Edit doesn't apply to retrieved (historical) rows — copy first to get an
    editable version. Copy, in turn, only makes sense on retrieved rows. */
-#inspectionElementsTable tr.retrieved-defect button[title='Edit'] {
-    display: none;
-}
-#inspectionElementsTable tr.expandable-row:not(.retrieved-defect) button[title='Copy'] {
+/* .grid-buttons added to both selectors below (matching the .btn-edit hide
+   rule above) purely for specificity: body.contracted-rows ... .grid-buttons
+   button sets display:flex on every button unconditionally, and without
+   that extra class these two rules had fewer class-selectors than that
+   override and silently lost to it - the Edit/Copy buttons would reappear
+   on rows they don't apply to as soon as contracted (compact row) mode was
+   turned on. */
+#inspectionElementsTable tr.retrieved-defect .grid-buttons button[title='Edit'] {
     display: none;
 }
 
@@ -3750,6 +3775,7 @@ body.contracted-rows #inspectionElementsTable tr.expandable-row .grid-badges {
 }
 
 body.contracted-rows #inspectionElementsTable tr.expandable-row .badge {
+    flex: 0 1 auto;
     flex-direction: row;
     align-items: center;
     gap: 10px;
@@ -3921,10 +3947,12 @@ body.night-mode.contracted-rows #inspectionElementsTable tr.expandable-row .prim
     background: #5b8c8a;
 }
 
-body.night-mode.contracted-rows #inspectionElementsTable tr.expandable-row .primary-tag.filled .dot,
+body.night-mode.contracted-rows #inspectionElementsTable tr.expandable-row .primary-tag.filled .dot {
+    background: white;
+}
+
 body.night-mode.contracted-rows #inspectionElementsTable tr.expandable-row .primary-tag.filled span {
     color: white;
-    background: white;
 }
 
 body.night-mode.contracted-rows #inspectionElementsTable tr.expandable-row .grid-buttons .btn-photo,
