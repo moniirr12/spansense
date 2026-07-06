@@ -1258,7 +1258,7 @@ body.night-mode .glass-scrollbar .thumb {
 .demo-modal {
     position: relative;
     width: 100%;
-    max-width: 920px;
+    max-width: 420px;
     background: var(--bg-glass-solid);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -1269,41 +1269,49 @@ body.night-mode .glass-scrollbar .thumb {
     animation: fadeInUp 0.4s ease-out;
 }
 
-.demo-modal video {
-    width: 100%;
-    display: block;
+.demo-coming-soon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 12px;
+    padding: 36px 28px;
     border-radius: 18px;
-    background: #000;
+    background: var(--bg-secondary);
 }
 
-.demo-modal-close {
-    position: absolute;
-    top: -16px;
-    right: -16px;
-    width: 36px;
-    height: 36px;
+.demo-coming-soon-icon {
+    width: 56px;
+    height: 56px;
     border-radius: 50%;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-light);
-    box-shadow: var(--shadow-md);
-    color: var(--text-secondary);
-    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.9rem;
-    transition: all 0.2s;
+    font-size: 1.4rem;
+    background: rgba(91, 140, 138, 0.12);
+    color: var(--primary);
 }
 
-.demo-modal-close:hover {
-    color: var(--primary);
-    border-color: var(--primary);
-    transform: scale(1.08);
+.demo-coming-soon h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.demo-coming-soon p {
+    max-width: 320px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.demo-coming-soon .btn {
+    margin-top: 8px;
 }
 
 @media (max-width: 768px) {
     .demo-modal-overlay { padding: 16px; }
-    .demo-modal-close { top: -14px; right: 4px; }
 }
 </style>
 <base target="_self">
@@ -1532,10 +1540,12 @@ body.night-mode .glass-scrollbar .thumb {
 <!-- DEMO VIDEO MODAL -->
 <div class="demo-modal-overlay" id="demoModalOverlay" onclick="if(event.target===this) closeDemoModal()">
     <div class="demo-modal">
-        <button class="demo-modal-close" onclick="closeDemoModal()"><i class="fas fa-times"></i></button>
-        <video id="demoVideo" controls playsinline>
-            <source src="assets/demo-tour.mp4" type="video/mp4">
-        </video>
+        <div class="demo-coming-soon">
+            <div class="demo-coming-soon-icon"><i class="fas fa-clapperboard"></i></div>
+            <h3>Demo video coming shortly</h3>
+            <p>A full walkthrough of spanSense is currently in development. Request access above to explore the platform directly in the meantime.</p>
+            <button class="btn btn-primary" onclick="closeDemoModal()">← Back</button>
+        </div>
     </div>
 </div>
 
@@ -1681,19 +1691,14 @@ function handleRegister() {
 // Demo video modal
 function openDemoModal() {
     const overlay = document.getElementById('demoModalOverlay');
-    const video = document.getElementById('demoVideo');
-    if (!overlay || !video) return;
+    if (!overlay) return;
     overlay.classList.add('active');
-    video.currentTime = 0;
-    video.play().catch(() => {});
 }
 
 function closeDemoModal() {
     const overlay = document.getElementById('demoModalOverlay');
-    const video = document.getElementById('demoVideo');
-    if (!overlay || !video) return;
+    if (!overlay) return;
     overlay.classList.remove('active');
-    video.pause();
 }
 
 document.addEventListener('keydown', function(e) {
