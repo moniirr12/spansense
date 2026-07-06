@@ -118,27 +118,97 @@ async function fetchTypeDistribution() {
   }
 }
 
+// Structure-type identity colours - same swatch as the map's own per-type
+// markers (see typeFill in map/map.js), so "Bridges" is always this colour
+// on every chart, instead of whatever a sort-order index happened to land on.
+const TYPE_COLORS = {
+  bridge: '#2c645c',
+  footbridge: '#4f9088',
+  culvert: '#c79a4b',
+  retaining_wall: '#9b4f4f',
+  sign_gantry: '#7a6fb0'
+};
+const TYPE_LABELS = {
+  bridge: 'Bridge',
+  footbridge: 'Footbridge',
+  culvert: 'Culvert',
+  retaining_wall: 'Retaining Wall',
+  sign_gantry: 'Sign Gantry'
+};
+function typeKey(type) { return (type || '').toLowerCase().replace(/\s+/g, '_'); }
+function typeColor(type) { return TYPE_COLORS[typeKey(type)] || '#5b8c8a'; }
+function typeLabel(type) { return TYPE_LABELS[typeKey(type)] || (type || 'Unknown'); }
+
+// Draws each bar's value just past its end in muted ink - never the bar's
+// own colour, so it stays legible against every band. Chart.js has no
+// built-in data-label support; this is a small plugin instead of pulling in
+// the chartjs-plugin-datalabels dependency for one label per chart.
+const barEndLabelPlugin = {
+  id: 'barEndLabel',
+  afterDatasetsDraw(chart) {
+    const { ctx } = chart;
+    const isNight = document.body.classList.contains('night-mode');
+    ctx.save();
+    ctx.font = '600 11px Inter, -apple-system, sans-serif';
+    ctx.fillStyle = isNight ? '#9ab0b8' : '#55676c';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    chart.getDatasetMeta(0).data.forEach((bar, i) => {
+      const value = chart.data.datasets[0].data[i];
+      if (value == null) return;
+      ctx.fillText(Math.round(value), bar.x + 8, bar.y);
+    });
+    ctx.restore();
+  }
+};
+
+// Renders Chart.js's tooltip as a styled HTML element (see .chart-tooltip in
+// dashboard.css) instead of the plain canvas-drawn default, matching the
+// tooltip already shipped on twinView's BCI trend chart rather than every
+// chart having its own generic look. Needs .chart-body (the canvas's parent)
+// to be position:relative, which dashboard.css sets.
+function externalTooltipHandler(context) {
+  const { chart, tooltip } = context;
+  let el = chart.canvas.parentNode.querySelector('.chart-tooltip');
+  if (!el) {
+    el = document.createElement('div');
+    el.className = 'chart-tooltip';
+    chart.canvas.parentNode.appendChild(el);
+  }
+  if (tooltip.opacity === 0) {
+    el.style.opacity = '0';
+    return;
+  }
+  const title = (tooltip.title || []).join(' ');
+  const body = tooltip.body ? tooltip.body.map(b => b.lines.join(' ')).join('<br>') : '';
+  el.innerHTML = (title ? '<b>' + title + '</b>' : '') + body;
+  el.style.opacity = '1';
+  el.style.left = chart.canvas.offsetLeft + tooltip.caretX + 'px';
+  el.style.top = chart.canvas.offsetTop + tooltip.caretY + 'px';
+}
+
 function renderTypeBarChart(typeData) {
   const ctx = document.getElementById('typeChart').getContext('2d');
 
   // Sort by count descending so the most common type reads first.
   const sorted = [...typeData].sort((a, b) => b.count - a.count);
-  const labels = sorted.map(item => item.type || 'Unknown');
+  const labels = sorted.map(item => typeLabel(item.type));
   const counts = sorted.map(item => item.count);
-
-  // Teal-forward palette consistent with the rest of the dashboard.
-  const backgroundColors = ['#5b8c8a', '#8ab4b0', '#4a90b8', '#c28b5a', '#a371c7'];
+  const colors = sorted.map(item => typeColor(item.type));
 
   new Chart(ctx, {
     type: 'bar',
+    plugins: [barEndLabelPlugin],
     data: {
       labels: labels,
       datasets: [{
         label: 'Structures',
         data: counts,
-        backgroundColor: labels.map((_, i) => backgroundColors[i % backgroundColors.length]),
+        backgroundColor: colors,
         borderWidth: 0,
-        borderRadius: 6
+        borderRadius: 6,
+        barPercentage: 0.7,
+        categoryPercentage: 0.75
       }]
     },
     options: {
@@ -146,15 +216,19 @@ function renderTypeBarChart(typeData) {
       responsive: true,
       maintainAspectRatio: true,
       aspectRatio: 1.4,
+      layout: { padding: { right: 30 } },
       plugins: {
         legend: { display: false },
         tooltip: {
+          enabled: false,
+          external: externalTooltipHandler,
           callbacks: {
+            title: (items) => items[0]?.label || '',
             label: function(context) {
               const value = context.raw || 0;
               const total = context.dataset.data.reduce((a, b) => a + b, 0);
               const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-              return `${value} (${percentage}%)`;
+              return `${value} structures (${percentage}%)`;
             }
           }
         }
@@ -196,12 +270,17 @@ function renderAvgBciByTypeChart(typeData) {
   const ctx = document.getElementById('avgBciByTypeChart').getContext('2d');
 
   const sorted = [...typeData].sort((a, b) => b.avg_bci - a.avg_bci);
-  const labels = sorted.map(item => item.type || 'Unknown');
+  const labels = sorted.map(item => typeLabel(item.type));
   const values = sorted.map(item => item.avg_bci);
+  // Coloured by condition band (bciTier), not by type identity - the value
+  // being plotted here is a condition score, so colour should say "how good
+  // is this score" rather than "which type is this" (typeColor is for the
+  // Asset Inventory chart above, where the value itself is just a count).
   const colors = values.map(v => bciTier(v).color);
 
   avgBciByTypeChartInstance = new Chart(ctx, {
     type: 'bar',
+    plugins: [barEndLabelPlugin],
     data: {
       labels: labels,
       datasets: [{
@@ -209,7 +288,9 @@ function renderAvgBciByTypeChart(typeData) {
         data: values,
         backgroundColor: colors,
         borderWidth: 0,
-        borderRadius: 6
+        borderRadius: 6,
+        barPercentage: 0.7,
+        categoryPercentage: 0.75
       }]
     },
     options: {
@@ -217,10 +298,14 @@ function renderAvgBciByTypeChart(typeData) {
       responsive: true,
       maintainAspectRatio: true,
       aspectRatio: 1.4,
+      layout: { padding: { right: 30 } },
       plugins: {
         legend: { display: false },
         tooltip: {
+          enabled: false,
+          external: externalTooltipHandler,
           callbacks: {
+            title: (items) => items[0]?.label || '',
             label: function(context) { return `Average BCI: ${context.raw}`; }
           }
         }
