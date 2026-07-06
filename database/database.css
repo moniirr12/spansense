@@ -392,6 +392,63 @@ body {
     color: white;
 }
 
+/* ---------- BRIDGES TABLE: CARD-STYLE ROWS ----------
+   Only the Bridges category gets this - .bridges-cards is added/removed on
+   #dataTable by rebuildBridgesTable()/rebuildInspectionsTable()/
+   rebuildReportsTable() in database.js, since #dataTable's innerHTML (and
+   this class) is what all three categories share and rebuild in turn.
+   Mirrors inspection.html's rounded pill-row look (#inspectionElementsTable
+   tr.main-row) but keeps every column inline - no expand/collapse. */
+.data-table.bridges-cards { border-collapse: separate; border-spacing: 0 8px; }
+.data-table.bridges-cards thead tr { background: transparent; }
+.data-table.bridges-cards tbody tr td {
+    background: #f8fafc;
+    border-top: 1px solid #e9edf2;
+    border-bottom: 1px solid #e9edf2;
+}
+.data-table.bridges-cards tbody tr:hover td { background: white; border-color: #c5dbd8; }
+.data-table.bridges-cards tbody tr td:first-child {
+    border-left: 1px solid #e9edf2;
+    border-top-left-radius: 30px;
+    border-bottom-left-radius: 30px;
+}
+.data-table.bridges-cards tbody tr td:last-child {
+    border-right: 1px solid #e9edf2;
+    border-top-right-radius: 30px;
+    border-bottom-right-radius: 30px;
+}
+.data-table.bridges-cards .bridge-name .meta {
+    display: block; font-size: 0.7rem; font-weight: 500; color: #8a9ba8; margin-top: 2px;
+}
+.data-table.bridges-cards .type-circle {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 50%; color: white; font-size: 0.68rem;
+    margin-right: 8px; flex-shrink: 0;
+}
+
+/* Circular select checkbox (replaces the plain square one, bridges only) */
+.data-table.bridges-cards .col-check input[type="checkbox"] {
+    appearance: none; -webkit-appearance: none;
+    width: 20px; height: 20px; border-radius: 50%;
+    border: 2px solid #c5dbd8; background: white; cursor: pointer;
+    position: relative; transition: all 0.15s ease; accent-color: unset;
+}
+.data-table.bridges-cards .col-check input[type="checkbox"]:hover { border-color: #8ab4b0; }
+.data-table.bridges-cards .col-check input[type="checkbox"]:checked {
+    background: #5b8c8a; border-color: #5b8c8a;
+}
+.data-table.bridges-cards .col-check input[type="checkbox"]:checked::after {
+    content: '\f00c'; font-family: 'Font Awesome 6 Free'; font-weight: 900;
+    color: white; font-size: 10px; position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.night-mode .data-table.bridges-cards tbody tr td { background: #232e34; border-color: #2f3e45; }
+.night-mode .data-table.bridges-cards tbody tr:hover td { background: #2a3a40; border-color: #3a4b53; }
+.night-mode .data-table.bridges-cards .col-check input[type="checkbox"] {
+    background: #232e34; border-color: #3a4b53;
+}
+
 /* ---------- EXPORT OPTIONS ---------- */
 .export-options {
     display: grid;

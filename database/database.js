@@ -158,12 +158,27 @@
     // ============================================
     // BRIDGES TABLE
     // ============================================
+    // Colors/icons matching the map's own per-type marker circles (see
+    // typeFill/typeIcons in map/map.js) - kept as FontAwesome glyphs here
+    // instead of duplicating those hand-drawn SVGs, since this is a small
+    // inline table badge rather than a map marker.
+    var typeCircleMeta = {
+        bridge:         { color: '#2c645c', icon: 'fa-bridge' },
+        footbridge:     { color: '#4f9088', icon: 'fa-person-walking' },
+        retaining_wall: { color: '#9b4f4f', icon: 'fa-wall' },
+        culvert:        { color: '#c79a4b', icon: 'fa-water' },
+        sign_gantry:    { color: '#7a6fb0', icon: 'fa-sign' },
+        tunnel:         { color: '#2c645c', icon: 'fa-road' },
+        viaduct:        { color: '#2c645c', icon: 'fa-road' }
+    };
+
     function rebuildBridgesTable() {
         var tbody = document.getElementById('tableBody');
+        document.getElementById('dataTable').classList.add('bridges-cards');
         var rowsHtml = '';
 
         if (bridgesData.length === 0) {
-            rowsHtml = '<tr><td colspan="9" style="text-align:center;padding:40px;color:#8a9ba8;">' +
+            rowsHtml = '<tr><td colspan="7" style="text-align:center;padding:40px;color:#8a9ba8;">' +
                 '<i class="fas fa-database" style="font-size:2rem;margin-bottom:12px;display:block;"></i>' +
                 'No bridges found</td></tr>';
         } else {
@@ -205,17 +220,17 @@
                 };
                 var typeLabel = typeMap[(row.type || '').toLowerCase()] ||
                     (row.type ? row.type.charAt(0).toUpperCase() + row.type.slice(1).replace(/_/g, ' ') : '--');
+                var typeMeta = typeCircleMeta[(row.type || '').toLowerCase().replace(/\s+/g, '_')] || typeCircleMeta.bridge;
 
                 rowsHtml += '<tr>' +
                     '<td class="col-check"><input type="checkbox" class="row-check" data-id="' + row.id + '"></td>' +
                     '<td><strong>' + (row.id || '--') + '</strong></td>' +
-                    '<td>' + (row.name || '--') + '</td>' +
-                    '<td>' + lat + '°, ' + lon + '°</td>' +
-                    '<td>' + typeLabel + '</td>' +
+                    '<td class="bridge-name">' + (row.name || '--') +
+                        '<span class="meta">' + lat + '°, ' + lon + '°</span></td>' +
+                    '<td><span class="type-circle" style="background:' + typeMeta.color + '"><i class="fas ' + typeMeta.icon + '"></i></span>' + typeLabel + '</td>' +
                     '<td>' + (row.built_year || '--') + '</td>' +
                     '<td>' + (row.span_number || '0') + '</td>' +
                     '<td>' + formatDate(row.last_inspected) + '</td>' +
-                    '<td></td>' +
                 '</tr>';
             });
         }
@@ -289,7 +304,6 @@
             bridges: [
                 { label: 'Bridge ID', sortable: true, key: 'id' },
                 { label: 'Structure Name', sortable: true, key: 'name' },
-                { label: 'Coordinates', sortable: false },
                 { label: 'Type', sortable: false },
                 { label: 'Year Built', sortable: false },
                 { label: 'Spans', sortable: false },
@@ -328,7 +342,10 @@
                 html += '<th>' + col.label + '</th>';
             }
         });
-        html += '<th></th></tr>';
+        // Bridges has no per-row actions (unlike inspections/reports, whose
+        // last column holds real buttons), so it gets no trailing header cell.
+        if (cat !== 'bridges') html += '<th></th>';
+        html += '</tr>';
         thead.innerHTML = html;
         // This replaces the header - including the #selectAll checkbox - with
         // a brand new node, orphaning whatever listener rebuildXTable() had
@@ -405,7 +422,8 @@
     // ============================================
     function rebuildInspectionsTable() {
         var tbody = document.getElementById('tableBody');
-        
+        document.getElementById('dataTable').classList.remove('bridges-cards');
+
         // Filter data
         filteredInspectionsData = inspectionsData.filter(function(row) {
             if (currentFilter === 'all') return true;
@@ -525,7 +543,8 @@
     // ============================================
     function rebuildReportsTable() {
         var tbody = document.getElementById('tableBody');
-        
+        document.getElementById('dataTable').classList.remove('bridges-cards');
+
         // Filter data
         filteredReportsData = reportsData.filter(function(row) {
             if (currentFilter !== 'all' && row.type !== currentFilter) return false;
