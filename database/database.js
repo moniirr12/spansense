@@ -172,9 +172,17 @@
         viaduct:        { color: '#2c645c', icon: 'fa-road' }
     };
 
+    // Same colors/icons already used for the GI/PI/SI filter chips (see the
+    // inspections/reports entries in the filter-chip definitions below).
+    var inspectionTypeCircleMeta = {
+        GI: { color: '#8ab4b0', icon: 'fa-chart-line', label: 'General' },
+        PI: { color: '#5b8c8a', icon: 'fa-building',   label: 'Principal' },
+        SI: { color: '#eab308', icon: 'fa-eye',        label: 'Superficial' }
+    };
+
     function rebuildBridgesTable() {
         var tbody = document.getElementById('tableBody');
-        document.getElementById('dataTable').classList.add('bridges-cards');
+        document.getElementById('dataTable').classList.add('card-rows');
         var rowsHtml = '';
 
         if (bridgesData.length === 0) {
@@ -342,9 +350,10 @@
                 html += '<th>' + col.label + '</th>';
             }
         });
-        // Bridges has no per-row actions (unlike inspections/reports, whose
-        // last column holds real buttons), so it gets no trailing header cell.
-        if (cat !== 'bridges') html += '<th></th>';
+        // Only Reports has real per-row action buttons (Bridges and
+        // Inspections have no actions column), so only it gets a trailing
+        // header cell.
+        if (cat === 'reports') html += '<th></th>';
         html += '</tr>';
         thead.innerHTML = html;
         // This replaces the header - including the #selectAll checkbox - with
@@ -422,7 +431,7 @@
     // ============================================
     function rebuildInspectionsTable() {
         var tbody = document.getElementById('tableBody');
-        document.getElementById('dataTable').classList.remove('bridges-cards');
+        document.getElementById('dataTable').classList.add('card-rows');
 
         // Filter data
         filteredInspectionsData = inspectionsData.filter(function(row) {
@@ -453,13 +462,12 @@
         var rowsHtml = '';
 
         if (totalRecords === 0) {
-            rowsHtml = '<tr><td colspan="12" style="text-align:center;padding:40px;color:#8a9ba8;">' +
+            rowsHtml = '<tr><td colspan="10" style="text-align:center;padding:40px;color:#8a9ba8;">' +
                 '<i class="fas fa-database" style="font-size:2rem;margin-bottom:12px;display:block;"></i>' +
                 'No inspections found</td></tr>';
         } else {
             displayData.forEach(function(row) {
-                var typeMap = { 'PI': 'Principal', 'GI': 'General', 'SI': 'Superficial' };
-                var typeLabel = typeMap[row.inspection_type] || row.inspection_type || 'Inspection';
+                var typeMeta = inspectionTypeCircleMeta[row.inspection_type] || inspectionTypeCircleMeta.GI;
                 var bciAv   = row.overall_bciave   != null ? Math.round(parseFloat(row.overall_bciave))   : '--';
                 var bciCrit = row.overall_bcicrit  != null ? Math.round(parseFloat(row.overall_bcicrit))  : '--';
 
@@ -472,9 +480,8 @@
                     '<td>' + formatDate(row.inspection_date) + '</td>' +
                     '<td><span style="color:#5b8c8a;font-weight:600;">' + bciAv + '</span></td>' +
                     '<td><span style="color:#e8a87c;font-weight:600;">' + bciCrit + '</span></td>' +
-                    '<td><span class="status-badge completed"><i class="fas fa-check-circle"></i> ' + typeLabel + '</span></td>' +
+                    '<td><span class="type-circle" style="background:' + typeMeta.color + '"><i class="fas ' + typeMeta.icon + '"></i></span>' + typeMeta.label + '</td>' +
                     '<td>' + (row.total_spans || '0') + '</td>' +
-                    '<td></td>' +
                 '</tr>';
             });
         }
@@ -543,7 +550,7 @@
     // ============================================
     function rebuildReportsTable() {
         var tbody = document.getElementById('tableBody');
-        document.getElementById('dataTable').classList.remove('bridges-cards');
+        document.getElementById('dataTable').classList.add('card-rows');
 
         // Filter data
         filteredReportsData = reportsData.filter(function(row) {
@@ -581,19 +588,18 @@
         var rowsHtml = '';
 
         if (totalRecords === 0) {
-            rowsHtml = '<tr><td colspan="9" style="text-align:center;padding:40px;color:#8a9ba8;">' +
+            rowsHtml = '<tr><td colspan="8" style="text-align:center;padding:40px;color:#8a9ba8;">' +
                 '<i class="fas fa-file-alt" style="font-size:2rem;margin-bottom:12px;display:block;"></i>' +
                 'No reports found.</td></tr>';
         } else {
             displayData.forEach(function(row) {
+                var typeMeta = inspectionTypeCircleMeta[row.type] || inspectionTypeCircleMeta.GI;
                 rowsHtml += '<tr>' +
                     '<td class="col-check"><input type="checkbox" class="row-check" data-id="' + row.id + '"></td>' +
                     '<td><strong>' + (row.id || '--') + '</strong></td>' +
                     '<td>' + (row.structure_id || '--') + '</td>' +
                     '<td>' + (row.bridge || '--') + '</td>' +
-                    '<td><span class="status-badge ' +
-                        (row.type === 'PI' ? 'active' : row.type === 'GI' ? 'completed' : 'monitoring') + '">' +
-                        (row.display_type || '--') + '</span></td>' +
+                    '<td><span class="type-circle" style="background:' + typeMeta.color + '"><i class="fas ' + typeMeta.icon + '"></i></span>' + (row.display_type || '--') + '</td>' +
                     '<td>' + formatDate(row.generated) + '</td>' +
                     '<td>' + (row.defect_count != null ? row.defect_count : '--') + '</td>' +
                     '<td><div class="row-actions">' +

@@ -323,7 +323,6 @@ body {
 .data-table {
     width: 100%;
     border-collapse: collapse;
-    background: white;
 }
 .data-table thead tr { background: #f8fafc; }
 .data-table th {
@@ -351,21 +350,6 @@ body {
     accent-color: #5b8c8a;
     cursor: pointer;
 }
-.data-table .status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 600;
-}
-.status-badge.active { background: #e8f5f0; color: #2d7a6e; }
-.status-badge.monitoring { background: #fff7ed; color: #c28b5a; }
-.status-badge.closed { background: #f1f3f5; color: #6a7c8e; }
-.status-badge.completed { background: #e8f5f0; color: #2d7a6e; }
-.status-badge.pending { background: #fff7ed; color: #c28b5a; }
-.status-badge.draft { background: #f1f3f5; color: #6a7c8e; }
 .data-table .row-actions {
     display: flex;
     gap: 8px;
@@ -392,77 +376,76 @@ body {
     color: white;
 }
 
-/* ---------- BRIDGES TABLE: CARD-STYLE ROWS ----------
-   Only the Bridges category gets this - .bridges-cards is added/removed on
-   #dataTable by rebuildBridgesTable()/rebuildInspectionsTable()/
-   rebuildReportsTable() in database.js, since #dataTable's innerHTML (and
-   this class) is what all three categories share and rebuild in turn.
-   Mirrors inspection.html's rounded pill-row look (#inspectionElementsTable
+/* ---------- CARD-STYLE ROWS (all three categories) ----------
+   .card-rows is added by rebuildBridgesTable()/rebuildInspectionsTable()/
+   rebuildReportsTable() in database.js, since #dataTable's innerHTML is
+   what all three categories share and rebuild in turn. Mirrors
+   inspection.html's rounded pill-row look (#inspectionElementsTable
    tr.main-row) but keeps every column inline - no expand/collapse. */
-.data-table.bridges-cards { border-collapse: separate; border-spacing: 0 8px; }
-.data-table.bridges-cards thead tr { background: transparent; }
-.data-table.bridges-cards thead th {
+.data-table.card-rows { border-collapse: separate; border-spacing: 0 8px; }
+.data-table.card-rows thead tr { background: transparent; }
+.data-table.card-rows thead th {
     background: #eef2f6;
     border-top: 1px solid #e3e9ef;
     border-bottom: 1px solid #e3e9ef;
     color: #6a7c8e;
 }
-.data-table.bridges-cards thead th:first-child {
+.data-table.card-rows thead th:first-child {
     border-left: 1px solid #e3e9ef;
     border-top-left-radius: 30px;
     border-bottom-left-radius: 30px;
 }
-.data-table.bridges-cards thead th:last-child {
+.data-table.card-rows thead th:last-child {
     border-right: 1px solid #e3e9ef;
     border-top-right-radius: 30px;
     border-bottom-right-radius: 30px;
 }
-.data-table.bridges-cards tbody tr td {
-    background: #f8fafc;
+.data-table.card-rows tbody tr td {
+    background: white;
     border-top: 1px solid #e9edf2;
     border-bottom: 1px solid #e9edf2;
 }
-.data-table.bridges-cards tbody tr:hover td { background: white; border-color: #c5dbd8; }
-.data-table.bridges-cards tbody tr td:first-child {
+.data-table.card-rows tbody tr:hover td { background: #fafbfc; border-color: #c5dbd8; }
+.data-table.card-rows tbody tr td:first-child {
     border-left: 1px solid #e9edf2;
     border-top-left-radius: 30px;
     border-bottom-left-radius: 30px;
 }
-.data-table.bridges-cards tbody tr td:last-child {
+.data-table.card-rows tbody tr td:last-child {
     border-right: 1px solid #e9edf2;
     border-top-right-radius: 30px;
     border-bottom-right-radius: 30px;
 }
-.data-table.bridges-cards .bridge-name .meta {
+.data-table.card-rows .bridge-name .meta {
     display: block; font-size: 0.7rem; font-weight: 500; color: #8a9ba8; margin-top: 2px;
 }
-.data-table.bridges-cards .type-circle {
+.data-table.card-rows .type-circle {
     display: inline-flex; align-items: center; justify-content: center;
     width: 26px; height: 26px; border-radius: 50%; color: white; font-size: 0.68rem;
     margin-right: 8px; flex-shrink: 0;
 }
 
-/* Circular select checkbox (replaces the plain square one, bridges only) */
-.data-table.bridges-cards .col-check input[type="checkbox"] {
+/* Circular select checkbox (replaces the plain square one) */
+.data-table.card-rows .col-check input[type="checkbox"] {
     appearance: none; -webkit-appearance: none;
     width: 20px; height: 20px; border-radius: 50%;
     border: 2px solid #c5dbd8; background: white; cursor: pointer;
     position: relative; transition: all 0.15s ease; accent-color: unset;
 }
-.data-table.bridges-cards .col-check input[type="checkbox"]:hover { border-color: #8ab4b0; }
-.data-table.bridges-cards .col-check input[type="checkbox"]:checked {
+.data-table.card-rows .col-check input[type="checkbox"]:hover { border-color: #8ab4b0; }
+.data-table.card-rows .col-check input[type="checkbox"]:checked {
     background: #5b8c8a; border-color: #5b8c8a;
 }
-.data-table.bridges-cards .col-check input[type="checkbox"]:checked::after {
+.data-table.card-rows .col-check input[type="checkbox"]:checked::after {
     content: '\f00c'; font-family: 'Font Awesome 6 Free'; font-weight: 900;
     color: white; font-size: 10px; position: absolute; top: 50%; left: 50%;
     transform: translate(-50%, -50%);
 }
 
-.night-mode .data-table.bridges-cards thead th { background: #1e2a2f; border-color: #2f3e45; color: #8aa4ac; }
-.night-mode .data-table.bridges-cards tbody tr td { background: #232e34; border-color: #2f3e45; }
-.night-mode .data-table.bridges-cards tbody tr:hover td { background: #2a3a40; border-color: #3a4b53; }
-.night-mode .data-table.bridges-cards .col-check input[type="checkbox"] {
+.night-mode .data-table.card-rows thead th { background: #1e2a2f; border-color: #2f3e45; color: #8aa4ac; }
+.night-mode .data-table.card-rows tbody tr td { background: #232e34; border-color: #2f3e45; }
+.night-mode .data-table.card-rows tbody tr:hover td { background: #2a3a40; border-color: #3a4b53; }
+.night-mode .data-table.card-rows .col-check input[type="checkbox"] {
     background: #232e34; border-color: #3a4b53;
 }
 
@@ -856,7 +839,7 @@ body {
     box-shadow: 0 4px 20px rgba(91, 140, 138, 0.3) !important;
 }
 
-.night-mode .export-card, .night-mode .export-panel, .night-mode .activity-panel,
+.night-mode .export-card, .night-mode .activity-panel,
 .night-mode .progress-card, .night-mode .toast {
     background: #232e34;
     border-color: #2f3e45;
@@ -878,7 +861,6 @@ body {
 }
 .night-mode .option-group { background: #1e2a2f; border-color: #2f3e45; }
 .night-mode .option-group h3 { color: #d4dfe3; }
-.night-mode .data-table-wrap { border-color: #2f3e45; }
 .night-mode .data-table thead tr { background: #1e2a2f; }
 .night-mode .data-table th { color: #8aa4ac; border-color: #2f3e45; }
 .night-mode .data-table td { color: #c5d3d9; border-color: #2a3a40; }
@@ -899,12 +881,6 @@ body {
 .night-mode .export-action-bar .selection-info { color: #8aa4ac; }
 .night-mode .export-action-bar .selection-info strong { color: #d4dfe3; }
 .night-mode .panel-header { border-color: #2f3e45; }
-.night-mode .data-table .status-badge.active { background: #1e3a3e; color: #8ab4b0; }
-.night-mode .data-table .status-badge.monitoring { background: #3a3020; color: #e8a87c; }
-.night-mode .data-table .status-badge.closed { background: #2a3a40; color: #9ab0b8; }
-.night-mode .data-table .status-badge.completed { background: #1e3a3e; color: #8ab4b0; }
-.night-mode .data-table .status-badge.pending { background: #3a3020; color: #e8a87c; }
-.night-mode .data-table .status-badge.draft { background: #2a3a40; color: #9ab0b8; }
 
 
 
@@ -970,9 +946,7 @@ html.night-mode .glass-scrollbar .thumb {
 }
 
 
-.night-mode .data-table { background: #232e34; }
-.night-mode .data-table tbody tr { background: #232e34; }
-.night-mode .data-table td { color: #c5d3d9; border-color: #2a3a40; background: #232e34; }
+.night-mode .data-table td { color: #c5d3d9; border-color: #2a3a40; }
 
 
 
