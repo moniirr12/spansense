@@ -7,6 +7,14 @@ function openModal(isEditMode = false, preferredState = null) {
         return;
     }
 
+    // Defect-nav arrows only ever apply to editing an existing "defect"
+    // segment entry (see openDefectEditModal, which re-shows this via
+    // updateDefectNavControl() after this function returns) - default to
+    // hidden here so Add mode and No Defects/Not Inspected edits never
+    // carry over a stale control from whatever was open before.
+    const navControl = document.getElementById('defectNavControl');
+    if (navControl) navControl.style.display = 'none';
+
     const modalTitle = document.getElementById('modalTitle');
     if (modalTitle) {
         let mainRow = null;
@@ -929,6 +937,140 @@ function findAllExpandableRows(mainRow) {
   return expandableRows;
 }
 
+// "1.2"/"0.0"/"0.1" code for an expandable-row - same parsing openDefectEditModal
+// uses to tell a real defect apart from a "No Defects"/"Not Inspected" entry.
+function getDefectCodeForRow(row) {
+  const addDefectEl = row.querySelector(".addDefect");
+  if (!addDefectEl) return '';
+  let defectCombined = addDefectEl.dataset.code || '';
+  if (!defectCombined) {
+    const addDefectHTML = addDefectEl.innerHTML || '';
+    if (addDefectHTML.includes('No Defects') || addDefectHTML.includes('fa-check-circle')) {
+      defectCombined = '0.0';
+    } else if (addDefectHTML.includes('Not Inspected') || addDefectHTML.includes('fa-ban')) {
+      defectCombined = '0.1';
+    } else {
+      defectCombined = addDefectEl.textContent.trim();
+    }
+  }
+  return defectCombined;
+}
+
+// Rows the defect-nav header arrows can step through: real defects only
+// (skips "No Defects"/"Not Inspected" entries, which don't open this modal
+// at all - see openDefectEditModal - and skips prior-inspection "retrieved-
+// defect" rows, which are read-only reference rows, not editable defects).
+function getNavigableDefectRows(mainRow) {
+  return findAllExpandableRows(mainRow).filter(row => {
+    if (row.classList.contains("retrieved-defect")) return false;
+    const code = getDefectCodeForRow(row);
+    return code !== '0.0' && code !== '0.1';
+  });
+}
+
+// Shows/hides the header's "Defect X of N" prev/next control based on how
+// many navigable defects the current row's element (currentRow) has - only
+// worth showing when there's more than one to step between.
+function updateDefectNavControl() {
+  const navControl = document.getElementById('defectNavControl');
+  if (!navControl) return;
+  if (!currentRow || !currentExpandableRow) {
+    navControl.style.display = 'none';
+    return;
+  }
+  const navRows = getNavigableDefectRows(currentRow);
+  const idx = navRows.indexOf(currentExpandableRow);
+  if (idx === -1 || navRows.length <= 1) {
+    navControl.style.display = 'none';
+    return;
+  }
+  navControl.style.display = 'flex';
+  document.getElementById('defectNavCount').textContent = `Defect ${idx + 1} of ${navRows.length}`;
+  document.getElementById('defectNavPrev').disabled = idx === 0;
+  document.getElementById('defectNavNext').disabled = idx === navRows.length - 1;
+}
+
+// Loads one expandable-row's defect (or "No Defects"/"Not Inspected" entry)
+// into the modal for editing - shared by the table click handler and by the
+// header's prev/next defect-nav arrows, so navigating between defects on
+// the same element goes through the exact same population logic as clicking
+// a row directly.
+function openDefectEditModal(expandableRow) {
+    if (!expandableRow || expandableRow.classList.contains("retrieved-defect")) {
+        return;
+    }
+    currentRow = findMainRow(expandableRow);
+    currentExpandableRow = expandableRow;
+    const defectCombined = getDefectCodeForRow(expandableRow);
+    const parts = defectCombined.split('.');
+    const defectType = parts[0] || '1';
+    const defectNumber = parts[1] || '1';
+    const worksText = expandableRow.querySelector(".addWorks").textContent.trim();
+    const worksValue = worksText === 'Yes' || worksText === 'Y' ? 'Y' : worksText === 'Monitor' || worksText === 'M' ? 'M' : 'N';
+    const editDefectCode = `${defectType}.${defectNumber}`;
+    let editSegmentState = 'defect';
+    let editSegmentComment = expandableRow.querySelector(".addComment")?.textContent || '';
+    if (editDefectCode === '0.0') editSegmentState = 'no-defects';
+    else if (editDefectCode === '0.1') editSegmentState = 'not-inspected';
+    if (editSegmentState === 'defect') {
+        document.getElementById("defectType").value = defectType;
+        document.getElementById("defectType").dispatchEvent(new Event('change', { bubbles: true }));
+        document.getElementById("defectNumber").value = defectNumber;
+        // updateDefectNumbers() (run by the change event just above)
+        // rebuilds the number options for the new type and renders
+        // its dropdown against whatever was selected at that point
+        // (the first option) — re-render now that the real number
+        // for this defect has been set directly.
+        if (typeof renderCustomSelect === 'function') {
+            renderCustomSelect('defectNumber', 'defectNumberLabel', 'defectNumberPanel', 'defectNumberDropdown');
+        }
+        document.getElementById("severity").value = expandableRow.querySelector(".addSeverity").textContent;
+        document.getElementById("extent").value = expandableRow.querySelector(".addExtent").textContent;
+        document.getElementById("works").value = worksValue;
+        document.getElementById("priority").value = expandableRow.querySelector(".addPriority").textContent;
+        document.getElementById("cost").value = expandableRow.querySelector(".addCost").textContent;
+        document.getElementById("comment").value = expandableRow.querySelector(".addComment").textContent;
+        document.getElementById("remedialWorks").value = expandableRow.querySelector(".addRemedialWorks")?.textContent || '';
+    } else {
+        document.getElementById("severity").value = '1';
+        document.getElementById("extent").value = 'A';
+        document.getElementById("works").value = 'N';
+        document.getElementById("comment").value = editSegmentComment;
+        document.getElementById("priority").value = '';
+        document.getElementById("cost").value = '';
+        document.getElementById("remedialWorks").value = '';
+    }
+    document.getElementById("modalTitle").textContent = "Edit Defect";
+    // No Defects / Not Inspected only ever need a comment, so editing
+    // one reuses the same inline quick-confirm box as creating one,
+    // instead of opening the full modal just to tweak a comment.
+    if (editSegmentState === 'no-defects' || editSegmentState === 'not-inspected') {
+        const buttonRow = addButtonRowForMainRow(currentRow);
+        const box = buttonRow?.querySelector('.quick-confirm-box');
+        if (box) {
+            box.dataset.pendingStatus = editSegmentState;
+            box.dataset.editingTimestamp = expandableRow.dataset.timestamp;
+            const textarea = box.querySelector('.quick-confirm-comment');
+            textarea.value = editSegmentComment;
+            textarea.style.height = '';
+            textarea.style.height = textarea.scrollHeight + 'px';
+            const confirmBtn = box.querySelector('.quick-confirm-confirm');
+            confirmBtn.classList.remove('confirm-green', 'confirm-orange');
+            confirmBtn.classList.add(editSegmentState === 'no-defects' ? 'confirm-green' : 'confirm-orange');
+            box.style.display = 'block';
+            textarea.focus();
+            return;
+        }
+    }
+    if (editSegmentState === 'no-defects') {
+        document.getElementById("of-no-defects-comment").value = editSegmentComment;
+    } else if (editSegmentState === 'not-inspected') {
+        document.getElementById("of-not-inspected-comment").value = editSegmentComment;
+    }
+    openModal(true, editSegmentState);
+    updateDefectNavControl();
+}
+
 function findButtonRow(mainRow) {
   let sibling = mainRow.nextElementSibling;
   while (sibling && !sibling.classList.contains("main-row")) {
@@ -1355,97 +1497,23 @@ document.addEventListener("DOMContentLoaded", function () {
                          target.closest("button[title='Delete']") ||
                          target.closest("button[title='Copy']");
       if (onExpandableRow && !isExcluded) {
-          const expandableRow = onExpandableRow;
-          if (expandableRow && expandableRow.classList.contains("retrieved-defect")) {
-              return;
-          }
-          if (expandableRow) {
-              currentRow = findMainRow(expandableRow);
-              currentExpandableRow = expandableRow;
-              const addDefectEl = expandableRow.querySelector(".addDefect");
-              let defectCombined = '';
-              if (addDefectEl) {
-                  defectCombined = addDefectEl.dataset.code || '';
-                  if (!defectCombined) {
-                      const addDefectHTML = addDefectEl.innerHTML || '';
-                      if (addDefectHTML.includes('No Defects') || addDefectHTML.includes('fa-check-circle')) {
-                          defectCombined = '0.0';
-                      } else if (addDefectHTML.includes('Not Inspected') || addDefectHTML.includes('fa-ban')) {
-                          defectCombined = '0.1';
-                      } else {
-                          defectCombined = addDefectEl.textContent.trim();
-                      }
-                  }
-              }
-              const parts = defectCombined.split('.');
-              const defectType = parts[0] || '1';
-              const defectNumber = parts[1] || '1';
-              const worksText = expandableRow.querySelector(".addWorks").textContent.trim();
-              const worksValue = worksText === 'Yes' || worksText === 'Y' ? 'Y' : worksText === 'Monitor' || worksText === 'M' ? 'M' : 'N';
-              const editDefectCode = `${defectType}.${defectNumber}`;
-              let editSegmentState = 'defect';
-              let editSegmentComment = expandableRow.querySelector(".addComment")?.textContent || '';
-              if (editDefectCode === '0.0') editSegmentState = 'no-defects';
-              else if (editDefectCode === '0.1') editSegmentState = 'not-inspected';
-              if (editSegmentState === 'defect') {
-                  document.getElementById("defectType").value = defectType;
-                  document.getElementById("defectType").dispatchEvent(new Event('change', { bubbles: true }));
-                  document.getElementById("defectNumber").value = defectNumber;
-                  // updateDefectNumbers() (run by the change event just above)
-                  // rebuilds the number options for the new type and renders
-                  // its dropdown against whatever was selected at that point
-                  // (the first option) — re-render now that the real number
-                  // for this defect has been set directly.
-                  if (typeof renderCustomSelect === 'function') {
-                      renderCustomSelect('defectNumber', 'defectNumberLabel', 'defectNumberPanel', 'defectNumberDropdown');
-                  }
-                  document.getElementById("severity").value = expandableRow.querySelector(".addSeverity").textContent;
-                  document.getElementById("extent").value = expandableRow.querySelector(".addExtent").textContent;
-                  document.getElementById("works").value = worksValue;
-                  document.getElementById("priority").value = expandableRow.querySelector(".addPriority").textContent;
-                  document.getElementById("cost").value = expandableRow.querySelector(".addCost").textContent;
-                  document.getElementById("comment").value = expandableRow.querySelector(".addComment").textContent;
-                  document.getElementById("remedialWorks").value = expandableRow.querySelector(".addRemedialWorks")?.textContent || '';
-              } else {
-                  document.getElementById("severity").value = '1';
-                  document.getElementById("extent").value = 'A';
-                  document.getElementById("works").value = 'N';
-                  document.getElementById("comment").value = editSegmentComment;
-                  document.getElementById("priority").value = '';
-                  document.getElementById("cost").value = '';
-                  document.getElementById("remedialWorks").value = '';
-              }
-              document.getElementById("modalTitle").textContent = "Edit Defect";
-              // No Defects / Not Inspected only ever need a comment, so editing
-              // one reuses the same inline quick-confirm box as creating one,
-              // instead of opening the full modal just to tweak a comment.
-              if (editSegmentState === 'no-defects' || editSegmentState === 'not-inspected') {
-                  const buttonRow = addButtonRowForMainRow(currentRow);
-                  const box = buttonRow?.querySelector('.quick-confirm-box');
-                  if (box) {
-                      box.dataset.pendingStatus = editSegmentState;
-                      box.dataset.editingTimestamp = expandableRow.dataset.timestamp;
-                      const textarea = box.querySelector('.quick-confirm-comment');
-                      textarea.value = editSegmentComment;
-                      textarea.style.height = '';
-                      textarea.style.height = textarea.scrollHeight + 'px';
-                      const confirmBtn = box.querySelector('.quick-confirm-confirm');
-                      confirmBtn.classList.remove('confirm-green', 'confirm-orange');
-                      confirmBtn.classList.add(editSegmentState === 'no-defects' ? 'confirm-green' : 'confirm-orange');
-                      box.style.display = 'block';
-                      textarea.focus();
-                      return;
-                  }
-              }
-              if (editSegmentState === 'no-defects') {
-                  document.getElementById("of-no-defects-comment").value = editSegmentComment;
-              } else if (editSegmentState === 'not-inspected') {
-                  document.getElementById("of-not-inspected-comment").value = editSegmentComment;
-              }
-              openModal(true, editSegmentState);
-          }
+          openDefectEditModal(onExpandableRow);
       }
   });
+
+  document.getElementById('defectNavPrev')?.addEventListener('click', function() {
+      if (!currentRow || !currentExpandableRow) return;
+      const navRows = getNavigableDefectRows(currentRow);
+      const idx = navRows.indexOf(currentExpandableRow);
+      if (idx > 0) openDefectEditModal(navRows[idx - 1]);
+  });
+  document.getElementById('defectNavNext')?.addEventListener('click', function() {
+      if (!currentRow || !currentExpandableRow) return;
+      const navRows = getNavigableDefectRows(currentRow);
+      const idx = navRows.indexOf(currentExpandableRow);
+      if (idx < navRows.length - 1) openDefectEditModal(navRows[idx + 1]);
+  });
+
   document.getElementById("inspectionElementsTable").addEventListener("click", async function (event) {
     if (event.target.closest("button[title='Delete']")) {
       const confirmed = await showConfirmModal({

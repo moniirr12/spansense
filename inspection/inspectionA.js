@@ -1059,6 +1059,18 @@ window.setModalSegment = function(btn, state) {
         }
     }
 
+    // Defect-nav arrows only apply to the "defect" segment - hide them for
+    // No Defects/Not Inspected, and re-show (if there's more than one
+    // defect on this element) when switching back.
+    if (typeof updateDefectNavControl === 'function') {
+        if (state === 'defect') {
+            updateDefectNavControl();
+        } else {
+            var navControl = document.getElementById('defectNavControl');
+            if (navControl) navControl.style.display = 'none';
+        }
+    }
+
     // Write to BOTH keys so nothing gets out of sync
     var modal = document.getElementById('modal');
     if (modal) {
