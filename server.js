@@ -839,6 +839,34 @@ function computeNextDue(bridge, historyUpToNow, nextInspectionOverride) {
     return { type, date: dueDate };
 }
 
+// Used by the full inspection report's "4.3 Next Inspection" section
+// (test.js) to replace the old flat "24 months" boilerplate with the same
+// GI/PI cycle schedule planning.html and the twinView card use - computed as
+// of the reported inspection's own date/position in the bridge's history,
+// not "today" (so reprinting an old report keeps showing what was due after
+// THAT inspection, not what's due now) - which is also why, unlike
+// /api/twin's "today" usage, this never applies next_inspection_override.
+app.get('/api/inspection/next-due', requireAuth, async (req, res) => {
+    try {
+        const { structure_id, date } = req.query;
+        const bridge = await dbGet('SELECT * FROM bridges WHERE id = $1', [structure_id]);
+        if (!bridge) return res.status(404).json({ error: 'Bridge not found' });
+
+        const historyUpToNow = await dbAll(
+            `SELECT id, inspection_date FROM inspections
+             WHERE structure_id = $1 AND inspection_date <= $2
+             ORDER BY inspection_date ASC, id ASC`,
+            [structure_id, date]
+        );
+
+        const nextDue = computeNextDue(bridge, historyUpToNow, null);
+        if (!nextDue) return res.json({ type: null, date: null });
+        res.json({ type: nextDue.type, date: nextDue.date.toISOString() });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Aggregated data for the twinView 3D digital twin (twin/twin.html + twin.js).
 // 3D geometry (deck width/truss height/panels per span) is NOT here - it's
 // hand-authored per bridge id in twin/bridgeModels.js, not stored in the DB.

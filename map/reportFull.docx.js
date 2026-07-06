@@ -240,6 +240,8 @@ async function buildFullInspectionReportDocx(doc) {
         .then(function(r) { return r.ok ? r.json() : {}; }).catch(function() { return {}; });
     var photosResponse = await fetch(API_BASE + '/api/bridges/' + structureId + '/inspection-photos?inspectionDate=' + encodeURIComponent(inspectionDate))
         .then(function(r) { return r.ok ? r.json() : { success: false, photos: [] }; }).catch(function() { return { success: false, photos: [] }; });
+    var nextDueData = await fetch(API_BASE + '/api/inspection/next-due?structure_id=' + structureId + '&date=' + inspectionDate)
+        .then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; });
 
     var defectsData = inspectionData.defects || [];
     var allPhotos = photosResponse.success ? photosResponse.photos : [];
@@ -485,13 +487,12 @@ async function buildFullInspectionReportDocx(doc) {
 
     children.push(bookmarkedHeading(d, '4.3 Next Inspection', d.HeadingLevel.HEADING_2, 'section4_3'));
     var highSeverity = severityCounts[5] + severityCounts[4];
+    var scheduleLine = (nextDueData && nextDueData.date)
+        ? 'The next inspection (' + nextDueData.type + ') is scheduled for ' + new Date(nextDueData.date).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) + ", in line with this structure's inspection cycle."
+        : 'The next inspection date could not be determined from this structure\'s inspection history.';
     var nextInspText = highSeverity > 0
-        ? 'It is recommended that the next general inspection be carried out within 6 months.\n\nNote: Interim safety inspections should be conducted monthly due to identified severe/critical defects.'
-        : severityCounts[3] > 0
-        ? 'It is recommended that the next general inspection be carried out within 12 months.'
-        : defectsData.length > 0
-        ? 'It is recommended that the next general inspection be carried out within 24 months.'
-        : 'It is recommended that the next general inspection be carried out within 24-36 months.';
+        ? scheduleLine + '\n\nNote: Interim safety inspections should be conducted monthly due to identified severe/critical defects.'
+        : scheduleLine;
     children.push(reportPara(d, nextInspText, { color: highSeverity > 0 ? 'DC2626' : REPORT_COLORS.heading }));
 
     // ── APPENDIX A: PHOTOGRAPHS ──

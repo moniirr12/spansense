@@ -102,7 +102,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    margin-top: 35px;
+    margin-top: 65px;
     z-index: 200;
     opacity: 0;
     transform: translateY(-50px);
@@ -465,7 +465,10 @@ body {
     transition: border-color 0.2s ease, background 0.2s ease;
 }
 
-/* First cell: left border + left radius */
+/* First cell: left border + left radius. padding-left/right must match -
+   the number-circle background centers on the padding-box while the
+   number text centers on the content-box, so any left/right asymmetry
+   here shifts the text off-center from its own circle. */
 #inspectionElementsTable tr.main-row td:first-child {
     border-left: 1px solid #e9edf2;
     border-top-left-radius: 30px;
@@ -473,6 +476,7 @@ body {
     width: 60px;
     text-align: center;
     padding-left: 18px;
+    padding-right: 18px;
 }
 
 /* Last cell: right border + right radius */
@@ -771,7 +775,13 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    transition: all 0.2s;
+    /* Only hover feedback animates - explicitly excludes padding/border-
+       radius/flex-direction (which the bulky<->contracted row-density
+       toggle also changes via body.contracted-rows) so switching density
+       snaps those cleanly instead of interpolating them out of sync with
+       non-animatable properties like flex-direction, which was causing
+       buttons/badges to visibly overflow their card mid-"transition". */
+    transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 #inspectionElementsTable tr.expandable-row .badge:hover {
     border-color: #5b8c8a;
@@ -875,7 +885,13 @@ body {
     font-weight: 500;
     cursor: pointer;
     border: none;
-    transition: all 0.2s;
+    /* Excludes width/padding/border-radius - the contracted-rows override
+       below changes those from "full width, pill-shaped" to "32px square
+       icon", and letting those animate out of step with grid-buttons'
+       non-animatable flex-direction switch (column -> row) is what made
+       buttons visibly spill outside the card while the density toggle
+       "transitioned". */
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.2s;
     font-family: inherit;
     text-align: center;
     width: 100%;
@@ -888,6 +904,14 @@ body {
 #inspectionElementsTable tr.expandable-row .grid-buttons .btn-photo:hover {
     background: #e9ecef;
     color: #4a5b6e;
+}
+/* .btn-edit is (despite the name) the "Copy" button - title="Copy", copy
+   icon, and its click handler only ever does anything on a .retrieved-defect
+   row (copies a prior inspection's comparison row into a new editable
+   defect on this one) - so it has no function at all on this inspection's
+   own already-editable rows and shouldn't show there. */
+#inspectionElementsTable tr.expandable-row:not(.retrieved-defect) .grid-buttons .btn-edit {
+    display: none;
 }
 #inspectionElementsTable tr.expandable-row .grid-buttons .btn-edit {
     background: #5b8c8a;
@@ -977,10 +1001,14 @@ body {
 }
 /* Edit doesn't apply to retrieved (historical) rows — copy first to get an
    editable version. Copy, in turn, only makes sense on retrieved rows. */
-#inspectionElementsTable tr.retrieved-defect button[title='Edit'] {
-    display: none;
-}
-#inspectionElementsTable tr.expandable-row:not(.retrieved-defect) button[title='Copy'] {
+/* .grid-buttons added to both selectors below (matching the .btn-edit hide
+   rule above) purely for specificity: body.contracted-rows ... .grid-buttons
+   button sets display:flex on every button unconditionally, and without
+   that extra class these two rules had fewer class-selectors than that
+   override and silently lost to it - the Edit/Copy buttons would reappear
+   on rows they don't apply to as soon as contracted (compact row) mode was
+   turned on. */
+#inspectionElementsTable tr.retrieved-defect .grid-buttons button[title='Edit'] {
     display: none;
 }
 
@@ -3741,32 +3769,18 @@ body.contracted-rows #inspectionElementsTable tr.expandable-row .aligned-grid {
     box-shadow: 0 1px 4px rgba(0,0,0,0.03);
 }
 
-/* 2. Badges — horizontal inline strip */
+/* 2. Badges — same fixed square size and same internal column arrangement
+   (label on top, value below) as bulky mode; only the pair's own layout
+   changes, from stacked (severity above extent) to side-by-side (severity
+   left, extent right), so contracted rows don't spend as much vertical
+   space on them. */
 body.contracted-rows #inspectionElementsTable tr.expandable-row .grid-badges {
     flex-direction: row;
-    gap: 6px;
-    min-width: 0;
+    /* Row-direction flex children stretch to fill the container's height
+       by default - center (rather than stretch) keeps them at their
+       square 70x70 size and centers the pair within the (often taller)
+       content column next to them. */
     align-items: center;
-}
-
-body.contracted-rows #inspectionElementsTable tr.expandable-row .badge {
-    flex-direction: row;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 16px;
-    min-width: 0;
-    min-height: 40px;
-    border-radius: 10px;
-    border-width: 2px;
-}
-
-body.contracted-rows #inspectionElementsTable tr.expandable-row .badge .badge-label {
-    font-size: 0.6rem;
-    margin-bottom: 0;
-}
-
-body.contracted-rows #inspectionElementsTable tr.expandable-row .badge .badge-value {
-    font-size: 1.4rem;
 }
 
 /* 3. Content rows — tighter spacing */
@@ -3921,10 +3935,12 @@ body.night-mode.contracted-rows #inspectionElementsTable tr.expandable-row .prim
     background: #5b8c8a;
 }
 
-body.night-mode.contracted-rows #inspectionElementsTable tr.expandable-row .primary-tag.filled .dot,
+body.night-mode.contracted-rows #inspectionElementsTable tr.expandable-row .primary-tag.filled .dot {
+    background: white;
+}
+
 body.night-mode.contracted-rows #inspectionElementsTable tr.expandable-row .primary-tag.filled span {
     color: white;
-    background: white;
 }
 
 body.night-mode.contracted-rows #inspectionElementsTable tr.expandable-row .grid-buttons .btn-photo,
@@ -4127,6 +4143,45 @@ body.night-mode.contracted-rows #inspectionElementsTable tr.expandable-row .grid
     flex-shrink: 0;
 }
 .night-mode .prev-loaded-badge { background: #1e3a35; border-color: #3a6b60; color: #8ab4b0; }
+
+/* ============================================
+   DEFECT NAVIGATION (prev/next across multiple
+   defects on the same element, in modal header)
+   ============================================ */
+.defect-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #eef4f2;
+    border-radius: 20px;
+    padding: 4px;
+    flex-shrink: 0;
+}
+.defect-nav-arrow {
+    width: 26px; height: 26px; border-radius: 50%;
+    border: none; background: white; color: #5b8c8a;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    transition: transform 0.12s ease;
+}
+.defect-nav-arrow:hover:not(:disabled) { transform: scale(1.08); }
+.defect-nav-arrow:disabled { opacity: 0.35; cursor: not-allowed; }
+.defect-nav-count { font-size: 0.72rem; font-weight: 700; color: #5b8c8a; padding: 0 4px; white-space: nowrap; }
+.defect-nav-divider { width: 1px; height: 18px; background: #cfe3e1; margin: 0 2px; }
+.defect-nav-add {
+    width: 26px; height: 26px; border-radius: 50%;
+    border: none; background: #5b8c8a; color: white;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 0.7rem;
+    transition: transform 0.12s ease;
+}
+.defect-nav-add:hover { transform: scale(1.08); }
+
+.night-mode .defect-nav { background: #1e3a35; }
+.night-mode .defect-nav-arrow { background: #2a4a46; color: #8ab4b0; }
+.night-mode .defect-nav-count { color: #8ab4b0; }
+.night-mode .defect-nav-divider { background: #3a6b60; }
 
 /* Panel itself — fixed, floats left of centered modal */
 .prev-defects-panel {
