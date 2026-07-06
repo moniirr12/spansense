@@ -118,6 +118,21 @@ function renderSparkline(elId, inspections, key, bandClass) {
         '</svg>';
 }
 
+// One-line "since last <TYPE>" readout under each tile's sparkline - same
+// current/previous pair renderBciTrend already compares, just phrased
+// against the previous inspection's type instead of its raw score.
+function renderTileDelta(elId, current, previous, prevType) {
+    var el = document.getElementById(elId);
+    if (current == null || previous == null) { el.textContent = ''; el.className = 'bci-delta'; return; }
+
+    var delta = Math.round(current) - Math.round(previous);
+    var dir = delta > 0 ? 'up' : (delta < 0 ? 'down' : 'flat');
+    var arrow = delta > 0 ? '▲' : (delta < 0 ? '▼' : '—');
+    var since = prevType ? 'since last ' + prevType : 'since previous inspection';
+    el.className = 'bci-delta ' + dir;
+    el.textContent = arrow + ' ' + Math.abs(delta) + ' pts ' + since;
+}
+
 // Dedicated "BCI trend" card: both BCI avg and BCI crit plotted against every
 // inspection on record (not just the previous one - see renderBciTrend above
 // for that flat delta). The two series get fixed identity colours (avg =
@@ -347,6 +362,8 @@ async function selectBridge(bridgeId, inspectionId) {
 
         renderSparkline('sparkAvg', bridge.inspections, 'bciAvg', 'spark-' + avgClass);
         renderSparkline('sparkCrit', bridge.inspections, 'bciCrit', 'spark-' + critClass);
+        renderTileDelta('deltaAvg', bridge.bciAvg, bridge.prevBciAvg, bridge.prevInspectionType);
+        renderTileDelta('deltaCrit', bridge.bciCrit, bridge.prevBciCrit, bridge.prevInspectionType);
         renderBciTrendChart(bridge.inspections || []);
 
         document.getElementById('factSpan').textContent = bridge.spanLength ? (bridge.spanLength * bridge.spans).toFixed(1) + ' m' : '—';

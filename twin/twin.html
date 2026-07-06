@@ -453,6 +453,14 @@ body {
 .night-mode .spark-fair { color: #e8a87c; }
 .night-mode .spark-critical { color: #ef5b5b; }
 
+.bci-delta { font-size: 0.68rem; margin-top: 6px; font-weight: 600; }
+.bci-delta.down { color: #dc2626; }
+.bci-delta.up { color: #2d7a6e; }
+.bci-delta.flat { color: #8a9ba8; }
+.night-mode .bci-delta.down { color: #ef5b5b; }
+.night-mode .bci-delta.up { color: #8ab4b0; }
+.night-mode .bci-delta.flat { color: #8aa4ac; }
+
 /* ---------- BCI TREND CARD ---------- */
 .trend-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
 .trend-sub { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 0.7rem; color: #8a9ba8; flex-shrink: 0; }
@@ -829,6 +837,11 @@ body.night-mode .glass-scrollbar .thumb {
 .night-mode .live-twin-selector .lts-name { color: #d4dfe3; }
 .night-mode .live-twin-selector .lts-icon {
     background: linear-gradient(135deg, #2f4a48, #1e3a38);
+    color: #8ab4b0;
+}
+.night-mode .dd-item .dd-icon {
+    background: linear-gradient(135deg, #2f4a48, #1e3a38);
+    color: #8ab4b0;
 }
 .night-mode .dropdown-menu {
     background: #232e34;
@@ -928,11 +941,13 @@ body.night-mode .glass-scrollbar .thumb {
                         <div class="bci-label">BCI avg</div>
                         <div class="bci-value" id="bciAvg">—</div>
                         <div class="spark-row" id="sparkAvg"></div>
+                        <div class="bci-delta" id="deltaAvg"></div>
                     </div>
                     <div class="bci-tile critical" id="bciCritTile">
                         <div class="bci-label">BCI crit</div>
                         <div class="bci-value" id="bciCrit">—</div>
                         <div class="spark-row" id="sparkCrit"></div>
+                        <div class="bci-delta" id="deltaCrit"></div>
                     </div>
                 </div>
             </div>

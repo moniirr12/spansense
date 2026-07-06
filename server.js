@@ -995,6 +995,7 @@ app.get('/api/twin/:structureId', requireAuth, async (req, res) => {
             bciCrit,
             prevBciAvg,
             prevBciCrit,
+            prevInspectionType: previousInspection?.inspection_type || null,
             bciCritLocation: critSpan ? `span ${critSpan.span_number}` : null,
             spanBCI,
             defects,
