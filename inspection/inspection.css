@@ -4152,10 +4152,20 @@ body.night-mode.contracted-rows #inspectionElementsTable tr.expandable-row .grid
 .defect-nav-arrow:hover:not(:disabled) { transform: scale(1.08); }
 .defect-nav-arrow:disabled { opacity: 0.35; cursor: not-allowed; }
 .defect-nav-count { font-size: 0.72rem; font-weight: 700; color: #5b8c8a; padding: 0 4px; white-space: nowrap; }
+.defect-nav-divider { width: 1px; height: 18px; background: #cfe3e1; margin: 0 2px; }
+.defect-nav-add {
+    width: 26px; height: 26px; border-radius: 50%;
+    border: none; background: #5b8c8a; color: white;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 0.7rem;
+    transition: transform 0.12s ease;
+}
+.defect-nav-add:hover { transform: scale(1.08); }
 
 .night-mode .defect-nav { background: #1e3a35; }
 .night-mode .defect-nav-arrow { background: #2a4a46; color: #8ab4b0; }
 .night-mode .defect-nav-count { color: #8ab4b0; }
+.night-mode .defect-nav-divider { background: #3a6b60; }
 
 /* Panel itself — fixed, floats left of centered modal */
 .prev-defects-panel {

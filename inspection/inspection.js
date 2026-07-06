@@ -478,7 +478,13 @@ function quickRecordElement(buttonRow, status, comment, existingRow) {
   saveChanges();
 }
 
-function saveChanges() {
+// Does everything saveChanges() used to do EXCEPT close the modal - pulled
+// out so the defect-nav prev/next/add arrows can silently commit whatever's
+// currently in the form before swapping to a different defect (previously
+// navigating away just discarded in-progress edits). Returns false (and
+// leaves the modal open, same alert as a manual Save) when the form is
+// invalid, so navigation never silently commits or silently drops bad data.
+function persistCurrentDefectForm() {
   console.group("===== SAVING DEFECT DATA =====");
   const structureId = sessionStorage.getItem('structureId');
   const inspectionDate = sessionStorage.getItem('inspectionDate');
@@ -487,7 +493,7 @@ function saveChanges() {
     console.error("No span selected - aborting save");
     showAlertModal("No span selected! Please select a span first.");
     console.groupEnd();
-    return;
+    return false;
   }
   const sevVal = document.getElementById('severity')?.value;
   const extVal = document.getElementById('extent')?.value;
@@ -495,7 +501,7 @@ function saveChanges() {
   if (!isValidCombo) {
     showAlertModal('Invalid Severity/Extent combination. Only 1A or 2-5 with B-E are valid.');
     console.groupEnd();
-    return;
+    return false;
   }
   let mainRow = null;
   if (currentExpandableRow?.classList?.contains("expandable-row")) {
@@ -518,7 +524,7 @@ function saveChanges() {
     console.error("CRITICAL: No valid main row found");
     showAlertModal("System error: Could not determine element location. Please refresh the page and try again.");
     console.groupEnd();
-    return;
+    return false;
   }
   const elementNumber = mainRow.dataset.rowId;
   console.log("Using main row:", { elementNumber });
@@ -622,7 +628,7 @@ function saveChanges() {
       console.error("Original defect not found in storage");
       showAlertModal("Error: Could not find original defect data.");
       console.groupEnd();
-      return;
+      return false;
     }
   } else {
     defects.push(defectData);
@@ -720,9 +726,15 @@ function saveChanges() {
   console.log("BCI refresh result:", result);
   inspectionData = JSON.parse(sessionStorage.getItem('inspectionData') || '{}');
   updateMainRow(mainRow);
-  closeModal();
   console.log("===== SAVE COMPLETE =====");
   console.groupEnd();
+  return true;
+}
+
+function saveChanges() {
+  if (persistCurrentDefectForm()) {
+    closeModal();
+  }
 }
 
 window.closeModal = closeModal;
@@ -968,26 +980,58 @@ function getNavigableDefectRows(mainRow) {
   });
 }
 
-// Shows/hides the header's "Defect X of N" prev/next control based on how
-// many navigable defects the current row's element (currentRow) has - only
-// worth showing when there's more than one to step between.
+// Shows/updates the header's "Defect X of N" prev/next/add control. Visible
+// any time the modal is editing/adding a defect for a known element
+// (currentRow set) - not just when there are 2+ to step between, since the
+// "+" (add another defect here) is useful even for an element with only one
+// (or zero) defects recorded so far.
 function updateDefectNavControl() {
   const navControl = document.getElementById('defectNavControl');
   if (!navControl) return;
-  if (!currentRow || !currentExpandableRow) {
+  if (!currentRow) {
     navControl.style.display = 'none';
     return;
   }
   const navRows = getNavigableDefectRows(currentRow);
-  const idx = navRows.indexOf(currentExpandableRow);
-  if (idx === -1 || navRows.length <= 1) {
-    navControl.style.display = 'none';
-    return;
-  }
+  const idx = currentExpandableRow ? navRows.indexOf(currentExpandableRow) : -1;
   navControl.style.display = 'flex';
-  document.getElementById('defectNavCount').textContent = `Defect ${idx + 1} of ${navRows.length}`;
-  document.getElementById('defectNavPrev').disabled = idx === 0;
-  document.getElementById('defectNavNext').disabled = idx === navRows.length - 1;
+  const countEl = document.getElementById('defectNavCount');
+  const prevBtn = document.getElementById('defectNavPrev');
+  const nextBtn = document.getElementById('defectNavNext');
+  if (idx !== -1) {
+    countEl.textContent = `Defect ${idx + 1} of ${navRows.length}`;
+    prevBtn.disabled = idx === 0;
+    nextBtn.disabled = idx === navRows.length - 1;
+  } else {
+    // Composing a new, not-yet-saved defect on this element (opened via the
+    // "+" button) - Prev can still abandon it and jump back to the last
+    // real defect, but there's nothing "after" a new entry to Next into.
+    countEl.textContent = 'New defect';
+    prevBtn.disabled = navRows.length === 0;
+    nextBtn.disabled = true;
+  }
+}
+
+// Blanks the defect form back to its default "Add Defect" state. Pulled out
+// of the original .btn-add-defect handler so the header's "+" (add another
+// defect on this element) button can reuse it too - openModal() alone can't
+// do this itself: with no preferredState and isEditMode=false it always
+// resolves targetState to 'defect' before reaching the branch that resets
+// field values, so that branch never actually runs from these call sites.
+function resetDefectFormFields() {
+    document.getElementById("defectType").value = "1";
+    // Trigger change so updateDefectNumbers() rebuilds the number dropdown for type 1.
+    document.getElementById("defectType").dispatchEvent(new Event('change', { bubbles: true }));
+    document.getElementById("defectNumber").value = "1";
+    document.getElementById("severity").value = "1";
+    document.getElementById("extent").value = "A";
+    document.getElementById("works").value = "N";
+    document.getElementById("priority").value = "";
+    document.getElementById("cost").value = "";
+    document.getElementById("comment").value = "";
+    document.getElementById("remedialWorks").value = "";
+    document.getElementById("of-no-defects-comment").value = "";
+    document.getElementById("of-not-inspected-comment").value = "";
 }
 
 // Loads one expandable-row's defect (or "No Defects"/"Not Inspected" entry)
@@ -1420,21 +1464,10 @@ document.addEventListener("DOMContentLoaded", function () {
       if (buttonRow) {
         currentRow = findMainRow(buttonRow);
         currentExpandableRow = null;
-        document.getElementById("defectType").value = "1";
-        // FIX #1: Trigger change event to populate defectNumber dropdown
-        document.getElementById("defectType").dispatchEvent(new Event('change', { bubbles: true }));
-        document.getElementById("defectNumber").value = "1";
-        document.getElementById("severity").value = "1";
-        document.getElementById("extent").value = "A";
-        document.getElementById("works").value = "N";
-        document.getElementById("priority").value = "";
-        document.getElementById("cost").value = "";
-        document.getElementById("comment").value = "";
-        document.getElementById("remedialWorks").value = "";
-        document.getElementById("of-no-defects-comment").value = "";
-        document.getElementById("of-not-inspected-comment").value = "";
+        resetDefectFormFields();
         document.getElementById("modalTitle").textContent = "Add Defect";
         openModal();
+        updateDefectNavControl();
       }
     }
   });
@@ -1502,16 +1535,40 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   document.getElementById('defectNavPrev')?.addEventListener('click', function() {
-      if (!currentRow || !currentExpandableRow) return;
+      if (!currentRow) return;
       const navRows = getNavigableDefectRows(currentRow);
+      if (!navRows.length) return;
+      if (!currentExpandableRow) {
+          // Composing a new, unsaved defect - abandon it (nothing to lose,
+          // it was never saved) and jump straight to the last real one.
+          openDefectEditModal(navRows[navRows.length - 1]);
+          return;
+      }
       const idx = navRows.indexOf(currentExpandableRow);
-      if (idx > 0) openDefectEditModal(navRows[idx - 1]);
+      if (idx > 0) {
+          if (!persistCurrentDefectForm()) return;
+          openDefectEditModal(navRows[idx - 1]);
+      }
   });
   document.getElementById('defectNavNext')?.addEventListener('click', function() {
       if (!currentRow || !currentExpandableRow) return;
       const navRows = getNavigableDefectRows(currentRow);
       const idx = navRows.indexOf(currentExpandableRow);
-      if (idx < navRows.length - 1) openDefectEditModal(navRows[idx + 1]);
+      if (idx < navRows.length - 1) {
+          if (!persistCurrentDefectForm()) return;
+          openDefectEditModal(navRows[idx + 1]);
+      }
+  });
+  document.getElementById('defectNavAdd')?.addEventListener('click', function() {
+      if (!currentRow) return;
+      if (currentExpandableRow) {
+          if (!persistCurrentDefectForm()) return;
+      }
+      currentExpandableRow = null;
+      resetDefectFormFields();
+      document.getElementById("modalTitle").textContent = "Add Defect";
+      openModal();
+      updateDefectNavControl();
   });
 
   document.getElementById("inspectionElementsTable").addEventListener("click", async function (event) {
