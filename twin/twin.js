@@ -128,9 +128,9 @@ function renderTileDelta(elId, current, previous, prevType) {
     var delta = Math.round(current) - Math.round(previous);
     var dir = delta > 0 ? 'up' : (delta < 0 ? 'down' : 'flat');
     var arrow = delta > 0 ? '▲' : (delta < 0 ? '▼' : '—');
-    var since = prevType ? 'since last ' + prevType : 'since previous inspection';
+    var since = prevType ? 'vs last ' + prevType : 'vs last insp.';
     el.className = 'bci-delta ' + dir;
-    el.textContent = arrow + ' ' + Math.abs(delta) + ' pts ' + since;
+    el.textContent = arrow + ' ' + Math.abs(delta) + ' ' + since;
 }
 
 // Dedicated "BCI trend" card: both BCI avg and BCI crit plotted against every
@@ -192,14 +192,10 @@ function renderBciTrendChart(inspections) {
     svg += '<text class="trend-axis-label" x="' + (width - 2) + '" y="' + (critY - 3).toFixed(1) + '" font-size="8" text-anchor="end">50</text>';
 
     if (avgPts.length > 1) {
-        svg += '<g class="trend-avg-color"><path d="' + pathFor(avgPts) + '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
-            avgPts.map(function(p) { return '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="3" fill="currentColor"/>'; }).join('') +
-            '</g>';
+        svg += '<g class="trend-avg-color"><path d="' + pathFor(avgPts) + '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>';
     }
     if (critPts.length > 1) {
-        svg += '<g class="trend-crit-color"><path d="' + pathFor(critPts) + '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
-            critPts.map(function(p) { return '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="3" fill="currentColor"/>'; }).join('') +
-            '</g>';
+        svg += '<g class="trend-crit-color"><path d="' + pathFor(critPts) + '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>';
     }
 
     svg += '<line class="trend-crosshair" id="trendCrosshair" x1="0" y1="' + padT + '" x2="0" y2="' + (padT + innerH) + '"/>';

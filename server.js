@@ -1353,9 +1353,12 @@ app.post('/save-inspection', requireAuth, async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        // Compute overall BCI averages from spans
-        const bciCrits = inspection.spans.map(s => parseFloat(s.bciCrit) || 100);
-        const bciAvs   = inspection.spans.map(s => parseFloat(s.bciAv)   || 100);
+        // Compute overall BCI averages from spans. Default to 100 only when a
+        // span's score is genuinely missing (NaN) - `parseFloat(x) || 100`
+        // looks equivalent but silently replaces a real score of 0 (worst
+        // possible BCI) with 100 (perfect), since 0 is falsy in JS.
+        const bciCrits = inspection.spans.map(s => { const v = parseFloat(s.bciCrit); return Number.isNaN(v) ? 100 : v; });
+        const bciAvs   = inspection.spans.map(s => { const v = parseFloat(s.bciAv);   return Number.isNaN(v) ? 100 : v; });
         const overallBciCrit = parseFloat((bciCrits.reduce((a, b) => a + b, 0) / bciCrits.length).toFixed(2));
         const overallBciAve  = parseFloat((bciAvs.reduce((a, b) => a + b, 0) / bciAvs.length).toFixed(2));
         console.log(`[INFO] Overall BCI - Crit: ${overallBciCrit}, Ave: ${overallBciAve}`);
@@ -1529,9 +1532,11 @@ app.put('/update-inspection', requireAuth, async (req, res) => {
             throw new Error("Inspection not found");
         }
 
-        // Compute overall BCI averages from spans
-        const bciCrits = inspection.spans.map(s => parseFloat(s.bciCrit) || 100);
-        const bciAvs   = inspection.spans.map(s => parseFloat(s.bciAv)   || 100);
+        // Compute overall BCI averages from spans. Default to 100 only when a
+        // span's score is genuinely missing (NaN) - see the matching comment
+        // in /save-inspection for why `parseFloat(x) || 100` is wrong here.
+        const bciCrits = inspection.spans.map(s => { const v = parseFloat(s.bciCrit); return Number.isNaN(v) ? 100 : v; });
+        const bciAvs   = inspection.spans.map(s => { const v = parseFloat(s.bciAv);   return Number.isNaN(v) ? 100 : v; });
         const overallBciCrit = parseFloat((bciCrits.reduce((a, b) => a + b, 0) / bciCrits.length).toFixed(2));
         const overallBciAve  = parseFloat((bciAvs.reduce((a, b) => a + b, 0) / bciAvs.length).toFixed(2));
         console.log(`[INFO] Update - Overall BCI - Crit: ${overallBciCrit}, Ave: ${overallBciAve}`);
