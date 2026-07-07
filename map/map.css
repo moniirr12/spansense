@@ -930,6 +930,7 @@ body.modal-open {
     letter-spacing: 0.1em;
     color: #8a9ba8;
 }
+#bridgeModal .stat-label sub { text-transform: none; }
 #bridgeModal .stat-value {
     font-size: 1.05rem;
     font-weight: 700;
@@ -4047,6 +4048,7 @@ body.modal-open {
   font-size: 0.6rem; font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.1em; color: #8a9ba8;
 }
+.ss-stat-lbl sub { text-transform: none; }
 
 .ss-stat-val { font-size: 0.95rem; font-weight: 700; color: #1e2a33; }
 .ss-stat-val .ss-trend { font-size: 0.7rem; font-weight: 600; margin-left: 4px; }

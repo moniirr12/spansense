@@ -424,6 +424,7 @@ body {
     text-transform: uppercase;
     margin-bottom: 4px;
 }
+.bci-tile .bci-label sub { text-transform: none; }
 .bci-tile .bci-value {
     font-size: 2.4rem;
     font-weight: 700;
@@ -948,13 +949,13 @@ body.night-mode .glass-scrollbar .thumb {
                 <div class="ic-eyebrow">Condition</div>
                 <div class="bci-grid">
                     <div class="bci-tile fair" id="bciAvgTile">
-                        <div class="bci-label">BCI avg</div>
+                        <div class="bci-label">BCI<sub>avg</sub></div>
                         <div class="bci-value" id="bciAvg">—</div>
                         <div class="spark-row" id="sparkAvg"></div>
                         <div class="bci-delta" id="deltaAvg"></div>
                     </div>
                     <div class="bci-tile critical" id="bciCritTile">
-                        <div class="bci-label">BCI crit</div>
+                        <div class="bci-label">BCI<sub>crit</sub></div>
                         <div class="bci-value" id="bciCrit">—</div>
                         <div class="spark-row" id="sparkCrit"></div>
                         <div class="bci-delta" id="deltaCrit"></div>
@@ -969,8 +970,8 @@ body.night-mode .glass-scrollbar .thumb {
                 </div>
                 <div class="chart-wrap" id="bciTrendChart"></div>
                 <div class="chart-legend">
-                    <div class="item"><span class="sw trend-avg-color"></span>BCI avg</div>
-                    <div class="item"><span class="sw trend-crit-color"></span>BCI crit</div>
+                    <div class="item"><span class="sw trend-avg-color"></span>BCI<sub>avg</sub></div>
+                    <div class="item"><span class="sw trend-crit-color"></span>BCI<sub>crit</sub></div>
                 </div>
             </div>
 
@@ -996,11 +997,11 @@ body.night-mode .glass-scrollbar .thumb {
                         <span class="status-badge pending" id="nextInsp">—</span>
                     </div>
                     <div class="status-line">
-                        <span class="sl-label">BCI avg trend</span>
+                        <span class="sl-label">BCI<sub>avg</sub> trend</span>
                         <span class="status-badge completed" id="bciAvgTrend">—</span>
                     </div>
                     <div class="status-line">
-                        <span class="sl-label">BCI crit trend</span>
+                        <span class="sl-label">BCI<sub>crit</sub> trend</span>
                         <span class="status-badge completed" id="bciCritTrend">—</span>
                     </div>
                 </div>

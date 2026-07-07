@@ -291,6 +291,7 @@ body {
 .metric-split-item p sub {
     font-size: 0.85em;
     bottom: -0.2em;
+    text-transform: none;
 }
 
 .metric-split-divider {

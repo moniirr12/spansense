@@ -341,7 +341,7 @@ async function generateBCIForm(doc) {
                         <div class="bci-results">
                             <table class="bci-table">
                                 <tr>
-                                    <td><strong>BCI crit</strong>: ${bciCrit} <strong>BCI ave</strong>: ${bciAv}</td>
+                                    <td><strong>BCI<sub>crit</sub></strong>: ${bciCrit} <strong>BCI<sub>avg</sub></strong>: ${bciAv}</td>
                                 </tr>
                             </table>
                         </div>

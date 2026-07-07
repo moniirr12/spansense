@@ -955,7 +955,7 @@ window.openReviewModal = function openReviewModal(inspectionId) {
         (item.structure_name || 'Structure ' + item.structure_id) + ' · STR #' + item.structure_id;
     document.getElementById('reviewModalSummary').innerHTML =
         `Inspected by ${item.inspector_name || 'Unknown'} on ${formatDate(item.inspection_date)} &nbsp;·&nbsp; ` +
-        `BCI Avg ${bciAv} / Critical ${bciCrit}` +
+        `BCI<sub>avg</sub> ${bciAv} / BCI<sub>crit</sub> ${bciCrit}` +
         (item.conclusions ? `<br><br>"${item.conclusions}"` : '');
     document.getElementById('reviewCommentsInput').value = '';
 

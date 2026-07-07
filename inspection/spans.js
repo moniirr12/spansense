@@ -93,6 +93,7 @@ function viewReport(e) {
                     .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 24px 0; }
                     .meta-item { background: #f8fafc; padding: 16px; border-radius: 14px; }
                     .meta-label { font-size: 0.7rem; color: #8a9ba8; text-transform: uppercase; font-weight: 600; }
+                    .meta-label sub { text-transform: none; }
                     .meta-value { font-size: 1.2rem; font-weight: 700; color: #2c4a48; margin-top: 4px; }
                     table { width: 100%; border-collapse: collapse; margin-top: 24px; }
                     th { background: #f8fafc; padding: 12px; text-align: left; font-size: 0.75rem; text-transform: uppercase; color: #8a9ba8; }
@@ -113,11 +114,11 @@ function viewReport(e) {
                             <div class="meta-value">${defects.length}</div>
                         </div>
                         <div class="meta-item">
-                            <div class="meta-label">BCI Average</div>
+                            <div class="meta-label">BCI<sub>avg</sub></div>
                             <div class="meta-value" style="color:#5b8c8a;">${document.getElementById('bciAvResult')?.textContent || '100.00'}</div>
                         </div>
                         <div class="meta-item">
-                            <div class="meta-label">BCI Critical</div>
+                            <div class="meta-label">BCI<sub>crit</sub></div>
                             <div class="meta-value" style="color:#e8a87c;">${document.getElementById('bciCritResult')?.textContent || '100.00'}</div>
                         </div>
                     </div>
@@ -393,7 +394,7 @@ function generateDraftConclusions() {
         }
     }
 
-    paragraphs.push(`Overall structural condition is assessed as ${conditionLabel} (BCI Average ${bciAv.toFixed(2)}, BCI Critical ${bciCrit.toFixed(2)}).`);
+    paragraphs.push(`Overall structural condition is assessed as ${conditionLabel} (BCI avg ${bciAv.toFixed(2)}, BCI crit ${bciCrit.toFixed(2)}).`);
     paragraphs.push(worksRequired.length
         ? 'It is recommended that the identified remedial works be prioritised accordingly.'
         : 'No remedial works are currently required.');
@@ -615,6 +616,7 @@ if (previewButton) {
           .meta { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; margin: 24px 0; }
           .meta-item { background: #f8fafc; padding: 16px; border-radius: 14px; }
           .meta-label { font-size: 0.7rem; color: #8a9ba8; text-transform: uppercase; font-weight: 600; }
+          .meta-label sub { text-transform: none; }
           .meta-value { font-size: 1.2rem; font-weight: 700; color: #2c4a48; margin-top: 4px; }
           .stats-row { display: flex; gap: 20px; flex-wrap: wrap; margin: 16px 0 8px; font-size: 0.85rem; color: #4a5b6e; }
           .stats-row b { color: #2c4a48; }
@@ -641,11 +643,11 @@ if (previewButton) {
               <div class="meta-value">${realDefects.length}</div>
             </div>
             <div class="meta-item">
-              <div class="meta-label">BCI Average</div>
+              <div class="meta-label">BCI<sub>avg</sub></div>
               <div class="meta-value" style="color:#5b8c8a;">${bciAv}</div>
             </div>
             <div class="meta-item">
-              <div class="meta-label">BCI Critical</div>
+              <div class="meta-label">BCI<sub>crit</sub></div>
               <div class="meta-value" style="color:#e8a87c;">${bciCrit}</div>
             </div>
           </div>

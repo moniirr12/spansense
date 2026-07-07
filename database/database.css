@@ -335,6 +335,7 @@ body {
     letter-spacing: 0.08em;
     border-bottom: 1px solid #e9edf2;
 }
+.data-table th sub { text-transform: none; }
 .data-table td {
     padding: 14px 16px;
     color: #2c3e44;

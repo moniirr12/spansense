@@ -1242,7 +1242,7 @@
                     }
                     list.innerHTML = rows.map(row => {
                         const cfg = typeConfig[row.inspection_type] || { label: row.inspection_type || 'Inspection', icon: 'fa-clipboard-check', cls: 'edit' };
-                        const bciPart = row.bci_av != null ? ` · BCI avg ${Math.round(parseFloat(row.bci_av))}` : '';
+                        const bciPart = row.bci_av != null ? ` · BCI<sub>avg</sub> ${Math.round(parseFloat(row.bci_av))}` : '';
                         const inspector = row.inspector_name ? row.inspector_name : 'Unknown inspector';
                         return `
                         <div class="activity-row">

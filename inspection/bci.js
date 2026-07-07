@@ -300,8 +300,8 @@ function getStructureConfig(structureType) {
             <body>
                 <h2>Bridge Condition Indicator (BCI)</h2>
                 <div class="bci-results">
-                    <p><strong>BCI Average:</strong> ${bciAv.toFixed(2)}</p>
-                    <p><strong>BCI Critical:</strong> ${bciCrit.toFixed(2)}</p>
+                    <p><strong>BCI<sub>avg</sub>:</strong> ${bciAv.toFixed(2)}</p>
+                    <p><strong>BCI<sub>crit</sub>:</strong> ${bciCrit.toFixed(2)}</p>
                 </div>
                 <table>
                     <thead>
