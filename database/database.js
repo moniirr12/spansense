@@ -159,10 +159,12 @@
     // BRIDGES TABLE
     // ============================================
     // Colors/icons matching the map's own per-type marker circles (see
-    // typeFill/typeIcons in map/map.js). Bridge/footbridge/sign_gantry keep
-    // their own FontAwesome glyphs here since those already read clearly at
-    // this size; culvert/retaining_wall reuse the map's own hand-drawn SVGs
-    // (via svgIcons below) so those two match the map exactly.
+    // typeFill/typeIcons in map/map.js). Footbridge/sign_gantry keep their
+    // own FontAwesome glyphs here since those already read clearly at this
+    // size; bridge/culvert/retaining_wall reuse the map's own hand-drawn
+    // SVGs (via svgIcons below, which takes priority over the `icon` field
+    // here) so those three match the map exactly - fa-bridge in particular
+    // is a Pro-only glyph and renders blank on the free FontAwesome CDN.
     var typeCircleMeta = {
         bridge:         { color: '#2c645c', icon: 'fa-bridge' },
         footbridge:     { color: '#4f9088', icon: 'fa-person-walking' },
@@ -178,6 +180,11 @@
     // markup works both on a colored circle badge (table rows) and a plain
     // colored chip icon (filters).
     var svgIcons = {
+        bridge: function(sz, color) {
+            return '<svg viewBox="0 0 20 20" width="' + sz + '" height="' + sz + '" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-width="1.9"' +
+                (color ? ' style="color:' + color + '"' : '') +
+                '><line x1="2" y1="6" x2="18" y2="6"/><line x1="5" y1="6" x2="5" y2="13"/><line x1="10" y1="6" x2="10" y2="13"/><line x1="15" y1="6" x2="15" y2="13"/><path d="M1 16 Q5 13.5 9 16 T17 16"/></svg>';
+        },
         culvert: function(sz, color) {
             return '<svg viewBox="0 0 20 20" width="' + sz + '" height="' + sz + '" stroke="currentColor" stroke-linecap="round" fill="none" stroke-width="1.9"' +
                 (color ? ' style="color:' + color + '"' : '') +

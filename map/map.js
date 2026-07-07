@@ -52,13 +52,15 @@ function condRing(bci) {
     return bciTier(bci).color;
 }
 
-// Bridge/footbridge/sign_gantry use the same FontAwesome glyphs as the
-// database page's structure-type badges (see typeCircleMeta in
-// database/database.js) so the icon for a given type matches across pages.
-// Culvert/retaining_wall stay hand-drawn SVGs - database.js's svgIcons now
-// reuses this exact path data instead of a generic FA glyph for those two.
+// Footbridge/sign_gantry use the same FontAwesome glyphs as the database
+// page's structure-type badges (see typeCircleMeta in database/database.js)
+// so the icon for a given type matches across pages. Bridge/culvert/
+// retaining_wall stay hand-drawn SVGs - fa-bridge is a Pro-only glyph in the
+// free FontAwesome CDN build this app loads, so it rendered blank - and
+// database.js's svgIcons now reuses this exact path data for all three
+// instead of a generic FA glyph.
 const typeIcons = {
-    bridge:         (sz) => `<i class="fas fa-bridge" style="color:white;font-size:${sz}px;"></i>`,
+    bridge:         (sz) => `<svg viewBox="0 0 20 20" width="${sz}" height="${sz}" stroke="white" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-width="1.9"><line x1="2" y1="6" x2="18" y2="6"/><line x1="5" y1="6" x2="5" y2="13"/><line x1="10" y1="6" x2="10" y2="13"/><line x1="15" y1="6" x2="15" y2="13"/><path d="M1 16 Q5 13.5 9 16 T17 16"/></svg>`,
     footbridge:     (sz) => `<i class="fas fa-person-walking" style="color:white;font-size:${sz}px;"></i>`,
     culvert:        (sz) => `<svg viewBox="0 0 20 20" width="${sz}" height="${sz}" stroke="white" stroke-linecap="round" fill="none" stroke-width="1.9"><circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="3"/><line x1="3" y1="17" x2="17" y2="17"/></svg>`,
     retaining_wall: (sz) => `<svg viewBox="0 0 20 20" width="${sz}" height="${sz}" stroke="white" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-width="1.9"><rect x="2" y="5" width="16" height="11" rx="1.5"/><line x1="2" y1="10.5" x2="18" y2="10.5"/><line x1="7" y1="5" x2="7" y2="10.5"/><line x1="13" y1="10.5" x2="13" y2="16"/></svg>`,
