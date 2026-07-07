@@ -907,6 +907,16 @@ function injectRetrievedRibbon(row) {
         dst.textContent = src.textContent;
         dst.style.color = src.style.color;
       }
+      // Mirror the band-background class too (see BCI_BAND_CLASSES in
+      // bci.js) so the sticky sidebar's mini cards tint the same as the
+      // main ones instead of staying permanently white.
+      const srcCard = src && src.closest('.stat-card');
+      const dstCard = dst && dst.closest('.stat-card');
+      if (srcCard && dstCard && window.BCI_BAND_CLASSES) {
+        window.BCI_BAND_CLASSES.forEach(c => dstCard.classList.remove(c));
+        const band = window.BCI_BAND_CLASSES.find(c => srcCard.classList.contains(c));
+        if (band) dstCard.classList.add(band);
+      }
     });
   }
 

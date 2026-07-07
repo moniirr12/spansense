@@ -193,12 +193,12 @@ function renderBciTrendChart(inspections) {
 
     if (avgPts.length > 1) {
         svg += '<g class="trend-avg-color"><path d="' + pathFor(avgPts) + '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
-            avgPts.map(function(p) { return '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="3"/>'; }).join('') +
+            avgPts.map(function(p) { return '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="3" fill="currentColor"/>'; }).join('') +
             '</g>';
     }
     if (critPts.length > 1) {
         svg += '<g class="trend-crit-color"><path d="' + pathFor(critPts) + '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
-            critPts.map(function(p) { return '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="3"/>'; }).join('') +
+            critPts.map(function(p) { return '<circle cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="3" fill="currentColor"/>'; }).join('') +
             '</g>';
     }
 

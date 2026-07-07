@@ -381,6 +381,18 @@ function getBciColor(value) {
     return isDark ? '#e07070' : '#c0392b';                    // critical
 }
 
+// Same bands as getBciColor, as a card-background class instead of a text
+// colour - see .stat-card.bci-band-* in inspection.css. spans.js's sidebar
+// sync mirrors this class onto the sticky sidebar's copy of the card too.
+const BCI_BAND_CLASSES = ['bci-band-good', 'bci-band-fair', 'bci-band-poor', 'bci-band-critical'];
+window.BCI_BAND_CLASSES = BCI_BAND_CLASSES;
+function getBciBandClass(value) {
+    if (value >= 85) return 'bci-band-good';
+    if (value >= 65) return 'bci-band-fair';
+    if (value >= 40) return 'bci-band-poor';
+    return 'bci-band-critical';
+}
+
 // Tweens a BCI score element's displayed number instead of snapping straight
 // to the new value, so edits to defects don't make the score jump abruptly.
 const bciTweenFrames = new WeakMap();
@@ -389,6 +401,11 @@ function setBciValue(el, value) {
     el.classList.remove('stat-loading');
     const target = parseFloat(value);
     el.style.color = getBciColor(target);
+    const card = el.closest('.stat-card');
+    if (card) {
+        BCI_BAND_CLASSES.forEach(c => card.classList.remove(c));
+        card.classList.add(getBciBandClass(target));
+    }
     const current = parseFloat(el.textContent);
     if (isNaN(current) || Math.abs(target - current) < 0.005) {
         el.textContent = target.toFixed(2);
