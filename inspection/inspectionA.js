@@ -794,49 +794,11 @@ if (inspectionDatesElement) {
     });
 }
 
-// Photo Modal Functions
-document.addEventListener("DOMContentLoaded", function () {
-    const photoModal = document.getElementById("photoModal");
-    const closeModalBtn = photoModal?.querySelector(".close");
-    const modalElement = document.getElementById("modalElement");
-    const modalStructure = document.getElementById("modalStructure");
-  
-    const structureId = sessionStorage.getItem('structureId');  
-    const structureName = sessionStorage.getItem('structureName');
-  
-    function openPhotoModal() {
-        if (structureId && structureName) {
-            if (modalElement) modalElement.textContent = structureName;
-            const structureInfo = `${structureName} (#${structureId})`;
-            if (modalStructure) modalStructure.textContent = structureInfo;
-            if (photoModal) photoModal.style.display = "block";
-        } else {
-            console.error("No structure data found in sessionStorage.");
-        }
-    }
-  
-    function closePhotoModal() {
-        if (photoModal) photoModal.style.display = "none";
-    }
-  
-    const inspectionTable = document.getElementById("inspectionElementsTable");
-    if (inspectionTable) {
-        inspectionTable.addEventListener("click", function (event) {
-            const target = event.target;
-            if (target.closest("button[title='View']")) {
-                openPhotoModal();
-            }
-        });
-    }
-  
-    if (closeModalBtn) closeModalBtn.addEventListener("click", closePhotoModal);
-  
-    window.addEventListener("click", function (event) {
-        if (event.target === photoModal) {
-            closePhotoModal();
-        }
-    });
-});
+// A second, local openPhotoModal()/closePhotoModal() pair used to live here,
+// wired to the same "View" button clicks as photo.js's real
+// window.openPhotoModal. It referenced #photoModal/#modalElement/
+// #modalStructure, none of which exist in inspection.html, so it was a
+// harmless no-op firing alongside the real handler on every click; removed.
 
 const photoInput = document.getElementById('photoInput');
 if (photoInput) {
@@ -1079,37 +1041,10 @@ window.setModalSegment = function(btn, state) {
     }
 };
 
-// Hook saveChanges to handle the two special states
-(function() {
-    var _origSave = window.saveChanges;
-    window.saveChanges = function() {
-        var modal = document.getElementById('modal');
-        var state = modal ? (modal.dataset.modalState || modal.dataset.ofState || 'defect') : 'defect';
-
-        if (state === 'no-defects') {
-            var commentVal = document.getElementById('of-no-defects-comment').value;
-            document.getElementById('severity').value = '1';
-            document.getElementById('extent').value   = 'A';
-            document.getElementById('works').value    = 'N';
-            document.getElementById('comment').value  = commentVal;
-            document.getElementById('priority').value = '';
-            document.getElementById('cost').value     = '';
-            document.getElementById('remedialWorks').value = '';
-            document.getElementById('defectType').value = '0';
-            document.getElementById('defectNumber').value = '0';
-        } else if (state === 'not-inspected') {
-            var reasonVal = document.getElementById('of-not-inspected-comment').value;
-            document.getElementById('severity').value = '1';
-            document.getElementById('extent').value   = 'A';
-            document.getElementById('works').value    = 'N';
-            document.getElementById('comment').value  = reasonVal ? '[Not Inspected] ' + reasonVal : '[Not Inspected]';
-            document.getElementById('priority').value = '';
-            document.getElementById('cost').value     = '';
-            document.getElementById('remedialWorks').value = '';
-            document.getElementById('defectType').value = '0';
-            document.getElementById('defectNumber').value = '1';
-        }
-
-        if (_origSave) _origSave.apply(this, arguments);
-    };
-})();
+// No-defects/not-inspected special-casing used to be hooked onto
+// window.saveChanges here, but this file loads before inspection.js defines
+// saveChanges (so _origSave captured undefined) and inspection.js's own
+// window.saveChanges = saveChanges assignment then hard-overwrites this
+// wrapper anyway - it never ran. inspection.js's persistCurrentDefectForm()
+// already handles both states independently (see its modalState branch),
+// so this was fully redundant as well as dead; removed.

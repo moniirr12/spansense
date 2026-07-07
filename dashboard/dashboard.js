@@ -483,7 +483,7 @@ function renderConditionDistributionChart(data) {
                 { label: 'Good (80-89)', data: filteredData.map(d => d.good || 0), backgroundColor: '#84cc16', borderRadius: 4 },
                 { label: 'Fair (65-79)', data: filteredData.map(d => d.fair || 0), backgroundColor: '#eab308', borderRadius: 4 },
                 { label: 'Poor (40-64)', data: filteredData.map(d => d.poor || 0), backgroundColor: '#f97316', borderRadius: 4 },
-                { label: 'Critical (0-39)', data: filteredData.map(d => d.very_poor || 0), backgroundColor: '#ef4444', borderRadius: 4 }
+                { label: 'Very Poor (0-39)', data: filteredData.map(d => d.very_poor || 0), backgroundColor: '#ef4444', borderRadius: 4 }
             ]
         },
         options: {
@@ -637,7 +637,7 @@ function renderCriticalBridges(data) {
         const bci = bridge.overall_bciave !== null ? Math.round(bridge.overall_bciave) : '—';
         const isCritical = bridge.overall_bciave < 40;
         const badgeClass = isCritical ? 'risk-critical' : 'risk-high';
-        const badgeLabel = isCritical ? 'Critical' : 'High';
+        const badgeLabel = isCritical ? 'Very Poor' : 'High';
 
         // Use template literals properly with ${} interpolation
         // Escape quotes in the onclick by using backticks or different quote styles

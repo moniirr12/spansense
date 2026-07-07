@@ -1283,21 +1283,16 @@
             }
         }
 
-        // Dark mode toggle
+        // Dark mode: pre-apply the saved theme here, synchronously, before any
+        // external script loads - this is what actually prevents a flash of
+        // the wrong theme (nm-preload). The click handler itself lives in
+        // inspection1.js (loaded later in the script chain), which is the
+        // canonical owner of #nightModeToggle's behavior; it re-applies this
+        // same initial state on load too, so this block only needs to cover
+        // the gap before that script runs.
         (function() {
             const toggleBtn = document.getElementById('nightModeToggle');
             if (!toggleBtn) return;
-
-            toggleBtn.onclick = function() {
-                document.body.classList.toggle('night-mode');
-                if (document.body.classList.contains('night-mode')) {
-                    this.innerHTML = '<i class="fas fa-sun"></i>';
-                    localStorage.setItem('nightMode', 'on');
-                } else {
-                    this.innerHTML = '<i class="fas fa-moon"></i>';
-                    localStorage.setItem('nightMode', 'off');
-                }
-            };
 
             const savedNightMode = localStorage.getItem('nightMode');
             const systemPrefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;

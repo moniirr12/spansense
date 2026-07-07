@@ -687,10 +687,10 @@ function populateDocumentsQuickStats(documents) {
       const { year, mday } = ssFormatDate(doc.date);
       const critVal = Math.round(parseFloat(doc.bci_crit) || 0);
       const avVal   = Math.round(parseFloat(doc.bci_av)   || 0);
-      const isCritical = critVal < 50;
+      const isVeryPoor = critVal < 40;
       const inspector = doc.inspector_name || '';
       return `
-        <div class="ss-card${isCritical ? ' ss-critical' : ''}">
+        <div class="ss-card${isVeryPoor ? ' ss-very-poor' : ''}">
           <div class="ss-date-block">
             <div class="ss-year">${year}</div>
             <div class="ss-mday">${mday}</div>

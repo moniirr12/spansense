@@ -4111,11 +4111,11 @@ body.modal-open {
   background: #f5f8fa; border-color: #c5dbd8;
   transform: translateX(4px); box-shadow: 0 4px 16px rgba(0,0,0,0.06);
 }
-.ss-card.ss-critical {
+.ss-card.ss-very-poor {
   background: linear-gradient(135deg, #fdf8f5 0%, #fdf5f0 100%);
   border-color: #f0ddd0;
 }
-.ss-card.ss-critical:hover {
+.ss-card.ss-very-poor:hover {
   border-color: #e8c4b0;
   background: linear-gradient(135deg, #fdf5f0 0%, #fcf0e8 100%);
 }
@@ -4238,7 +4238,7 @@ body.modal-open {
 .night-mode .ss-card-list { background: rgba(30, 42, 47, 0.5); }
 .night-mode .ss-card { background: #1e2a2f; border-color: #2f3e45; }
 .night-mode .ss-card:hover { background: #2a3a40; border-color: #3a5c5a; }
-.night-mode .ss-card.ss-critical { background: linear-gradient(135deg, #2f2a25 0%, #3a2a25 100%); border-color: #4a3a30; }
+.night-mode .ss-card.ss-very-poor { background: linear-gradient(135deg, #2f2a25 0%, #3a2a25 100%); border-color: #4a3a30; }
 .night-mode .ss-date-block { background: #2f3e48; border-color: #3e525e; }
 .night-mode .ss-date-block .ss-year { color: #d4dfe3; }
 .night-mode .ss-date-block .ss-mday { color: #8aa4ac; }

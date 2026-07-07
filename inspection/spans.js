@@ -32,48 +32,11 @@ document.addEventListener('DOMContentLoaded', function() {
 // ============================================
 // LANDSCAPE POST-SAVE MODAL
 // ============================================
-
-function showPostSaveModal(inspectionData, defects, isEditMode) {
-    const overlay = document.getElementById('postSaveOverlay');
-    if (!overlay) {
-        console.error('Post-save modal overlay not found');
-        return;
-    }
-
-    // Populate data
-    const bridgeNameEl = document.getElementById('psBridgeName');
-    const dateEl = document.getElementById('psDate');
-    const spansEl = document.getElementById('psSpanCount');
-    const defectsEl = document.getElementById('psDefectCount');
-    const bciAvEl = document.getElementById('psBciAv');
-    const bciCritEl = document.getElementById('psBciCrit');
-
-    if (bridgeNameEl) bridgeNameEl.textContent = inspectionData.structureName || 'Unknown Bridge';
-    
-    if (dateEl) {
-        const d = inspectionData.inspectionDate ? new Date(inspectionData.inspectionDate) : new Date();
-        dateEl.textContent = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-    }
-    
-    if (spansEl) spansEl.textContent = (inspectionData.spans?.length || 0) + ' inspected';
-    if (defectsEl) defectsEl.textContent = defects.length + ' recorded';
-    
-    if (bciAvEl) {
-        const bciAv = document.getElementById('bciAvResult')?.textContent || '100.00';
-        bciAvEl.textContent = bciAv;
-    }
-    
-    if (bciCritEl) {
-        const bciCrit = document.getElementById('bciCritResult')?.textContent || '100.00';
-        bciCritEl.textContent = bciCrit;
-    }
-
-    // Store mode for action handlers
-    overlay.dataset.isEditMode = isEditMode ? 'true' : 'false';
-
-    overlay.classList.add('active');
-    document.body.style.overflow = 'hidden';
-}
+// The modal itself is populated and shown by saveSequence.js's own private
+// showPostSaveModal() (called internally after the save animation finishes,
+// so it always resolves to that file's closure-scoped version regardless of
+// script load order). A second, window-exposed 3-arg version used to live
+// here but nothing ever called it - removed as dead code.
 
 // ---------- ACTION HANDLERS ----------
 
@@ -197,7 +160,6 @@ window.goHome = goHome;
 window.newInspection = newInspection;
 window.viewReport = viewReport;
 window.closePostSaveModal = closePostSaveModal;
-window.showPostSaveModal = showPostSaveModal;
 
 // ============================================
 // HELPER FUNCTIONS

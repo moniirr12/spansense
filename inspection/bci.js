@@ -462,6 +462,3 @@ function updateBCIScores() {
   // Return the values so they can be used elsewhere
   return { bciAv, bciCrit };
 }
-
-// Export the function
-module.exports = updateBCIScores;
