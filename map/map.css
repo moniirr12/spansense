@@ -893,11 +893,11 @@ body.modal-open {
     flex: 1;
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 14px 16px;
+    gap: 10px;
+    padding: 9px 12px;
     background: rgba(248, 250, 252, 0.8);
     border: 1px solid rgba(233, 237, 242, 0.8);
-    border-radius: 18px;
+    border-radius: 14px;
     transition: all 0.2s;
 }
 #bridgeModal .stat-pill:hover {
@@ -906,22 +906,25 @@ body.modal-open {
     box-shadow: 0 4px 16px rgba(0,0,0,0.04);
 }
 #bridgeModal .stat-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
     background: white;
     border: 1px solid #e9edf2;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #5b8c8a;
-    font-size: 1rem;
+    font-size: 0.85rem;
     flex-shrink: 0;
 }
 #bridgeModal .stat-info {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
+    align-items: baseline;
+    justify-content: space-between;
+    flex: 1;
+    gap: 8px;
+    min-width: 0;
 }
 #bridgeModal .stat-label {
     font-size: 0.6rem;
@@ -929,12 +932,14 @@ body.modal-open {
     text-transform: uppercase;
     letter-spacing: 0.1em;
     color: #8a9ba8;
+    white-space: nowrap;
 }
 #bridgeModal .stat-label sub { text-transform: none; }
 #bridgeModal .stat-value {
-    font-size: 1.05rem;
+    font-size: 0.92rem;
     font-weight: 700;
     color: #1e2a33;
+    white-space: nowrap;
 }
 
 /* Quick Info Grid */
