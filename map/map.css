@@ -859,7 +859,8 @@ body.modal-open {
 }
 #bridgeModal .photo-section .bridge-img {
     width: 100%;
-    aspect-ratio: 1 / 1;
+    height: auto;
+    aspect-ratio: 4 / 3;
     object-fit: cover;
     object-position: center 75%;
     display: block;
