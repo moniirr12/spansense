@@ -2560,6 +2560,32 @@ app.listen(PORT, () => {
 
 
 
+// Backend-only paths that must never be downloadable. The frontend's pages
+// and scripts are scattered across many top-level folders instead of one
+// dedicated public/ directory, so express.static below has to serve the
+// whole project root - without this denylist running first, anyone could
+// curl /server.js or /supabaseStorage.js and read the entire backend
+// source, every SQL query, and the storage bucket logic.
+const STATIC_DENYLIST_PATTERNS = [
+    /^\/server\.js$/i,
+    /^\/supabasestorage\.js$/i,
+    /^\/package(-lock)?\.json$/i,
+    /^\/scripts(\/|$)/i,
+    /^\/node_modules(\/|$)/i
+];
+app.use((req, res, next) => {
+    let normalized;
+    try {
+        normalized = path.posix.normalize(decodeURIComponent(req.path));
+    } catch {
+        return res.status(400).end();
+    }
+    if (STATIC_DENYLIST_PATTERNS.some(re => re.test(normalized))) {
+        return res.status(404).end();
+    }
+    next();
+});
+
 // Serve frontend static files (must be before error handler and listen).
 // no-cache (not "don't cache") — the browser still keeps the file and
 // reuses it via a cheap 304 if the ETag matches, it just always asks first.
