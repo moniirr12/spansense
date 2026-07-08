@@ -5,6 +5,10 @@
 // Run with: node scripts/migrate-structure-types.js
 require('dotenv').config();
 const { Client } = require('pg');
+const fs = require('fs');
+const path = require('path');
+
+const supabaseCA = fs.readFileSync(path.join(__dirname, '..', 'certs', 'supabase-ca.crt'), 'utf8');
 
 const RETAINING_WALL_ELEMENTS = [
     [1, 'Foundations', 1],
@@ -32,7 +36,7 @@ const RETAINING_WALL_ELEMENTS = [
 async function main() {
     const client = new Client({
         connectionString: process.env.DATABASE_URL,
-        ssl: { rejectUnauthorized: false }
+        ssl: { rejectUnauthorized: true, ca: supabaseCA }
     });
     await client.connect();
 

@@ -6,6 +6,7 @@ const cors = require("cors");
 
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 const proj4 = require('proj4');
 const bcrypt = require('bcryptjs');
 const storage = require('./supabaseStorage');
@@ -89,9 +90,16 @@ app.get('/api/routes', requireAuth, requireAdmin, (req, res) => {
 });
 
 // PostgreSQL connection
+// rejectUnauthorized was previously false in production, which encrypts the
+// connection but never checks it's actually Supabase's pooler on the other
+// end (accepts any cert, so a MITM on that hop would go unnoticed). Pinning
+// Supabase's own Root 2021 CA (certs/supabase-ca.crt - their public root,
+// captured directly from a live handshake with our own DB, not a
+// third-party copy) lets us verify the chain properly instead.
+const supabaseCA = fs.readFileSync(path.join(__dirname, 'certs', 'supabase-ca.crt'), 'utf8');
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true, ca: supabaseCA } : false
 });
 
 // Test connection on startup
@@ -2571,7 +2579,8 @@ const STATIC_DENYLIST_PATTERNS = [
     /^\/supabasestorage\.js$/i,
     /^\/package(-lock)?\.json$/i,
     /^\/scripts(\/|$)/i,
-    /^\/node_modules(\/|$)/i
+    /^\/node_modules(\/|$)/i,
+    /^\/certs(\/|$)/i
 ];
 app.use((req, res, next) => {
     let normalized;
