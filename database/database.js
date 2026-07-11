@@ -50,8 +50,8 @@
             { id: 'name',     label: 'Bridge',          key: 'structure_name', checked: true },
             { id: 'inspector',label: 'Inspector',       key: 'inspector_name', checked: true },
             { id: 'date',     label: 'Date',            key: 'inspection_date',checked: true },
-            { id: 'bciav',    label: 'BCI Av',          key: 'overall_bciave', checked: true },
-            { id: 'bcicrit',  label: 'BCI Crit',        key: 'overall_bcicrit',checked: true },
+            { id: 'bciav',    label: 'BCI<sub>avg</sub>',  key: 'overall_bciave', checked: true },
+            { id: 'bcicrit',  label: 'BCI<sub>crit</sub>', key: 'overall_bcicrit',checked: true },
             { id: 'type',     label: 'Type',            key: 'inspection_type',checked: true },
             { id: 'tspans',   label: 'Total spans',     key: 'total_spans',    checked: false },
         ],
@@ -159,9 +159,12 @@
     // BRIDGES TABLE
     // ============================================
     // Colors/icons matching the map's own per-type marker circles (see
-    // typeFill/typeIcons in map/map.js) - kept as FontAwesome glyphs here
-    // instead of duplicating those hand-drawn SVGs, since this is a small
-    // inline table badge rather than a map marker.
+    // typeFill/typeIcons in map/map.js). Footbridge/sign_gantry keep their
+    // own FontAwesome glyphs here since those already read clearly at this
+    // size; bridge/culvert/retaining_wall reuse the map's own hand-drawn
+    // SVGs (via svgIcons below, which takes priority over the `icon` field
+    // here) so those three match the map exactly - fa-bridge in particular
+    // is a Pro-only glyph and renders blank on the free FontAwesome CDN.
     var typeCircleMeta = {
         bridge:         { color: '#2c645c', icon: 'fa-bridge' },
         footbridge:     { color: '#4f9088', icon: 'fa-person-walking' },
@@ -170,6 +173,28 @@
         sign_gantry:    { color: '#7a6fb0', icon: 'fa-sign' },
         tunnel:         { color: '#2c645c', icon: 'fa-road' },
         viaduct:        { color: '#2c645c', icon: 'fa-road' }
+    };
+
+    // Same path data as typeIcons.culvert/retaining_wall in map/map.js, just
+    // using currentColor instead of a hardcoded white stroke so the same
+    // markup works both on a colored circle badge (table rows) and a plain
+    // colored chip icon (filters).
+    var svgIcons = {
+        bridge: function(sz, color) {
+            return '<svg viewBox="0 0 20 20" width="' + sz + '" height="' + sz + '" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-width="1.9"' +
+                (color ? ' style="color:' + color + '"' : '') +
+                '><line x1="2" y1="6" x2="18" y2="6"/><line x1="5" y1="6" x2="5" y2="13"/><line x1="10" y1="6" x2="10" y2="13"/><line x1="15" y1="6" x2="15" y2="13"/><path d="M1 16 Q5 13.5 9 16 T17 16"/></svg>';
+        },
+        culvert: function(sz, color) {
+            return '<svg viewBox="0 0 20 20" width="' + sz + '" height="' + sz + '" stroke="currentColor" stroke-linecap="round" fill="none" stroke-width="1.9"' +
+                (color ? ' style="color:' + color + '"' : '') +
+                '><circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="3"/><line x1="3" y1="17" x2="17" y2="17"/></svg>';
+        },
+        retaining_wall: function(sz, color) {
+            return '<svg viewBox="0 0 20 20" width="' + sz + '" height="' + sz + '" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-width="1.9"' +
+                (color ? ' style="color:' + color + '"' : '') +
+                '><rect x="2" y="5" width="16" height="11" rx="1.5"/><line x1="2" y1="10.5" x2="18" y2="10.5"/><line x1="7" y1="5" x2="7" y2="10.5"/><line x1="13" y1="10.5" x2="13" y2="16"/></svg>';
+        }
     };
 
     // Same colors/icons already used for the GI/PI/SI filter chips (see the
@@ -228,14 +253,16 @@
                 };
                 var typeLabel = typeMap[(row.type || '').toLowerCase()] ||
                     (row.type ? row.type.charAt(0).toUpperCase() + row.type.slice(1).replace(/_/g, ' ') : '--');
-                var typeMeta = typeCircleMeta[(row.type || '').toLowerCase().replace(/\s+/g, '_')] || typeCircleMeta.bridge;
+                var typeKey = (row.type || '').toLowerCase().replace(/\s+/g, '_');
+                var typeMeta = typeCircleMeta[typeKey] || typeCircleMeta.bridge;
+                var typeIconHtml = svgIcons[typeKey] ? svgIcons[typeKey](13) : '<i class="fas ' + typeMeta.icon + '"></i>';
 
                 rowsHtml += '<tr>' +
                     '<td class="col-check"><input type="checkbox" class="row-check" data-id="' + row.id + '"></td>' +
                     '<td><strong>' + (row.id || '--') + '</strong></td>' +
                     '<td class="bridge-name">' + (row.name || '--') +
                         '<span class="meta">' + lat + '°, ' + lon + '°</span></td>' +
-                    '<td><span class="type-circle" style="background:' + typeMeta.color + '"><i class="fas ' + typeMeta.icon + '"></i></span>' + typeLabel + '</td>' +
+                    '<td><span class="type-circle" style="background:' + typeMeta.color + '">' + typeIconHtml + '</span>' + typeLabel + '</td>' +
                     '<td>' + (row.built_year || '--') + '</td>' +
                     '<td>' + (row.span_number || '0') + '</td>' +
                     '<td>' + formatDate(row.last_inspected) + '</td>' +
@@ -323,8 +350,8 @@
                 { label: 'Bridge', sortable: true, key: 'structure_name' },
                 { label: 'Inspector', sortable: false },
                 { label: 'Date', sortable: false },
-                { label: 'BCI Av', sortable: true, key: 'overall_bciave' },
-                { label: 'BCI Crit', sortable: true, key: 'overall_bcicrit' },
+                { label: 'BCI<sub>avg</sub>', sortable: true, key: 'overall_bciave' },
+                { label: 'BCI<sub>crit</sub>', sortable: true, key: 'overall_bcicrit' },
                 { label: 'Type', sortable: false },
                 { label: 'Total Spans', sortable: false }
             ],
@@ -780,7 +807,8 @@
             var btn = document.createElement('button');
             btn.className = 'filter-chip' + (i === 0 ? ' active' : '');
             btn.onclick = function() { window.setFilter(this, f.id); };
-            btn.innerHTML = '<i class="fas ' + f.icon + '"' + (f.color ? ' style="color:' + f.color + '"' : '') + '></i> ' + f.label;
+            var iconHtml = svgIcons[f.id] ? svgIcons[f.id](13, f.color) : '<i class="fas ' + f.icon + '"' + (f.color ? ' style="color:' + f.color + '"' : '') + '></i>';
+            btn.innerHTML = iconHtml + ' ' + f.label;
             filtersBar.appendChild(btn);
         });
 
@@ -1116,7 +1144,8 @@
             var btn = document.createElement('button');
             btn.className = 'filter-chip' + (i === 0 ? ' active' : '');
             btn.onclick = function() { window.setFilter(this, f.id); };
-            btn.innerHTML = '<i class="fas ' + f.icon + '"' + (f.color ? ' style="color:' + f.color + '"' : '') + '></i> ' + f.label;
+            var iconHtml = svgIcons[f.id] ? svgIcons[f.id](13, f.color) : '<i class="fas ' + f.icon + '"' + (f.color ? ' style="color:' + f.color + '"' : '') + '></i>';
+            btn.innerHTML = iconHtml + ' ' + f.label;
             filtersBar.appendChild(btn);
         });
 

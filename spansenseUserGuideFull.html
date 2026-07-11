@@ -113,6 +113,13 @@
   .key-card h4 { font-size: 12px; font-weight: 700; color: #1e3432; margin-bottom: 2px; }
   .key-card p { font-size: 11px; color: #6b8685; line-height: 1.4; }
 
+  .impact-demo { display: flex; align-items: center; gap: 12px; margin: 10px 0 12px; }
+  .impact-demo .val { font-size: 16px; font-weight: 800; padding: 7px 16px; border-radius: 8px; background: #f2f6f5; color: #1e3432; }
+  .impact-demo .arrow { color: #8a9ba8; font-size: 15px; }
+  .impact-demo .val.worse { background: rgba(192,57,43,0.12); color: #c0392b; }
+  .impact-demo .val.better { background: rgba(45,122,110,0.12); color: #2d7a6e; }
+  .impact-demo .cap { font-size: 10.5px; color: #8a9ba8; margin-left: 4px; }
+
   @media print {
     body { background: white; }
     .page { box-shadow: none; }
@@ -152,12 +159,12 @@
   <div class="toc-row"><span class="toc-num">02</span><span class="toc-title">The Map — Finding a Structure</span><span class="toc-page">4</span></div>
   <div class="toc-row"><span class="toc-num">03</span><span class="toc-title">Viewing Previous Inspections</span><span class="toc-page">5</span></div>
   <div class="toc-row"><span class="toc-num">04</span><span class="toc-title">Running an Inspection, Step by Step</span><span class="toc-page">6</span></div>
-  <div class="toc-row"><span class="toc-num">05</span><span class="toc-title">Understanding BCI Scores</span><span class="toc-page">7</span></div>
-  <div class="toc-row"><span class="toc-num">06</span><span class="toc-title">twinView — 3D Digital Twin</span><span class="toc-page">8</span></div>
-  <div class="toc-row"><span class="toc-num">07</span><span class="toc-title">Reports &amp; Exporting Data</span><span class="toc-page">9</span></div>
-  <div class="toc-row"><span class="toc-num">08</span><span class="toc-title">Inspection Planning &amp; Scheduling</span><span class="toc-page">10</span></div>
-  <div class="toc-row"><span class="toc-num">09</span><span class="toc-title">Dashboard — Portfolio Overview</span><span class="toc-page">11</span></div>
-  <div class="toc-row"><span class="toc-num">10</span><span class="toc-title">Your Account &amp; Preferences</span><span class="toc-page">12</span></div>
+  <div class="toc-row"><span class="toc-num">05</span><span class="toc-title">Understanding BCI Scores</span><span class="toc-page">8</span></div>
+  <div class="toc-row"><span class="toc-num">06</span><span class="toc-title">twinView — 3D Digital Twin</span><span class="toc-page">9</span></div>
+  <div class="toc-row"><span class="toc-num">07</span><span class="toc-title">Reports &amp; Exporting Data</span><span class="toc-page">10</span></div>
+  <div class="toc-row"><span class="toc-num">08</span><span class="toc-title">Inspection Planning &amp; Scheduling</span><span class="toc-page">11</span></div>
+  <div class="toc-row"><span class="toc-num">09</span><span class="toc-title">Dashboard — Portfolio Overview</span><span class="toc-page">12</span></div>
+  <div class="toc-row"><span class="toc-num">10</span><span class="toc-title">Your Account &amp; Preferences</span><span class="toc-page">13</span></div>
 
   <div class="footer-bar"><span>spanSense — User Guide</span><span>Contents</span></div>
 </div>
@@ -169,7 +176,7 @@
     <p class="lede">A quick orientation before your first inspection.</p>
   </div>
 
-  <p class="body-text">Log in with the account your admin gave you. Every page shares the same floating navbar at the top — <strong>Map</strong>, <strong>Dashboard</strong>, <strong>Database</strong>, <strong>Planning</strong>, and <strong>twinView</strong> — plus a night-mode toggle, your account icon, and Contact Us on the right. The account icon's shape tells you your role at a glance: a magnifying glass for inspectors, a checked user for engineers, a shield for admins.</p>
+  <p class="body-text">Log in with the account your admin gave you — you'll land on the Map. Its top bar just holds the logo, a search box, the night-mode toggle, your account icon, and Contact Us; the links to <strong>Dashboard</strong>, <strong>Database</strong>, <strong>Planning</strong>, and <strong>twinView</strong> live in a collapsible sidebar on the left edge instead — hover it to expand. Once you move to any of those other pages, that same set of links moves up into a floating navbar at the top. The account icon's shape tells you your role at a glance: a magnifying glass for inspectors, a checked user for engineers, a shield for admins.</p>
 
   <h3 class="subhead">Your role decides what you can do</h3>
   <table class="data-tbl">
@@ -210,10 +217,20 @@
     <li><p>From the card, choose <strong>New Inspection</strong>, <strong>Previous Inspections</strong>, or <strong>Documents</strong></p></li>
   </ol>
 
-  <div class="shot" style="max-width:70mm; margin:12px auto 0;">
-    <img src="reportAssets/guide-structure-card-tight.png" alt="Structure detail card">
+  <div class="two-col" style="margin-top:12px; grid-template-columns:1.5fr 1fr;">
+    <div>
+      <div class="shot">
+        <img src="reportAssets/guide-map-dark.png" alt="The Map in night mode, showing structures plotted by type and condition">
+      </div>
+      <p class="cap-text">Every structure plotted by type icon and condition-coded ring</p>
+    </div>
+    <div>
+      <div class="shot">
+        <img src="reportAssets/guide-structure-card-dark.png" alt="Structure detail card, shown in night mode">
+      </div>
+      <p class="cap-text">Click a marker to open its structure card</p>
+    </div>
   </div>
-  <p class="cap-text">The structure card — your starting point for everything about one structure</p>
 
   <div class="footer-bar"><span>spanSense — User Guide</span><span>The Map</span></div>
 </div>
@@ -231,7 +248,7 @@
     <li>Filter by <strong>Principal (PI)</strong>, <strong>General (GI)</strong>, or <strong>Superficial (SI)</strong></li>
     <li>Search across every recorded inspection for that structure</li>
     <li>Each row shows the inspector, date, and both <strong>CRIT</strong> and <strong>AV</strong> scores</li>
-    <li>Use the row's icons to download the <strong>PDF report</strong>, <strong>edit</strong> the inspection, or view the <strong>full record</strong></li>
+    <li>Use the row's icons to download the <strong>PDF report</strong>, <strong>edit</strong> the inspection, or generate a <strong>BCI Proforma</strong></li>
     <li>Click <strong>+ New Inspection</strong> to start the next one straight from here</li>
   </ul>
 
@@ -275,6 +292,58 @@
   <div class="footer-bar"><span>spanSense — User Guide</span><span>Running an Inspection</span></div>
 </div>
 
+<!-- ================= 04b DEFECT MODAL DEEP DIVE ================= -->
+<div class="page">
+  <div class="sec-head">
+    <h2>04 — Inside the Add Defect Modal</h2>
+    <p class="lede">A closer look at the previous-defects panel, the live BCI preview, the severity guide, and moving between defects — all without leaving the modal.</p>
+  </div>
+
+  <div class="two-col" style="gap:16px; align-items:start;">
+    <div class="shot">
+      <img src="reportAssets/guide-defect-modal.png" alt="Add Defect modal, shown in night mode">
+    </div>
+    <div>
+      <h3 class="subhead" style="margin-top:0;">Previous Defects — and copying one in</h3>
+      <p class="body-text">Open a defect for an element that's had one logged before, and a <strong>Previous Defects</strong> panel appears beside the modal — collapsed to a slim tab until you expand it. Each past defect shows as a card (Severity/Extent/Works badges, date, comment), three most recent first with a <strong>Load more</strong> option for the rest. Click a card to copy it straight into the form — severity, extent, works, cost, remedial works, and comment all fill in together, with a <strong>"From &lt;date&gt;"</strong> badge confirming it's a copy. Adjust what's changed, then save.</p>
+    </div>
+  </div>
+  <p class="cap-text" style="margin-top:2px;">The Add Defect modal in night mode — Previous Defects expanded on the left with real history, Severity Guide flyout on the right</p>
+
+  <div class="callout" style="margin-top:10px; padding:8px 14px;">
+    <strong>Not the same as the table's Copy icon:</strong> the Copy/Edit icons on an already-logged row duplicate a defect you've just saved in <em>this</em> inspection — Previous Defects pulls from history instead.
+  </div>
+
+  <h3 class="subhead">Live BCI Impact preview</h3>
+  <p class="body-text">Move the Severity or Extent stepper and the <strong>BCI_avg Impact</strong> panel recalculates instantly — current score on the left, what it would become on the right. It uses the same calculation that produces the final report score, so there's no surprise once you save: red means your change makes the structure's score worse, green means it improves.</p>
+  <div class="impact-demo"><span class="val">91.20</span><span class="arrow">→</span><span class="val worse">84.60</span><span class="cap">gets worse — shown in red</span></div>
+
+  <div class="two-col" style="margin-top:10px; gap:16px;">
+    <div>
+      <h3 class="subhead" style="margin-top:0;">Severity Guide</h3>
+      <p class="body-text">Not sure what separates a 3 from a 4? This panel spells out all five levels in plain language for the exact defect type and number picked, with your current selection highlighted.</p>
+      <table class="data-tbl">
+        <tr><th>Lvl</th><th>1.1 Rusting</th></tr>
+        <tr><td><strong>1</strong></td><td>No rust</td></tr>
+        <tr><td><strong>2</strong></td><td>Minor surface rust</td></tr>
+        <tr><td><strong>3</strong></td><td>Moderate pitting</td></tr>
+        <tr style="background:#fbf3e7;"><td><strong>4</strong></td><td>Deep pits/perforations</td></tr>
+        <tr><td><strong>5</strong></td><td>Disintegrated by corrosion</td></tr>
+      </table>
+    </div>
+    <div>
+      <h3 class="subhead" style="margin-top:0;">Moving between defects</h3>
+      <p class="body-text">No need to close the modal to work through an element's defects:</p>
+      <ul class="feat-list">
+        <li>Use the <strong>◀ / ▶</strong> arrows in the modal header to step between defects already logged for this element — a <strong>"Defect X of N"</strong> counter shows where you are, and each move auto-saves what you were editing</li>
+        <li>Click <strong>+</strong> to start logging another new defect on the same element without closing the modal</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer-bar"><span>spanSense — User Guide</span><span>Running an Inspection</span></div>
+</div>
+
 <!-- ================= 05 BCI SCORES ================= -->
 <div class="page">
   <div class="sec-head">
@@ -285,14 +354,14 @@
   <p class="body-text"><strong>BCI avg</strong> is the overall average condition across every element in the inspection. <strong>BCI crit</strong> is the score of the single worst-condition element — the one that actually drives risk decisions. Both fall into the same five bands used everywhere in the app:</p>
 
   <div class="bci-bands">
-    <div class="bci-band band-critical"><div class="lbl">Critical</div><div class="score">0–39</div><div class="name">Immediate action</div></div>
+    <div class="bci-band band-critical"><div class="lbl">Very Poor</div><div class="score">0–39</div><div class="name">Immediate action</div></div>
     <div class="bci-band band-poor"><div class="lbl">Poor</div><div class="score">40–64</div><div class="name">Investigate</div></div>
     <div class="bci-band band-fair"><div class="lbl">Fair</div><div class="score">65–79</div><div class="name">Monitor</div></div>
     <div class="bci-band band-good"><div class="lbl">Good</div><div class="score">80–89</div><div class="name">Maintain</div></div>
     <div class="bci-band band-excellent"><div class="lbl">Very Good</div><div class="score">90–100</div><div class="name">No action</div></div>
   </div>
 
-  <p class="body-text" style="margin-top:12px;">You'll see this exact banding in four places: the structure card, the Add Defect modal's live impact preview, the Dashboard's BCI Score Distribution chart, and twinView's condition panel — so a score always means the same thing wherever you see it.</p>
+  <p class="body-text" style="margin-top:12px;">You'll see this exact banding in three places: the structure card, the Add Defect modal's live impact preview, and the Dashboard's BCI Score Distribution chart. twinView's condition panel is a bit coarser — it colors the score as just Critical, Fair, or Good, so treat it as a quick at-a-glance signal rather than the precise five-band read.</p>
 
   <div class="callout good">
     <strong>Where to find it:</strong> the structure card shows the current average; Previous Inspections shows CRIT and AV per inspection; twinView shows both, plus how they've changed since the last inspection.
@@ -352,7 +421,7 @@
     <p class="lede">Never miss the next inspection — and it's tailored per structure.</p>
   </div>
 
-  <p class="body-text">By default, every structure follows a 2-year General Inspection / 6-year Principal Inspection cycle, alternating GI, GI, PI. Planning shows this as a <strong>Month</strong> calendar, a <strong>Year</strong> grid, or a multi-year <strong>Gantt</strong> view — click any inspection chip in any view to jump straight to it.</p>
+  <p class="body-text">By default, every structure follows a 2-year General Inspection / 6-year Principal Inspection cycle, alternating GI, GI, PI. Planning shows this as a <strong>Month</strong> calendar, a <strong>Year</strong> grid, or a multi-year <strong>Gantt</strong> view — click any inspection chip in Month or Year view to open its schedule editor directly.</p>
 
   <h3 class="subhead">Editing a structure's schedule</h3>
   <ol class="steps">

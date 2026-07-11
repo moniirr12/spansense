@@ -545,13 +545,13 @@
                 <div class="stats-three-cards">
                     <!-- BCI Average Card -->
                     <div class="stat-card average">
-                        <div class="stat-label">BCI AVERAGE</div>
+                        <div class="stat-label">BCI<sub>avg</sub></div>
                         <div class="stat-value stat-loading" id="bciAvResult">···</div>
                     </div>
 
                     <!-- BCI Critical Card -->
                     <div class="stat-card critical">
-                        <div class="stat-label">BCI CRITICAL</div>
+                        <div class="stat-label">BCI<sub>crit</sub></div>
                         <div class="stat-value critical stat-loading" id="bciCritResult">···</div>
                     </div>
 
@@ -587,11 +587,11 @@
 
                 <div class="bci-sticky-sidebar" id="bciStickySidebar">
                     <div class="stat-card average">
-                        <div class="stat-label">BCI AVERAGE</div>
+                        <div class="stat-label">BCI<sub>avg</sub></div>
                         <div class="stat-value" id="bciAvSidebar">100.00</div>
                     </div>
                     <div class="stat-card critical">
-                        <div class="stat-label">BCI CRITICAL</div>
+                        <div class="stat-label">BCI<sub>crit</sub></div>
                         <div class="stat-value critical" id="bciCritSidebar">100.00</div>
                     </div>
                 </div>
@@ -1074,7 +1074,7 @@
         <!-- Floating side rail: live BCI impact + condensed severity guidance -->
         <div class="modal-side-rail" id="modalSideRail">
             <div class="bci-impact-panel" id="bciImpactPanel" style="display:none;">
-                <div class="bci-impact-header"><i class="fas fa-chart-line"></i> BCI Average Impact</div>
+                <div class="bci-impact-header"><i class="fas fa-chart-line"></i> BCI<sub>avg</sub> Impact</div>
                 <div class="bci-impact-body">
                     <span id="bciPreviewBefore">—</span>
                     <i class="fas fa-arrow-right"></i>
@@ -1208,11 +1208,11 @@
                         <span class="summary-value" id="psDate">12 Jun 2026</span>
                     </div>
                     <div class="summary-row">
-                        <span class="summary-label"><i class="fas fa-chart-line"></i> BCI Average</span>
+                        <span class="summary-label"><i class="fas fa-chart-line"></i> BCI<sub>avg</sub></span>
                         <span class="summary-value bci-av" id="psBciAv">87.4</span>
                     </div>
                     <div class="summary-row">
-                        <span class="summary-label"><i class="fas fa-exclamation-triangle"></i> BCI Critical</span>
+                        <span class="summary-label"><i class="fas fa-exclamation-triangle"></i> BCI<sub>crit</sub></span>
                         <span class="summary-value bci-crit" id="psBciCrit">62.1</span>
                     </div>
                 </div>
@@ -1283,21 +1283,16 @@
             }
         }
 
-        // Dark mode toggle
+        // Dark mode: pre-apply the saved theme here, synchronously, before any
+        // external script loads - this is what actually prevents a flash of
+        // the wrong theme (nm-preload). The click handler itself lives in
+        // inspection1.js (loaded later in the script chain), which is the
+        // canonical owner of #nightModeToggle's behavior; it re-applies this
+        // same initial state on load too, so this block only needs to cover
+        // the gap before that script runs.
         (function() {
             const toggleBtn = document.getElementById('nightModeToggle');
             if (!toggleBtn) return;
-
-            toggleBtn.onclick = function() {
-                document.body.classList.toggle('night-mode');
-                if (document.body.classList.contains('night-mode')) {
-                    this.innerHTML = '<i class="fas fa-sun"></i>';
-                    localStorage.setItem('nightMode', 'on');
-                } else {
-                    this.innerHTML = '<i class="fas fa-moon"></i>';
-                    localStorage.setItem('nightMode', 'off');
-                }
-            };
 
             const savedNightMode = localStorage.getItem('nightMode');
             const systemPrefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;

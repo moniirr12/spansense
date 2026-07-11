@@ -278,6 +278,8 @@
     gap: 7px;
 }
 
+.summary-label sub { text-transform: none; }
+
 .summary-label i {
     font-size: 0.75rem;
     width: 14px;

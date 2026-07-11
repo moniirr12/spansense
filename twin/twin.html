@@ -412,19 +412,21 @@ body {
 }
 .bci-tile {
     border-radius: 16px;
-    padding: 16px 14px;
+    padding: 12px 14px;
     text-align: center;
     border: 1px solid #e9edf2;
 }
+.night-mode .bci-tile { border-color: #2a3a40; }
 .bci-tile .bci-label {
     font-size: 0.68rem;
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
+.bci-tile .bci-label sub { text-transform: none; }
 .bci-tile .bci-value {
-    font-size: 2rem;
+    font-size: 2.4rem;
     font-weight: 700;
     line-height: 1;
 }
@@ -441,6 +443,70 @@ body {
 .bci-tile.critical { background: #fdf2f2; }
 .bci-tile.critical .bci-label, .bci-tile.critical .bci-sub { color: #c0392b; }
 .bci-tile.critical .bci-value { color: #c0392b; }
+.night-mode .bci-tile.good { background: #1e3a3e; }
+.night-mode .bci-tile.good .bci-label, .night-mode .bci-tile.good .bci-sub { color: #8ab4b0; }
+.night-mode .bci-tile.good .bci-value { color: #8ab4b0; }
+.night-mode .bci-tile.fair { background: #3a3020; }
+.night-mode .bci-tile.fair .bci-label, .night-mode .bci-tile.fair .bci-sub { color: #e8a87c; }
+.night-mode .bci-tile.fair .bci-value { color: #e8a87c; }
+.night-mode .bci-tile.critical { background: rgba(220,38,38,0.2); }
+.night-mode .bci-tile.critical .bci-label, .night-mode .bci-tile.critical .bci-sub { color: #ef5b5b; }
+.night-mode .bci-tile.critical .bci-value { color: #ef5b5b; }
+
+/* Per-tile sparkline (BCI history for that one metric, coloured to match
+   the tile's own good/fair/critical band - see renderSparkline in twin.js) */
+.spark-row { margin-top: 8px; display: flex; align-items: flex-end; justify-content: center; height: 24px; }
+.spark-row svg { display: block; }
+.spark-good { color: #2d7a6e; }
+.spark-fair { color: #c28b5a; }
+.spark-critical { color: #c0392b; }
+.night-mode .spark-good { color: #8ab4b0; }
+.night-mode .spark-fair { color: #e8a87c; }
+.night-mode .spark-critical { color: #ef5b5b; }
+
+.bci-delta { font-size: 0.68rem; margin-top: 6px; font-weight: 600; }
+.bci-delta.down { color: #dc2626; }
+.bci-delta.up { color: #2d7a6e; }
+.bci-delta.flat { color: #8a9ba8; }
+.night-mode .bci-delta.down { color: #ef5b5b; }
+.night-mode .bci-delta.up { color: #8ab4b0; }
+.night-mode .bci-delta.flat { color: #8aa4ac; }
+
+/* ---------- BCI TREND CARD ---------- */
+.trend-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.trend-sub { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 0.7rem; color: #8a9ba8; flex-shrink: 0; }
+.night-mode .trend-sub { color: #8aa4ac; }
+.chart-wrap { position: relative; margin-top: 10px; }
+.chart-wrap svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart-tooltip {
+    position: absolute; top: 0; pointer-events: none; opacity: 0; transition: opacity 0.1s;
+    background: #2c4a48; color: #f2f6f5; font-size: 0.72rem; line-height: 1.5;
+    border-radius: 8px; padding: 6px 10px; transform: translate(-50%, 0);
+    white-space: nowrap; z-index: 5; box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+}
+.night-mode .chart-tooltip { background: #0f1619; }
+.chart-tooltip b { display: block; font-size: 0.76rem; }
+.trend-crosshair { stroke: #d3dde0; stroke-width: 1; opacity: 0; transition: opacity 0.1s; }
+.night-mode .trend-crosshair { stroke: #3a4b53; }
+.trend-ref-line { stroke: #eef2f6; stroke-width: 1; stroke-dasharray: 2,3; }
+.night-mode .trend-ref-line { stroke: #2a3a40; }
+.trend-axis-label { fill: #c3ccd3; }
+.night-mode .trend-axis-label { fill: #3a4b53; }
+.trend-date-label { fill: #8a9ba8; }
+.night-mode .trend-date-label { fill: #8aa4ac; }
+.trend-avg-color { color: #5b8c8a; }
+.trend-crit-color { color: #c2703f; }
+.night-mode .trend-avg-color { color: #8ab4b0; }
+.night-mode .trend-crit-color { color: #e8a87c; }
+.chart-legend { display: flex; gap: 14px; margin-top: 12px; }
+.chart-legend .item { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: #8a9ba8; }
+.night-mode .chart-legend .item { color: #8aa4ac; }
+.chart-legend .sw { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: currentColor; }
+.trend-empty {
+    padding: 20px 0; text-align: center; font-size: 0.8rem; color: #8a9ba8;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.night-mode .trend-empty { color: #8aa4ac; }
 
 /* facts list */
 .fact-list { display: flex; flex-direction: column; gap: 12px; }
@@ -782,6 +848,11 @@ body.night-mode .glass-scrollbar .thumb {
 .night-mode .live-twin-selector .lts-name { color: #d4dfe3; }
 .night-mode .live-twin-selector .lts-icon {
     background: linear-gradient(135deg, #2f4a48, #1e3a38);
+    color: #8ab4b0;
+}
+.night-mode .dd-item .dd-icon {
+    background: linear-gradient(135deg, #2f4a48, #1e3a38);
+    color: #8ab4b0;
 }
 .night-mode .dropdown-menu {
     background: #232e34;
@@ -878,13 +949,29 @@ body.night-mode .glass-scrollbar .thumb {
                 <div class="ic-eyebrow">Condition</div>
                 <div class="bci-grid">
                     <div class="bci-tile fair" id="bciAvgTile">
-                        <div class="bci-label">BCI avg</div>
+                        <div class="bci-label">BCI<sub>avg</sub></div>
                         <div class="bci-value" id="bciAvg">—</div>
+                        <div class="spark-row" id="sparkAvg"></div>
+                        <div class="bci-delta" id="deltaAvg"></div>
                     </div>
                     <div class="bci-tile critical" id="bciCritTile">
-                        <div class="bci-label">BCI crit</div>
+                        <div class="bci-label">BCI<sub>crit</sub></div>
                         <div class="bci-value" id="bciCrit">—</div>
+                        <div class="spark-row" id="sparkCrit"></div>
+                        <div class="bci-delta" id="deltaCrit"></div>
                     </div>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <div class="trend-head">
+                    <div class="ic-eyebrow" style="margin-bottom: 0;">BCI trend</div>
+                    <div class="trend-sub" id="trendSub">—</div>
+                </div>
+                <div class="chart-wrap" id="bciTrendChart"></div>
+                <div class="chart-legend">
+                    <div class="item"><span class="sw trend-avg-color"></span>BCI<sub>avg</sub></div>
+                    <div class="item"><span class="sw trend-crit-color"></span>BCI<sub>crit</sub></div>
                 </div>
             </div>
 
@@ -910,11 +997,11 @@ body.night-mode .glass-scrollbar .thumb {
                         <span class="status-badge pending" id="nextInsp">—</span>
                     </div>
                     <div class="status-line">
-                        <span class="sl-label">BCI avg trend</span>
+                        <span class="sl-label">BCI<sub>avg</sub> trend</span>
                         <span class="status-badge completed" id="bciAvgTrend">—</span>
                     </div>
                     <div class="status-line">
-                        <span class="sl-label">BCI crit trend</span>
+                        <span class="sl-label">BCI<sub>crit</sub> trend</span>
                         <span class="status-badge completed" id="bciCritTrend">—</span>
                     </div>
                 </div>

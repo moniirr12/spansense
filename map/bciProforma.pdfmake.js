@@ -513,8 +513,8 @@ function buildBCIProformaContent(bciFormData, singleSpanIdx) {
         tableBody.push([
             {
                 text: [
-                    { text: 'BCI crit: ', bold: true }, { text: bciCrit },
-                    { text: '    |    BCI ave: ', bold: true }, { text: bciAv }
+                    { text: 'BCI', bold: true }, { text: 'crit', bold: true, sub: {}, fontSize: 6 }, { text: ': ', bold: true }, { text: bciCrit },
+                    { text: '    |    BCI', bold: true }, { text: 'avg', bold: true, sub: {}, fontSize: 6 }, { text: ': ', bold: true }, { text: bciAv }
                 ],
                 colSpan: 20, fontSize: 8, alignment: 'center'
             },

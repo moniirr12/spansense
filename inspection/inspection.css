@@ -146,7 +146,7 @@ body {
 .stat-card {
     background: white;
     border-radius: 22px;
-    padding: 18px 12px;
+    padding: 14px 12px;
     text-align: center;
     border: 1px solid #e9edf2;
     transition: all 0.2s ease;
@@ -175,14 +175,29 @@ body {
     font-weight: 700;
     letter-spacing: 0.08em;
     color: #8a9ba8;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
     text-transform: uppercase;
 }
-.stat-card .stat-value { font-size: 2rem; font-weight: 700; color: #2c4a48; line-height: 1.2; }
+.stat-card .stat-label sub { text-transform: none; }
+.stat-card .stat-value { font-size: 2.35rem; font-weight: 700; color: #2c4a48; line-height: 1.2; }
 .stat-card.critical .stat-value { color: #e8a87c; }
 /* Shown only until the real score is computed on load — deliberately
    doesn't look like "100.00" so it can't be mistaken for a real score. */
 .stat-value.stat-loading { color: #c5d3d9 !important; font-weight: 400; letter-spacing: 0.1em; }
+
+/* Card background tints one of these, matching twinView's Condition tiles -
+   same good/fair/poor/critical bands and colours as getBciColor() in bci.js,
+   just applied to the whole card instead of just the number. Text colour
+   itself stays driven by that JS (inline style beats any CSS rule here), so
+   only the background needs a class per band. */
+.stat-card.bci-band-good { background: #eef4f2; }
+.stat-card.bci-band-fair { background: #fdf6ec; }
+.stat-card.bci-band-poor { background: #fbeeee; }
+.stat-card.bci-band-critical { background: #fdf2f2; }
+.night-mode .stat-card.bci-band-good { background: #1e3a3e; }
+.night-mode .stat-card.bci-band-fair { background: #3a2f1a; }
+.night-mode .stat-card.bci-band-poor { background: #3a2424; }
+.night-mode .stat-card.bci-band-critical { background: rgba(220, 38, 38, 0.2); }
 .night-mode .stat-value.stat-loading { color: #4a5b62 !important; }
 
 /* Date card inner layout */
@@ -2354,10 +2369,12 @@ body {
 /* Hidden elements */
 #inspectionDetails, #historicalDefects { display: none; }
 
-/* BCI Score colors for dark mode */
-.night-mode .stat-card.critical .stat-value {
-    color: #e8a87c !important;  /* Keep the warm orange for critical */
-}
+/* BCI Score colors for dark mode - the !important that used to force this
+   card's text to a fixed orange was fighting getBciColor()'s actual per-value
+   band colour (see setBciValue in bci.js), so a "BCI Critical" card showing a
+   perfectly good score still read as orange. Removed now that the card's
+   background also bands by value (see .stat-card.bci-band-* above) - text
+   and background should agree on the same band. */
 
 /* If you have specific BCI score colors, add them here */
 .night-mode .bci-stat-card .stat-value {

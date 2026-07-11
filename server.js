@@ -6,6 +6,7 @@ const cors = require("cors");
 
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 const proj4 = require('proj4');
 const bcrypt = require('bcryptjs');
 const storage = require('./supabaseStorage');
@@ -89,9 +90,16 @@ app.get('/api/routes', requireAuth, requireAdmin, (req, res) => {
 });
 
 // PostgreSQL connection
+// rejectUnauthorized was previously false in production, which encrypts the
+// connection but never checks it's actually Supabase's pooler on the other
+// end (accepts any cert, so a MITM on that hop would go unnoticed). Pinning
+// Supabase's own Root 2021 CA (certs/supabase-ca.crt - their public root,
+// captured directly from a live handshake with our own DB, not a
+// third-party copy) lets us verify the chain properly instead.
+const supabaseCA = fs.readFileSync(path.join(__dirname, 'certs', 'supabase-ca.crt'), 'utf8');
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true, ca: supabaseCA } : false
 });
 
 // Test connection on startup
@@ -974,7 +982,9 @@ app.get('/api/twin/:structureId', requireAuth, async (req, res) => {
             id: i.id,
             type: i.inspection_type || 'GI',
             date: monthYearFmt(new Date(i.inspection_date)),
-            timestamp: new Date(i.inspection_date).getTime()
+            timestamp: new Date(i.inspection_date).getTime(),
+            bciAvg: i.overall_bciave != null ? parseFloat(i.overall_bciave) : null,
+            bciCrit: i.overall_bcicrit != null ? parseFloat(i.overall_bcicrit) : null
         }));
 
         const spanNumber = bridge.span_number || spans.length || 1;
@@ -993,6 +1003,7 @@ app.get('/api/twin/:structureId', requireAuth, async (req, res) => {
             bciCrit,
             prevBciAvg,
             prevBciCrit,
+            prevInspectionType: previousInspection?.inspection_type || null,
             bciCritLocation: critSpan ? `span ${critSpan.span_number}` : null,
             spanBCI,
             defects,
@@ -1350,9 +1361,12 @@ app.post('/save-inspection', requireAuth, async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        // Compute overall BCI averages from spans
-        const bciCrits = inspection.spans.map(s => parseFloat(s.bciCrit) || 100);
-        const bciAvs   = inspection.spans.map(s => parseFloat(s.bciAv)   || 100);
+        // Compute overall BCI averages from spans. Default to 100 only when a
+        // span's score is genuinely missing (NaN) - `parseFloat(x) || 100`
+        // looks equivalent but silently replaces a real score of 0 (worst
+        // possible BCI) with 100 (perfect), since 0 is falsy in JS.
+        const bciCrits = inspection.spans.map(s => { const v = parseFloat(s.bciCrit); return Number.isNaN(v) ? 100 : v; });
+        const bciAvs   = inspection.spans.map(s => { const v = parseFloat(s.bciAv);   return Number.isNaN(v) ? 100 : v; });
         const overallBciCrit = parseFloat((bciCrits.reduce((a, b) => a + b, 0) / bciCrits.length).toFixed(2));
         const overallBciAve  = parseFloat((bciAvs.reduce((a, b) => a + b, 0) / bciAvs.length).toFixed(2));
         console.log(`[INFO] Overall BCI - Crit: ${overallBciCrit}, Ave: ${overallBciAve}`);
@@ -1526,9 +1540,11 @@ app.put('/update-inspection', requireAuth, async (req, res) => {
             throw new Error("Inspection not found");
         }
 
-        // Compute overall BCI averages from spans
-        const bciCrits = inspection.spans.map(s => parseFloat(s.bciCrit) || 100);
-        const bciAvs   = inspection.spans.map(s => parseFloat(s.bciAv)   || 100);
+        // Compute overall BCI averages from spans. Default to 100 only when a
+        // span's score is genuinely missing (NaN) - see the matching comment
+        // in /save-inspection for why `parseFloat(x) || 100` is wrong here.
+        const bciCrits = inspection.spans.map(s => { const v = parseFloat(s.bciCrit); return Number.isNaN(v) ? 100 : v; });
+        const bciAvs   = inspection.spans.map(s => { const v = parseFloat(s.bciAv);   return Number.isNaN(v) ? 100 : v; });
         const overallBciCrit = parseFloat((bciCrits.reduce((a, b) => a + b, 0) / bciCrits.length).toFixed(2));
         const overallBciAve  = parseFloat((bciAvs.reduce((a, b) => a + b, 0) / bciAvs.length).toFixed(2));
         console.log(`[INFO] Update - Overall BCI - Crit: ${overallBciCrit}, Ave: ${overallBciAve}`);
@@ -2551,6 +2567,33 @@ app.listen(PORT, () => {
 });
 
 
+
+// Backend-only paths that must never be downloadable. The frontend's pages
+// and scripts are scattered across many top-level folders instead of one
+// dedicated public/ directory, so express.static below has to serve the
+// whole project root - without this denylist running first, anyone could
+// curl /server.js or /supabaseStorage.js and read the entire backend
+// source, every SQL query, and the storage bucket logic.
+const STATIC_DENYLIST_PATTERNS = [
+    /^\/server\.js$/i,
+    /^\/supabasestorage\.js$/i,
+    /^\/package(-lock)?\.json$/i,
+    /^\/scripts(\/|$)/i,
+    /^\/node_modules(\/|$)/i,
+    /^\/certs(\/|$)/i
+];
+app.use((req, res, next) => {
+    let normalized;
+    try {
+        normalized = path.posix.normalize(decodeURIComponent(req.path));
+    } catch {
+        return res.status(400).end();
+    }
+    if (STATIC_DENYLIST_PATTERNS.some(re => re.test(normalized))) {
+        return res.status(404).end();
+    }
+    next();
+});
 
 // Serve frontend static files (must be before error handler and listen).
 // no-cache (not "don't cache") — the browser still keeps the file and

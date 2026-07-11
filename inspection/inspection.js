@@ -1716,34 +1716,12 @@ if (worksFieldEl) {
     });
 }
 
-(function() {
-    const toggleBtn = document.getElementById('nightModeToggle');
-    if (!toggleBtn) {
-        console.log('Dark mode button not found');
-        return;
-    }
-    toggleBtn.onclick = function(e) {
-        e.preventDefault();
-        document.body.classList.toggle('night-mode');
-        if (document.body.classList.contains('night-mode')) {
-            this.innerHTML = '<i class="fas fa-sun"></i>';
-            localStorage.setItem('nightMode', 'on');
-            console.log('Dark mode ON');
-        } else {
-            this.innerHTML = '<i class="fas fa-moon"></i>';
-            localStorage.setItem('nightMode', 'off');
-            console.log('Dark mode OFF');
-        }
-    };
-    const savedNightMode = localStorage.getItem('nightMode');
-    const systemPrefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
-    document.documentElement.classList.remove('nm-preload');
-    if (savedNightMode === 'on' || (savedNightMode === null && !systemPrefersLight)) {
-        document.body.classList.add('night-mode');
-        toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
-        console.log('Restored dark mode from storage');
-    }
-})();
+// #nightModeToggle's click handler and initial-state setup live in
+// inspection1.js (loaded after this file) and an early inline <script> in
+// inspection.html (which pre-applies the saved theme before any external
+// script loads, to avoid a flash of the wrong theme) - a third copy used to
+// live here, fully redundant since it always ran and was immediately
+// overwritten by inspection1.js's, and has been removed.
 
 function updateConditionalFields(expandableRow, worksValue) {
     const worksRow = expandableRow.querySelector('.works-row');

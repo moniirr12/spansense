@@ -32,48 +32,11 @@ document.addEventListener('DOMContentLoaded', function() {
 // ============================================
 // LANDSCAPE POST-SAVE MODAL
 // ============================================
-
-function showPostSaveModal(inspectionData, defects, isEditMode) {
-    const overlay = document.getElementById('postSaveOverlay');
-    if (!overlay) {
-        console.error('Post-save modal overlay not found');
-        return;
-    }
-
-    // Populate data
-    const bridgeNameEl = document.getElementById('psBridgeName');
-    const dateEl = document.getElementById('psDate');
-    const spansEl = document.getElementById('psSpanCount');
-    const defectsEl = document.getElementById('psDefectCount');
-    const bciAvEl = document.getElementById('psBciAv');
-    const bciCritEl = document.getElementById('psBciCrit');
-
-    if (bridgeNameEl) bridgeNameEl.textContent = inspectionData.structureName || 'Unknown Bridge';
-    
-    if (dateEl) {
-        const d = inspectionData.inspectionDate ? new Date(inspectionData.inspectionDate) : new Date();
-        dateEl.textContent = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-    }
-    
-    if (spansEl) spansEl.textContent = (inspectionData.spans?.length || 0) + ' inspected';
-    if (defectsEl) defectsEl.textContent = defects.length + ' recorded';
-    
-    if (bciAvEl) {
-        const bciAv = document.getElementById('bciAvResult')?.textContent || '100.00';
-        bciAvEl.textContent = bciAv;
-    }
-    
-    if (bciCritEl) {
-        const bciCrit = document.getElementById('bciCritResult')?.textContent || '100.00';
-        bciCritEl.textContent = bciCrit;
-    }
-
-    // Store mode for action handlers
-    overlay.dataset.isEditMode = isEditMode ? 'true' : 'false';
-
-    overlay.classList.add('active');
-    document.body.style.overflow = 'hidden';
-}
+// The modal itself is populated and shown by saveSequence.js's own private
+// showPostSaveModal() (called internally after the save animation finishes,
+// so it always resolves to that file's closure-scoped version regardless of
+// script load order). A second, window-exposed 3-arg version used to live
+// here but nothing ever called it - removed as dead code.
 
 // ---------- ACTION HANDLERS ----------
 
@@ -130,6 +93,7 @@ function viewReport(e) {
                     .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 24px 0; }
                     .meta-item { background: #f8fafc; padding: 16px; border-radius: 14px; }
                     .meta-label { font-size: 0.7rem; color: #8a9ba8; text-transform: uppercase; font-weight: 600; }
+                    .meta-label sub { text-transform: none; }
                     .meta-value { font-size: 1.2rem; font-weight: 700; color: #2c4a48; margin-top: 4px; }
                     table { width: 100%; border-collapse: collapse; margin-top: 24px; }
                     th { background: #f8fafc; padding: 12px; text-align: left; font-size: 0.75rem; text-transform: uppercase; color: #8a9ba8; }
@@ -150,11 +114,11 @@ function viewReport(e) {
                             <div class="meta-value">${defects.length}</div>
                         </div>
                         <div class="meta-item">
-                            <div class="meta-label">BCI Average</div>
+                            <div class="meta-label">BCI<sub>avg</sub></div>
                             <div class="meta-value" style="color:#5b8c8a;">${document.getElementById('bciAvResult')?.textContent || '100.00'}</div>
                         </div>
                         <div class="meta-item">
-                            <div class="meta-label">BCI Critical</div>
+                            <div class="meta-label">BCI<sub>crit</sub></div>
                             <div class="meta-value" style="color:#e8a87c;">${document.getElementById('bciCritResult')?.textContent || '100.00'}</div>
                         </div>
                     </div>
@@ -197,7 +161,6 @@ window.goHome = goHome;
 window.newInspection = newInspection;
 window.viewReport = viewReport;
 window.closePostSaveModal = closePostSaveModal;
-window.showPostSaveModal = showPostSaveModal;
 
 // ============================================
 // HELPER FUNCTIONS
@@ -431,7 +394,7 @@ function generateDraftConclusions() {
         }
     }
 
-    paragraphs.push(`Overall structural condition is assessed as ${conditionLabel} (BCI Average ${bciAv.toFixed(2)}, BCI Critical ${bciCrit.toFixed(2)}).`);
+    paragraphs.push(`Overall structural condition is assessed as ${conditionLabel} (BCI avg ${bciAv.toFixed(2)}, BCI crit ${bciCrit.toFixed(2)}).`);
     paragraphs.push(worksRequired.length
         ? 'It is recommended that the identified remedial works be prioritised accordingly.'
         : 'No remedial works are currently required.');
@@ -653,6 +616,7 @@ if (previewButton) {
           .meta { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; margin: 24px 0; }
           .meta-item { background: #f8fafc; padding: 16px; border-radius: 14px; }
           .meta-label { font-size: 0.7rem; color: #8a9ba8; text-transform: uppercase; font-weight: 600; }
+          .meta-label sub { text-transform: none; }
           .meta-value { font-size: 1.2rem; font-weight: 700; color: #2c4a48; margin-top: 4px; }
           .stats-row { display: flex; gap: 20px; flex-wrap: wrap; margin: 16px 0 8px; font-size: 0.85rem; color: #4a5b6e; }
           .stats-row b { color: #2c4a48; }
@@ -679,11 +643,11 @@ if (previewButton) {
               <div class="meta-value">${realDefects.length}</div>
             </div>
             <div class="meta-item">
-              <div class="meta-label">BCI Average</div>
+              <div class="meta-label">BCI<sub>avg</sub></div>
               <div class="meta-value" style="color:#5b8c8a;">${bciAv}</div>
             </div>
             <div class="meta-item">
-              <div class="meta-label">BCI Critical</div>
+              <div class="meta-label">BCI<sub>crit</sub></div>
               <div class="meta-value" style="color:#e8a87c;">${bciCrit}</div>
             </div>
           </div>
@@ -906,6 +870,16 @@ function injectRetrievedRibbon(row) {
       if (src && dst && src.textContent !== dst.textContent) {
         dst.textContent = src.textContent;
         dst.style.color = src.style.color;
+      }
+      // Mirror the band-background class too (see BCI_BAND_CLASSES in
+      // bci.js) so the sticky sidebar's mini cards tint the same as the
+      // main ones instead of staying permanently white.
+      const srcCard = src && src.closest('.stat-card');
+      const dstCard = dst && dst.closest('.stat-card');
+      if (srcCard && dstCard && window.BCI_BAND_CLASSES) {
+        window.BCI_BAND_CLASSES.forEach(c => dstCard.classList.remove(c));
+        const band = window.BCI_BAND_CLASSES.find(c => srcCard.classList.contains(c));
+        if (band) dstCard.classList.add(band);
       }
     });
   }

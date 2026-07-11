@@ -142,6 +142,22 @@ function reportPara(d, text, opts) {
     });
 }
 
+// Same as reportPara, but for a "BCI" + avg/crit label where the qualifier
+// renders as a real subscript run (docx's native subScript option) instead
+// of plain trailing text.
+function reportBciLabelPara(d, sub, opts) {
+    opts = opts || {};
+    var runOpts = { italics: !!opts.italics, bold: !!opts.bold, color: opts.color, size: opts.size || 18 };
+    return new d.Paragraph({
+        alignment: opts.alignment,
+        spacing: { after: opts.after != null ? opts.after : 120 },
+        children: [
+            new d.TextRun(Object.assign({}, runOpts, { text: 'BCI' })),
+            new d.TextRun(Object.assign({}, runOpts, { text: sub, subScript: true }))
+        ]
+    });
+}
+
 // One clickable line in the manually-built Table of Contents.
 function tocEntry(d, text, bookmarkId, indent) {
     return new d.Paragraph({
@@ -398,11 +414,11 @@ async function buildFullInspectionReportDocx(doc) {
                 width: { size: 100, type: d.WidthType.PERCENTAGE },
                 rows: [new d.TableRow({ children: [
                     new d.TableCell({ width: { size: 34, type: d.WidthType.PERCENTAGE }, children: [
-                        reportPara(d, 'BCI Average', { alignment: d.AlignmentType.CENTER, bold: true, size: 16, color: REPORT_COLORS.muted, after: 40 }),
+                        reportBciLabelPara(d, 'avg', { alignment: d.AlignmentType.CENTER, bold: true, size: 16, color: REPORT_COLORS.muted, after: 40 }),
                         reportPara(d, String(spanBciAv), { alignment: d.AlignmentType.CENTER, bold: true, size: 32 })
                     ] }),
                     new d.TableCell({ width: { size: 33, type: d.WidthType.PERCENTAGE }, children: [
-                        reportPara(d, 'BCI Critical', { alignment: d.AlignmentType.CENTER, bold: true, size: 16, color: REPORT_COLORS.muted, after: 40 }),
+                        reportBciLabelPara(d, 'crit', { alignment: d.AlignmentType.CENTER, bold: true, size: 16, color: REPORT_COLORS.muted, after: 40 }),
                         reportPara(d, String(spanBciCrit), { alignment: d.AlignmentType.CENTER, bold: true, size: 32, color: 'DC2626' })
                     ] }),
                     new d.TableCell({ width: { size: 33, type: d.WidthType.PERCENTAGE }, children: [

@@ -291,6 +291,7 @@ body {
 .metric-split-item p sub {
     font-size: 0.85em;
     bottom: -0.2em;
+    text-transform: none;
 }
 
 .metric-split-divider {
@@ -414,7 +415,31 @@ body {
     align-items: center;
     justify-content: center;
     min-height: 200px;
+    position: relative;
 }
+
+/* Styled HTML tooltip for Chart.js's `external` callback (see
+   externalTooltipHandler in dashboard.js) - matches the tooltip already
+   shipped on twinView's BCI trend chart instead of Chart.js's plain
+   canvas-drawn default. */
+.chart-tooltip {
+    position: absolute;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.1s;
+    background: #2c4a48;
+    color: #f2f6f5;
+    font-size: 0.74rem;
+    line-height: 1.5;
+    border-radius: 8px;
+    padding: 7px 11px;
+    white-space: nowrap;
+    z-index: 20;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+    transform: translate(-50%, calc(-100% - 10px));
+}
+.chart-tooltip b { display: block; font-size: 0.78rem; }
+.night-mode .chart-tooltip { background: #0f1619; }
 
 .wide-chart .chart-body {
     min-height: 220px;

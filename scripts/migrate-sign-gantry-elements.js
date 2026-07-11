@@ -7,6 +7,10 @@
 // Run with: node scripts/migrate-sign-gantry-elements.js
 require('dotenv').config();
 const { Client } = require('pg');
+const fs = require('fs');
+const path = require('path');
+
+const supabaseCA = fs.readFileSync(path.join(__dirname, '..', 'certs', 'supabase-ca.crt'), 'utf8');
 
 const SIGN_GANTRY_ELEMENTS = [
     [1,  'Foundations', 1],
@@ -30,7 +34,7 @@ const SIGN_GANTRY_ELEMENTS = [
 async function main() {
     const client = new Client({
         connectionString: process.env.DATABASE_URL,
-        ssl: { rejectUnauthorized: false }
+        ssl: { rejectUnauthorized: true, ca: supabaseCA }
     });
     await client.connect();
 

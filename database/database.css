@@ -257,7 +257,7 @@ body {
     align-items: center;
     margin-bottom: 24px;
     padding-bottom: 16px;
-    border-bottom: 1px solid #eef2f6;
+    border-bottom: 1px solid #e2e8f0;
 }
 .panel-header h2 {
     font-size: 1.15rem;
@@ -335,6 +335,7 @@ body {
     letter-spacing: 0.08em;
     border-bottom: 1px solid #e9edf2;
 }
+.data-table th sub { text-transform: none; }
 .data-table td {
     padding: 14px 16px;
     color: #2c3e44;
@@ -531,7 +532,7 @@ body {
     justify-content: space-between;
     align-items: center;
     padding-top: 20px;
-    border-top: 1px solid #eef2f6;
+    border-top: 1px solid #e2e8f0;
 }
 .export-action-bar .selection-info {
     font-size: 0.85rem;

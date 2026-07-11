@@ -870,14 +870,20 @@ async function generateSimplePDFReport(doc, mode = 'download') {
                                 {
                                     width: '*',
                                     stack: [
-                                        { text: 'BCI Average', bold: true, fontSize: 8, color: '#888', alignment: 'center' },
+                                        { text: [
+                                            { text: 'BCI', bold: true, fontSize: 8, color: '#888' },
+                                            { text: 'avg', bold: true, fontSize: 6, color: '#888', sub: {} }
+                                        ], alignment: 'center' },
                                         { text: spanBciAv.toString(), fontSize: 28, bold: true, color: getSpanBCIColor(spanBciAv), alignment: 'center' }
                                     ]
                                 },
                                 {
                                     width: '*',
                                     stack: [
-                                        { text: 'BCI Critical', bold: true, fontSize: 8, color: '#888', alignment: 'center' },
+                                        { text: [
+                                            { text: 'BCI', bold: true, fontSize: 8, color: '#888' },
+                                            { text: 'crit', bold: true, fontSize: 6, color: '#888', sub: {} }
+                                        ], alignment: 'center' },
                                         { text: spanBciCrit.toString(), fontSize: 28, bold: true, color: '#dc2626', alignment: 'center' }
                                     ]
                                 },
