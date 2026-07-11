@@ -16,6 +16,12 @@ function formatDate(dateString) {
 }
 
 // Helper function to convert image URL to dataURL
+//
+// Guarded with a hard timeout: a broken/slow third-party image host (CORS
+// failures usually fire onerror quickly, but not always - some just hang)
+// used to have no upper bound on how long one photo could stall the whole
+// report. Capping it at 6s means one bad image costs at most 6s instead of
+// potentially never resolving, and every successful load is unaffected.
 async function imageUrlToDataURL(url) {
     return new Promise((resolve) => {
         if (!url) {
@@ -26,6 +32,17 @@ async function imageUrlToDataURL(url) {
             resolve(url);
             return;
         }
+        let settled = false;
+        const finish = (result) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timeoutId);
+            resolve(result);
+        };
+        const timeoutId = setTimeout(() => {
+            console.warn('Timed out loading image:', url);
+            finish(null);
+        }, 6000);
         const img = new Image();
         img.crossOrigin = "Anonymous";
         img.onload = function() {
@@ -34,86 +51,129 @@ async function imageUrlToDataURL(url) {
             canvas.height = img.height;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0);
-            resolve(canvas.toDataURL('image/jpeg', 0.7));
+            finish(canvas.toDataURL('image/jpeg', 0.7));
         };
         img.onerror = function() {
             console.warn('Could not load image:', url);
-            resolve(null);
+            finish(null);
         };
         img.src = url;
     });
 }
 
 // Capture location map
+//
+// The whole body runs inside a try/catch, not just the setTimeout portion:
+// this used to be `new Promise(async (resolve) => {...})` with no reject and
+// no surrounding try/catch. The Promise constructor doesn't observe the
+// return value (or rejection) of an async executor - it only cares about
+// explicit resolve()/reject() calls - so *any* throw anywhere in here
+// (L.map() on a missing container, a tile layer error, html2canvas hitting a
+// CORS-tainted canvas from the OSM tiles, etc.) became an unhandled
+// rejection on a detached promise nothing awaits, and resolve() was never
+// called. That hung the entire report generation forever instead of just
+// dropping the location map image, which is what actually broke "View
+// Report" in database.html.
 async function captureLocationMap(lat, lng, locationName) {
-    return new Promise(async (resolve) => {
+    return new Promise((resolve) => {
         if (!lat || !lng) {
             resolve(null);
             return;
         }
-        
-        let hiddenContainer = document.getElementById('hiddenMapContainer');
-        if (!hiddenContainer) {
-            hiddenContainer = document.createElement('div');
-            hiddenContainer.id = 'hiddenMapContainer';
-            hiddenContainer.style.position = 'absolute';
-            hiddenContainer.style.left = '-9999px';
-            hiddenContainer.style.top = '-9999px';
-            hiddenContainer.style.width = '800px';
-            hiddenContainer.style.height = '500px';
-            document.body.appendChild(hiddenContainer);
-        }
-        
-        hiddenContainer.innerHTML = '<div id="tempMap" style="width: 100%; height: 100%;"></div>';
-        
-        // Create map with zoom control removed
-        const map = L.map('tempMap', {
-            zoomControl: false  // This removes the zoom buttons (+/-)
-        }).setView([lat, lng], 14);
-        
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
-        
-        L.marker([lat, lng]).addTo(map).bindPopup(`<b>${locationName}</b>`);
-        
-        // Add a custom north symbol
-        const NorthControl = L.Control.extend({
-            options: {
-                position: 'topright'
-            },
-            onAdd: function(map) {
-                const container = L.DomUtil.create('div', 'north-symbol');
-                container.innerHTML = '↑<br>N';
-                container.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
-                container.style.padding = '5px 8px';
-                container.style.fontSize = '14px';
-                container.style.fontWeight = 'bold';
-                container.style.color = '#333';
-                container.style.borderRadius = '4px';
-                container.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
-                container.style.textAlign = 'center';
-                container.style.lineHeight = '1.2';
-                container.style.fontFamily = 'Arial, sans-serif';
-                container.style.border = '1px solid #ccc';
-                return container;
+
+        let map = null;
+        let hiddenContainer = null;
+
+        try {
+            hiddenContainer = document.getElementById('hiddenMapContainer');
+            if (!hiddenContainer) {
+                hiddenContainer = document.createElement('div');
+                hiddenContainer.id = 'hiddenMapContainer';
+                hiddenContainer.style.position = 'absolute';
+                hiddenContainer.style.left = '-9999px';
+                hiddenContainer.style.top = '-9999px';
+                hiddenContainer.style.width = '800px';
+                hiddenContainer.style.height = '500px';
+                document.body.appendChild(hiddenContainer);
             }
-        });
-        
-        map.addControl(new NorthControl());
-        
-        setTimeout(async () => {
-            const mapElement = document.getElementById('tempMap');
-            const canvas = await html2canvas(mapElement, {
-                scale: 2,
-                backgroundColor: '#ffffff',
-                useCORS: true,
-                logging: false
+
+            hiddenContainer.innerHTML = '<div id="tempMap" style="width: 100%; height: 100%;"></div>';
+
+            // Create map with zoom control removed
+            map = L.map('tempMap', {
+                zoomControl: false  // This removes the zoom buttons (+/-)
+            }).setView([lat, lng], 14);
+
+            var tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            L.marker([lat, lng]).addTo(map).bindPopup(`<b>${locationName}</b>`);
+
+            // Add a custom north symbol
+            const NorthControl = L.Control.extend({
+                options: {
+                    position: 'topright'
+                },
+                onAdd: function(map) {
+                    const container = L.DomUtil.create('div', 'north-symbol');
+                    container.innerHTML = '↑<br>N';
+                    container.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+                    container.style.padding = '5px 8px';
+                    container.style.fontSize = '14px';
+                    container.style.fontWeight = 'bold';
+                    container.style.color = '#333';
+                    container.style.borderRadius = '4px';
+                    container.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+                    container.style.textAlign = 'center';
+                    container.style.lineHeight = '1.2';
+                    container.style.fontFamily = 'Arial, sans-serif';
+                    container.style.border = '1px solid #ccc';
+                    return container;
+                }
             });
-            map.remove();
-            hiddenContainer.innerHTML = '';
-            resolve(canvas.toDataURL('image/png'));
-        }, 1500);
+
+            map.addControl(new NorthControl());
+        } catch (err) {
+            console.warn('Could not set up location map:', err);
+            if (map) { try { map.remove(); } catch (e) {} }
+            if (hiddenContainer) hiddenContainer.innerHTML = '';
+            resolve(null);
+            return;
+        }
+
+        // Wait for the tiles to actually finish loading rather than always
+        // sleeping the full 1500ms - tileLayer 'load' usually fires well
+        // under that, so this is a straight speedup on the common case. The
+        // 1500ms timer stays as an upper bound in case 'load' never fires
+        // (slow tile server, etc.), so worst-case timing is unchanged.
+        var captured = false;
+        var takeSnapshot = async () => {
+            console.log('DEBUG: takeSnapshot fired, captured=', captured);
+            if (captured) return;
+            captured = true;
+            try {
+                const mapElement = document.getElementById('tempMap');
+                console.log('DEBUG: calling html2canvas');
+                const canvas = await html2canvas(mapElement, {
+                    scale: 2,
+                    backgroundColor: '#ffffff',
+                    useCORS: true,
+                    logging: false
+                });
+                console.log('DEBUG: html2canvas done, resolving');
+                resolve(canvas.toDataURL('image/png'));
+            } catch (err) {
+                console.warn('Could not capture location map:', err);
+                resolve(null);
+            } finally {
+                try { map.remove(); } catch (e) {}
+                hiddenContainer.innerHTML = '';
+            }
+        };
+        tileLayer.once('load', takeSnapshot);
+        setTimeout(takeSnapshot, 1500);
+        console.log('DEBUG: listeners armed');
     });
 }
 
@@ -122,7 +182,7 @@ async function captureLocationMap(lat, lng, locationName) {
 
 
 
-async function generateSimplePDFReport(doc, mode = 'download') {
+async function generateSimplePDFReport(doc, mode = 'download', targetWindow = null) {
     try {
         const structureId = doc.structure_id;
         const structureName = doc.structure_name;
@@ -328,20 +388,25 @@ async function generateSimplePDFReport(doc, mode = 'download') {
             );
         }
 
-        // Load all defect photos
-        const photosWithDataURLs = [];
+        // Load all defect photos. Photo numbers still come from a single
+        // deterministic pass over photosByDefect (unchanged order/values),
+        // but the actual image fetches now run concurrently via Promise.all
+        // instead of one-at-a-time - Promise.all preserves array order
+        // regardless of which finishes first, so the resulting
+        // photosWithDataURLs is identical to before, just faster to build.
+        const photoJobs = [];
         let photoCounter = 1;
         for (const [defectCode, photos] of Object.entries(photosByDefect)) {
             for (const photo of photos) {
-                const dataURL = await imageUrlToDataURL(photo.photo_url);
-                photosWithDataURLs.push({
-                    ...photo,
-                    defectCode: defectCode,
-                    photoNumber: photoCounter++,
-                    photo_dataURL: dataURL
-                });
+                photoJobs.push({ photo, defectCode, photoNumber: photoCounter++ });
             }
         }
+        const photosWithDataURLs = await Promise.all(photoJobs.map(async (job) => ({
+            ...job.photo,
+            defectCode: job.defectCode,
+            photoNumber: job.photoNumber,
+            photo_dataURL: await imageUrlToDataURL(job.photo.photo_url)
+        })));
 
         // Helper to get photo numbers for a defect
         function getPhotoNumbersForDefect(defectCode) {
@@ -1216,14 +1281,24 @@ async function generateSimplePDFReport(doc, mode = 'download') {
                                 }, reject);
                             });
                         } else if (mode === 'open') {
-                            pdfGenerator.open();
+                            // pdfmake's own window.open() call lands here only after several
+                            // awaited fetches, so it's no longer inside the click's call stack
+                            // and browsers block it as a popup. Callers that want 'open' mode
+                            // should open a blank window synchronously on the click itself and
+                            // pass it in here - pdfmake reuses it instead of opening a new one.
+                            if (targetWindow && !targetWindow.closed) {
+                                pdfGenerator.open({}, targetWindow);
+                            } else {
+                                pdfGenerator.open();
+                            }
                             showToast('Report opened in new tab', 'success');
                             return null;
                         }
-                        
+
                     } catch (error) {
                         console.error('Simple report generation failed:', error);
                         showToast(`Error: ${error.message}`, 'error');
+                        if (targetWindow && !targetWindow.closed) targetWindow.close();
                     }
 }
 

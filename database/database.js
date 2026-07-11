@@ -630,9 +630,9 @@
                     '<td>' + formatDate(row.generated) + '</td>' +
                     '<td>' + (row.defect_count != null ? row.defect_count : '--') + '</td>' +
                     '<td><div class="row-actions">' +
-                        '<button title="Generate BCI Proforma" onclick="generateReport(' + row.inspection_id + ')" class="btn-report"><i class="fas fa-file-pdf"></i></button>' +
+                        '<button title="Generate BCI Proforma" onclick="generateReport(' + row.inspection_id + ')" class="btn-report"><i class="fas fa-file-invoice"></i></button>' +
                         '<button title="View Report" onclick="viewInspection(' + row.inspection_id + ')"><i class="fas fa-eye"></i></button>' +
-                        '<button title="Download Report" onclick="downloadReport(' + row.inspection_id + ')"><i class="fas fa-download"></i></button>' +
+                        '<button title="Download Report" onclick="downloadReport(' + row.inspection_id + ')"><i class="fas fa-file-pdf"></i></button>' +
                     '</div></td>' +
                 '</tr>';
             });
@@ -1479,12 +1479,39 @@
     // REPORT ACTIONS (unchanged logic)
     // ============================================
     window.viewInspection = async function(id) {
+        // Open the tab synchronously, right on the click, before any awaits -
+        // otherwise the browser's popup blocker treats the later window.open()
+        // inside generateSimplePDFReport as not user-initiated and blocks it.
+        var reportWindow = window.open('', '_blank');
+
         var inspection = inspectionsData.find(function(i) { return i.id === id; });
-        if (!inspection) { showToast('Inspection not found', 'error'); return; }
+        if (!inspection) {
+            showToast('Inspection not found', 'error');
+            if (reportWindow) reportWindow.close();
+            return;
+        }
         sessionStorage.setItem('structureId', inspection.structure_id || '');
         sessionStorage.setItem('structureName', inspection.structure_name || '');
         var doc = { structure_id: inspection.structure_id || '', structure_name: inspection.structure_name || '', date: inspection.inspection_date || '' };
-        await generateSimplePDFReport(doc, 'open');
+
+        // Safety net: generateSimplePDFReport is a large legacy pipeline (bridge
+        // photo, location map screenshot, per-defect photos, PDF assembly) with
+        // several spots that can stall rather than error - if it doesn't finish
+        // in a reasonable time, close the blank tab and tell the user instead of
+        // leaving them staring at an empty tab forever.
+        var timedOut = false;
+        var timeoutId = setTimeout(function() {
+            timedOut = true;
+            showToast('Report is taking too long to generate. Please try again.', 'error');
+            if (reportWindow && !reportWindow.closed) reportWindow.close();
+        }, 25000);
+
+        try {
+            await generateSimplePDFReport(doc, 'open', reportWindow);
+        } finally {
+            clearTimeout(timeoutId);
+        }
+        if (timedOut) return;
     };
 
     window.generateReport = async function(inspectionId) {

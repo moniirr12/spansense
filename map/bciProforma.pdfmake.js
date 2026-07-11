@@ -280,6 +280,18 @@ function escapeXml(s) {
 function rotatedLabel(text, w, h, fontSize) {
     fontSize = fontSize || 6.5;
     var cx = w / 2, cy = h / 2;
+    // dominant-baseline="middle" isn't honoured consistently across PDF
+    // renderers - pdf.js centers on it fine, but PDFium/Acrobat (what most
+    // people actually open a downloaded PDF with) silently fall back to the
+    // default alphabetic baseline, i.e. y becomes where the glyph *sits*
+    // rather than its center. Because this text is rotated -90deg, that
+    // baseline-vs-center mismatch doesn't show up as a vertical nudge - it
+    // rotates into a sideways shift, which is the "offset" that was visible.
+    // Fix: drop dominant-baseline entirely and pre-shift y by the standard
+    // baseline-to-visual-center approximation (~0.35*fontSize, roughly half
+    // a cap-height) before rotating, so plain alphabetic baseline already
+    // lands centered - correct in every renderer, not just the lenient ones.
+    var baselineY = cy + fontSize * 0.35;
     return {
         // overflow="hidden" matters here: the outermost <svg> element defaults
         // to overflow:visible per the SVG/CSS spec, so without it any glyph
@@ -287,8 +299,8 @@ function rotatedLabel(text, w, h, fontSize) {
         // for a centered rotated label close to its box's edges) bleeds into
         // neighbouring cells instead of being clipped to this box.
         svg: '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '" overflow="hidden">' +
-             '<text x="' + cx + '" y="' + cy + '" transform="rotate(-90 ' + cx + ' ' + cy + ')" ' +
-             'text-anchor="middle" dominant-baseline="middle" ' +
+             '<text x="' + cx + '" y="' + baselineY + '" transform="rotate(-90 ' + cx + ' ' + cy + ')" ' +
+             'text-anchor="middle" ' +
              'font-family="Helvetica" font-weight="bold" font-size="' + fontSize + '">' +
              escapeXml(text) + '</text></svg>',
         fit: [w, h]
