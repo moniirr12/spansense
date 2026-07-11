@@ -16,12 +16,6 @@ function formatDate(dateString) {
 }
 
 // Helper function to convert image URL to dataURL
-//
-// Guarded with a hard timeout: a broken/slow third-party image host (CORS
-// failures usually fire onerror quickly, but not always - some just hang)
-// used to have no upper bound on how long one photo could stall the whole
-// report. Capping it at 6s means one bad image costs at most 6s instead of
-// potentially never resolving, and every successful load is unaffected.
 async function imageUrlToDataURL(url) {
     return new Promise((resolve) => {
         if (!url) {
@@ -32,17 +26,6 @@ async function imageUrlToDataURL(url) {
             resolve(url);
             return;
         }
-        let settled = false;
-        const finish = (result) => {
-            if (settled) return;
-            settled = true;
-            clearTimeout(timeoutId);
-            resolve(result);
-        };
-        const timeoutId = setTimeout(() => {
-            console.warn('Timed out loading image:', url);
-            finish(null);
-        }, 6000);
         const img = new Image();
         img.crossOrigin = "Anonymous";
         img.onload = function() {
@@ -51,11 +34,11 @@ async function imageUrlToDataURL(url) {
             canvas.height = img.height;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0);
-            finish(canvas.toDataURL('image/jpeg', 0.7));
+            resolve(canvas.toDataURL('image/jpeg', 0.7));
         };
         img.onerror = function() {
             console.warn('Could not load image:', url);
-            finish(null);
+            resolve(null);
         };
         img.src = url;
     });
@@ -104,7 +87,7 @@ async function captureLocationMap(lat, lng, locationName) {
                 zoomControl: false  // This removes the zoom buttons (+/-)
             }).setView([lat, lng], 14);
 
-            var tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; OpenStreetMap contributors'
             }).addTo(map);
 
@@ -142,26 +125,15 @@ async function captureLocationMap(lat, lng, locationName) {
             return;
         }
 
-        // Wait for the tiles to actually finish loading rather than always
-        // sleeping the full 1500ms - tileLayer 'load' usually fires well
-        // under that, so this is a straight speedup on the common case. The
-        // 1500ms timer stays as an upper bound in case 'load' never fires
-        // (slow tile server, etc.), so worst-case timing is unchanged.
-        var captured = false;
-        var takeSnapshot = async () => {
-            console.log('DEBUG: takeSnapshot fired, captured=', captured);
-            if (captured) return;
-            captured = true;
+        setTimeout(async () => {
             try {
                 const mapElement = document.getElementById('tempMap');
-                console.log('DEBUG: calling html2canvas');
                 const canvas = await html2canvas(mapElement, {
                     scale: 2,
                     backgroundColor: '#ffffff',
                     useCORS: true,
                     logging: false
                 });
-                console.log('DEBUG: html2canvas done, resolving');
                 resolve(canvas.toDataURL('image/png'));
             } catch (err) {
                 console.warn('Could not capture location map:', err);
@@ -170,10 +142,7 @@ async function captureLocationMap(lat, lng, locationName) {
                 try { map.remove(); } catch (e) {}
                 hiddenContainer.innerHTML = '';
             }
-        };
-        tileLayer.once('load', takeSnapshot);
-        setTimeout(takeSnapshot, 1500);
-        console.log('DEBUG: listeners armed');
+        }, 1500);
     });
 }
 
@@ -388,25 +357,20 @@ async function generateSimplePDFReport(doc, mode = 'download', targetWindow = nu
             );
         }
 
-        // Load all defect photos. Photo numbers still come from a single
-        // deterministic pass over photosByDefect (unchanged order/values),
-        // but the actual image fetches now run concurrently via Promise.all
-        // instead of one-at-a-time - Promise.all preserves array order
-        // regardless of which finishes first, so the resulting
-        // photosWithDataURLs is identical to before, just faster to build.
-        const photoJobs = [];
+        // Load all defect photos
+        const photosWithDataURLs = [];
         let photoCounter = 1;
         for (const [defectCode, photos] of Object.entries(photosByDefect)) {
             for (const photo of photos) {
-                photoJobs.push({ photo, defectCode, photoNumber: photoCounter++ });
+                const dataURL = await imageUrlToDataURL(photo.photo_url);
+                photosWithDataURLs.push({
+                    ...photo,
+                    defectCode: defectCode,
+                    photoNumber: photoCounter++,
+                    photo_dataURL: dataURL
+                });
             }
         }
-        const photosWithDataURLs = await Promise.all(photoJobs.map(async (job) => ({
-            ...job.photo,
-            defectCode: job.defectCode,
-            photoNumber: job.photoNumber,
-            photo_dataURL: await imageUrlToDataURL(job.photo.photo_url)
-        })));
 
         // Helper to get photo numbers for a defect
         function getPhotoNumbersForDefect(defectCode) {
