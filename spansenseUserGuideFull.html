@@ -43,7 +43,9 @@
   /* ===== TOC ===== */
   .toc h1 { font-size: 26px; font-weight: 800; color: #1e3432; margin-bottom: 6px; }
   .toc .sub { font-size: 13px; color: #8a9ba8; margin-bottom: 34px; }
-  .toc-row { display: flex; align-items: baseline; gap: 16px; padding: 13px 0; border-bottom: 1px solid #eef2f6; }
+  .toc-row { display: flex; align-items: baseline; gap: 16px; padding: 13px 0; border-bottom: 1px solid #eef2f6; text-decoration: none; color: inherit; cursor: pointer; }
+  .toc-row:hover { background: #f7fbfa; }
+  .toc-row:hover .toc-title { color: #2c5a57; text-decoration: underline; }
   .toc-num { font-size: 12.5px; font-weight: 800; color: #5b8c8a; min-width: 22px; }
   .toc-title { flex: 1; font-size: 14px; color: #2c3e44; }
   .toc-page { font-size: 13px; color: #8a9ba8; }
@@ -132,7 +134,7 @@
 <div class="page cover">
   <div class="brand">SPANSENSE</div>
   <h1>User Guide</h1>
-  <p class="desc">Find a structure, run an inspection, read the BCI score, and get the report out — everything you need to use spanSense day to day, walked through step by step with real screenshots of the current app.</p>
+  <p class="desc">Find a structure, run an inspection, read the BCI score, and get the report out — everything you need to use spanSense day to day, walked through step by step with real screenshots of the current platform.</p>
   <svg class="bridge-art" viewBox="0 0 760 140" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M20 110 C 120 10, 260 10, 380 70 C 500 10, 640 10, 740 110" stroke="#7ba8a5" stroke-width="2" opacity="0.8"/>
     <line x1="160" y1="35" x2="160" y2="112" stroke="#7ba8a5" stroke-width="3"/>
@@ -155,24 +157,24 @@
   <h1>Contents</h1>
   <p class="sub">A map of this guide.</p>
 
-  <div class="toc-row"><span class="toc-num">01</span><span class="toc-title">Getting Started</span><span class="toc-page">3</span></div>
-  <div class="toc-row"><span class="toc-num">02</span><span class="toc-title">The Map — Finding a Structure</span><span class="toc-page">4</span></div>
-  <div class="toc-row"><span class="toc-num">03</span><span class="toc-title">Viewing Previous Inspections</span><span class="toc-page">5</span></div>
-  <div class="toc-row"><span class="toc-num">04</span><span class="toc-title">Running an Inspection, Step by Step</span><span class="toc-page">6</span></div>
-  <div class="toc-row"><span class="toc-num">05</span><span class="toc-title">Understanding BCI Scores</span><span class="toc-page">8</span></div>
-  <div class="toc-row"><span class="toc-num">06</span><span class="toc-title">twinView — 3D Digital Twin</span><span class="toc-page">9</span></div>
-  <div class="toc-row"><span class="toc-num">07</span><span class="toc-title">Reports &amp; Exporting Data</span><span class="toc-page">10</span></div>
-  <div class="toc-row"><span class="toc-num">08</span><span class="toc-title">Inspection Planning &amp; Scheduling</span><span class="toc-page">11</span></div>
-  <div class="toc-row"><span class="toc-num">09</span><span class="toc-title">Dashboard — Portfolio Overview</span><span class="toc-page">12</span></div>
-  <div class="toc-row"><span class="toc-num">10</span><span class="toc-title">Your Account &amp; Preferences</span><span class="toc-page">13</span></div>
+  <a class="toc-row" href="#sec-01"><span class="toc-num">01</span><span class="toc-title">Getting Started</span><span class="toc-page">3</span></a>
+  <a class="toc-row" href="#sec-02"><span class="toc-num">02</span><span class="toc-title">The Map — Finding a Structure</span><span class="toc-page">4</span></a>
+  <a class="toc-row" href="#sec-03"><span class="toc-num">03</span><span class="toc-title">Viewing Previous Inspections</span><span class="toc-page">5</span></a>
+  <a class="toc-row" href="#sec-04"><span class="toc-num">04</span><span class="toc-title">Running an Inspection, Step by Step</span><span class="toc-page">6</span></a>
+  <a class="toc-row" href="#sec-05"><span class="toc-num">05</span><span class="toc-title">Understanding BCI Scores</span><span class="toc-page">8</span></a>
+  <a class="toc-row" href="#sec-06"><span class="toc-num">06</span><span class="toc-title">twinView — 3D Digital Twin</span><span class="toc-page">9</span></a>
+  <a class="toc-row" href="#sec-07"><span class="toc-num">07</span><span class="toc-title">Reports &amp; Exporting Data</span><span class="toc-page">10</span></a>
+  <a class="toc-row" href="#sec-08"><span class="toc-num">08</span><span class="toc-title">Inspection Planning &amp; Scheduling</span><span class="toc-page">11</span></a>
+  <a class="toc-row" href="#sec-09"><span class="toc-num">09</span><span class="toc-title">Dashboard — Portfolio Overview</span><span class="toc-page">12</span></a>
+  <a class="toc-row" href="#sec-10"><span class="toc-num">10</span><span class="toc-title">Your Account &amp; Preferences</span><span class="toc-page">13</span></a>
 
-  <div class="footer-bar"><span>spanSense — User Guide</span><span>Contents</span></div>
+  <div class="footer-bar"><span>spanSense — User Guide</span><span>Contents · 2</span></div>
 </div>
 
 <!-- ================= 01 GETTING STARTED ================= -->
-<div class="page">
+<div class="page" id="sec-01">
   <div class="sec-head">
-    <h2>01 — Getting Started</h2>
+    <h2>01. Getting Started</h2>
     <p class="lede">A quick orientation before your first inspection.</p>
   </div>
 
@@ -199,46 +201,44 @@
     <strong>Tip:</strong> you don't need to finish an inspection in one sitting — every wizard step has a <strong>Save Draft</strong> option that picks up right where you left off.
   </div>
 
-  <div class="footer-bar"><span>spanSense — User Guide</span><span>Getting Started</span></div>
+  <div class="footer-bar"><span>spanSense — User Guide</span><span>Getting Started · 3</span></div>
 </div>
 
 <!-- ================= 02 THE MAP ================= -->
-<div class="page">
+<div class="page" id="sec-02">
   <div class="sec-head">
-    <h2>02 — The Map — Finding a Structure</h2>
+    <h2>02. The Map — Finding a Structure</h2>
     <p class="lede">The map is your home screen after login, and the starting point for almost everything.</p>
   </div>
 
-  <p class="body-text">Structures are plotted with a type-coded icon (bridge, footbridge, culvert, retaining wall, or sign gantry) and a condition-coded ring color — the same colors used everywhere else in the app, so a glance at the map already tells you which structures need attention.</p>
+  <div class="shot" style="max-width:120mm; margin:10px auto 0;">
+    <img src="reportAssets/guide-map-dark.png" alt="The Map in night mode, showing structures plotted by type and condition">
+  </div>
+  <p class="cap-text">Every structure plotted by type icon and condition-coded ring</p>
 
-  <ol class="steps">
-    <li><p>Use the <strong>search bar</strong> at the top to jump straight to a named structure, or the sidebar filters on the left to narrow by type or condition</p></li>
-    <li><p><strong>Click a marker</strong> to open its structure card: photo, BCI average score, last inspected date, span/length/year/type</p></li>
-    <li><p>From the card, choose <strong>New Inspection</strong>, <strong>Previous Inspections</strong>, or <strong>Documents</strong></p></li>
-  </ol>
+  <p class="body-text" style="margin-top:14px;">Structures are plotted with a type-coded icon (bridge, footbridge, culvert, retaining wall, or sign gantry) and a condition-coded ring color — the same colors used everywhere else in the app, so a glance at the map already tells you which structures need attention.</p>
 
-  <div class="two-col" style="margin-top:12px; grid-template-columns:1.5fr 1fr;">
+  <div class="two-col" style="margin-top:4px; grid-template-columns:1fr 1fr; align-items:start;">
+    <ol class="steps" style="margin-top:0;">
+      <li><p>Use the <strong>search bar</strong> at the top to jump straight to a named structure, or the sidebar filters on the left to narrow by type or condition</p></li>
+      <li><p><strong>Click a marker</strong> to open its structure card: photo, BCI average score, last inspected date, span/length/year/type</p></li>
+      <li><p>From the card, choose <strong>New Inspection</strong>, <strong>Previous Inspections</strong>, or <strong>Documents</strong></p></li>
+    </ol>
     <div>
-      <div class="shot">
-        <img src="reportAssets/guide-map-dark.png" alt="The Map in night mode, showing structures plotted by type and condition">
-      </div>
-      <p class="cap-text">Every structure plotted by type icon and condition-coded ring</p>
-    </div>
-    <div>
-      <div class="shot">
+      <div class="shot" style="max-width:60mm; margin:0 auto;">
         <img src="reportAssets/guide-structure-card-dark.png" alt="Structure detail card, shown in night mode">
       </div>
       <p class="cap-text">Click a marker to open its structure card</p>
     </div>
   </div>
 
-  <div class="footer-bar"><span>spanSense — User Guide</span><span>The Map</span></div>
+  <div class="footer-bar"><span>spanSense — User Guide</span><span>The Map · 4</span></div>
 </div>
 
 <!-- ================= 03 PREVIOUS INSPECTIONS ================= -->
-<div class="page">
+<div class="page" id="sec-03">
   <div class="sec-head">
-    <h2>03 — Viewing Previous Inspections</h2>
+    <h2>03. Viewing Previous Inspections</h2>
     <p class="lede">Every past inspection for a structure, in one searchable list.</p>
   </div>
 
@@ -257,18 +257,25 @@
   </div>
   <p class="cap-text">Filter, search, and act on any past inspection for this structure</p>
 
-  <div class="footer-bar"><span>spanSense — User Guide</span><span>Previous Inspections</span></div>
+  <div class="footer-bar"><span>spanSense — User Guide</span><span>Previous Inspections · 5</span></div>
 </div>
 
 <!-- ================= 04 RUNNING AN INSPECTION ================= -->
-<div class="page">
+<div class="page" id="sec-04">
   <div class="sec-head">
-    <h2>04 — Running an Inspection, Step by Step</h2>
+    <h2>04. Running an Inspection, Step by Step</h2>
     <p class="lede">The wizard is two steps: metadata, then defect logging element by element.</p>
   </div>
 
-  <h3 class="subhead" style="margin-top:0;">Step 1 — Metadata</h3>
-  <p class="body-text">Confirm the inspection type (GI/PI/SI), date, and inspector, then move on to the element checklist.</p>
+  <div class="two-col" style="grid-template-columns:1fr 1.3fr; gap:16px; align-items:start;">
+    <div>
+      <h3 class="subhead" style="margin-top:0;">Step 1 — Metadata</h3>
+      <p class="body-text">Confirm the inspection type (GI/PI/SI), date, and inspector, then work through each span's above-ground/photograph checks before moving on to the element checklist.</p>
+    </div>
+    <div class="shot">
+      <img src="reportAssets/guide-inspection1-metadata.png" alt="Inspection metadata step, showing inspection type, date, inspector and per-span checklist">
+    </div>
+  </div>
 
   <h3 class="subhead">Step 2 — Log each element</h3>
   <ol class="steps">
@@ -289,13 +296,13 @@
   <h3 class="subhead">Finishing up</h3>
   <p class="body-text">Once every element is logged, add your <strong>Conclusions</strong> and hit <strong>Save</strong> — the BCI average and critical scores are calculated automatically from what you've logged, no manual math required. The inspection then enters the review queue for an engineer to approve.</p>
 
-  <div class="footer-bar"><span>spanSense — User Guide</span><span>Running an Inspection</span></div>
+  <div class="footer-bar"><span>spanSense — User Guide</span><span>Running an Inspection · 6</span></div>
 </div>
 
 <!-- ================= 04b DEFECT MODAL DEEP DIVE ================= -->
 <div class="page">
   <div class="sec-head">
-    <h2>04 — Inside the Add Defect Modal</h2>
+    <h2>04. Inside the Add Defect Modal</h2>
     <p class="lede">A closer look at the previous-defects panel, the live BCI preview, the severity guide, and moving between defects — all without leaving the modal.</p>
   </div>
 
@@ -341,17 +348,17 @@
     </div>
   </div>
 
-  <div class="footer-bar"><span>spanSense — User Guide</span><span>Running an Inspection</span></div>
+  <div class="footer-bar"><span>spanSense — User Guide</span><span>Running an Inspection · 7</span></div>
 </div>
 
 <!-- ================= 05 BCI SCORES ================= -->
-<div class="page">
+<div class="page" id="sec-05">
   <div class="sec-head">
-    <h2>05 — Understanding BCI Scores</h2>
+    <h2>05. Understanding BCI Scores</h2>
     <p class="lede">BCIav and BCIcrit are calculated for you — no formula, no spreadsheet.</p>
   </div>
 
-  <p class="body-text"><strong>BCI avg</strong> is the overall average condition across every element in the inspection. <strong>BCI crit</strong> is the score of the single worst-condition element — the one that actually drives risk decisions. Both fall into the same five bands used everywhere in the app:</p>
+  <p class="body-text"><strong>BCI avg</strong> is the condition across every inspected element, weighted by how structurally important each one is. <strong>BCI crit</strong> is narrower: each structure type has a fixed set of <strong>critical elements</strong> (e.g. main girders, bearings, abutments) and BCI crit is based purely on the worst condition among just those — not the worst element in the whole inspection. A bad defect on a non-critical element (a sign, a handrail) drags BCI avg down but leaves BCI crit untouched; if none of the critical elements have a defect, BCI crit reads 100. Both fall into the same five bands used everywhere in the app:</p>
 
   <div class="bci-bands">
     <div class="bci-band band-critical"><div class="lbl">Very Poor</div><div class="score">0–39</div><div class="name">Immediate action</div></div>
@@ -367,13 +374,13 @@
     <strong>Where to find it:</strong> the structure card shows the current average; Previous Inspections shows CRIT and AV per inspection; twinView shows both, plus how they've changed since the last inspection.
   </div>
 
-  <div class="footer-bar"><span>spanSense — User Guide</span><span>BCI Scores</span></div>
+  <div class="footer-bar"><span>spanSense — User Guide</span><span>BCI Scores · 8</span></div>
 </div>
 
 <!-- ================= 06 TWINVIEW ================= -->
-<div class="page">
+<div class="page" id="sec-06">
   <div class="sec-head">
-    <h2>06 — twinView — 3D Digital Twin</h2>
+    <h2>06. twinView — 3D Digital Twin</h2>
     <p class="lede">A 3D model of the structure, built from real span and condition data.</p>
   </div>
 
@@ -389,13 +396,13 @@
   </div>
   <p class="cap-text">Orbit and zoom the 3D model; the condition trend is right there in Inspection Status</p>
 
-  <div class="footer-bar"><span>spanSense — User Guide</span><span>twinView</span></div>
+  <div class="footer-bar"><span>spanSense — User Guide</span><span>twinView · 9</span></div>
 </div>
 
 <!-- ================= 07 REPORTS & EXPORT ================= -->
-<div class="page">
+<div class="page" id="sec-07">
   <div class="sec-head">
-    <h2>07 — Reports &amp; Exporting Data</h2>
+    <h2>07. Reports &amp; Exporting Data</h2>
     <p class="lede">Generate a report from one inspection, or export your whole stock from Database.</p>
   </div>
 
@@ -411,13 +418,13 @@
   </div>
   <p class="cap-text">Choose a category, pick a format, and export — filters and a column picker are below</p>
 
-  <div class="footer-bar"><span>spanSense — User Guide</span><span>Reports &amp; Export</span></div>
+  <div class="footer-bar"><span>spanSense — User Guide</span><span>Reports &amp; Export · 10</span></div>
 </div>
 
 <!-- ================= 08 PLANNING ================= -->
-<div class="page">
+<div class="page" id="sec-08">
   <div class="sec-head">
-    <h2>08 — Inspection Planning &amp; Scheduling</h2>
+    <h2>08. Inspection Planning &amp; Scheduling</h2>
     <p class="lede">Never miss the next inspection — and it's tailored per structure.</p>
   </div>
 
@@ -436,13 +443,13 @@
   </div>
   <p class="cap-text">Year view — overdue inspections in red, upcoming in teal, principal inspections stand out separately</p>
 
-  <div class="footer-bar"><span>spanSense — User Guide</span><span>Planning &amp; Scheduling</span></div>
+  <div class="footer-bar"><span>spanSense — User Guide</span><span>Planning &amp; Scheduling · 11</span></div>
 </div>
 
 <!-- ================= 09 DASHBOARD ================= -->
-<div class="page">
+<div class="page" id="sec-09">
   <div class="sec-head">
-    <h2>09 — Dashboard — Portfolio Overview</h2>
+    <h2>09. Dashboard — Portfolio Overview</h2>
     <p class="lede">Your whole stock at a glance — every card is clickable.</p>
   </div>
 
@@ -461,13 +468,13 @@
   <h3 class="subhead">If you're an engineer or admin</h3>
   <p class="body-text">The <strong>Pending Review</strong> section further down lists every inspection awaiting a decision. Search, filter by type, or toggle "Critical only," then click <strong>Review</strong> to approve or reject with a comment — or open the full inspection first if you want to check the detail before deciding.</p>
 
-  <div class="footer-bar"><span>spanSense — User Guide</span><span>Dashboard</span></div>
+  <div class="footer-bar"><span>spanSense — User Guide</span><span>Dashboard · 12</span></div>
 </div>
 
 <!-- ================= 10 ACCOUNT ================= -->
-<div class="page">
+<div class="page" id="sec-10">
   <div class="sec-head">
-    <h2>10 — Your Account &amp; Preferences</h2>
+    <h2>10. Your Account &amp; Preferences</h2>
     <p class="lede">Open Account from any navbar to update your details or preferences.</p>
   </div>
 
@@ -485,7 +492,7 @@
 
   <p class="body-text" style="margin-top:14px;">Stuck on something this guide didn't cover? Use <strong>Contact Us</strong> from any navbar — someone will get back to you.</p>
 
-  <div class="footer-bar"><span>spanSense — User Guide</span><span>Account &amp; Preferences</span></div>
+  <div class="footer-bar"><span>spanSense — User Guide</span><span>Account &amp; Preferences · 13</span></div>
 </div>
 
 </body>
