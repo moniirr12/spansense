@@ -485,6 +485,33 @@ if (chatClose && chatBox) {
     chatClose.addEventListener('click', () => chatBox.classList.remove('active'));
 }
 
+// Personalize the chat assistant's opening line with the logged-in user's
+// first name. Reads the same localStorage cache userGreeting.js writes
+// (instant on repeat visits), then always confirms/updates against
+// /api/me in case the cache is stale or this is the first load.
+(function initChatGreeting() {
+    const greetingEl = document.getElementById('chatGreeting');
+    if (!greetingEl) return;
+
+    function setGreeting(name) {
+        greetingEl.textContent = `Hello ${name}, how can I help you today?`;
+    }
+
+    try {
+        const cached = JSON.parse(localStorage.getItem('spansenseUserGreetingCache') || 'null');
+        if (cached && cached.displayName) setGreeting(cached.displayName);
+    } catch (e) { /* malformed cache - ignore, fetch below will fix it */ }
+
+    fetch('/api/me')
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+            const fullName = data && (data.full_name || data.username);
+            if (!fullName) return;
+            setGreeting(fullName.trim().split(/\s+/)[0]);
+        })
+        .catch(err => console.error('Chat greeting: failed to load profile', err));
+})();
+
 const chatInput = document.querySelector('.chat-input input');
 const chatSend = document.querySelector('.chat-send');
 
