@@ -478,11 +478,39 @@ const chatToggle = document.querySelector('.chat-toggle');
 const chatBox = document.querySelector('.chat-box');
 const chatClose = document.querySelector('.chat-close');
 
+// Opening the chat replaces the toggle circle (rather than floating a panel
+// on top of it and whatever's underneath) - hide the toggle while the box
+// is open, and bring it back on close.
+function openChat() {
+    chatBox.classList.add('active');
+    // .chat-toggle has `display: flex !important` in map.css, which beats a
+    // plain inline style - set the inline override as !important too.
+    chatToggle.style.setProperty('display', 'none', 'important');
+}
+function closeChat() {
+    chatBox.classList.remove('active');
+    chatToggle.style.removeProperty('display');
+}
+
 if (chatToggle && chatBox) {
-    chatToggle.addEventListener('click', () => chatBox.classList.toggle('active'));
+    chatToggle.addEventListener('click', openChat);
 }
 if (chatClose && chatBox) {
-    chatClose.addEventListener('click', () => chatBox.classList.remove('active'));
+    chatClose.addEventListener('click', closeChat);
+}
+if (chatBox && chatToggle) {
+    // Click outside the chat box closes it
+    document.addEventListener('click', (e) => {
+        if (chatBox.classList.contains('active') && !chatBox.contains(e.target) && !chatToggle.contains(e.target)) {
+            closeChat();
+        }
+    });
+    // Esc closes it too
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && chatBox.classList.contains('active')) {
+            closeChat();
+        }
+    });
 }
 
 // Personalize the chat assistant's opening line with the logged-in user's

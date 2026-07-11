@@ -2121,7 +2121,7 @@ body.modal-open {
 /* Chat box glassy */
 .chat-box {
     position: absolute !important;
-    bottom: 70px !important;
+    bottom: 0 !important;
     right: 0 !important;
     width: 360px !important;
     background: rgba(255, 255, 255, 0.95) !important;
