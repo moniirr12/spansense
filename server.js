@@ -911,7 +911,8 @@ app.get('/api/twin/:structureId', requireAuth, async (req, res) => {
                 [selectedInspection.id]
             );
             const defectRows = await dbAll(
-                `SELECT span_number, element_no, severity, works_required, pos_x, pos_y, pos_z
+                `SELECT span_number, element_no, severity, extent, defect_type, defect_number,
+                        works_required, priority, cost, comments, remedial_works, pos_x, pos_y, pos_z
                  FROM defects WHERE inspection_id = $1
                  ORDER BY span_number, element_no`,
                 [selectedInspection.id]
@@ -923,7 +924,14 @@ app.get('/api/twin/:structureId', requireAuth, async (req, res) => {
                     elementNo: d.element_no,
                     severity: sev || null,
                     severityLabel: SEVERITY_LABELS[sev] || null,
+                    extent: d.extent || null,
+                    defectType: d.defect_type || null,
+                    defectNumber: d.defect_number || null,
                     worksRequired: d.works_required === 'Y',
+                    priority: d.priority || null,
+                    cost: d.cost !== null ? parseFloat(d.cost) : null,
+                    comments: (d.comments && d.comments !== 'Add') ? d.comments : null,
+                    remedialWorks: d.remedial_works || null,
                     x: d.pos_x !== null ? parseFloat(d.pos_x) : null,
                     y: d.pos_y !== null ? parseFloat(d.pos_y) : null,
                     z: d.pos_z !== null ? parseFloat(d.pos_z) : null
