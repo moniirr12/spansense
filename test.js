@@ -45,76 +45,405 @@ async function imageUrlToDataURL(url) {
 }
 
 // Capture location map
+//
+// The whole body runs inside a try/catch, not just the setTimeout portion:
+// this used to be `new Promise(async (resolve) => {...})` with no reject and
+// no surrounding try/catch. The Promise constructor doesn't observe the
+// return value (or rejection) of an async executor - it only cares about
+// explicit resolve()/reject() calls - so *any* throw anywhere in here
+// (L.map() on a missing container, a tile layer error, html2canvas hitting a
+// CORS-tainted canvas from the OSM tiles, etc.) became an unhandled
+// rejection on a detached promise nothing awaits, and resolve() was never
+// called. That hung the entire report generation forever instead of just
+// dropping the location map image, which is what actually broke "View
+// Report" in database.html.
 async function captureLocationMap(lat, lng, locationName) {
-    return new Promise(async (resolve) => {
+    return new Promise((resolve) => {
         if (!lat || !lng) {
             resolve(null);
             return;
         }
-        
-        let hiddenContainer = document.getElementById('hiddenMapContainer');
-        if (!hiddenContainer) {
-            hiddenContainer = document.createElement('div');
-            hiddenContainer.id = 'hiddenMapContainer';
-            hiddenContainer.style.position = 'absolute';
-            hiddenContainer.style.left = '-9999px';
-            hiddenContainer.style.top = '-9999px';
-            hiddenContainer.style.width = '800px';
-            hiddenContainer.style.height = '500px';
-            document.body.appendChild(hiddenContainer);
+
+        let map = null;
+        let hiddenContainer = null;
+        let settled = false;
+
+        function finish(result) {
+            if (settled) return;
+            settled = true;
+            try { if (map) map.remove(); } catch (e) {}
+            if (hiddenContainer) hiddenContainer.innerHTML = '';
+            resolve(result);
         }
-        
-        hiddenContainer.innerHTML = '<div id="tempMap" style="width: 100%; height: 100%;"></div>';
-        
-        // Create map with zoom control removed
-        const map = L.map('tempMap', {
-            zoomControl: false  // This removes the zoom buttons (+/-)
-        }).setView([lat, lng], 14);
-        
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
-        
-        L.marker([lat, lng]).addTo(map).bindPopup(`<b>${locationName}</b>`);
-        
-        // Add a custom north symbol
-        const NorthControl = L.Control.extend({
-            options: {
-                position: 'topright'
-            },
-            onAdd: function(map) {
-                const container = L.DomUtil.create('div', 'north-symbol');
-                container.innerHTML = '↑<br>N';
-                container.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
-                container.style.padding = '5px 8px';
-                container.style.fontSize = '14px';
-                container.style.fontWeight = 'bold';
-                container.style.color = '#333';
-                container.style.borderRadius = '4px';
-                container.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
-                container.style.textAlign = 'center';
-                container.style.lineHeight = '1.2';
-                container.style.fontFamily = 'Arial, sans-serif';
-                container.style.border = '1px solid #ccc';
-                return container;
-            }
-        });
-        
-        map.addControl(new NorthControl());
-        
-        setTimeout(async () => {
+
+        function capture() {
             const mapElement = document.getElementById('tempMap');
-            const canvas = await html2canvas(mapElement, {
+            html2canvas(mapElement, {
                 scale: 2,
                 backgroundColor: '#ffffff',
                 useCORS: true,
                 logging: false
+            }).then((canvas) => finish(canvas.toDataURL('image/png')))
+              .catch((err) => { console.warn('Could not capture location map:', err); finish(null); });
+        }
+
+        try {
+            hiddenContainer = document.getElementById('hiddenMapContainer');
+            if (!hiddenContainer) {
+                hiddenContainer = document.createElement('div');
+                hiddenContainer.id = 'hiddenMapContainer';
+                hiddenContainer.style.position = 'absolute';
+                hiddenContainer.style.left = '-9999px';
+                hiddenContainer.style.top = '-9999px';
+                hiddenContainer.style.width = '800px';
+                hiddenContainer.style.height = '500px';
+                document.body.appendChild(hiddenContainer);
+            }
+
+            hiddenContainer.innerHTML = '<div id="tempMap" style="width: 100%; height: 100%;"></div>';
+
+            // Create map with zoom control removed
+            map = L.map('tempMap', {
+                zoomControl: false  // This removes the zoom buttons (+/-)
+            }).setView([lat, lng], 14);
+
+            // tile.openstreetmap.org sends no Access-Control-Allow-Origin
+            // header, so html2canvas's canvas ends up tainted and silently
+            // draws every tile blank (marker/controls still show fine, since
+            // those aren't cross-origin images) - this is the actual cause
+            // of "the location map is blank", not a load-timing issue.
+            // CARTO's basemap tiles are served with CORS enabled, so switch
+            // to those for this hidden capture-only map.
+            const tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+                crossOrigin: true
+            }).addTo(map);
+
+            L.marker([lat, lng]).addTo(map).bindPopup(`<b>${locationName}</b>`);
+
+            // Add a custom north symbol
+            const NorthControl = L.Control.extend({
+                options: {
+                    position: 'topright'
+                },
+                onAdd: function(map) {
+                    const container = L.DomUtil.create('div', 'north-symbol');
+                    container.innerHTML = '↑<br>N';
+                    container.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+                    container.style.padding = '5px 8px';
+                    container.style.fontSize = '14px';
+                    container.style.fontWeight = 'bold';
+                    container.style.color = '#333';
+                    container.style.borderRadius = '4px';
+                    container.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+                    container.style.textAlign = 'center';
+                    container.style.lineHeight = '1.2';
+                    container.style.fontFamily = 'Arial, sans-serif';
+                    container.style.border = '1px solid #ccc';
+                    return container;
+                }
             });
-            map.remove();
-            hiddenContainer.innerHTML = '';
-            resolve(canvas.toDataURL('image/png'));
-        }, 1500);
+
+            map.addControl(new NorthControl());
+
+            // Capture once the tile layer actually reports every visible tile
+            // loaded, instead of a blind fixed delay - on a slower connection
+            // the old 1500ms wait could fire before OSM's tiles finished
+            // painting, silently baking a blank grey map into the report. A
+            // safety-net timeout still covers the case where 'load' never
+            // fires (e.g. the tile server is unreachable).
+            let captured = false;
+            tileLayer.on('load', () => {
+                if (captured) return;
+                captured = true;
+                setTimeout(capture, 200); // let the paint settle
+            });
+            setTimeout(() => { if (!captured) { captured = true; capture(); } }, 4000);
+        } catch (err) {
+            console.warn('Could not set up location map:', err);
+            finish(null);
+        }
     });
+}
+
+// ─── Report design tokens ──────────────────────────────────────────────────
+// Same spanSense brand palette as bciProforma.pdfmake.js / reportFull.docx.js
+// (accent teal #5b8c8a, ink #1e3432) plus the cover gradient and priority
+// colours from the spansenseUserGuideFull.html design this report follows.
+const NARR_COLORS = {
+    ink: '#1e3432',
+    body: '#3d4a4f',
+    muted: '#8a9ba8',
+    accent: '#5b8c8a',
+    accentSoft: '#8ab4b0',
+    accentTint: '#eef4f2',
+    hairline: '#e2e8e7',
+    surfaceSunken: '#f7fbfa',
+    priH: '#dc2626', priHBg: '#fdecea',
+    priM: '#b45309', priMBg: '#fdf1e2',
+    priL: '#15803d', priLBg: '#eaf6ed',
+    cover1: '#0e1c19', cover2: '#1c322f', cover3: '#2c4a48', cover4: '#40685f',
+    coverMuted: '#a9cfcb', coverMuted2: '#c9d6d4'
+};
+
+// Ported from inspection/inspectionA.js's defectNumberText - same defect
+// type/number -> human label mapping used when logging a defect in the
+// inspection wizard. Duplicated here (rather than shared) since this report
+// renders from map.html/database.html, which never load inspectionA.js.
+const DEFECT_TYPE_LABEL = {
+    1: { 1: "Rusting", 2: "Section loss", 3: "Rusting or damage to bolts", 4: "Damage to weld" },
+    2: { 2: "Spalling", 3: "Cracking", 4: "Prestressing damage", 5: "Delamination", 6: "Freeze thaw" },
+    3: { 1: "Deformation", 2: "Pointing", 3: "Arch ring damage", 4: "Arch barrel crack", 5: "Cracking", 6: "Section loss", 7: "Bulging or leaning" },
+    4: { 1: "Coating damage" },
+    5: { 1: "Structural damage", 2: "Inspection obstruction" },
+    6: { 1: "Settlement", 2: "Differential movement", 3: "Sliding", 4: "Rotation", 5: "Scour", 6: "Foundation faults" },
+    7: { 1: "Scour", 2: "Vegetation or silt" },
+    8: { 1: "Blockage", 2: "Causing stains", 3: "Structural damage", 4: "Weep hole blockage" },
+    9: { 1: "Wear and weathering", 2: "Crazing, tracking & fretting", 3: "Poor texture", 4: "Cracking", 5: "Slippery", 6: "Cracked flagged surfacing" },
+    10: { 1: "Asphaltic plug debonding", 2: "Asphaltic plug material loss", 3: "Asphaltic plug tracking", 4: "Cracking along nosing", 5: "Elastomeric and others missing bolts", 6: "Elastomeric and others sealant breached", 7: "Elastomeric and others road breaking", 8: "Elastomeric and others loose fixings", 9: "Elastomeric and others component damage", 10: "Buried joint cracking", 11: "Buried joint sealant damage", 12: "Joint leakage" },
+    11: { 1: "Deformation or settlement" },
+    12: { 1: "Rusting", 2: "Offset or dislodged", 3: "Sliding", 4: "Crazing", 5: "Sliding plate damage", 6: "Bearing damage" },
+    13: { 1: "Impact" },
+    14: { 1: "Non structural damage", 2: "Structural damage" },
+    15: { 1: "Cracking or displacement" },
+    16: { 1: "Damage", 2: "Section loss" }
+};
+
+// Same severity wording as inspection/spans.js's getSeverityLabel.
+const SEVERITY_LABEL = { 1: 'Minor', 2: 'Moderate', 3: 'Severe', 4: 'Critical', 5: 'Emergency' };
+
+function defectTypeLabel(defectType, defectNumber) {
+    const byType = DEFECT_TYPE_LABEL[Number(defectType)];
+    return (byType && byType[Number(defectNumber)]) || null;
+}
+
+function severityLabel(sev) {
+    return SEVERITY_LABEL[Number(sev)] || null;
+}
+
+function getBCICategory(score) {
+    if (score >= 90) return { text: 'Very Good', color: '#22c55e' };
+    if (score >= 80) return { text: 'Good', color: NARR_COLORS.accentSoft };
+    if (score >= 65) return { text: 'Fair', color: '#eab308' };
+    if (score >= 40) return { text: 'Poor', color: '#f97316' };
+    return { text: 'Critical', color: '#dc2626' };
+}
+
+function priorityColors(p) {
+    if (p === 'H') return { bg: NARR_COLORS.priHBg, fg: NARR_COLORS.priH };
+    if (p === 'M') return { bg: NARR_COLORS.priMBg, fg: NARR_COLORS.priM };
+    if (p === 'L') return { bg: NARR_COLORS.priLBg, fg: NARR_COLORS.priL };
+    return { bg: NARR_COLORS.surfaceSunken, fg: NARR_COLORS.muted };
+}
+
+// ─── pdfmake building blocks shared across the report's sections ──────────
+// A small filled rectangle used as a "chip" (BCI badge, priority tag, status
+// pill) - pdfmake has no border-radius for text/tables, so every chip in
+// this report is square-cornered by design rather than attempting one-off
+// SVG roundrects per chip.
+function reportChip(text, bg, fg, opts) {
+    opts = opts || {};
+    return {
+        width: 'auto',
+        table: { body: [[{ text: text, fontSize: opts.fontSize || 9, bold: true, color: fg || 'white', alignment: 'center' }]] },
+        layout: {
+            fillColor: function () { return bg; },
+            hLineWidth: function () { return 0; },
+            vLineWidth: function () { return 0; },
+            paddingLeft: function () { return opts.padX || 10; },
+            paddingRight: function () { return opts.padX || 10; },
+            paddingTop: function () { return opts.padY || 4; },
+            paddingBottom: function () { return opts.padY || 4; }
+        },
+        margin: opts.margin || [0, 0, 0, 0]
+    };
+}
+
+// Label/value table - hairline between rows only, no vertical borders,
+// label muted, value bold ink. Same look as every kv table in the design.
+function narrKvTable(pairs) {
+    return {
+        table: {
+            widths: ['38%', '62%'],
+            body: pairs.map(function (p) {
+                return [
+                    { text: p[0], color: NARR_COLORS.muted, bold: true, fontSize: 9.5 },
+                    { text: p[1] != null && p[1] !== '' ? String(p[1]) : '—', color: NARR_COLORS.ink, bold: true, fontSize: 9.5 }
+                ];
+            })
+        },
+        layout: {
+            hLineWidth: function (i, node) { return (i === 0 || i === node.table.body.length) ? 0 : 0.5; },
+            vLineWidth: function () { return 0; },
+            hLineColor: function () { return NARR_COLORS.hairline; },
+            paddingLeft: function () { return 0; },
+            paddingRight: function () { return 0; },
+            paddingTop: function () { return 7; },
+            paddingBottom: function () { return 7; }
+        },
+        margin: [0, 0, 0, 13]
+    };
+}
+
+// Section heading ("3   Description of Defects") - registers itself with
+// pdfmake's built-in toc feature (tocItem/tocStyle) so the Contents page
+// gets real, always-correct page numbers instead of the old report's
+// hand-typed (and easily stale) ones.
+function sectionHeading(num, title, id) {
+    return {
+        text: [
+            { text: num + '    ', color: NARR_COLORS.accent, bold: true },
+            { text: title, color: NARR_COLORS.ink, bold: true }
+        ],
+        fontSize: 19,
+        id: id,
+        tocItem: true,
+        tocStyle: 'tocMain',
+        margin: [0, 0, 0, 14]
+    };
+}
+
+function subhead(text, id) {
+    const o = { text: text, bold: true, fontSize: 12.5, color: NARR_COLORS.accent, margin: [0, 20, 0, 9] };
+    if (id) {
+        o.id = id;
+        o.tocItem = true;
+        o.tocStyle = 'tocSub';
+        o.tocMargin = [14, 0, 0, 0];
+    }
+    return o;
+}
+
+// Tinted, left-accented note box (next-inspection notice, "no remedial
+// works recorded", etc.) - same shape as the design's .callout.
+function callout(text, opts) {
+    opts = opts || {};
+    return {
+        table: { widths: ['*'], body: [[{ text: text, fontSize: 9.5, lineHeight: 1.35, color: opts.color || '#2c4a48', margin: [12, 10, 12, 10] }]] },
+        layout: {
+            fillColor: function () { return opts.bg || NARR_COLORS.accentTint; },
+            hLineWidth: function () { return 0; },
+            vLineWidth: function (i) { return i === 0 ? 3 : 0; },
+            vLineColor: function () { return opts.accent || NARR_COLORS.accent; },
+            paddingLeft: function () { return 0; },
+            paddingRight: function () { return 0; },
+            paddingTop: function () { return 0; },
+            paddingBottom: function () { return 0; }
+        },
+        margin: [0, 6, 0, 13]
+    };
+}
+
+// Bordered box wrapping a single defect's detail (id/type, priority chip,
+// facts row, comment, remedial callout) - the design's .defect card.
+function defectCard(rows) {
+    return {
+        table: { widths: ['*'], body: [[{ stack: rows, margin: [13, 11, 13, 11] }]] },
+        layout: {
+            hLineWidth: function () { return 0.75; },
+            vLineWidth: function () { return 0.75; },
+            hLineColor: function () { return NARR_COLORS.hairline; },
+            vLineColor: function () { return NARR_COLORS.hairline; },
+            paddingLeft: function () { return 0; },
+            paddingRight: function () { return 0; },
+            paddingTop: function () { return 0; },
+            paddingBottom: function () { return 0; }
+        },
+        margin: [0, 6, 0, 11]
+    };
+}
+
+// A run of consecutive no-defect elements, batched into one hairline-rowed
+// table (No / Name / "No defects") instead of one card each - keeps the
+// element-by-element checklist honest (every element is accounted for)
+// without one paragraph per clear element.
+function clearElementsTable(items) {
+    return {
+        table: {
+            widths: [20, '*', 62],
+            body: items.map(function (it) {
+                return [
+                    { text: String(it.no), fontSize: 9.5, color: NARR_COLORS.muted, alignment: 'right' },
+                    { text: it.name, fontSize: 9.5, color: '#5b6c70' },
+                    { text: 'No defects', fontSize: 8, bold: true, color: '#9fb0ab', alignment: 'right' }
+                ];
+            })
+        },
+        layout: {
+            hLineWidth: function () { return 0.5; },
+            vLineWidth: function () { return 0; },
+            hLineColor: function () { return NARR_COLORS.hairline; },
+            paddingLeft: function (i) { return i === 1 ? 9 : 0; },
+            paddingRight: function (i) { return i === 0 ? 9 : 0; },
+            paddingTop: function () { return 6; },
+            paddingBottom: function () { return 6; }
+        },
+        margin: [0, 0, 0, 8]
+    };
+}
+
+function buildDefectCardContent(d, photoNumbers) {
+    // /api/inspection/full only sends the combined "type.number" defectId
+    // (see server.js), not separate defect_type/defect_number fields.
+    const [defType, defNum] = String(d.defectId || '').split('.');
+    const typeLabel = defectTypeLabel(defType, defNum);
+    const defectHeading = d.defectId + (typeLabel ? '   ·   ' + typeLabel.toUpperCase() : '');
+    const pri = priorityColors(d.priority);
+    const sevText = severityLabel(d.severity) || (d.severity ? ('Level ' + d.severity) : '—');
+    const worksRequired = d.worksRequired === 'Y' ? 'Yes' : d.worksRequired === 'M' ? 'Possibly' : 'No';
+
+    const facts = [
+        { width: 'auto', text: [{ text: 'Severity: ', color: NARR_COLORS.muted }, { text: sevText, bold: true, color: NARR_COLORS.ink }], fontSize: 9.5 },
+        { width: 'auto', text: [{ text: 'Extent: ', color: NARR_COLORS.muted }, { text: d.extent || '—', bold: true, color: NARR_COLORS.ink }], fontSize: 9.5 },
+        { width: 'auto', text: [{ text: 'Works required: ', color: NARR_COLORS.muted }, { text: worksRequired, bold: true, color: NARR_COLORS.ink }], fontSize: 9.5 }
+    ];
+    const cost = d.cost != null ? parseFloat(d.cost) : NaN;
+    if (d.worksRequired === 'Y' && !isNaN(cost) && cost > 0) {
+        facts.push({ width: 'auto', text: [{ text: 'Est. cost: ', color: NARR_COLORS.muted }, { text: '£' + cost.toLocaleString(), bold: true, color: NARR_COLORS.ink }], fontSize: 9.5 });
+    }
+
+    const headingColumns = [{ width: '*', text: defectHeading, fontSize: 9, bold: true, color: NARR_COLORS.muted }];
+    // Priority only means anything when works are actually required - no
+    // chip at all (rather than a "Priority —" placeholder) when there isn't one.
+    if (d.priority) headingColumns.push(reportChip('Priority ' + d.priority, pri.bg, pri.fg));
+
+    const rows = [
+        {
+            columns: headingColumns,
+            columnGap: 8,
+            margin: [0, 0, 0, 8]
+        },
+        { columns: facts, columnGap: 18, margin: [0, 0, 0, 8] }
+    ];
+
+    const comment = (d.comments && d.comments !== 'Add') ? d.comments.trim() : '';
+    if (comment || (photoNumbers && photoNumbers.length)) {
+        const commentRuns = [];
+        if (comment) commentRuns.push({ text: '“' + comment + '”', italics: true, color: NARR_COLORS.body });
+        (photoNumbers || []).forEach(function (n, idx) {
+            if (comment || idx > 0) commentRuns.push({ text: ' ' });
+            commentRuns.push({ text: '(Photo ' + n + ')', color: NARR_COLORS.accent, decoration: 'underline', linkToDestination: 'photo-' + n });
+        });
+        rows.push({ text: commentRuns, fontSize: 9.5, lineHeight: 1.3, margin: [0, 0, 0, 0] });
+    }
+
+    const remedial = (d.remedialWorks || d.remedial_works || '').trim();
+    if (remedial) {
+        rows.push({
+            table: { widths: ['*'], body: [[{ text: [{ text: 'Remedial works — ', bold: true, color: NARR_COLORS.ink }, { text: remedial, color: NARR_COLORS.body }], fontSize: 9.5, lineHeight: 1.3, margin: [10, 8, 10, 8] }]] },
+            layout: {
+                fillColor: function () { return NARR_COLORS.surfaceSunken; },
+                hLineWidth: function () { return 0; },
+                vLineWidth: function (i) { return i === 0 ? 2.5 : 0; },
+                vLineColor: function () { return NARR_COLORS.accent; },
+                paddingLeft: function () { return 0; }, paddingRight: function () { return 0; },
+                paddingTop: function () { return 0; }, paddingBottom: function () { return 0; }
+            },
+            margin: [0, comment ? 8 : 0, 0, 0]
+        });
+    }
+
+    return rows;
 }
 
 
@@ -122,7 +451,7 @@ async function captureLocationMap(lat, lng, locationName) {
 
 
 
-async function generateSimplePDFReport(doc, mode = 'download') {
+async function generateSimplePDFReport(doc, mode = 'download', targetWindow = null) {
     try {
         const structureId = doc.structure_id;
         const structureName = doc.structure_name;
@@ -350,7 +679,10 @@ async function generateSimplePDFReport(doc, mode = 'download') {
                 .map(p => p.photoNumber);
         }
 
-        // Calculate BCI scores
+        // Calculate BCI scores (fallback only - overallBciave/overallBcicrit
+        // below is the authoritative, already-stored value for this
+        // inspection; this local estimate is a last resort for older
+        // inspections saved before those columns existed).
         function calculateBCI(scores) {
             if (!scores || scores.length === 0) return { bciAv: 100, bciCrit: 100 };
             const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
@@ -359,26 +691,14 @@ async function generateSimplePDFReport(doc, mode = 'download') {
             return { bciAv: Math.round(bciAv), bciCrit: Math.round(bciCrit) };
         }
 
-        const severityScores = defectsData.map(d => d.severity || 0);
-        const { bciAv, bciCrit } = calculateBCI(severityScores);
-        
-        function getBCICategory(score) {
-            if (score >= 90) return { text: 'Very Good', color: '#22c55e' };
-            if (score >= 80) return { text: 'Good', color: '#8ab4b0' };
-            if (score >= 65) return { text: 'Fair', color: '#eab308' };
-            if (score >= 40) return { text: 'Poor', color: '#f97316' };
-            return { text: 'Critical', color: '#dc2626' };
-        }
-        
-        const bciCategory = getBCICategory(bciAv);
-        
-        const severityCounts = {
-            5: defectsData.filter(d => d.severity === 5).length,
-            4: defectsData.filter(d => d.severity === 4).length,
-            3: defectsData.filter(d => d.severity === 3).length,
-            2: defectsData.filter(d => d.severity === 2).length,
-            1: defectsData.filter(d => d.severity === 1).length
-        };
+        // severity is text ('1'-'5') over the wire, not a number - without
+        // Number() here `.reduce((a,b) => a+b)` string-concatenates instead
+        // of summing, and `* 8`/`* 12` below then multiplies a garbled
+        // string, well off the real BCI.
+        const severityScores = defectsData.map(d => Number(d.severity) || 0);
+        const localBci = calculateBCI(severityScores);
+        const bciAv = inspectionData.overallBciave != null ? parseFloat(inspectionData.overallBciave) : localBci.bciAv;
+        const bciCrit = inspectionData.overallBcicrit != null ? parseFloat(inspectionData.overallBcicrit) : localBci.bciCrit;
 
         // Get unique span numbers
         const spanNumbers = [...new Set(defectsData.map(d => d.spanNumber))].sort((a, b) => a - b);
@@ -390,819 +710,27 @@ async function generateSimplePDFReport(doc, mode = 'download') {
             defectsBySpan[span] = defectsData.filter(d => d.spanNumber === span);
         });
 
-        // Page width for calculations
-        const pageWidth = 595;
-        const photoWidth = pageWidth * 0.7;
-        const mapWidth = pageWidth * 0.65;
-
         // Helper function for Remedial Works (uses the lookup map)
         const getElementDesc = (defect) => {
             return elementNameMap[defect.elementNumber] || `Element ${defect.elementNumber}`;
         };
 
-        // Build Section 4 content
-        const buildSection4Content = () => {
-            const content = [];
-            
-            for (const spanNum of spanNumbers) {
-                content.push({
-                    text: `Span ${spanNum}`,
-                    style: 'subsectionHeader',
-                    margin: [0, 15, 0, 8]
-                });
-                
-                let currentMainNumber = '';
-                
-                for (const element of allElementsList) {
-                    if (element.mainNumber !== currentMainNumber) {
-                        currentMainNumber = element.mainNumber;
-                        // Map mainNumber to ID
-                        let categoryId = '';
-                        switch(currentMainNumber) {
-                            case '3.1': categoryId = 'section3_1'; break;
-                            case '3.2': categoryId = 'section3_2'; break;
-                            case '3.3': categoryId = 'section3_3'; break;
-                            case '3.4': categoryId = 'section3_4'; break;
-                            case '3.5': categoryId = 'section3_5'; break;
-                            case '3.6': categoryId = 'section3_6'; break;
-                        }
-                        content.push({
-                            text: `${element.mainNumber.replace('4', '3')} ${element.category}`,  // Changes 4.1 to 3.1
-                            style: 'subsectionHeader',
-                            margin: [10, 12, 0, 6],
-                            fontSize: 11,
-                            id: categoryId  // Add this for TOC linking
-                        });
-                    }
-                    
-                    const elementDefects = defectsData.filter(d => 
-                        d.elementNumber === element.elementNo && d.spanNumber === spanNum
-                    );
-                    
-                    content.push({
-                        text: `${element.subNumber.replace('4.', '3.')} ${element.name}`,
-                        bold: true,
-                        margin: [20, 6, 0, 3],
-                        fontSize: 10
-                    });
-                    
-                    if (elementDefects.length === 0) {
-                        content.push({
-                            text: '  No defects recorded',
-                            italics: true,
-                            color: '#888',
-                            margin: [30, 2, 0, 6],
-                            fontSize: 9
-                        });
-                    } else {
-                        for (let idx = 0; idx < elementDefects.length; idx++) {
-                            const defect = elementDefects[idx];
-                            const defectId = defect.defectId || `${defect.defect_type}.${defect.defect_number}`;
-                            const photoNumbers = getPhotoNumbersForDefect(defectId);
-                            const comment = defect.comments && defect.comments !== 'Add' ? defect.comments.trim() : '';
-                            
-                            content.push({
-                                text: `${defectId}. Severity: ${defect.severity || '?'}. Extent: ${defect.extent || '?'}`,
-                                margin: [30, 4, 0, 2],
-                                fontSize: 9
-                            });
-                            
-                            if (comment || photoNumbers.length > 0) {
-                                const commentElements = [];
-                                if (comment) commentElements.push({ text: comment });
-                                if (photoNumbers.length > 0) {
-                                    if (comment) commentElements.push({ text: ' ' });
-                                    const photoTexts = photoNumbers.map(num => `(Photo ${num})`);
-                                    commentElements.push({
-                                        text: photoTexts.join(' '),
-                                        color: 'blue',
-                                        decoration: 'underline',
-                                        linkToDestination: `photo-${photoNumbers[0]}`
-                                    });
-                                }
-                                content.push({
-                                    text: commentElements,
-                                    margin: [40, 1, 0, 6],
-                                    fontSize: 9
-                                });
-                            } else {
-                                content.push({ text: '', margin: [0, 0, 0, 4] });
-                            }
-                        }
-                    }
-                }
-            }
-            return content;
-        };
+        const bciCategory = getBCICategory(bciAv);
 
-        // Build document definition
-        const docDefinition = {
-            pageSize: 'A4',
-            pageMargins: [60, 50, 60, 50],
-            
+        // buildInspectionReportDocDefinition takes only plain data (no fetch/DOM
+        // access) so it can be exercised outside the browser - see the bottom of
+        // this file for the window.* export.
+        const docDefinition = buildInspectionReportDocDefinition({
+            structureName, structureId, inspectionDate,
+            bridgeData, inspectionData, defectsData,
+            allElementsList, elementNameMap, getElementDesc,
+            photosByDefect, photosWithDataURLs, getPhotoNumbersForDefect,
+            bridgePhotoDataURL, mapDataURL,
+            bciAv, bciCrit, bciCategory,
+            spanNumbers, defectsBySpan, nextDueData, bciFormData
+        });
 
-            header: function(currentPage, pageCount, pageSize) {
-                if (currentPage === 1) return null;
-                return {
-                    columns: [
-                        { text: `${structureName}`, alignment: 'left', fontSize: 8, color: '#888' },
-                        { text: `Inspection Report`, alignment: 'center', fontSize: 8, color: '#888' },
-                        { text: `Page ${currentPage} of ${pageCount}`, alignment: 'right', fontSize: 8, color: '#888' }
-                    ],
-                    margin: [40, 10, 40, 0]
-                };
-            },
-            
-            footer: function(currentPage, pageCount) {
-                if (currentPage === 1) return null;
-                return {
-                    text: `Generated: ${new Date().toLocaleDateString()} | spanSense Asset Management System`,
-                    alignment: 'center',
-                    fontSize: 7,
-                    color: '#aaa',
-                    margin: [0, 0, 0, 10]
-                };
-            },
-            
-            content: [
-                // COVER PAGE
-                {
-                    columns: [
-                        {
-                            width: '*',
-                            stack: [
-                                { text: 'SPANSENSE', fontSize: 20, bold: true, color: '#5b8c8a', alignment: 'center' },
-                                { text: 'BRIDGE INSPECTION REPORT', fontSize: 16, bold: true, color: '#2c3e44', alignment: 'center', margin: [0, 10, 0, 0] }
-                            ]
-                        }
-                    ],
-                    margin: [0, 80, 0, 0]
-                },
-                {
-                    text: structureName,
-                    fontSize: 14,
-                    bold: true,
-                    color: '#2c3e44',
-                    alignment: 'center',
-                    margin: [0, 20, 0, 5]
-                },
-                {
-                    text: `Structure ID: ${structureId}`,
-                    fontSize: 10,
-                    color: '#888',
-                    alignment: 'center',
-                    margin: [0, 0, 0, 25]
-                },
-                ...(bridgePhotoDataURL ? [{
-                    image: bridgePhotoDataURL,
-                    width: photoWidth,
-                    alignment: 'center',
-                    margin: [0, 0, 0, 25]
-                }] : []),
-                {
-                    text: `Inspection Date: ${formatDate(inspectionDate)}`,
-                    fontSize: 10,
-                    alignment: 'center',
-                    margin: [0, 0, 0, 5]
-                },
-                {
-                    text: `Report Generated: ${new Date().toLocaleDateString()}`,
-                    fontSize: 10,
-                    alignment: 'center'
-                },
-                
-
-                
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-                // TABLE OF CONTENTS - With proper margins and indentation
-                { text: '', pageBreak: 'before' },
-                {
-                    text: 'Table of Contents',
-                    style: 'tocTitle',
-                    alignment: 'center',
-                    margin: [0, 0, 0, 25]
-                },
-                // Add a container with the same left margin as report body
-                {
-                    margin: [0, 0, 0, 0],  // This will inherit page margins
-                    stack: [
-                        // Section 1
-                        {
-                            columns: [
-                                { text: '1. Structure Details', linkToDestination: 'section1', fontSize: 11 },
-                                { text: '2', alignment: 'right', fontSize: 11, color: '#666', linkToDestination: 'section1' }
-                            ],
-                            margin: [0, 5, 0, 2]
-                        },
-                        {
-                            columns: [
-                                { text: '     1.1 Structure Description', linkToDestination: 'section1_1', fontSize: 10, color: '#555' },
-                                { text: '3', alignment: 'right', fontSize: 10, color: '#666', linkToDestination: 'section1_1' }
-                            ],
-                            margin: [0, 2, 0, 2]
-                        },
-                        {
-                            columns: [
-                                { text: '     1.2 Coordinates', linkToDestination: 'section1_2', fontSize: 10, color: '#555' },
-                                { text: '3', alignment: 'right', fontSize: 10, color: '#666', linkToDestination: 'section1_2' }
-                            ],
-                            margin: [0, 2, 0, 2]
-                        },
-                        {
-                            columns: [
-                                { text: '     1.3 Location Map', linkToDestination: 'section1_3', fontSize: 10, color: '#555' },
-                                { text: '3', alignment: 'right', fontSize: 10, color: '#666', linkToDestination: 'section1_3' }
-                            ],
-                            margin: [0, 2, 0, 8]
-                        },
-                        
-                        // Section 2
-                        {
-                            columns: [
-                                { text: '2. Inspection Details', linkToDestination: 'section2', fontSize: 11 },
-                                { text: '4', alignment: 'right', fontSize: 11, color: '#666', linkToDestination: 'section2' }
-                            ],
-                            margin: [0, 5, 0, 2]
-                        },
-                        {
-                            columns: [
-                                { text: '     2.1 Span Details & BCI Scores', linkToDestination: 'section2', fontSize: 10, color: '#555' },
-                                { text: '4', alignment: 'right', fontSize: 10, color: '#666', linkToDestination: 'section2' }
-                            ],
-                            margin: [0, 2, 0, 8]
-                        },
-                        
-                        // Section 3
-                        {
-                            columns: [
-                                { text: '3. Description of Defects', linkToDestination: 'section3', fontSize: 11 },
-                                { text: '6', alignment: 'right', fontSize: 11, color: '#666', linkToDestination: 'section3' }
-                            ],
-                            margin: [0, 5, 0, 2]
-                        },
-                        {
-                            columns: [
-                                { text: '     3.1 Deck Elements', linkToDestination: 'section3_1', fontSize: 10, color: '#555' },
-                                { text: '6', alignment: 'right', fontSize: 10, color: '#666', linkToDestination: 'section3_1' }
-                            ],
-                            margin: [0, 2, 0, 2]
-                        },
-                        {
-                            columns: [
-                                { text: '     3.2 Load-bearing Substructure', linkToDestination: 'section3_2', fontSize: 10, color: '#555' },
-                                { text: '7', alignment: 'right', fontSize: 10, color: '#666', linkToDestination: 'section3_2' }
-                            ],
-                            margin: [0, 2, 0, 2]
-                        },
-                        {
-                            columns: [
-                                { text: '     3.3 Durability Elements', linkToDestination: 'section3_3', fontSize: 10, color: '#555' },
-                                { text: '8', alignment: 'right', fontSize: 10, color: '#666', linkToDestination: 'section3_3' }
-                            ],
-                            margin: [0, 2, 0, 2]
-                        },
-                        {
-                            columns: [
-                                { text: '     3.4 Safety Elements', linkToDestination: 'section3_4', fontSize: 10, color: '#555' },
-                                { text: '9', alignment: 'right', fontSize: 10, color: '#666', linkToDestination: 'section3_4' }
-                            ],
-                            margin: [0, 2, 0, 2]
-                        },
-                        {
-                            columns: [
-                                { text: '     3.5 Other Bridge Elements', linkToDestination: 'section3_5', fontSize: 10, color: '#555' },
-                                { text: '10', alignment: 'right', fontSize: 10, color: '#666', linkToDestination: 'section3_5' }
-                            ],
-                            margin: [0, 2, 0, 2]
-                        },
-                        {
-                            columns: [
-                                { text: '     3.6 Ancillary Elements', linkToDestination: 'section3_6', fontSize: 10, color: '#555' },
-                                { text: '11', alignment: 'right', fontSize: 10, color: '#666', linkToDestination: 'section3_6' }
-                            ],
-                            margin: [0, 2, 0, 8]
-                        },
-                        
-                        // Section 4
-                        {
-                            columns: [
-                                { text: '4. Conclusions and Recommendations', linkToDestination: 'section4', fontSize: 11 },
-                                { text: '12', alignment: 'right', fontSize: 11, color: '#666', linkToDestination: 'section4' }
-                            ],
-                            margin: [0, 5, 0, 2]
-                        },
-                        {
-                            columns: [
-                                { text: '     4.1 Conclusions', linkToDestination: 'section4_1', fontSize: 10, color: '#555' },
-                                { text: '12', alignment: 'right', fontSize: 10, color: '#666', linkToDestination: 'section4_1' }
-                            ],
-                            margin: [0, 2, 0, 2]
-                        },
-                        {
-                            columns: [
-                                { text: '     4.2 Recommended Remedial Works', linkToDestination: 'section4_2', fontSize: 10, color: '#555' },
-                                { text: '12', alignment: 'right', fontSize: 10, color: '#666', linkToDestination: 'section4_2' }
-                            ],
-                            margin: [0, 2, 0, 2]
-                        },
-                        {
-                            columns: [
-                                { text: '     4.3 Next Inspection', linkToDestination: 'section4_3', fontSize: 10, color: '#555' },
-                                { text: '13', alignment: 'right', fontSize: 10, color: '#666', linkToDestination: 'section4_3' }
-                            ],
-                            margin: [0, 2, 0, 15]
-                        },
-                        
-                        // Appendices
-                        {
-                            columns: [
-                                { text: 'Appendix A: Photographs', linkToDestination: 'appendixA', fontSize: 11 },
-                                { text: '14', alignment: 'right', fontSize: 11, color: '#666', linkToDestination: 'appendixA' }
-                            ],
-                            margin: [0, 5, 0, 5]
-                        },
-                        {
-                            columns: [
-                                { text: 'Appendix B: BCI Proforma', linkToDestination: 'appendixB', fontSize: 11 },
-                                { text: '16', alignment: 'right', fontSize: 11, color: '#666', linkToDestination: 'appendixB' }
-                            ],
-                            margin: [0, 5, 0, 5]
-                        }
-                    ]
-                },
-
-
-
-            // SECTION 1: STRUCTURE DETAILS
-            { text: '', pageBreak: 'before' },
-            { text: '1. Structure Details', style: 'sectionHeader', margin: [0, 0, 0, 15], id: 'section1' },
-            {
-                table: {
-                    widths: ['30%', '70%'],
-                    body: [
-                        ['Structure Name:', structureName],
-                        ['Structure Number:', structureId],
-                        ['Date of Construction:', bridgeData.year_built || 'Unknown'],
-                        ['Crosses:', bridgeData.crosses || 'Not specified'],
-                        ['Carries:', bridgeData.carries || 'Not specified'],
-                        ['Location:', bridgeData.location || 'Not specified']
-                    ]
-                },
-                layout: 'lightHorizontalLines',
-                margin: [0, 0, 0, 15]
-            },
-            // NEW: 1.1 Structure Description
-            {
-                text: '1.1 Structure Description',
-                style: 'subsectionHeader',
-                margin: [0, 0, 0, 8]
-            },
-            {
-                text: bridgeData.description || 'No structural description available for this bridge.',
-                margin: [15, 0, 0, 15],
-                fontSize: 9
-            },
-            // UPDATED: 1.2 Coordinates (was 1.1)
-            {
-                text: '1.2 Coordinates',
-                style: 'subsectionHeader',
-                margin: [0, 0, 0, 8]
-            },
-            {
-                table: {
-                    widths: ['20%', '30%', '20%', '30%'],
-                    body: [
-                        ['Easting:', bridgeData.easting || bridgeData.ose || 'N/A', 'Northing:', bridgeData.northing || bridgeData.osn || 'N/A'],
-                        ['Latitude:', (parseFloat(bridgeData.latitude) || 0).toFixed(6) || 'N/A', 'Longitude:', (parseFloat(bridgeData.longitude) || 0).toFixed(6) || 'N/A']
-                    ]
-                },
-                layout: 'noBorders',
-                margin: [0, 0, 0, 15]
-            },
-                ...(mapDataURL ? [
-                    { text: '1.3 Location Map', style: 'subsectionHeader', margin: [0, 10, 0, 10], id: 'section1_3' },  // Fixed id
-                    { image: mapDataURL, width: mapWidth, alignment: 'center', margin: [0, 0, 0, 15] }
-                ] : []),
-                                
-                
-
-
-
-
-
-
-
-
-            // SECTION 2: INSPECTION DETAILS (with per-span BCI scores)
-            { text: '', pageBreak: 'before' },
-            { text: '2. Inspection Details', style: 'sectionHeader', margin: [0, 0, 0, 15], id: 'section2' },
-            {
-                table: {
-                    widths: ['30%', '70%'],
-                    body: [
-                        ['Inspector Name:', inspectionData.inspectorName || 'Not recorded'],
-                        ['Inspection Type:', inspectionData.inspectionType || 'N/A'],
-                        ['Inspection Date:', inspectionData.inspectionDate ? formatDate(inspectionData.inspectionDate) : 'N/A'],
-                        ['Total Spans:', inspectionData.totalSpans || 'N/A']
-                    ]
-                },
-                layout: 'lightHorizontalLines'
-            },
-
-            ...(inspectionData.spans?.length > 0 ? [{
-                text: '2.1 Span Details & BCI Scores',
-                style: 'subsectionHeader',
-                margin: [0, 15, 0, 10]
-            }] : []),
-
-            ...(inspectionData.spans ? inspectionData.spans.map(span => {
-                // Calculate span BCI if not provided
-                const spanDefects = defectsData.filter(d => d.spanNumber === span.spanNumber);
-                const spanScores = spanDefects.map(d => d.severity || 0);
-                
-                let spanBciAv = span.bciAv ? parseFloat(span.bciAv) : null;
-                let spanBciCrit = span.bciCrit ? parseFloat(span.bciCrit) : null;
-                
-                if (spanBciAv === null && spanScores.length > 0) {
-                    const avgScore = spanScores.reduce((a, b) => a + b, 0) / spanScores.length;
-                    spanBciAv = Math.max(0, Math.min(100, 100 - (avgScore * 8)));
-                    spanBciCrit = Math.max(0, Math.min(100, 100 - (Math.max(...spanScores) * 12)));
-                    spanBciAv = Math.round(spanBciAv);
-                    spanBciCrit = Math.round(spanBciCrit);
-                } else if (spanBciAv === null) {
-                    spanBciAv = 100;
-                    spanBciCrit = 100;
-                }
-                
-                const getSpanBCIColor = (score) => {
-                    if (score >= 90) return '#22c55e';
-                    if (score >= 80) return '#8ab4b0';
-                    if (score >= 65) return '#eab308';
-                    if (score >= 40) return '#f97316';
-                    return '#dc2626';
-                };
-                
-                return {
-                    stack: [
-                        { text: `Span ${span.spanNumber}`, bold: true, fontSize: 12, margin: [0, 5, 0, 10], color: '#2c3e44' },
-                        {
-                            columns: [
-                                {
-                                    width: '*',
-                                    stack: [
-                                        { text: [
-                                            { text: 'BCI', bold: true, fontSize: 8, color: '#888' },
-                                            { text: 'avg', bold: true, fontSize: 6, color: '#888', sub: {} }
-                                        ], alignment: 'center' },
-                                        { text: spanBciAv.toString(), fontSize: 28, bold: true, color: getSpanBCIColor(spanBciAv), alignment: 'center' }
-                                    ]
-                                },
-                                {
-                                    width: '*',
-                                    stack: [
-                                        { text: [
-                                            { text: 'BCI', bold: true, fontSize: 8, color: '#888' },
-                                            { text: 'crit', bold: true, fontSize: 6, color: '#888', sub: {} }
-                                        ], alignment: 'center' },
-                                        { text: spanBciCrit.toString(), fontSize: 28, bold: true, color: '#dc2626', alignment: 'center' }
-                                    ]
-                                },
-                                {
-                                    width: '*',
-                                    stack: [
-                                        { text: 'Defects', bold: true, fontSize: 8, color: '#888', alignment: 'center' },
-                                        { text: spanDefects.length.toString(), fontSize: 28, bold: true, color: '#5b8c8a', alignment: 'center' }
-                                    ]
-                                }
-                            ],
-                            margin: [0, 0, 0, 8]
-                        },
-                        ...(span.comments ? [{
-                            text: 'Comments:', bold: true, fontSize: 8, color: '#888', margin: [0, 8, 0, 2]
-                        }, {
-                            text: span.comments, fontSize: 9, italics: true, margin: [10, 0, 0, 8], color: '#4a5b6e'
-                        }] : []),
-                        { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 0.5, lineColor: '#ddd' }], margin: [0, 5, 0, 5] }
-                    ]
-                }
-            }) : []),
-
-
-                
-                // SECTION 3: DESCRIPTION OF DEFECTS
-                { text: '', pageBreak: 'before' },
-                { text: '3. Description of Defects', style: 'sectionHeader', margin: [0, 0, 0, 15], id: 'section4' },
-                ...buildSection4Content(),
-                
-                // SECTION 4: CONCLUSIONS AND RECOMMENDATIONS
-                { text: '', pageBreak: 'before' },
-                { text: '4. Conclusions and Recommendations', style: 'sectionHeader', margin: [0, 0, 0, 15], id: 'section5' },
-                {
-                    text: '4.1 Conclusions',
-                    style: 'subsectionHeader',
-                    margin: [0, 0, 0, 10],
-                    id: 'section5_1'
-                },
-                {
-                    text: inspectionData.conclusions?.trim() || 'No conclusions provided for this inspection.',
-                    margin: [15, 0, 0, 15]
-                },
-                
-                // 4.2 Remedial works
-                {
-                    text: '4.2 Recommended Remedial Works',
-                    style: 'subsectionHeader',
-                    margin: [0, 0, 0, 10],
-                    id: 'section5_2'
-                },
-                ...(() => {
-                    const defectsWithRemedial = defectsData.filter(d => {
-                        const remedial = d.remedialWorks || d.remedial_works;
-                        return remedial && remedial.trim().length > 0 && remedial !== 'Add';
-                    });
-                    
-                    if (defectsWithRemedial.length === 0) {
-                        return [{
-                            text: 'No specific remedial works recorded for this inspection.',
-                            italics: true,
-                            color: '#888',
-                            margin: [15, 5, 0, 15]
-                        }];
-                    }
-                    
-                    const highPriority = defectsWithRemedial.filter(d => d.priority === 'H');
-                    const mediumPriority = defectsWithRemedial.filter(d => d.priority === 'M');
-                    const lowPriority = defectsWithRemedial.filter(d => d.priority === 'L');
-                    
-                    const sections = [];
-                    
-                    if (highPriority.length > 0) {
-                        sections.push(
-                            { text: '🔴 HIGH PRIORITY', bold: true, fontSize: 10, color: '#dc2626', margin: [0, 10, 0, 8] },
-                            {
-                                table: {
-                                    widths: ['15%', '35%', '50%'],
-                                    body: [
-                                        [
-                                            { text: 'Location', bold: true, fillColor: '#fef2f2' },
-                                            { text: 'Element', bold: true, fillColor: '#fef2f2' },
-                                            { text: 'Remedial Works', bold: true, fillColor: '#fef2f2' }
-                                        ],
-                                        ...highPriority.map(d => [
-                                            `Span ${d.spanNumber}`,
-                                            getElementDesc(d),
-                                            (d.remedialWorks || d.remedial_works)
-                                        ])
-                                    ]
-                                },
-                                layout: 'lightHorizontalLines',
-                                margin: [0, 0, 0, 15]
-                            }
-                        );
-                    }
-                    
-                    if (mediumPriority.length > 0) {
-                        sections.push(
-                            { text: '🟠 MEDIUM PRIORITY', bold: true, fontSize: 10, color: '#f97316', margin: [0, 10, 0, 8] },
-                            {
-                                table: {
-                                    widths: ['15%', '35%', '50%'],
-                                    body: [
-                                        [
-                                            { text: 'Location', bold: true, fillColor: '#fff7ed' },
-                                            { text: 'Element', bold: true, fillColor: '#fff7ed' },
-                                            { text: 'Remedial Works', bold: true, fillColor: '#fff7ed' }
-                                        ],
-                                        ...mediumPriority.map(d => [
-                                            `Span ${d.spanNumber}`,
-                                            getElementDesc(d),
-                                            (d.remedialWorks || d.remedial_works)
-                                        ])
-                                    ]
-                                },
-                                layout: 'lightHorizontalLines',
-                                margin: [0, 0, 0, 15]
-                            }
-                        );
-                    }
-                    
-                    if (lowPriority.length > 0) {
-                        sections.push(
-                            { text: '🟢 LOW PRIORITY', bold: true, fontSize: 10, color: '#22c55e', margin: [0, 10, 0, 8] },
-                            {
-                                table: {
-                                    widths: ['15%', '35%', '50%'],
-                                    body: [
-                                        [
-                                            { text: 'Location', bold: true, fillColor: '#f0fdf4' },
-                                            { text: 'Element', bold: true, fillColor: '#f0fdf4' },
-                                            { text: 'Remedial Works', bold: true, fillColor: '#f0fdf4' }
-                                        ],
-                                        ...lowPriority.map(d => [
-                                            `Span ${d.spanNumber}`,
-                                            getElementDesc(d),
-                                            (d.remedialWorks || d.remedial_works)
-                                        ])
-                                    ]
-                                },
-                                layout: 'lightHorizontalLines',
-                                margin: [0, 0, 0, 15]
-                            }
-                        );
-                    }
-                    
-                    return sections;
-                })(),
-                
-                {
-                    text: '4.3 Next Inspection',
-                    style: 'subsectionHeader',
-                    margin: [0, 0, 0, 10],
-                    id: 'section5_3'
-                },
-                {
-                    text: (() => {
-                        const highSeverity = severityCounts[5] + severityCounts[4];
-                        let scheduleLine;
-                        if (nextDueData && nextDueData.date) {
-                            const formatted = new Date(nextDueData.date).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
-                            scheduleLine = `The next inspection (${nextDueData.type}) is scheduled for ${formatted}, in line with this structure's inspection cycle.`;
-                        } else {
-                            scheduleLine = 'The next inspection date could not be determined from this structure\'s inspection history.';
-                        }
-                        if (highSeverity > 0) return scheduleLine + '\n\nNote: Interim safety inspections should be conducted monthly due to identified severe/critical defects.';
-                        return scheduleLine;
-                    })(),
-                    color: (severityCounts[5] + severityCounts[4]) > 0 ? '#dc2626' : '#2c3e44',
-                    margin: [15, 0, 0, 15]
-                },
-                
-                
-                // APPENDIX A: PHOTOGRAPHS
-                { text: '', pageBreak: 'before' },
-                { text: 'Appendix A: Photographs', style: 'sectionHeader', alignment: 'center', margin: [0, 40, 0, 10], id: 'appendixA' },
-                {
-                    text: 'The following pages contain photographic documentation of identified defects.',
-                    alignment: 'center',
-                    fontSize: 9,
-                    color: '#888',
-                    margin: [0, 0, 0, 20]
-                },
-                { text: '', pageBreak: 'after' },
-
-                ...(() => {
-                    if (photosWithDataURLs.length === 0) {
-                        return [{
-                            text: 'No photographs available for this inspection.',
-                            italics: true,
-                            color: '#888',
-                            alignment: 'center'
-                        }];
-                    }
-                    
-                    const photoContent = [];
-                    for (let i = 0; i < photosWithDataURLs.length; i++) {
-                        const photo = photosWithDataURLs[i];
-                        
-                        // Add a tiny invisible anchor (1pt height)
-                        photoContent.push({
-                            text: ' ',
-                            id: `photo-${photo.photoNumber}`,
-                            margin: [0, 0, 0, 0],
-                            fontSize: 1
-                        });
-                        
-                        if (photo.photo_dataURL) {
-                            photoContent.push({
-                                image: photo.photo_dataURL,
-                                width: 450,
-                                alignment: 'center',
-                                margin: [0, 0, 0, 15]
-                            });
-                        } else {
-                            photoContent.push({
-                                text: '[Image not available]',
-                                alignment: 'center',
-                                italics: true,
-                                color: '#888',
-                                margin: [0, 0, 0, 20]
-                            });
-                        }
-
-                        // Updated caption: 'Photo X: [comment]'
-                        photoContent.push({
-                            text: `Photo ${photo.photoNumber}: ${photo.photo_description ? `${photo.photo_description}` : ''}`,
-                            style: 'photoCaption',
-                            alignment: 'center',
-                            margin: [0, 5, 0, 10]
-                        });
-                        
-                        if ((i + 1) % 2 === 0 && i < photosWithDataURLs.length - 1) {
-                            photoContent.push({ text: '', pageBreak: 'after' });
-                        }
-                    }
-                    return photoContent;
-                })(),
-                
-
-// APPENDIX B: BCI PROFORMA - Generated with jsPDF
-{ text: '', pageBreak: 'before' },
-{ text: 'Appendix B: BCI Proforma', style: 'sectionHeader', alignment: 'center', margin: [0, 40, 0, 10], id: 'appendixB' },
-{
-    text: 'Bridge Condition Index (BCI) Assessment Form',
-    fontSize: 9,
-    alignment: 'center',
-    margin: [0, 0, 0, 20],
-    italics: true,
-    color: '#888'
-},
-{
-    alignment: 'center',
-    margin: [0, 10, 0, 20],
-    stack: [
-        {
-            text: 'Generate BCI Proforma',
-            alignment: 'center',
-            color: 'white',
-            fillColor: '#1a3a5c',
-            margin: [0, 0, 0, 0],
-            fontSize: 11,
-            bold: true,
-            decoration: 'underline',
-            link: '#',
-            onclick: 'generateBCIProformaSeparately()'
-        }
-    ]
-},
-                { text: '', pageBreak: 'after' },
-
-                // Dynamic BCI Proforma content
-                ...buildBCIProformaContent(bciFormData),   // Page 1: main pro-forma table
-                ...buildBCIPage2Content(bciFormData),       // Page 2: multiple defects + work required
-                            ],
-                            
-                            styles: {                
-                                sectionHeader: {
-                                    fontSize: 14,
-                                    bold: true,
-                                    color: '#2c3e44'
-                                },
-                                tocTitle: {
-                                    fontSize: 18,
-                                    bold: true,
-                                    color: '#2c3e44'
-                                },
-                                subsectionHeader: {
-                                    fontSize: 12,
-                                    bold: true,
-                                    color: '#5b8c8a'
-                                },
-                                photoCaption: {
-                                    fontSize: 10,
-                                    bold: true,
-                                    color: '#2c3e44'
-                                },
-                                tocItem: {
-                                    fontSize: 11,
-                                    bold: true,
-                                    margin: [0, 5, 0, 2],
-                                    color: '#2c3e44'
-                                },
-                                tocSubItem: {
-                                    fontSize: 10,
-                                    margin: [15, 2, 0, 2],
-                                    color: '#555'
-                                }
-                            },
-                            
-                            defaultStyle: {
-                                fontSize: 9,
-                                color: '#2c3e44'
-                            }
-                        };
-                        
-                        // At the very end, replace the download call with:
-                        const pdfGenerator = pdfMake.createPdf(docDefinition);
+        const pdfGenerator = pdfMake.createPdf(docDefinition);
                         const fileName = `${structureName.replace(/[^a-z0-9]/gi, '_')}_Inspection_Report_${inspectionDate}.pdf`;
                         
                         if (mode === 'download') {
@@ -1216,15 +744,440 @@ async function generateSimplePDFReport(doc, mode = 'download') {
                                 }, reject);
                             });
                         } else if (mode === 'open') {
-                            pdfGenerator.open();
+                            // pdfmake's own window.open() call lands here only after several
+                            // awaited fetches, so it's no longer inside the click's call stack
+                            // and browsers block it as a popup. Callers that want 'open' mode
+                            // should open a blank window synchronously on the click itself and
+                            // pass it in here - pdfmake reuses it instead of opening a new one.
+                            if (targetWindow && !targetWindow.closed) {
+                                pdfGenerator.open({}, targetWindow);
+                            } else {
+                                pdfGenerator.open();
+                            }
                             showToast('Report opened in new tab', 'success');
                             return null;
                         }
-                        
+
                     } catch (error) {
                         console.error('Simple report generation failed:', error);
                         showToast(`Error: ${error.message}`, 'error');
+                        if (targetWindow && !targetWindow.closed) targetWindow.close();
                     }
+}
+
+// Pure pdfmake docDefinition builder for the narrative inspection report -
+// no fetch/DOM/sessionStorage access, so it can run outside the browser
+// (see window.buildInspectionReportDocDefinition export at the bottom of
+// this file). generateSimplePDFReport above does all the data-fetching and
+// hands the result straight to this function.
+function buildInspectionReportDocDefinition(ctx) {
+    const {
+        structureName, structureId, inspectionDate,
+        bridgeData, inspectionData, defectsData,
+        allElementsList, getElementDesc,
+        photosWithDataURLs, getPhotoNumbersForDefect,
+        bridgePhotoDataURL, mapDataURL,
+        bciAv, bciCrit, bciCategory,
+        spanNumbers, defectsBySpan, nextDueData, bciFormData
+    } = ctx;
+
+    const RC = NARR_COLORS;
+
+    // ---------- COVER ----------
+    const metaParts = [
+        'Structure ' + structureId,
+        bridgeData.location || null,
+        inspectionData.inspectorName ? ('Inspector: ' + inspectionData.inspectorName) : null,
+        'Report generated ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+    ].filter(Boolean);
+
+    const coverContent = [
+        { text: 'SPANSENSE', fontSize: 13, bold: true, color: RC.coverMuted, margin: [0, 66, 0, 0] },
+        { text: 'STRUCTURE INSPECTION REPORT', fontSize: 10, bold: true, color: RC.coverMuted2, margin: [0, 8, 0, 0] },
+        { text: structureName, fontSize: 40, bold: true, color: 'white', margin: [0, 12, 0, 5] },
+        { text: `${inspectionData.inspectionType || 'GI'} Inspection   ·   ${formatDate(inspectionDate)}`, fontSize: 13, color: RC.coverMuted2, margin: [0, 0, 0, 24] },
+        ...(bridgePhotoDataURL ? [{ image: bridgePhotoDataURL, width: 460, alignment: 'center', margin: [0, 0, 0, 22] }] : []),
+        {
+            columns: [
+                reportChip('BCI avg  ' + Number(bciAv).toFixed(2), RC.cover3, 'white', { fontSize: 9.5 }),
+                reportChip('BCI crit  ' + Number(bciCrit).toFixed(2), RC.cover3, 'white', { fontSize: 9.5, margin: [10, 0, 0, 0] }),
+                reportChip('Condition: ' + bciCategory.text, RC.cover3, 'white', { fontSize: 9.5, margin: [10, 0, 0, 0] }),
+                { width: '*', text: '' }
+            ],
+            margin: [0, 0, 0, 44]
+        },
+        {
+            columns: metaParts.map((t, i) => ({ width: 'auto', text: t, fontSize: 10, color: RC.coverMuted2, margin: i > 0 ? [18, 0, 0, 0] : [0, 0, 0, 0] })).concat([{ width: '*', text: '' }]),
+            margin: [0, 28, 0, 0]
+        }
+    ];
+
+    // ---------- TOC ----------
+    const categoriesInOrder = [];
+    allElementsList.forEach(el => { if (!categoriesInOrder.includes(el.category)) categoriesInOrder.push(el.category); });
+
+    const tocContent = [
+        { text: '', pageBreak: 'before' },
+        {
+            toc: {
+                title: {
+                    stack: [
+                        { text: 'Contents', fontSize: 25, bold: true, color: RC.ink, margin: [0, 0, 0, 4] },
+                        { text: structureName + '   ·   Structure ' + structureId, fontSize: 10.5, color: RC.muted, margin: [0, 0, 0, 20] }
+                    ]
+                }
+            }
+        }
+    ];
+
+    // ---------- SECTION 1: STRUCTURE DETAILS ----------
+    const spanCount = bridgeData.span_number || 1;
+    const section1 = [
+        { text: '', pageBreak: 'before' },
+        sectionHeading('1', 'Structure Details', 'section1'),
+        narrKvTable([
+            ['Structure name', structureName],
+            ['Structure ID', structureId],
+            ['Type', bridgeData.type || 'Bridge'],
+            ['Location', bridgeData.location || 'Not specified'],
+            ['Date of construction', bridgeData.built_year || 'Unknown'],
+            ['Span / length', spanCount + (spanCount > 1 ? ' spans' : ' span') + (bridgeData.length ? `   ·   ${bridgeData.length} m` : '')]
+        ]),
+        subhead('1.1 Description', 'section1_1'),
+        { text: bridgeData.description || 'No structural description available for this bridge.', fontSize: 9.5, lineHeight: 1.4, color: RC.body, margin: [0, 0, 0, 13] },
+        subhead('1.2 Location & Coordinates', 'section1_2'),
+        narrKvTable([
+            ['Latitude / Longitude', (bridgeData.latitude && bridgeData.longitude) ? `${Number(bridgeData.latitude).toFixed(6)}, ${Number(bridgeData.longitude).toFixed(6)}` : 'N/A'],
+            ['Easting / Northing', `${bridgeData.easting || bridgeData.ose || 'N/A'} / ${bridgeData.northing || bridgeData.osn || 'N/A'}`]
+        ]),
+        ...(mapDataURL ? [
+            { image: mapDataURL, width: 475, alignment: 'center', margin: [0, 4, 0, 5] },
+            { text: 'Structure location map', italics: true, fontSize: 9.5, color: RC.muted, alignment: 'center', margin: [0, 0, 0, 10] }
+        ] : [])
+    ];
+
+    // ---------- SECTION 2: INSPECTION SUMMARY ----------
+    const bandDefs = [
+        { label: 'Critical', lo: 0, hi: 39 }, { label: 'Poor', lo: 40, hi: 64 }, { label: 'Fair', lo: 65, hi: 79 },
+        { label: 'Good', lo: 80, hi: 89 }, { label: 'Very good', lo: 90, hi: 100 }
+    ];
+    function bciBandStrip(score) {
+        return {
+            columns: bandDefs.map(b => {
+                const active = score >= b.lo && score <= b.hi;
+                return {
+                    width: '*',
+                    table: { widths: ['*'], body: [[{ text: b.label, fontSize: 8.5, bold: true, alignment: 'center', color: active ? 'white' : '#9fb0ab' }]] },
+                    layout: {
+                        fillColor: () => active ? RC.ink : RC.surfaceSunken,
+                        hLineWidth: () => 0.5, vLineWidth: () => 0.5, hLineColor: () => RC.hairline, vLineColor: () => RC.hairline,
+                        paddingLeft: () => 4, paddingRight: () => 4, paddingTop: () => 7, paddingBottom: () => 7
+                    }
+                };
+            }),
+            columnGap: 5,
+            margin: [0, 8, 0, 15]
+        };
+    }
+    function bciStatCell(label, value, fillColor, valueColor, tag) {
+        return {
+            width: '*',
+            table: {
+                widths: ['*'],
+                body: [[{
+                    stack: [
+                        { text: label, fontSize: 9, bold: true, color: RC.muted, margin: [0, 0, 0, 6] },
+                        { text: value, fontSize: 25, bold: true, color: valueColor },
+                        ...(tag ? [reportChip(tag, RC.surfaceSunken, RC.body, { fontSize: 9, margin: [0, 7, 0, 0] })] : [])
+                    ]
+                }]]
+            },
+            layout: {
+                fillColor: () => fillColor,
+                hLineWidth: () => 0.5, vLineWidth: () => 0.5, hLineColor: () => RC.hairline, vLineColor: () => RC.hairline,
+                paddingLeft: () => 13, paddingRight: () => 13, paddingTop: () => 13, paddingBottom: () => 13
+            }
+        };
+    }
+
+    const section2 = [
+        { text: '', pageBreak: 'before' },
+        sectionHeading('2', 'Inspection Summary', 'section2'),
+        narrKvTable([
+            ['Inspection type', inspectionData.inspectionType || 'N/A'],
+            ['Inspector', inspectionData.inspectorName || 'Not recorded'],
+            ['Inspection date', inspectionData.inspectionDate ? formatDate(inspectionData.inspectionDate) : formatDate(inspectionDate)],
+            ['Total spans', inspectionData.totalSpans || spanNumbers.length || 'N/A']
+        ]),
+        subhead('2.1 Condition Score (BCI)', 'section2_1')
+    ];
+
+    const spansList = (inspectionData.spans && inspectionData.spans.length) ? inspectionData.spans : spanNumbers.map(n => ({ spanNumber: n }));
+    spansList.forEach((span, idx) => {
+        const spanNum = span.spanNumber;
+        const spanDefects = defectsBySpan[spanNum] || [];
+        let spanBciAv = span.bciAv != null ? parseFloat(span.bciAv) : null;
+        let spanBciCrit = span.bciCrit != null ? parseFloat(span.bciCrit) : null;
+        if (spanBciAv == null) {
+            const scores = spanDefects.map(d => Number(d.severity) || 0);
+            if (scores.length) {
+                const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+                spanBciAv = Math.round(Math.max(0, Math.min(100, 100 - avg * 8)));
+                spanBciCrit = Math.round(Math.max(0, Math.min(100, 100 - Math.max(...scores) * 12)));
+            } else {
+                spanBciAv = 100; spanBciCrit = 100;
+            }
+        }
+        const spanCat = getBCICategory(spanBciAv);
+        const spanCritCat = getBCICategory(spanBciCrit);
+
+        if (spansList.length > 1) section2.push({ text: 'Span ' + spanNum, bold: true, fontSize: 11.5, color: RC.ink, margin: [0, idx === 0 ? 0 : 18, 0, 8] });
+
+        section2.push({
+            columns: [
+                bciStatCell('BCI Average', spanBciAv.toFixed(2), RC.accentTint, RC.accent, spanCat.text),
+                bciStatCell('BCI Critical', spanBciCrit.toFixed(2), RC.surfaceSunken, RC.ink, spanCritCat.text),
+                bciStatCell('Defects Recorded', String(spanDefects.length), RC.surfaceSunken, RC.ink)
+            ],
+            columnGap: 12
+        });
+        section2.push({ text: 'BCI Average', bold: true, fontSize: 8.5, color: RC.muted, margin: [0, 6, 0, 3] });
+        section2.push(bciBandStrip(spanBciAv));
+
+        if (span.comments) {
+            section2.push({ text: 'Comments', bold: true, fontSize: 8.5, color: RC.muted, margin: [0, 0, 0, 3] });
+            section2.push({ text: span.comments, italics: true, fontSize: 9.5, lineHeight: 1.35, color: RC.body, margin: [0, 0, 0, 8] });
+        }
+    });
+
+    section2.push(subhead('2.2 Defects by Priority', 'section2_2'));
+    const allCounts = {
+        H: defectsData.filter(d => d.priority === 'H').length,
+        M: defectsData.filter(d => d.priority === 'M').length,
+        L: defectsData.filter(d => d.priority === 'L').length
+    };
+    if (allCounts.H + allCounts.M + allCounts.L === 0) {
+        section2.push({ text: 'No defects requiring works were recorded for this inspection.', italics: true, fontSize: 9.5, color: RC.muted });
+    } else {
+        // pdfmake's columns only understand a bare '*' (share remaining
+        // space equally) - a weighted "N*" is not a thing it parses, so the
+        // proportional widths here have to be real point values computed
+        // by hand instead.
+        const total = allCounts.H + allCounts.M + allCounts.L;
+        const barWidth = 495;
+        const segments = [
+            { count: allCounts.H, label: 'High', color: RC.priH },
+            { count: allCounts.M, label: 'Medium', color: RC.priM },
+            { count: allCounts.L, label: 'Low', color: RC.priL }
+        ].filter(s => s.count > 0);
+        const barCells = segments.map((s, i) => {
+            const isLast = i === segments.length - 1;
+            const w = isLast ? (barWidth - segments.slice(0, i).reduce((sum, x) => sum + Math.round(barWidth * x.count / total), 0)) : Math.round(barWidth * s.count / total);
+            return {
+                width: w,
+                table: { widths: ['*'], body: [[{ text: s.count + ' ' + s.label, fontSize: 9, bold: true, color: 'white', alignment: 'center' }]] },
+                layout: { fillColor: () => s.color, hLineWidth: () => 0, vLineWidth: () => 0, paddingTop: () => 7, paddingBottom: () => 7 }
+            };
+        });
+        section2.push({ columns: barCells, columnGap: 2, margin: [0, 5, 0, 0] });
+    }
+
+    // ---------- SECTION 3: DESCRIPTION OF DEFECTS ----------
+    const section3 = [
+        { text: '', pageBreak: 'before' },
+        sectionHeading('3', 'Description of Defects', 'section3'),
+        { text: 'Every inspected element is listed below by category; the ones with a recorded defect are detailed in full.', fontSize: 9.5, lineHeight: 1.3, italics: true, color: RC.muted, margin: [0, 0, 0, 15] }
+    ];
+
+    spanNumbers.forEach((spanNum, spanIdx) => {
+        if (spanIdx > 0) section3.push({ text: '', pageBreak: 'before' });
+        if (spanNumbers.length > 1) section3.push({ text: 'Span ' + spanNum, bold: true, fontSize: 11.5, color: RC.ink, margin: [0, spanIdx === 0 ? 0 : 8, 0, 10] });
+
+        let currentCategory = null;
+        let catIdx = 0;
+        let pending = [];
+        const flush = () => { if (pending.length) { section3.push(clearElementsTable(pending)); pending = []; } };
+
+        allElementsList.forEach(el => {
+            if (el.category !== currentCategory) {
+                flush();
+                currentCategory = el.category;
+                catIdx += 1;
+                section3.push(subhead('3.' + catIdx + ' ' + currentCategory, spanIdx === 0 ? ('section3_' + catIdx) : undefined));
+            }
+            const elDefects = defectsData.filter(d => d.elementNumber === el.elementNo && d.spanNumber === spanNum);
+            if (elDefects.length === 0) {
+                pending.push({ no: el.elementNo, name: el.name });
+            } else {
+                flush();
+                section3.push({ text: el.subNumber.replace('4.', '3.') + ' ' + el.name, bold: true, fontSize: 10.5, color: RC.ink, margin: [0, 12, 0, 6] });
+                elDefects.forEach(d => { section3.push(defectCard(buildDefectCardContent(d, getPhotoNumbersForDefect(d.defectId)))); });
+            }
+        });
+        flush();
+    });
+
+    // ---------- SECTION 4: CONCLUSIONS & REMEDIAL WORKS ----------
+    const section4 = [
+        { text: '', pageBreak: 'before' },
+        sectionHeading('4', 'Conclusions & Remedial Works', 'section4'),
+        subhead('4.1 Conclusions', 'section4_1'),
+        { text: (inspectionData.conclusions || '').trim() || 'No conclusions provided for this inspection.', fontSize: 9.5, lineHeight: 1.4, color: RC.body, margin: [0, 0, 0, 14] },
+        subhead('4.2 Recommended Remedial Works', 'section4_2')
+    ];
+
+    const defectsWithRemedial = defectsData.filter(d => {
+        const r = d.remedialWorks || d.remedial_works;
+        return r && r.trim().length > 0 && r !== 'Add';
+    });
+    if (!defectsWithRemedial.length) {
+        section4.push({ text: 'No specific remedial works recorded for this inspection.', italics: true, color: RC.muted, fontSize: 9.5, margin: [0, 0, 0, 10] });
+    } else {
+        const priorityRank = { H: 0, M: 1, L: 2 };
+        const sorted = defectsWithRemedial.slice().sort((a, b) => (priorityRank[a.priority] ?? 3) - (priorityRank[b.priority] ?? 3));
+        let totalCost = 0;
+        const rows = [[
+            { text: 'Ref', bold: true, fontSize: 8.5, color: RC.accent, fillColor: RC.surfaceSunken },
+            { text: 'Element', bold: true, fontSize: 8.5, color: RC.accent, fillColor: RC.surfaceSunken },
+            { text: 'Remedial Works', bold: true, fontSize: 8.5, color: RC.accent, fillColor: RC.surfaceSunken },
+            { text: 'Priority', bold: true, fontSize: 8.5, color: RC.accent, fillColor: RC.surfaceSunken, alignment: 'center' },
+            { text: 'Cost', bold: true, fontSize: 8.5, color: RC.accent, fillColor: RC.surfaceSunken, alignment: 'right' }
+        ]];
+        sorted.forEach((d, i) => {
+            const cost = d.cost != null ? parseFloat(d.cost) : NaN;
+            if (!isNaN(cost)) totalCost += cost;
+            const pri = priorityColors(d.priority);
+            rows.push([
+                { text: String(i + 1), fontSize: 9.5 },
+                { text: getElementDesc(d), fontSize: 9.5 },
+                { text: d.remedialWorks || d.remedial_works, fontSize: 9.5, lineHeight: 1.25 },
+                d.priority
+                    ? { text: d.priority, fontSize: 9, bold: true, color: pri.fg, fillColor: pri.bg, alignment: 'center' }
+                    : { text: '', fontSize: 9, alignment: 'center' },
+                { text: (!isNaN(cost) && cost > 0) ? ('£' + cost.toLocaleString()) : '—', fontSize: 9.5, alignment: 'right' }
+            ]);
+        });
+        rows.push([
+            { text: '', border: [false, false, false, false] },
+            { text: '', border: [false, false, false, false] },
+            { text: 'Total estimated cost', bold: true, fontSize: 9.5, color: RC.ink, border: [false, false, false, false] },
+            { text: '', border: [false, false, false, false] },
+            { text: '£' + totalCost.toLocaleString(), bold: true, fontSize: 9.5, alignment: 'right', border: [false, false, false, false] }
+        ]);
+        section4.push({
+            table: { widths: [22, 100, '*', 52, 58], body: rows },
+            layout: {
+                hLineWidth: (i, node) => (i === 0 || i === 1 || i === node.table.body.length - 1) ? 0.75 : 0.5,
+                vLineWidth: () => 0,
+                hLineColor: () => RC.hairline,
+                paddingLeft: () => 5, paddingRight: () => 5, paddingTop: () => 7, paddingBottom: () => 7
+            },
+            margin: [0, 0, 0, 15]
+        });
+    }
+
+    section4.push(subhead('4.3 Next Inspection', 'section4_3'));
+    let scheduleLine;
+    if (nextDueData && nextDueData.date) {
+        const formatted = new Date(nextDueData.date).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+        scheduleLine = `The next inspection (${nextDueData.type}) is scheduled for ${formatted}, in line with this structure's inspection cycle.`;
+    } else {
+        scheduleLine = "This structure has no inspection cycle configured, so the next due date can't be calculated automatically.";
+    }
+    section4.push(callout(scheduleLine, { bg: RC.accentTint, color: '#2c4a48', accent: RC.accent }));
+
+    // ---------- APPENDIX A: PHOTOGRAPHIC RECORD ----------
+    // Two large photos per page (top half / bottom half), one page-break
+    // per pair, rather than the old fixed 450pt-wide thumbnails.
+    const appendixA = [
+        { text: '', pageBreak: 'before' },
+        sectionHeading('A', 'Appendix A — Photographic Record', 'appendixA'),
+        { text: 'Site photographs referenced against the defects in Section 3.', fontSize: 9.5, italics: true, color: RC.muted, margin: [0, 0, 0, 16] }
+    ];
+    if (!photosWithDataURLs.length) {
+        appendixA.push({ text: '', pageBreak: 'before' });
+        appendixA.push({ text: 'No photographs available for this inspection.', italics: true, color: RC.muted, alignment: 'center' });
+    } else {
+        appendixA.push({ text: '', pageBreak: 'before' });
+        photosWithDataURLs.forEach((photo, i) => {
+            appendixA.push({ text: ' ', id: 'photo-' + photo.photoNumber, fontSize: 1 });
+            if (photo.photo_dataURL) {
+                appendixA.push({ image: photo.photo_dataURL, fit: [475, 320], alignment: 'center', margin: [0, 0, 0, 10] });
+            } else {
+                appendixA.push({ text: '[Image not available]', alignment: 'center', italics: true, color: RC.muted, margin: [0, 120, 0, 10] });
+            }
+            appendixA.push({
+                text: [{ text: 'Photo ' + photo.photoNumber + '   ', bold: true, color: RC.ink }, { text: photo.photo_description || '', color: RC.body }],
+                fontSize: 9.5, alignment: 'center', margin: [0, 0, 0, 26]
+            });
+            if ((i + 1) % 2 === 0 && i < photosWithDataURLs.length - 1) appendixA.push({ text: '', pageBreak: 'after' });
+        });
+    }
+
+    // ---------- APPENDIX B: BCI PROFORMA ----------
+    // Unchanged, regulatory format - reuses the existing generator as-is
+    // rather than re-skinning it (see map/bciProforma.pdfmake.js).
+    const appendixB = [
+        { text: '', pageBreak: 'before' },
+        sectionHeading('B', 'Appendix B — BCI Proforma', 'appendixB'),
+        { text: 'Highways Agency element checklist, generated from the same inspection data above.', fontSize: 9.5, italics: true, color: RC.muted, margin: [0, 0, 0, 10] },
+        { text: '', pageBreak: 'after' }
+    ];
+    // buildBCIProformaFullContent interleaves span1-page1, span1-page2,
+    // span2-page1, span2-page2, ... - calling buildBCIProformaContent(all
+    // spans) then buildBCIPage2Content(all spans) separately (the old code
+    // here) instead produced every span's page 1 followed by every span's
+    // page 2.
+    if (typeof buildBCIProformaFullContent === 'function') {
+        appendixB.push(...buildBCIProformaFullContent(bciFormData));
+    }
+
+    return {
+        pageSize: 'A4',
+        pageMargins: [40, 42, 40, 42],
+        background: function (currentPage, pageSize) {
+            if (currentPage !== 1) return null;
+            const w = pageSize.width, h = pageSize.height;
+            return {
+                svg: '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '">' +
+                    '<defs><linearGradient id="cover" x1="0%" y1="0%" x2="100%" y2="100%">' +
+                    '<stop offset="0%" stop-color="' + RC.cover1 + '"/>' +
+                    '<stop offset="45%" stop-color="' + RC.cover2 + '"/>' +
+                    '<stop offset="72%" stop-color="' + RC.cover3 + '"/>' +
+                    '<stop offset="100%" stop-color="' + RC.cover4 + '"/>' +
+                    '</linearGradient></defs>' +
+                    '<rect width="' + w + '" height="' + h + '" fill="url(#cover)"/></svg>'
+            };
+        },
+        header: function (currentPage, pageCount) {
+            if (currentPage <= 2) return null;
+            return {
+                columns: [
+                    { text: structureName, alignment: 'left', fontSize: 8.5, color: RC.muted },
+                    { text: 'Inspection Report', alignment: 'center', fontSize: 8.5, color: RC.muted },
+                    { text: `Page ${currentPage} of ${pageCount}`, alignment: 'right', fontSize: 8.5, color: RC.muted }
+                ],
+                margin: [40, 18, 40, 0]
+            };
+        },
+        footer: function (currentPage) {
+            if (currentPage <= 2) return null;
+            return { text: `spanSense · Generated ${new Date().toLocaleDateString('en-GB')}`, alignment: 'center', fontSize: 7.5, color: RC.muted, margin: [0, 0, 0, 16] };
+        },
+        content: [].concat(coverContent, tocContent, section1, section2, section3, section4, appendixA, appendixB),
+        styles: {
+            tocMain: { fontSize: 11.5, bold: true, color: RC.ink },
+            tocSub: { fontSize: 9.5, color: '#5b6c70' }
+        },
+        // lineHeight deliberately NOT set here - bciProforma.pdfmake.js's
+        // Appendix B tables (concatenated into this same content array,
+        // untouched) hand-tune every row's padding against pdfmake's
+        // default lineHeight of 1; inheriting anything else from this
+        // defaultStyle would blow its row-height math up across pages.
+        // Sections 1-4 get their own generous lineHeight per text node
+        // instead (see subhead/callout/buildDefectCardContent etc. above).
+        defaultStyle: { font: 'Roboto', fontSize: 9.5, color: RC.body }
+    };
 }
 
 async function generateBCIFormForPDF(doc) {
@@ -1293,56 +1246,10 @@ function showToast(message, type) {
 }
 
 window.generateSimplePDFReport = generateSimplePDFReport;
-
+window.buildInspectionReportDocDefinition = buildInspectionReportDocDefinition;
 
 // buildBCIProformaContent used to be duplicated here - a stale snapshot
 // that, because this file loads after bciProforma.pdfmake.js on map.html,
 // was silently shadowing (and overriding) the real, maintained version and
 // every fix made to it. Removed; the live implementation is in
 // map/bciProforma.pdfmake.js, which already defines it globally.
-
-// Standalone BCI Proforma generator using jsPDF
-async function generateBCIProformaSeparately() {
-    try {
-        const structureId = sessionStorage.getItem('structureId');
-        const structureName = sessionStorage.getItem('structureName');
-        const inspectionDate = doc?.date || new Date().toISOString().split('T')[0];
-        
-        if (!structureId || !structureName) {
-            showToast('Missing structure information', 'error');
-            return;
-        }
-
-        showToast('Generating BCI Proforma...', 'info');
-        
-        // Create a temporary doc object
-        const tempDoc = {
-            structure_id: structureId,
-            structure_name: structureName,
-            date: inspectionDate
-        };
-        
-        // Get the BCI form data
-        const bciFormData = await generateBCIFormForPDF(tempDoc);
-        
-        // Generate using jsPDF
-        const { jsPDF } = window.jspdf;
-        const pdfDoc = new jsPDF({
-            orientation: "portrait",
-            unit: "mm",
-            format: "a4"
-        });
-        
-        // Save the PDF
-        pdfDoc.save(`${structureName.replace(/[^a-z0-9]/gi, '_')}_BCI_Proforma_${inspectionDate}.pdf`);
-        showToast('BCI Proforma generated successfully!', 'success');
-        
-    } catch (error) {
-        console.error('BCI Proforma generation failed:', error);
-        showToast(`Error: ${error.message}`, 'error');
-    }
-}
-
-
-// Make BCI functions available globally
-window.generateBCIProformaSeparately = generateBCIProformaSeparately;

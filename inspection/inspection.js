@@ -607,8 +607,11 @@ function persistCurrentDefectForm() {
     severity: finalSeverity,
     extent: finalExtent,
     works: finalWorks,
-    priority: priority,
-    cost: cost,
+    // Same 'Y'-only gate as inspectionDefect below/saveSequence.js/
+    // server.js - priority/cost only mean anything when works are
+    // actually required.
+    priority: finalWorks === 'Y' ? priority : '',
+    cost: finalWorks === 'Y' ? cost : '',
     remedialWorks: remedialWorks,
     comment: comment,
     spanNumber: selectedSpan,
@@ -650,8 +653,10 @@ function persistCurrentDefectForm() {
     extent: finalExtent,
     worksRequired: finalWorks,
     remedialWorks: remedialWorks,
-    priority: priority,
-    cost: parseFloat(cost) || 0,
+    // Same 'Y'-only gate as saveSequence.js/server.js - priority/cost only
+    // mean anything when works are actually required.
+    priority: finalWorks === 'Y' ? priority : null,
+    cost: finalWorks === 'Y' ? (parseFloat(cost) || 0) : null,
     comments: comment,
     timestamp: defectData.timestamp,
     photos: []

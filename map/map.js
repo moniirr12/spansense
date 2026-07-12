@@ -478,29 +478,157 @@ const chatToggle = document.querySelector('.chat-toggle');
 const chatBox = document.querySelector('.chat-box');
 const chatClose = document.querySelector('.chat-close');
 
+// Opening the chat replaces the toggle circle (rather than floating a panel
+// on top of it and whatever's underneath) - hide the toggle while the box
+// is open, and bring it back on close.
+function openChat() {
+    chatBox.classList.add('active');
+    // .chat-toggle has `display: flex !important` in map.css, which beats a
+    // plain inline style - set the inline override as !important too.
+    chatToggle.style.setProperty('display', 'none', 'important');
+}
+function closeChat() {
+    chatBox.classList.remove('active');
+    chatToggle.style.removeProperty('display');
+}
+
 if (chatToggle && chatBox) {
-    chatToggle.addEventListener('click', () => chatBox.classList.toggle('active'));
+    chatToggle.addEventListener('click', openChat);
 }
 if (chatClose && chatBox) {
-    chatClose.addEventListener('click', () => chatBox.classList.remove('active'));
+    chatClose.addEventListener('click', closeChat);
 }
+if (chatBox && chatToggle) {
+    // Click outside the chat box closes it
+    document.addEventListener('click', (e) => {
+        if (chatBox.classList.contains('active') && !chatBox.contains(e.target) && !chatToggle.contains(e.target)) {
+            closeChat();
+        }
+    });
+    // Esc closes it too
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && chatBox.classList.contains('active')) {
+            closeChat();
+        }
+    });
+}
+
+// Personalize the chat assistant's opening line with the logged-in user's
+// first name. Reads the same localStorage cache userGreeting.js writes
+// (instant on repeat visits), then always confirms/updates against
+// /api/me in case the cache is stale or this is the first load.
+(function initChatGreeting() {
+    const greetingEl = document.getElementById('chatGreeting');
+    if (!greetingEl) return;
+
+    function setGreeting(name) {
+        greetingEl.textContent = `Hello ${name}, how can I help you today?`;
+    }
+
+    try {
+        const cached = JSON.parse(localStorage.getItem('spansenseUserGreetingCache') || 'null');
+        if (cached && cached.displayName) setGreeting(cached.displayName);
+    } catch (e) { /* malformed cache - ignore, fetch below will fix it */ }
+
+    fetch('/api/me')
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+            const fullName = data && (data.full_name || data.username);
+            if (!fullName) return;
+            setGreeting(fullName.trim().split(/\s+/)[0]);
+        })
+        .catch(err => console.error('Chat greeting: failed to load profile', err));
+})();
 
 const chatInput = document.querySelector('.chat-input input');
 const chatSend = document.querySelector('.chat-send');
+
+// ============================================================
+// Free, no-API chat: keyword-matched canned answers drawn from
+// the spanSense user guide, so responses stay accurate without
+// calling out to an LLM. Swap this for a real model later by
+// replacing findChatAnswer() with a fetch to a /api/chat route.
+// ============================================================
+const CHAT_FAQ = [
+    {
+        keywords: ['inspection', 'start', 'new inspection', 'run', 'begin'],
+        answer: "To run a new inspection: click a structure marker on the map, then \"New Inspection\" on its card. Step 1 sets the inspection type (GI/PI/SI), date and inspector; step 2 walks through each element so you can log defects."
+    },
+    {
+        keywords: ['defect', 'severity', 'extent', 'add defect'],
+        answer: "When logging a defect, set Severity (1 Minor to 5 Emergency) and Extent (A isolated to E extensive). A live BCI impact preview shows how your change affects the score before you save, and a Severity Guide explains what separates each level."
+    },
+    {
+        keywords: ['bci', 'score', 'crit', 'avg', 'average', 'critical'],
+        answer: "BCI avg is the condition across every inspected element, weighted by importance. BCI crit is narrower: it's based only on a fixed set of critical elements (like main girders or bearings) for that structure type, so a defect on a minor element won't move it."
+    },
+    {
+        keywords: ['map', 'search', 'find structure', 'marker'],
+        answer: "Use the search bar at the top of the Map to jump to a structure by name, or the sidebar filters to narrow by type or condition. Click any marker to open its structure card."
+    },
+    {
+        keywords: ['previous', 'history', 'past inspection'],
+        answer: "Open \"Previous Inspections\" from a structure card to see every past inspection for it, filterable by Principal/General/Superficial, with CRIT and AV scores for each."
+    },
+    {
+        keywords: ['twinview', 'twin', '3d', 'digital twin'],
+        answer: "twinView shows a 3D model of a structure built from its real span and condition data. Pick a structure from the Live Twin selector, drag to orbit, and use the Inspection History timeline to see how it looked at any past inspection."
+    },
+    {
+        keywords: ['report', 'export', 'pdf', 'proforma', 'download'],
+        answer: "You can generate an inspection PDF or BCI Proforma from Previous Inspections, or export your whole structure/inspection records as CSV, PDF, JSON or XML from Database."
+    },
+    {
+        keywords: ['plan', 'schedule', 'gantt', 'due', 'calendar'],
+        answer: "Planning shows upcoming inspections as a Month calendar, Year grid or multi-year Gantt view. Click the pencil icon next to a structure to set a custom inspection cycle or move its next due date."
+    },
+    {
+        keywords: ['dashboard', 'pending review', 'overview'],
+        answer: "The Dashboard gives a portfolio-wide view: total assets, high-risk structures, BCI averages, and (for engineers/admins) a Pending Review queue for inspections awaiting approval."
+    },
+    {
+        keywords: ['account', 'password', 'night mode', 'dark mode', 'profile'],
+        answer: "Open Account from any navbar to update your profile or change your password. Night mode can be toggled from the moon icon on any page and your choice is remembered."
+    },
+    {
+        keywords: ['role', 'inspector', 'engineer', 'admin', 'permission'],
+        answer: "Inspectors can find structures, run inspections and view reports. Engineers can also approve/reject inspections and edit schedules. Admins have full system access."
+    },
+    {
+        keywords: ['help', 'contact', 'support', 'stuck'],
+        answer: "If this doesn't cover it, use Contact Us from any navbar and someone will get back to you."
+    }
+];
+const CHAT_FALLBACK = "I'm not sure about that yet. Try asking about inspections, BCI scores, the map, planning, reports, or your account.";
+
+function findChatAnswer(userText) {
+    const text = userText.toLowerCase();
+    let best = null, bestScore = 0;
+    CHAT_FAQ.forEach(entry => {
+        let score = 0;
+        entry.keywords.forEach(kw => { if (text.includes(kw)) score++; });
+        if (score > bestScore) { bestScore = score; best = entry; }
+    });
+    return best ? best.answer : CHAT_FALLBACK;
+}
+
+function appendChatMessage(role, text) {
+    const messageDiv = document.createElement('div');
+    messageDiv.classList.add('message', role);
+    messageDiv.textContent = text;
+    const messagesContainer = document.querySelector('.chat-messages');
+    if (!messagesContainer) return;
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
 
 function sendMessage() {
     if (!chatInput) return;
     const message = chatInput.value.trim();
     if (message) {
-        const messageDiv = document.createElement('div');
-        messageDiv.classList.add('message', 'user');
-        messageDiv.textContent = message;
-        const messagesContainer = document.querySelector('.chat-messages');
-        if (messagesContainer) {
-            messagesContainer.appendChild(messageDiv);
-            chatInput.value = '';
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
+        appendChatMessage('user', message);
+        chatInput.value = '';
+        setTimeout(() => appendChatMessage('bot', findChatAnswer(message)), 400);
     }
 }
 
@@ -714,11 +842,11 @@ function populateDocumentsQuickStats(documents) {
             </div>
           </div>
           <div class="ss-card-acts">
-            <button class="ss-act-btn ss-act-primary" title="View Report"
+            <button class="ss-act-btn" title="Download report"
               data-action="report" data-date="${doc.date}"><i class="fas fa-file-pdf"></i></button>
             <button class="ss-act-btn" title="Edit Inspection"
               data-action="edit" data-date="${doc.date}"><i class="fas fa-pen"></i></button>
-            <button class="ss-act-btn" title="BCI Proforma"
+            <button class="ss-act-btn" title="Download BCI proforma"
               data-action="bci" data-date="${doc.date}"><i class="fas fa-file-invoice"></i></button>
           </div>
         </div>`;
