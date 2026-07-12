@@ -218,5 +218,49 @@
         "length": 100.0,
         "built_year": 2500,
         "type": "retaining_wall"
+    },
+    {
+        "id": 21,
+        "name": "Caversham Bridge",
+        "location": "Reading, Berkshire",
+        "latitude": 51.4613,
+        "longitude": -0.9709,
+        "span": 30.0,
+        "length": 60.0,
+        "built_year": 1926,
+        "type": "bridge"
+    },
+    {
+        "id": 22,
+        "name": "A47 Norwich Southern Bypass Gantry",
+        "location": "Norwich, Norfolk",
+        "latitude": 52.6337,
+        "longitude": 1.3579,
+        "span": 24.0,
+        "length": 24.0,
+        "built_year": 2011,
+        "type": "sign_gantry"
+    },
+    {
+        "id": 23,
+        "name": "M5 Exeter Gantry (J30)",
+        "location": "Exeter, Devon",
+        "latitude": 50.6994,
+        "longitude": -3.4691,
+        "span": 28.0,
+        "length": 28.0,
+        "built_year": 2013,
+        "type": "sign_gantry"
+    },
+    {
+        "id": 24,
+        "name": "M60 Barton Gantry",
+        "location": "Manchester, Greater Manchester",
+        "latitude": 53.4693,
+        "longitude": -2.3336,
+        "span": 32.0,
+        "length": 32.0,
+        "built_year": 2016,
+        "type": "sign_gantry"
     }
 ]

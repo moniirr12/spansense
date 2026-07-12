@@ -490,47 +490,65 @@ body {
 }
 
 .critical-bridges-section {
-    background: white;
-    border-radius: 28px;
-    border: 1px solid #e9edf2;
-    overflow: hidden;
     margin-top: 0;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
 }
 
-.critical-bridges-section .section-header {
-    padding: 18px 22px;
-    margin-bottom: 0;
-    border-bottom: 1px solid #eef2f6;
-    background: #fafbfc;
+.critical-bridges {
+    padding: 0;
 }
 
-.bridge-table {
+/* ---------- CARD-STYLE TABLE (mirrors database.html's .data-table.card-rows) ---------- */
+.data-table {
     width: 100%;
+    border-collapse: collapse;
 }
-
-.bridge-table .row {
-    display: grid;
-    grid-template-columns: 1fr 110px 110px 100px;
-    padding: 14px 22px;
-    border-bottom: 1px solid #eef2f6;
-    align-items: center;
-    gap: 12px;
-    transition: background 0.15s;
-}
-
-.bridge-table .row:hover {
-    background: #fafbfc;
-}
-
-.bridge-table .row.header {
-    background: #fafbfc;
-    font-weight: 700;
+.data-table th {
+    padding: 14px 16px;
+    text-align: left;
+    color: #5a6e7a;
     font-size: 0.65rem;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: #8a9ba8;
-    padding: 12px 22px;
+}
+.data-table td {
+    padding: 12px 16px;
+    color: #2c3e44;
+    font-size: 0.82rem;
+}
+.data-table.card-rows { border-collapse: separate; border-spacing: 0 8px; }
+.data-table.card-rows thead tr { background: transparent; }
+.data-table.card-rows thead th {
+    background: #fafbfc;
+    border-top: 1px solid #eef2f6;
+    border-bottom: 1px solid #eef2f6;
+}
+.data-table.card-rows thead th:first-child {
+    border-left: 1px solid #eef2f6;
+    border-top-left-radius: 20px;
+    border-bottom-left-radius: 20px;
+}
+.data-table.card-rows thead th:last-child {
+    border-right: 1px solid #eef2f6;
+    border-top-right-radius: 20px;
+    border-bottom-right-radius: 20px;
+}
+.data-table.card-rows tbody tr td {
+    background: white;
+    border-top: 1px solid #eef2f6;
+    border-bottom: 1px solid #eef2f6;
+    transition: background 0.15s, border-color 0.15s;
+}
+.data-table.card-rows tbody tr:hover td { background: #fafbfc; border-color: #c5dbd8; }
+.data-table.card-rows tbody tr td:first-child {
+    border-left: 1px solid #eef2f6;
+    border-top-left-radius: 20px;
+    border-bottom-left-radius: 20px;
+}
+.data-table.card-rows tbody tr td:last-child {
+    border-right: 1px solid #eef2f6;
+    border-top-right-radius: 20px;
+    border-bottom-right-radius: 20px;
 }
 
 .bridge-name {
@@ -613,23 +631,12 @@ body {
     color: white;
 }
 
-/* Activity Feed Panel */
+/* Activity Feed Panel - no outer card (background/border/shadow) by design:
+   matches database.html's tables, which sit directly on the page with only
+   the individual pill rows as visually distinct elements. */
 .activity-feed {
-    background: white;
-    border-radius: 28px;
-    border: 1px solid #e9edf2;
-    overflow: hidden;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
     display: flex;
     flex-direction: column;
-}
-
-.activity-feed .section-header {
-    padding: 18px 22px;
-    margin-bottom: 0;
-    border-bottom: 1px solid #eef2f6;
-    background: #fafbfc;
-    flex-shrink: 0;
 }
 
 .activity-list {
@@ -652,6 +659,40 @@ body {
 
 .activity-item:last-child {
     border-bottom: none;
+}
+
+/* ---------- CARD-STYLE ROWS (Recent Activity) - same pill-row look as
+   .data-table.card-rows, without going all the way to a literal table:
+   each item's content (avatar/title/meta/badge/status) doesn't map to
+   fixed columns the way Critical Structures' bridge/BCI/date/report does. */
+.activity-list.card-rows {
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.activity-list.card-rows .activity-item {
+    background: white;
+    border: 1px solid #eef2f6;
+    border-radius: 20px;
+    padding: 10px 18px;
+}
+.activity-list.card-rows .activity-item:last-child {
+    border: 1px solid #eef2f6;
+}
+.activity-list.card-rows .activity-item:hover {
+    background: #fafbfc;
+    border-color: #c5dbd8;
+}
+
+/* ---------- Pending Review table cell (Structure column: avatar + name/meta) ---------- */
+.pending-review-table-wrap {
+    padding: 0 22px 14px;
+}
+.pr-structure-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
 .activity-avatar {
@@ -802,9 +843,7 @@ body {
 }
 
 .night-mode .metric,
-.night-mode .chart-card,
-.night-mode .critical-bridges-section,
-.night-mode .activity-feed {
+.night-mode .chart-card {
     background: #232e34;
     border-color: #2f3e45;
 }
@@ -860,15 +899,9 @@ body {
     color: #8ab4b0;
 }
 
-/* Generic fallback so every .section-header (e.g. "Analytics & Insights",
-   which isn't inside .critical-bridges-section or .activity-feed) gets its
-   border-bottom recolored, not just the two call sites styled below with
-   their own background bar. */
 .night-mode .section-header { border-color: #2f3e45; }
 
-.night-mode .chart-header,
-.night-mode .critical-bridges-section .section-header,
-.night-mode .activity-feed .section-header {
+.night-mode .chart-header {
     background: #1e2a2f;
     border-color: #2f3e45;
 }
@@ -904,17 +937,21 @@ body {
     color: #8aa4ac;
 }
 
-.night-mode .bridge-table .row {
-    border-bottom-color: #2f3e45;
-}
-
-.night-mode .bridge-table .row.header {
+.night-mode .data-table.card-rows thead th {
     background: #1e2a2f;
+    border-color: #2f3e45;
     color: #6a8090;
 }
-
-.night-mode .bridge-table .row:hover {
+.night-mode .data-table.card-rows tbody tr td {
+    background: #232e34;
+    border-color: #2f3e45;
+}
+.night-mode .data-table.card-rows tbody tr:hover td {
     background: #2a3a40;
+    border-color: #3a4b53;
+}
+.night-mode .data-table td {
+    color: #d4dfe3;
 }
 
 .night-mode .bridge-name {
@@ -953,6 +990,15 @@ body {
 
 .night-mode .activity-item:hover {
     background: #2a3a40;
+}
+
+.night-mode .activity-list.card-rows .activity-item {
+    background: #232e34;
+    border-color: #2f3e45;
+}
+.night-mode .activity-list.card-rows .activity-item:hover {
+    background: #2a3a40;
+    border-color: #3a4b53;
 }
 
 .night-mode .activity-title {
@@ -1046,26 +1092,15 @@ html.night-mode .glass-scrollbar .thumb {
         min-width: auto;
     }
     
-    .bridge-table .row {
-        grid-template-columns: 100px 80px 100px 1fr;
-        gap: 8px;
-        padding: 12px 16px;
-    }
-    
-    .bridge-table .row.header {
-        font-size: 0.6rem;
-        padding: 10px 16px;
-    }
-    
     .action-btn {
         padding: 4px 10px;
         font-size: 0.65rem;
     }
-    
+
     .section-header h2 {
         font-size: 0.95rem;
     }
-    
+
     .back-button {
         width: 100%;
         justify-content: center;
@@ -1077,20 +1112,11 @@ html.night-mode .glass-scrollbar .thumb {
         width: 95%;
         padding: 0 12px;
     }
-    
+
     .metrics {
         grid-template-columns: 1fr;
     }
-    
-    .bridge-table .row {
-        grid-template-columns: 1fr;
-        gap: 8px;
-    }
-    
-    .bridge-table .row.header {
-        display: none;
-    }
-    
+
     .action-btn {
         width: 100%;
         justify-content: center;

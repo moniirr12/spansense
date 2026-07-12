@@ -585,9 +585,7 @@ async function fetchCriticalBridges() {
     } catch (error) {
         console.error('Error fetching critical bridges:', error);
         document.getElementById('critical-bridges-body').innerHTML = `
-            <div class="row">
-                <div style="color: var(--text-muted); font-size: 0.8rem;">Could not load data.</div>
-            </div>`;
+            <tr><td colspan="4" style="color: var(--text-muted); font-size: 0.8rem;">Could not load data.</td></tr>`;
     }
 }
 
@@ -627,9 +625,7 @@ function renderCriticalBridges(data) {
 
     if (!data.length) {
         tbody.innerHTML = `
-            <div class="row">
-                <div style="color: var(--text-muted); font-size: 0.8rem;">No bridges below BCI 55.</div>
-            </div>`;
+            <tr><td colspan="4" style="color: var(--text-muted); font-size: 0.8rem;">No bridges below BCI 55.</td></tr>`;
         return;
     }
 
@@ -642,19 +638,19 @@ function renderCriticalBridges(data) {
         // Use template literals properly with ${} interpolation
         // Escape quotes in the onclick by using backticks or different quote styles
         return `
-            <div class="row">
-                <div>
+            <tr>
+                <td>
                     <span class="bridge-id">${bridge.structure_id}</span>
                     <span class="bridge-location">${bridge.structure_name}</span>
-                </div>
-                <div><span class="risk-badge ${badgeClass}">${badgeLabel} · ${bci}</span></div>
-                <div>${formatDate(bridge.inspection_date)}</div>
-                <div>
+                </td>
+                <td><span class="risk-badge ${badgeClass}">${badgeLabel} · ${bci}</span></td>
+                <td>${formatDate(bridge.inspection_date)}</td>
+                <td>
                     <button class="action-btn download-btn" onclick="downloadReport('${bridge.structure_id}', '${bridge.structure_name.replace(/'/g, "\\'")}', '${bridge.inspection_date}')">
                         <i class="fas fa-download"></i> Report
                     </button>
-                </div>
-            </div>`;
+                </td>
+            </tr>`;
     }).join('');
 }
 
@@ -919,9 +915,7 @@ function renderPendingReview(data) {
             ? 'Nothing awaiting review.'
             : 'No inspections match your filters.';
         list.innerHTML = `
-            <div class="activity-item">
-                <div style="color: var(--text-muted); font-size: 0.8rem;">${message}</div>
-            </div>`;
+            <tr><td colspan="3" style="color: var(--text-muted); font-size: 0.8rem;">${message}</td></tr>`;
         return;
     }
 
@@ -932,15 +926,19 @@ function renderPendingReview(data) {
         const inspector = item.inspector_name || 'Unknown';
 
         return `
-            <div class="activity-item">
-                <div class="activity-avatar activity-avatar-${tier.avatarColor}">${initials}</div>
-                <div class="activity-content">
-                    <div class="activity-title">${item.structure_name || 'Structure ' + item.structure_id}</div>
-                    <div class="activity-meta">STR #${item.structure_id} &nbsp;·&nbsp; ${inspector} &nbsp;·&nbsp; ${formatDate(item.inspection_date)}</div>
-                </div>
-                <span class="activity-bci bci-${tier.band}">${bci}</span>
-                <button class="action-btn review-btn" onclick="openReviewModal(${item.id})"><i class="fas fa-user-check"></i> Review</button>
-            </div>`;
+            <tr>
+                <td>
+                    <div class="pr-structure-cell">
+                        <div class="activity-avatar activity-avatar-${tier.avatarColor}">${initials}</div>
+                        <div class="activity-content">
+                            <div class="activity-title">${item.structure_name || 'Structure ' + item.structure_id}</div>
+                            <div class="activity-meta">STR #${item.structure_id} &nbsp;·&nbsp; ${inspector} &nbsp;·&nbsp; ${formatDate(item.inspection_date)}</div>
+                        </div>
+                    </div>
+                </td>
+                <td><span class="activity-bci bci-${tier.band}">${bci}</span></td>
+                <td><button class="action-btn review-btn" onclick="openReviewModal(${item.id})"><i class="fas fa-user-check"></i> Review</button></td>
+            </tr>`;
     }).join('');
 }
 

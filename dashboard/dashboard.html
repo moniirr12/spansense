@@ -162,19 +162,14 @@
                     <span class="section-badge">BCI &lt; 55</span>
                 </div>
                 <div class="critical-bridges">
-                    <div class="bridge-table">
-                        <div class="row header">
-                            <div>Bridge</div>
-                            <div>BCI Score</div>
-                            <div>Last Inspection</div>
-                            <div>Report</div>
-                        </div>
-                        <div id="critical-bridges-body">
-                            <div class="row">
-                                <div colspan="4" style="color: var(--text-muted); font-size: 0.85rem;">Loading...</div>
-                            </div>
-                        </div>
-                    </div>
+                    <table class="data-table card-rows">
+                        <thead>
+                            <tr><th>Bridge</th><th>BCI Score</th><th>Last Inspection</th><th>Report</th></tr>
+                        </thead>
+                        <tbody id="critical-bridges-body">
+                            <tr><td colspan="4" style="color: var(--text-muted); font-size: 0.85rem;">Loading...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -184,7 +179,7 @@
                     <h2><i class="fas fa-clipboard-list"></i> Recent Activity</h2>
                     <span class="section-badge">Latest</span>
                 </div>
-                <div class="activity-list" id="recent-activity-list">
+                <div class="activity-list card-rows" id="recent-activity-list">
                     <div class="activity-item">
                         <div style="color: var(--text-muted); font-size: 0.8rem; padding: 4px 0;">Loading...</div>
                     </div>
@@ -214,10 +209,15 @@
                     <i class="fas fa-triangle-exclamation"></i> Critical only
                 </button>
             </div>
-            <div class="activity-list" id="pending-review-list">
-                <div class="activity-item">
-                    <div style="color: var(--text-muted); font-size: 0.8rem; padding: 4px 0;">Loading...</div>
-                </div>
+            <div class="pending-review-table-wrap">
+                <table class="data-table card-rows">
+                    <thead>
+                        <tr><th>Structure</th><th>BCI</th><th>Action</th></tr>
+                    </thead>
+                    <tbody id="pending-review-list">
+                        <tr><td colspan="3" style="color: var(--text-muted); font-size: 0.8rem;">Loading...</td></tr>
+                    </tbody>
+                </table>
             </div>
             <div id="pending-review-pagination"></div>
         </div>
