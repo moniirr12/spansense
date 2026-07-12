@@ -601,7 +601,11 @@ function buildBCIProformaContent(bciFormData, singleSpanIdx) {
                 dataRow.push({ text: isNotInspected ? '' : String(d.s != null ? d.s : '-'), alignment: 'center', fontSize: 7 });
                 dataRow.push({ text: isNotInspected ? '' : String(d.ex != null ? d.ex : '-'), alignment: 'center', fontSize: 7 });
                 dataRow.push({ text: defDisplay, alignment: 'center', fontSize: 7 });
-                var worksNotRequired = isNotInspected || d.w === 'N';
+                // Priority/cost only mean anything when works are actually
+                // required - 'M' (possibly) and 'N' (no) shouldn't carry a
+                // priority or cost over here either, matching the narrative
+                // PDF report's own worksRequired === 'Y' gate for cost.
+                var worksNotRequired = isNotInspected || d.w !== 'Y';
                 dataRow.push({ text: isNotInspected ? '' : String(d.w != null ? d.w : '-'), alignment: 'center', fontSize: 7 });
                 dataRow.push({ text: worksNotRequired ? '' : String(d.p != null ? d.p : '-'), alignment: 'center', fontSize: 7 });
                 dataRow.push({ text: worksNotRequired ? '' : String(d.cost != null ? d.cost : ''), colSpan: 2, alignment: 'right', fontSize: 7 });
@@ -919,7 +923,9 @@ function buildBCIPage2Content(bciFormData, singleSpanIdx) {
         for (var i = 0; i < WORK_ROW_COUNT; i++) {
             var w        = spanWorks[i] || {};
             var remedial = w.remedialWorks || w.remedial_works || '';
-            var worksNotRequired = w.worksRequired === 'N';
+            // Same 'Y'-only gate as the page 1 data grid - 'M' (possibly)
+            // and 'N' (no) shouldn't carry a priority or cost either.
+            var worksNotRequired = w.worksRequired !== 'Y';
             var priority = worksNotRequired ? '' : (w.priority || '');
             var cost     = worksNotRequired ? '' : ((w.cost && w.cost !== 'Not specified') ? w.cost : '');
             var action   = w.worksRequired === 'Y' ? '✓' : (w.worksRequired === 'M' ? '?' : '');

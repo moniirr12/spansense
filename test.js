@@ -1093,6 +1093,7 @@ function buildInspectionReportDocDefinition(ctx) {
         appendixA.push({ text: '', pageBreak: 'before' });
         appendixA.push({ text: 'No photographs available for this inspection.', italics: true, color: RC.muted, alignment: 'center' });
     } else {
+        appendixA.push({ text: '', pageBreak: 'before' });
         photosWithDataURLs.forEach((photo, i) => {
             appendixA.push({ text: ' ', id: 'photo-' + photo.photoNumber, fontSize: 1 });
             if (photo.photo_dataURL) {
@@ -1117,9 +1118,13 @@ function buildInspectionReportDocDefinition(ctx) {
         { text: 'Highways Agency element checklist, generated from the same inspection data above.', fontSize: 9.5, italics: true, color: RC.muted, margin: [0, 0, 0, 10] },
         { text: '', pageBreak: 'after' }
     ];
-    if (typeof buildBCIProformaContent === 'function' && typeof buildBCIPage2Content === 'function') {
-        appendixB.push(...buildBCIProformaContent(bciFormData));
-        appendixB.push(...buildBCIPage2Content(bciFormData));
+    // buildBCIProformaFullContent interleaves span1-page1, span1-page2,
+    // span2-page1, span2-page2, ... - calling buildBCIProformaContent(all
+    // spans) then buildBCIPage2Content(all spans) separately (the old code
+    // here) instead produced every span's page 1 followed by every span's
+    // page 2.
+    if (typeof buildBCIProformaFullContent === 'function') {
+        appendixB.push(...buildBCIProformaFullContent(bciFormData));
     }
 
     return {
