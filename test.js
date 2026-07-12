@@ -939,6 +939,7 @@ function buildInspectionReportDocDefinition(ctx) {
             ],
             columnGap: 12
         });
+        section2.push({ text: 'BCI Average', bold: true, fontSize: 8.5, color: RC.muted, margin: [0, 6, 0, 3] });
         section2.push(bciBandStrip(spanBciAv));
 
         if (span.comments) {
