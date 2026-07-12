@@ -671,17 +671,20 @@ table.works .total-value{font-weight:700;color:var(--ink);border-bottom:none;}\
   @page{size:A4;margin:0;}\
 }';
 
-async function openFullInspectionReportHtml(doc, targetWindow) {
-    var win = (targetWindow && !targetWindow.closed) ? targetWindow : window.open('', '_blank');
-    if (!win) return null;
+async function downloadFullInspectionReportHtml(doc) {
     var html = await buildFullInspectionReportHtml(doc);
-    win.document.open();
-    win.document.write(html);
-    win.document.close();
-    return win;
+    var blob = new Blob([html], { type: 'text/html' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = (doc.structure_name || 'Report').replace(/[^a-z0-9]/gi, '_') + '_Inspection_Report_' + doc.date + '.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 window.buildFullInspectionReportHtml = buildFullInspectionReportHtml;
-window.openFullInspectionReportHtml = openFullInspectionReportHtml;
+window.downloadFullInspectionReportHtml = downloadFullInspectionReportHtml;
 
 }
