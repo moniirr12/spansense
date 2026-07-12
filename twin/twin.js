@@ -553,40 +553,12 @@ const matDefect = new THREE.MeshStandardMaterial({color: 0xe06a5a, emissive: 0xc
 const matStone    = new THREE.MeshStandardMaterial({color: 0x8a8378, metalness: 0.0, roughness: 0.95});
 const matConcrete = new THREE.MeshStandardMaterial({color: 0x9aa39c, metalness: 0.05, roughness: 0.85});
 
-// Cone marker (distinct from the octahedron defect markers) for the Works
-// Required layer. exact=false (no placed x/y/z) renders semi-transparent so
-// it reads as an estimate rather than a precise location.
-function createWorksMarker(exact) {
-    var color = 0xc28b5a;
-    var mat = new THREE.MeshStandardMaterial({
-        color: color, emissive: color, emissiveIntensity: 1.1,
-        transparent: !exact, opacity: exact ? 1 : 0.55
-    });
-    return new THREE.Mesh(new THREE.ConeGeometry(0.7, 1.6, 8), mat);
-}
-
-// Real placed position if this defect has one, otherwise a position spread
-// across its span/element so multiple unlocated works-required defects in
-// the same span don't all stack on one spot.
-function worksMarkerPosition(d, X0, SPAN_LEN, NUM_SPANS, DECK_W, deckY) {
-    if (d.x != null && d.y != null && d.z != null) {
-        return { x: d.x, y: d.y, z: d.z, exact: true };
-    }
-    var spanIdx = Math.min(Math.max((d.spanNumber || 1) - 1, 0), Math.max(NUM_SPANS - 1, 0));
-    var x = X0 + SPAN_LEN * spanIdx + SPAN_LEN / 2;
-    var seed = ((d.elementNo || 0) * 37) % 100 / 100;
-    x += (seed - 0.5) * SPAN_LEN * 0.6;
-    var z = ((d.elementNo || 0) % 2 === 0 ? 1 : -1) * (DECK_W * 0.25);
-    return { x: x, y: deckY + 1.6, z: z, exact: false };
-}
-
 const rig = new THREE.Group();
 scene.add(rig);
 const structureGroup = new THREE.Group();
 const sensorGroup = new THREE.Group();
-const worksGroup = new THREE.Group();
 const defectGroup = new THREE.Group();
-rig.add(structureGroup, sensorGroup, worksGroup, defectGroup);
+rig.add(structureGroup, sensorGroup, defectGroup);
 
 let gridHelper, glowMesh;
 
@@ -677,7 +649,6 @@ function rebuildModel(bridge) {
     // Clear existing
     while(structureGroup.children.length > 0) structureGroup.remove(structureGroup.children[0]);
     while(sensorGroup.children.length > 0) sensorGroup.remove(sensorGroup.children[0]);
-    while(worksGroup.children.length > 0) worksGroup.remove(worksGroup.children[0]);
     while(defectGroup.children.length > 0) defectGroup.remove(defectGroup.children[0]);
     if (gridHelper) rig.remove(gridHelper);
     if (glowMesh) rig.remove(glowMesh);
@@ -756,19 +727,6 @@ function rebuildModel(bridge) {
         sensorGroup.add(ring);
     });
 
-    // Works Required markers — one per defect flagged works_required='Y',
-    // at its real placed position if it has one, otherwise an approximate
-    // spot within its span so the layer isn't empty just because most
-    // defects haven't been located on the model yet.
-    (bridge.defects || []).filter(function(d) { return d.worksRequired; }).forEach(function(d) {
-        var pos = worksMarkerPosition(d, X0, SPAN_LEN, NUM_SPANS, DECK_W, deckY);
-        var m = createWorksMarker(pos.exact);
-        m.position.set(pos.x, pos.y, pos.z);
-        m.userData.defect = d;
-        m.userData.positionExact = pos.exact;
-        worksGroup.add(m);
-    });
-
     // Defects: only ones with real coordinates set are rendered. There's no
     // interface to place them yet, so this layer is sparse/empty until then.
     (bridge.defects || []).filter(function(d) {
@@ -795,10 +753,8 @@ function rebuildModel(bridge) {
     rotY = 0.4;
     rotX = 0.18;
 
-    // Reset layer toggles - works required and defects off by default
-    worksGroup.visible = false;
+    // Reset layer toggles - defects off by default
     defectGroup.visible = false;
-    document.querySelectorAll('.vc-pill[data-layer="works"]').forEach(function(el) { el.classList.remove('on'); });
     document.querySelectorAll('.vc-pill[data-layer="defects"]').forEach(function(el) { el.classList.remove('on'); });
     document.querySelectorAll('.vc-pill[data-layer="structure"]').forEach(function(el) { el.classList.add('on'); });
     document.querySelectorAll('.vc-pill[data-layer="sensors"]').forEach(function(el) { el.classList.add('on'); });
@@ -869,7 +825,6 @@ function handleCanvasClick(e) {
     );
     raycaster.setFromCamera(ndc, camera);
     var targets = defectGroup.visible ? defectGroup.children.slice() : [];
-    if (worksGroup.visible) targets = targets.concat(worksGroup.children);
     if (!targets.length) { hideDefectPopup(); return; }
 
     var hits = raycaster.intersectObjects(targets, false);
@@ -954,7 +909,6 @@ function bindLayerPills(selector) {
             var on = pill.classList.contains('on');
             if (layer === 'structure') structureGroup.visible = on;
             if (layer === 'sensors') sensorGroup.visible = on;
-            if (layer === 'works') worksGroup.visible = on;
             if (layer === 'defects') defectGroup.visible = on;
         });
     });
