@@ -64,7 +64,7 @@ const KIND_DEFAULTS = {
     caversham_arch: {
         deckWidth: 9.2, trussHeight: 0, panelsPerSpan: 1,
         ribCount: 6, archRise: 3.2, archThickness: 0.7, deckThickness: 1.1,
-        springDrop: 4.2, pierDrop: 14, pierWidth: 2.2, bayRadius: 2.0
+        springDrop: 4.2, pierDrop: 8, pierWidth: 3.0, bayRadius: 2.0
     }
 };
 

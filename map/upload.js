@@ -28,6 +28,7 @@ const fileList = document.getElementById('fileList');
 const breadcrumbs = document.getElementById('breadcrumbs');
 const newFolderBtn = document.getElementById('newFolderBtn');
 const uploadBtn = document.getElementById('uploadBtn');
+const downloadBtn = document.getElementById('downloadBtn');
 const deleteBtn = document.getElementById('deleteBtn');
 const folderForm = document.getElementById('folderForm');
 const folderName = document.getElementById('folderName');
@@ -48,6 +49,7 @@ function initializeFileExplorer() {
     // Event listeners
     newFolderBtn.addEventListener('click', showFolderForm);
     uploadBtn.addEventListener('click', () => fileInput.click());
+    downloadBtn.addEventListener('click', downloadSelectedItem);
     deleteBtn.addEventListener('click', deleteSelectedItem);
     createFolderBtn.addEventListener('click', createFolder);
     cancelFolderBtn.addEventListener('click', hideFolderForm);
@@ -132,6 +134,10 @@ async function loadFolderContents(folderId = null) {
         renderBreadcrumbs(folderId);
         renderContents(folders, files);
 
+        // Selection doesn't survive a folder switch - the selected <li> is gone.
+        selectedItem = null;
+        deleteBtn.disabled = true;
+        downloadBtn.disabled = true;
     } catch (error) {
         if (seq !== loadFolderSeq) return;
         console.error('Error loading contents:', error);
@@ -273,6 +279,8 @@ function renderContents(folders, files) {
         li.className = 'file-item';
         li.dataset.id = file.id;
         li.dataset.type = 'file';
+        li.dataset.filepath = file.filepath;
+        li.dataset.name = file.name;
         li.innerHTML = `
             <span class="file-icon">${getFileIcon(file.name)}</span>
             <span>${file.name}</span>
@@ -310,23 +318,58 @@ function getFileIcon(filename) {
 function selectItem(element) {
     // Clear previous selection
     document.querySelectorAll('.file-item, .folder-item').forEach(item => {
-        item.style.backgroundColor = '';
+        item.classList.remove('selected');
     });
-    
+
     // Set new selection
-    element.style.backgroundColor = '#e3f2fd';
+    element.classList.add('selected');
     selectedItem = {
         id: element.dataset.id,
-        type: element.dataset.type
+        type: element.dataset.type,
+        filepath: element.dataset.filepath,
+        name: element.dataset.name
     };
-    
-    // Enable delete button
+
+    // Enable delete button; download only makes sense for files
     deleteBtn.disabled = false;
+    downloadBtn.disabled = selectedItem.type !== 'file';
 }
 
 // Open a file
 function openFile(file) {
     window.open(file.filepath, '_blank');
+}
+
+// Download the selected file. Fetches it as a blob first (rather than just
+// pointing an <a download> at the signed URL) so the browser saves it under
+// its real name instead of whatever the storage path/query string resolves
+// to; falls back to opening it in a new tab if the fetch itself fails (e.g.
+// a CORS-restrictive storage config), same as double-click already does.
+async function downloadSelectedItem() {
+    if (!selectedItem || selectedItem.type !== 'file' || !selectedItem.filepath) return;
+
+    try {
+        // credentials must be explicitly 'omit' here, not left to the page-wide
+        // fetch-credentials.js default of 'include' - Supabase Storage's signed
+        // URLs respond with a wildcard CORS origin, which browsers refuse to
+        // pair with credentialed requests (fails with a generic "Failed to
+        // fetch", no CORS detail surfaced).
+        const response = await fetch(selectedItem.filepath, { credentials: 'omit' });
+        if (!response.ok) throw new Error(`Server returned ${response.status}`);
+        const blob = await response.blob();
+
+        const objectUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = objectUrl;
+        a.download = selectedItem.name || 'download';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(objectUrl);
+    } catch (error) {
+        console.error('Download error:', error);
+        window.open(selectedItem.filepath, '_blank');
+    }
 }
 
 // Show folder creation form
@@ -450,6 +493,7 @@ async function deleteSelectedItem() {
         // Success case
         selectedItem = null;
         deleteBtn.disabled = true;
+        downloadBtn.disabled = true;
         loadFolderContents(currentFolderId);
         
     } catch (error) {
