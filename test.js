@@ -402,12 +402,14 @@ function buildDefectCardContent(d, photoNumbers) {
         facts.push({ width: 'auto', text: [{ text: 'Est. cost: ', color: NARR_COLORS.muted }, { text: '£' + cost.toLocaleString(), bold: true, color: NARR_COLORS.ink }], fontSize: 9.5 });
     }
 
+    const headingColumns = [{ width: '*', text: defectHeading, fontSize: 9, bold: true, color: NARR_COLORS.muted }];
+    // Priority only means anything when works are actually required - no
+    // chip at all (rather than a "Priority —" placeholder) when there isn't one.
+    if (d.priority) headingColumns.push(reportChip('Priority ' + d.priority, pri.bg, pri.fg));
+
     const rows = [
         {
-            columns: [
-                { width: '*', text: defectHeading, fontSize: 9, bold: true, color: NARR_COLORS.muted },
-                reportChip('Priority ' + (d.priority || '—'), pri.bg, pri.fg)
-            ],
+            columns: headingColumns,
             columnGap: 8,
             margin: [0, 0, 0, 8]
         },
@@ -1049,7 +1051,9 @@ function buildInspectionReportDocDefinition(ctx) {
                 { text: String(i + 1), fontSize: 9.5 },
                 { text: getElementDesc(d), fontSize: 9.5 },
                 { text: d.remedialWorks || d.remedial_works, fontSize: 9.5, lineHeight: 1.25 },
-                { text: d.priority || '—', fontSize: 9, bold: true, color: pri.fg, fillColor: pri.bg, alignment: 'center' },
+                d.priority
+                    ? { text: d.priority, fontSize: 9, bold: true, color: pri.fg, fillColor: pri.bg, alignment: 'center' }
+                    : { text: '', fontSize: 9, alignment: 'center' },
                 { text: (!isNaN(cost) && cost > 0) ? ('£' + cost.toLocaleString()) : '—', fontSize: 9.5, alignment: 'right' }
             ]);
         });

@@ -284,7 +284,7 @@ function lv(label, value, extra) {
 // baseline-vs-alphabetic-baseline inconsistency across PDF renderers
 // (pdf.js vs PDFium/Acrobat) that the SVG version had to work around by
 // hand - canvas's textBaseline is reliable, so no pre-shift hack is needed.
-function rotatedLabel(text, w, h, fontSize) {
+function rotatedLabel(text, w, h, fontSize, allowWrap) {
     fontSize = fontSize || 6.5;
     var scale = 4; // supersample so the raster stays crisp when zoomed/printed
     var canvas = document.createElement('canvas');
@@ -298,7 +298,32 @@ function rotatedLabel(text, w, h, fontSize) {
     ctx.textBaseline = 'middle';
     ctx.font = 'bold ' + fontSize + 'pt Helvetica, Arial, sans-serif';
     ctx.fillStyle = '#000000';
-    ctx.fillText(text, 0, 0);
+
+    // Long "Set" column labels ("Load-bearing Substructure", "Other Bridge
+    // Elements"...) don't fit as one rotated line in every group's h (some
+    // rowSpans are as short as ~42pt) - wrap onto a 2nd parallel rotated
+    // line rather than letting the single line overflow/clip past the cell.
+    // Two lines still fit within this column's existing w (~19pt: two ~6pt-
+    // tall lines plus gaps), so this needed a code change, not a wider
+    // column. Opt-in (setCell only) - the "Bridge code" label stays as a
+    // single line as before.
+    var maxLineLength = h - 4;
+    if (!allowWrap || ctx.measureText(text).width <= maxLineLength) {
+        ctx.fillText(text, 0, 0);
+    } else {
+        var words = text.split(' ');
+        var line1 = words[0];
+        var i = 1;
+        for (; i < words.length; i++) {
+            var candidate = line1 + ' ' + words[i];
+            if (ctx.measureText(candidate).width > maxLineLength) break;
+            line1 = candidate;
+        }
+        var line2 = words.slice(i).join(' ');
+        var lineGap = fontSize * 1.35;
+        ctx.fillText(line1, 0, -lineGap / 2);
+        ctx.fillText(line2, 0, lineGap / 2);
+    }
     return { image: canvas.toDataURL('image/png'), fit: [w, h] };
 }
 
@@ -315,7 +340,7 @@ function setCell(label, rowSpan, rowHeightTarget, rowPad) {
     var h = Math.max(10, rowSpan * (rowHeightTarget - 2) - 2 * rowPad - 2);
     return Object.assign(
         { rowSpan: rowSpan, alignment: 'center', fillColor: BCI_COLORS.sectionBg },
-        rotatedLabel(label, w, h, 6)
+        rotatedLabel(label, w, h, 6, true)
     );
 }
 
