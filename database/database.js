@@ -633,6 +633,7 @@
                         '<button title="Generate BCI Proforma" onclick="generateReport(' + row.inspection_id + ')" class="btn-report"><i class="fas fa-file-invoice"></i></button>' +
                         '<button title="View Report" onclick="viewInspection(' + row.inspection_id + ')"><i class="fas fa-eye"></i></button>' +
                         '<button title="Download Report" onclick="downloadReport(' + row.inspection_id + ')"><i class="fas fa-file-pdf"></i></button>' +
+                        '<button title="View Styled Report (HTML)" onclick="viewInspectionHtml(' + row.inspection_id + ')"><i class="fas fa-file-lines"></i></button>' +
                     '</div></td>' +
                 '</tr>';
             });
@@ -1508,6 +1509,44 @@
 
         try {
             await generateSimplePDFReport(doc, 'open', reportWindow);
+        } finally {
+            clearTimeout(timeoutId);
+        }
+        if (timedOut) return;
+    };
+
+    // Same restyled narrative report as the PDF (cover, TOC, structure
+    // details, BCI, defects, conclusions/remedial works, photo appendix),
+    // built as real HTML instead of pdfmake tables - view/print from the new
+    // tab itself. Deliberately excludes the BCI Proforma (see
+    // map/reportFull.html.js's header comment).
+    window.viewInspectionHtml = async function(id) {
+        var reportWindow = window.open('', '_blank');
+
+        var inspection = inspectionsData.find(function(i) { return i.id === id; });
+        if (!inspection) {
+            showToast('Inspection not found', 'error');
+            if (reportWindow) reportWindow.close();
+            return;
+        }
+        var doc = { structure_id: inspection.structure_id || '', structure_name: inspection.structure_name || '', date: inspection.inspection_date || '' };
+
+        var timedOut = false;
+        var timeoutId = setTimeout(function() {
+            timedOut = true;
+            showToast('Report is taking too long to generate. Please try again.', 'error');
+            if (reportWindow && !reportWindow.closed) reportWindow.close();
+        }, 25000);
+
+        try {
+            if (typeof openFullInspectionReportHtml !== 'function') {
+                throw new Error('HTML report generator not loaded. Please refresh the page.');
+            }
+            await openFullInspectionReportHtml(doc, reportWindow);
+        } catch (error) {
+            console.error('HTML report generation failed:', error);
+            showToast('Error: ' + error.message, 'error');
+            if (reportWindow && !reportWindow.closed) reportWindow.close();
         } finally {
             clearTimeout(timeoutId);
         }
