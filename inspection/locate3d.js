@@ -248,6 +248,14 @@ function rebuildLocate3DModel(bridge) {
     };
     var frame = builder(bridge, shapeCtx);
 
+    // Some kinds (e.g. river piers reaching down to a riverbed well below
+    // the default -8.4 ground line) need the ground/glow repositioned so
+    // the structure actually reaches it instead of floating above it.
+    if (frame.groundY != null) {
+        l3d.gridHelper.position.y = frame.groundY;
+        l3d.glowMesh.position.y = frame.groundY + 0.1;
+    }
+
     // Sensors (procedural, same as twinView)
     generateSensorsLocate3D(bridge, SPAN_LEN).forEach(function(pt) {
         var s = new THREE.Mesh(new THREE.SphereGeometry(0.42, 16, 16), l3d.matSensor);

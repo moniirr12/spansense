@@ -735,6 +735,14 @@ function rebuildModel(bridge) {
     };
     var frame = builder(bridge, ctx);
 
+    // Some kinds (e.g. river piers reaching down to a riverbed well below
+    // the default -8.4 ground line) need the ground/glow repositioned so
+    // the structure actually reaches it instead of floating above it.
+    if (frame.groundY != null) {
+        gridHelper.position.y = frame.groundY;
+        glowMesh.position.y = frame.groundY + 0.1;
+    }
+
     // Sensors (procedural - no real telemetry source yet)
     generateSensors(bridge, SPAN_LEN).forEach(function(p) {
         var s = new THREE.Mesh(new THREE.SphereGeometry(0.42, 16, 16), matSensor);

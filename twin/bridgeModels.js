@@ -60,6 +60,11 @@ const KIND_DEFAULTS = {
     gantry: {
         deckWidth: 1.4, trussHeight: 0, panelsPerSpan: 1,
         columnHeight: 6.6, columnWidth: 0.6, beamWidth: 1.0, numSignPanels: 3
+    },
+    caversham_arch: {
+        deckWidth: 9.2, trussHeight: 0, panelsPerSpan: 1,
+        ribCount: 6, archRise: 3.2, archThickness: 0.7, deckThickness: 1.1,
+        springDrop: 4.2, pierDrop: 14, pierWidth: 2.2, bayRadius: 2.0
     }
 };
 
@@ -85,7 +90,8 @@ const BRIDGE_MODELS = {
     17: { kind: 'wall', material: 'stone', battered: true },        // Retaining Wall at York Minster
     18: { kind: 'culvert' },                                        // Culvert at River Thames
     19: { kind: 'truss', deckWidth: 4, trussHeight: 3.2, panelsPerSpan: 4 }, // Footbridge at Hyde Park
-    20: { kind: 'trilithon' }                                       // Retaining Wall at Stonehenge
+    20: { kind: 'trilithon' },                                       // Retaining Wall at Stonehenge
+    21: { kind: 'caversham_arch' }                                   // Caversham Bridge
 };
 
 // Fallback for any future structure not yet hand-mapped above.

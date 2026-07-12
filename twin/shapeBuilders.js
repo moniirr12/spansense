@@ -575,6 +575,147 @@ function buildSignGantryStructure(bridge, ctx) {
     };
 }
 
+// Caversham Bridge (Reading): two shallow segmental arches meeting at a
+// single central river pier, each arch built from several concrete ribs
+// spread across the deck width (not the generic 2-rib arch buildArchStructure
+// uses), with a stadium-shaped (rounded-end) central pier and semicircular
+// granite-balustraded promenade bays bulging out from the deck edges over
+// that pier. Bespoke to this one real structure, the same way
+// buildBasculeStructure/buildCantileverStructure are tailored to Tower
+// Bridge/Forth Bridge rather than being fully generic. Ported from a
+// standalone concept model (twin/caversham-bridge-3d.html) built against
+// real-world references (opened 1926, 2 segmental arches on 1 central
+// river pier, 6 concrete ribs per arch, granite-faced reinforced concrete).
+function buildCavershamStructure(bridge, ctx) {
+    var TOTAL_LEN = ctx.TOTAL_LEN, DECK_W = ctx.DECK_W, deckY = ctx.deckY;
+    var model = bridge.model || {};
+    var ribCount = model.ribCount || 6;
+    var archRise = model.archRise || 3.2;
+    var archThickness = model.archThickness || 0.7;
+    var deckThickness = model.deckThickness || 1.1;
+    var springDrop = model.springDrop || 4.2;
+    var pierDrop = model.pierDrop || 8;
+    var pierWidth = model.pierWidth || 2.2;
+    var bayRadius = model.bayRadius || 2.0;
+
+    var springY = deckY - springDrop;
+    var riverbedY = springY - pierDrop;
+    var pierXs = [-TOTAL_LEN / 2, 0, TOTAL_LEN / 2]; // abutment, central river pier, abutment
+
+    function addBox(x, y, z, w, h, d, material) {
+        var mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
+        mesh.position.set(x, y, z);
+        ctx.structureGroup.add(mesh);
+        return mesh;
+    }
+
+    function ribZs() {
+        var zs = [];
+        for (var i = 0; i < ribCount; i++) zs.push(-DECK_W / 2 + (i + 0.5) * (DECK_W / ribCount));
+        return zs;
+    }
+
+    // Stadium-shaped (rounded-end) central river pier: box + two end-cap
+    // cylinders, long axis along Z (flow direction) so the rounded ends
+    // read as cutwaters facing up/downstream.
+    function addRiverPier(x, capDepthZ) {
+        var boxLen = Math.max(0.2, capDepthZ - pierWidth);
+        var pierH = springY - riverbedY;
+        addBox(x, riverbedY + pierH / 2, 0, pierWidth, pierH, boxLen, ctx.matPier);
+        [-1, 1].forEach(function (dir) {
+            var cyl = new THREE.Mesh(new THREE.CylinderGeometry(pierWidth / 2, pierWidth / 2, pierH, 16), ctx.matPier);
+            cyl.position.set(x, riverbedY + pierH / 2, dir * boxLen / 2);
+            ctx.structureGroup.add(cyl);
+        });
+    }
+
+    function addAbutment(x) {
+        var h = springY - riverbedY;
+        addBox(x, riverbedY + h / 2, 0, 5, h, DECK_W + 1.5, ctx.matPier);
+    }
+
+    // One shallow segmental arch spanning [xa, xb], as a ring of ribs
+    // across the deck width, plus open-spandrel columns up to the soffit.
+    function buildSpanArch(xa, xb) {
+        var samples = 16;
+        ribZs().forEach(function (z) {
+            var prev = null;
+            for (var i = 0; i <= samples; i++) {
+                var t = i / samples;
+                var x = xa + t * (xb - xa);
+                var y = springY + archRise * 4 * t * (1 - t);
+                if (prev) addBeam(ctx, prev.x, prev.y, z, x, y, z, archThickness, ctx.matStone);
+                prev = { x: x, y: y };
+            }
+            [0.2, 0.35, 0.5, 0.65, 0.8].forEach(function (t) {
+                var x = xa + t * (xb - xa);
+                var archTopY = springY + archRise * 4 * t * (1 - t) + archThickness / 2;
+                var deckSoffitY = deckY - deckThickness / 2;
+                if (deckSoffitY - archTopY > 0.12) addBeam(ctx, x, archTopY, z, x, deckSoffitY, z, 0.22, ctx.matPier);
+            });
+        });
+    }
+
+    // Semicircular granite-balustraded promenade bay over the central pier,
+    // bulging outward on one side (dir = +1/-1). A short tapered corbel
+    // under a flush floor reads as a balcony bump, not a column reaching
+    // down to the pier. CylinderGeometry's cap angle parametrizes as
+    // x=sin(theta), z=cos(theta) (verified empirically) - thetaStart=-PI/2
+    // sweeps (-r,0)->(0,r)->(r,0), a flat chord along local X bulging +Z.
+    function addPromenadeBay(x, dir) {
+        var parapetH = 0.9, corbelH = 0.3;
+        var thetaStart = dir > 0 ? -Math.PI / 2 : Math.PI / 2;
+        var floor = new THREE.Mesh(
+            new THREE.CylinderGeometry(bayRadius, bayRadius, deckThickness, 24, 1, false, thetaStart, Math.PI),
+            ctx.matStone
+        );
+        floor.position.set(x, deckY, dir * DECK_W / 2);
+        ctx.structureGroup.add(floor);
+
+        var corbel = new THREE.Mesh(
+            new THREE.CylinderGeometry(bayRadius, bayRadius * 0.65, corbelH, 24, 1, false, thetaStart, Math.PI),
+            ctx.matPier
+        );
+        corbel.position.set(x, deckY - deckThickness / 2 - corbelH / 2, dir * DECK_W / 2);
+        ctx.structureGroup.add(corbel);
+
+        var wall = new THREE.Mesh(
+            new THREE.CylinderGeometry(bayRadius, bayRadius, parapetH, 24, 1, true, thetaStart, Math.PI),
+            ctx.matStone
+        );
+        wall.position.set(x, deckY + deckThickness / 2 + parapetH / 2, dir * DECK_W / 2);
+        ctx.structureGroup.add(wall);
+    }
+
+    function buildDeck() {
+        addBox(0, deckY, 0, TOTAL_LEN, deckThickness, DECK_W, ctx.matDeck);
+        [DECK_W / 2 - 0.15, -(DECK_W / 2 - 0.15)].forEach(function (z) {
+            addBox(0, deckY + deckThickness / 2 + 0.45, z, TOTAL_LEN, 0.9, 0.28, ctx.matStone);
+            [pierXs[0] + 1.4, pierXs[2] - 1.4].forEach(function (x) {
+                var post = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.5, 10), ctx.matSteel);
+                post.position.set(x, deckY + deckThickness / 2 + 0.9 + 0.75, z);
+                ctx.structureGroup.add(post);
+            });
+        });
+        [1, -1].forEach(function (dir) { addPromenadeBay(pierXs[1], dir); });
+    }
+
+    addAbutment(pierXs[0]);
+    addRiverPier(pierXs[1], DECK_W * 0.5);
+    addAbutment(pierXs[2]);
+    for (var s = 0; s < pierXs.length - 1; s++) buildSpanArch(pierXs[s], pierXs[s + 1]);
+    buildDeck();
+
+    return {
+        camDistance: Math.min(Math.max(40, TOTAL_LEN * 1.05), 130),
+        camHeight: Math.min(Math.max(10, archRise + springDrop + pierDrop * 0.6), 22),
+        // The shared ground grid otherwise sits fixed partway up the pier
+        // shaft (-8.4, well above riverbedY here), making the piers look
+        // like they stop short of the ground instead of reaching it.
+        groundY: riverbedY
+    };
+}
+
 var BUILDERS = {
     truss: buildTrussStructure,
     wall: buildWallStructure,
@@ -585,5 +726,6 @@ var BUILDERS = {
     suspension: buildSuspensionStructure,
     cantilever: buildCantileverStructure,
     bascule: buildBasculeStructure,
-    gantry: buildSignGantryStructure
+    gantry: buildSignGantryStructure,
+    caversham_arch: buildCavershamStructure
 };
