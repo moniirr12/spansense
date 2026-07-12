@@ -107,8 +107,16 @@ async function captureLocationMap(lat, lng, locationName) {
                 zoomControl: false  // This removes the zoom buttons (+/-)
             }).setView([lat, lng], 14);
 
-            const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors'
+            // tile.openstreetmap.org sends no Access-Control-Allow-Origin
+            // header, so html2canvas's canvas ends up tainted and silently
+            // draws every tile blank (marker/controls still show fine, since
+            // those aren't cross-origin images) - this is the actual cause
+            // of "the location map is blank", not a load-timing issue.
+            // CARTO's basemap tiles are served with CORS enabled, so switch
+            // to those for this hidden capture-only map.
+            const tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+                crossOrigin: true
             }).addTo(map);
 
             L.marker([lat, lng]).addTo(map).bindPopup(`<b>${locationName}</b>`);
