@@ -151,8 +151,8 @@ async function generateBCIForm(doc) {
                         <tr>
                             <td colspan="2" style="border: 1px solid black; text-align: center; height: 35px;">${i + 1}</td>
                             <td colspan="9" style="border: 1px solid black;">${work.remedialWorks || work.remedial_works || ''}</td>
-                            <td colspan="3" style="border: 1px solid black; text-align: center;">${work.priority || 'M'}</td>
-                            <td colspan="2" style="border: 1px solid black; text-align: right;">${work.cost && work.cost !== 'Not specified' ? work.cost : ''}</td>
+                            <td colspan="3" style="border: 1px solid black; text-align: center;">${work.worksRequired === 'Y' ? (work.priority || 'M') : ''}</td>
+                            <td colspan="2" style="border: 1px solid black; text-align: right;">${work.worksRequired === 'Y' && work.cost && work.cost !== 'Not specified' ? work.cost : ''}</td>
                             <td colspan="2" style="border: 1px solid black; text-align: center;">${work.worksRequired === 'Y' ? '✓' : (work.worksRequired === 'M' ? '?' : '')}</td>
                         </tr>
                     `;

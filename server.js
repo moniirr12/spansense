@@ -1446,8 +1446,13 @@ app.post('/save-inspection', requireAuth, async (req, res) => {
                         defect.severity,
                         defect.extent,
                         defect.worksRequired,
-                        defect.priority?.charAt(0) || 'M',
-                        parseFloat(defect.cost) || 0,
+                        // Priority/cost only mean anything when works are
+                        // actually required - defaulting them regardless of
+                        // worksRequired is what was making the BCI Proforma
+                        // show a stray priority/cost on defects with no
+                        // works required (or 'M'/possibly).
+                        defect.worksRequired === 'Y' ? (defect.priority?.charAt(0) || 'M') : null,
+                        defect.worksRequired === 'Y' ? (parseFloat(defect.cost) || 0) : null,
                         defect.comments || '',
                         defect.remedial_works || '',
                         defect.timestamp || new Date().toISOString(),
@@ -1664,8 +1669,9 @@ app.put('/update-inspection', requireAuth, async (req, res) => {
                     defect.severity,
                     defect.extent,
                     defect.worksRequired || '',
-                    defect.priority || 'M',
-                    defect.cost || 0,
+                    // Same 'Y'-only gate as /save-inspection above.
+                    defect.worksRequired === 'Y' ? (defect.priority || 'M') : null,
+                    defect.worksRequired === 'Y' ? (defect.cost || 0) : null,
                     defect.comments || '',
                     defect.remedial_works || '',
                     defect.timestamp || new Date().toISOString(),

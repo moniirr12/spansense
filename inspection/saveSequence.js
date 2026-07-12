@@ -202,9 +202,14 @@
                             defectNumber: defect.defectNumber,
                             severity: defect.severity,
                             extent: defect.extent,
+                            // Priority/cost only mean anything when works are
+                            // actually required - defaulting them to 'M'/0
+                            // even when works is 'N' (or unset) is what was
+                            // making the BCI Proforma show a stray priority
+                            // and cost for defects with no works required.
                             worksRequired: defect.works || '',
-                            priority: defect.priority || 'M',
-                            cost: defect.cost || 0,
+                            priority: defect.works === 'Y' ? (defect.priority || 'M') : null,
+                            cost: defect.works === 'Y' ? (defect.cost || 0) : null,
                             comments: defect.comment || '',
                             remedial_works: defect.remedialWorks || '',
                             timestamp: defect.timestamp || new Date().toISOString(),
