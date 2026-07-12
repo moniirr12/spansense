@@ -633,7 +633,6 @@
                         '<button title="Generate BCI Proforma" onclick="generateReport(' + row.inspection_id + ')" class="btn-report"><i class="fas fa-file-invoice"></i></button>' +
                         '<button title="View Report" onclick="viewInspection(' + row.inspection_id + ')"><i class="fas fa-eye"></i></button>' +
                         '<button title="Download Report" onclick="downloadReport(' + row.inspection_id + ')"><i class="fas fa-file-pdf"></i></button>' +
-                        '<button title="Download Styled Report (HTML)" onclick="downloadInspectionHtml(' + row.inspection_id + ')"><i class="fas fa-file-lines"></i></button>' +
                     '</div></td>' +
                 '</tr>';
             });
@@ -1513,33 +1512,6 @@
             clearTimeout(timeoutId);
         }
         if (timedOut) return;
-    };
-
-    // Same restyled narrative report as the PDF (cover, TOC, structure
-    // details, BCI, defects, conclusions/remedial works, photo appendix),
-    // built as real HTML instead of pdfmake tables - downloaded as a .html
-    // file (open it in a browser to view/print) rather than opened in a new
-    // tab, since a synchronous window.open() plus a slow multi-fetch build
-    // is exactly the shape popup blockers and stalled-tab confusion target.
-    // Deliberately excludes the BCI Proforma (see map/reportFull.html.js's
-    // header comment).
-    window.downloadInspectionHtml = async function(id) {
-        var inspection = inspectionsData.find(function(i) { return i.id === id; });
-        if (!inspection) { showToast('Inspection not found', 'error'); return; }
-        if (typeof downloadFullInspectionReportHtml !== 'function') {
-            showToast('HTML report generator not loaded. Please refresh the page.', 'error');
-            return;
-        }
-        var doc = { structure_id: inspection.structure_id || '', structure_name: inspection.structure_name || '', date: inspection.inspection_date || '' };
-
-        showToast('Generating report...', 'info');
-        try {
-            await downloadFullInspectionReportHtml(doc);
-            showToast('Report downloaded', 'success');
-        } catch (error) {
-            console.error('HTML report generation failed:', error);
-            showToast('Error: ' + error.message, 'error');
-        }
     };
 
     window.generateReport = async function(inspectionId) {

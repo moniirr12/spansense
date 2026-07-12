@@ -698,18 +698,6 @@ async function generateSimplePDFReport(doc, mode = 'download', targetWindow = nu
         const bciAv = inspectionData.overallBciave != null ? parseFloat(inspectionData.overallBciave) : localBci.bciAv;
         const bciCrit = inspectionData.overallBcicrit != null ? parseFloat(inspectionData.overallBcicrit) : localBci.bciCrit;
 
-        // severity comes back from the API as text ('1'-'5'), not a number -
-        // Number(d.severity) here (this used to be a strict === 5 etc. that
-        // could never match a string, so "Next Inspection" never noticed
-        // severe/critical defects).
-        const severityCounts = {
-            5: defectsData.filter(d => Number(d.severity) === 5).length,
-            4: defectsData.filter(d => Number(d.severity) === 4).length,
-            3: defectsData.filter(d => Number(d.severity) === 3).length,
-            2: defectsData.filter(d => Number(d.severity) === 2).length,
-            1: defectsData.filter(d => Number(d.severity) === 1).length
-        };
-
         // Get unique span numbers
         const spanNumbers = [...new Set(defectsData.map(d => d.spanNumber))].sort((a, b) => a - b);
         if (spanNumbers.length === 0) spanNumbers.push(1);
@@ -736,7 +724,7 @@ async function generateSimplePDFReport(doc, mode = 'download', targetWindow = nu
             allElementsList, elementNameMap, getElementDesc,
             photosByDefect, photosWithDataURLs, getPhotoNumbersForDefect,
             bridgePhotoDataURL, mapDataURL,
-            bciAv, bciCrit, bciCategory, severityCounts,
+            bciAv, bciCrit, bciCategory,
             spanNumbers, defectsBySpan, nextDueData, bciFormData
         });
 
@@ -787,7 +775,7 @@ function buildInspectionReportDocDefinition(ctx) {
         allElementsList, getElementDesc,
         photosWithDataURLs, getPhotoNumbersForDefect,
         bridgePhotoDataURL, mapDataURL,
-        bciAv, bciCrit, bciCategory, severityCounts,
+        bciAv, bciCrit, bciCategory,
         spanNumbers, defectsBySpan, nextDueData, bciFormData
     } = ctx;
 
@@ -939,13 +927,14 @@ function buildInspectionReportDocDefinition(ctx) {
             }
         }
         const spanCat = getBCICategory(spanBciAv);
+        const spanCritCat = getBCICategory(spanBciCrit);
 
         if (spansList.length > 1) section2.push({ text: 'Span ' + spanNum, bold: true, fontSize: 11.5, color: RC.ink, margin: [0, idx === 0 ? 0 : 18, 0, 8] });
 
         section2.push({
             columns: [
                 bciStatCell('BCI Average', spanBciAv.toFixed(2), RC.accentTint, RC.accent, spanCat.text),
-                bciStatCell('BCI Critical', spanBciCrit.toFixed(2), RC.surfaceSunken, RC.ink),
+                bciStatCell('BCI Critical', spanBciCrit.toFixed(2), RC.surfaceSunken, RC.ink, spanCritCat.text),
                 bciStatCell('Defects Recorded', String(spanDefects.length), RC.surfaceSunken, RC.ink)
             ],
             columnGap: 12
@@ -1083,7 +1072,6 @@ function buildInspectionReportDocDefinition(ctx) {
     }
 
     section4.push(subhead('4.3 Next Inspection', 'section4_3'));
-    const highSeverity = (severityCounts[5] || 0) + (severityCounts[4] || 0);
     let scheduleLine;
     if (nextDueData && nextDueData.date) {
         const formatted = new Date(nextDueData.date).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
@@ -1091,8 +1079,7 @@ function buildInspectionReportDocDefinition(ctx) {
     } else {
         scheduleLine = "This structure has no inspection cycle configured, so the next due date can't be calculated automatically.";
     }
-    const noteText = scheduleLine + (highSeverity > 0 ? '\n\nInterim safety inspections should be conducted monthly due to identified severe or critical defects.' : '');
-    section4.push(callout(noteText, highSeverity > 0 ? { bg: '#fdecea', color: '#7a1f1f', accent: RC.priH } : { bg: RC.accentTint, color: '#2c4a48', accent: RC.accent }));
+    section4.push(callout(scheduleLine, { bg: RC.accentTint, color: '#2c4a48', accent: RC.accent }));
 
     // ---------- APPENDIX A: PHOTOGRAPHIC RECORD ----------
     // Two large photos per page (top half / bottom half), one page-break
@@ -1103,6 +1090,7 @@ function buildInspectionReportDocDefinition(ctx) {
         { text: 'Site photographs referenced against the defects in Section 3.', fontSize: 9.5, italics: true, color: RC.muted, margin: [0, 0, 0, 16] }
     ];
     if (!photosWithDataURLs.length) {
+        appendixA.push({ text: '', pageBreak: 'before' });
         appendixA.push({ text: 'No photographs available for this inspection.', italics: true, color: RC.muted, alignment: 'center' });
     } else {
         photosWithDataURLs.forEach((photo, i) => {

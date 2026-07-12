@@ -6,11 +6,14 @@
 if (typeof buildBCIProformaContent === 'undefined') {
 
 // ─── Colours ─────────────────────────────────────────────────────────────────
+// Teal-tinted greys (spanSense's accent is #5b8c8a) instead of the flat
+// neutral greys this proforma used before, at the same lightness/contrast
+// levels so the header/section hierarchy still reads the same.
 var BCI_COLORS = {
-    headerBg:  '#bfbfbf',
-    sectionBg: '#d9d9d9',
-    titleBg:   '#1a3a5c',
-    footerBg:  '#d9d9d9',
+    headerBg:  '#c3d9d6',
+    sectionBg: '#dbe9e7',
+    titleBg:   '#1e3432',
+    footerBg:  '#dbe9e7',
     white:     '#ffffff',
     black:     '#000000',
     priorityH: '#dc2626',
@@ -267,44 +270,36 @@ function lv(label, value, extra) {
     };
 }
 
-function escapeXml(s) {
-    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
 // pdfmake table cells can't rotate plain text, so vertical labels ("Set"
-// column, "Bridge code") are drawn as an inline SVG instead. Rotating -90deg
-// (SVG's coordinate system is y-down, so a negative angle is anticlockwise
-// on screen) makes the label read bottom-to-top. `fit` only ever shrinks,
-// never grows, so if `h` slightly overshoots the cell's real content height
-// it still can't push the table past its tuned PAGE_TARGET_HEIGHT.
+// column, "Bridge code") are drawn as a rotated canvas image instead.
+// Rendered as a canvas raster rather than an inline SVG (the previous
+// approach) - pdfMake's bundled svg-to-pdfkit was found to leak coordinate-
+// space state *between separate createPdf() calls in the same page
+// session*: the 2nd+ BCI Proforma generated without a page reload had these
+// labels' clip rect and transform silently replaced with the full A4 page
+// width and a zero offset, corrupting/offsetting the text (diagnosed by
+// diffing the actual PDF content streams of two consecutive generations).
+// A canvas image never touches that library code path, so it can't inherit
+// stale state from a previous render. It also sidesteps the old dominant-
+// baseline-vs-alphabetic-baseline inconsistency across PDF renderers
+// (pdf.js vs PDFium/Acrobat) that the SVG version had to work around by
+// hand - canvas's textBaseline is reliable, so no pre-shift hack is needed.
 function rotatedLabel(text, w, h, fontSize) {
     fontSize = fontSize || 6.5;
-    var cx = w / 2, cy = h / 2;
-    // dominant-baseline="middle" isn't honoured consistently across PDF
-    // renderers - pdf.js centers on it fine, but PDFium/Acrobat (what most
-    // people actually open a downloaded PDF with) silently fall back to the
-    // default alphabetic baseline, i.e. y becomes where the glyph *sits*
-    // rather than its center. Because this text is rotated -90deg, that
-    // baseline-vs-center mismatch doesn't show up as a vertical nudge - it
-    // rotates into a sideways shift, which is the "offset" that was visible.
-    // Fix: drop dominant-baseline entirely and pre-shift y by the standard
-    // baseline-to-visual-center approximation (~0.35*fontSize, roughly half
-    // a cap-height) before rotating, so plain alphabetic baseline already
-    // lands centered - correct in every renderer, not just the lenient ones.
-    var baselineY = cy + fontSize * 0.35;
-    return {
-        // overflow="hidden" matters here: the outermost <svg> element defaults
-        // to overflow:visible per the SVG/CSS spec, so without it any glyph
-        // that renders even slightly past the declared width/height (common
-        // for a centered rotated label close to its box's edges) bleeds into
-        // neighbouring cells instead of being clipped to this box.
-        svg: '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '" overflow="hidden">' +
-             '<text x="' + cx + '" y="' + baselineY + '" transform="rotate(-90 ' + cx + ' ' + cy + ')" ' +
-             'text-anchor="middle" ' +
-             'font-family="Helvetica" font-weight="bold" font-size="' + fontSize + '">' +
-             escapeXml(text) + '</text></svg>',
-        fit: [w, h]
-    };
+    var scale = 4; // supersample so the raster stays crisp when zoomed/printed
+    var canvas = document.createElement('canvas');
+    canvas.width = w * scale;
+    canvas.height = h * scale;
+    var ctx = canvas.getContext('2d');
+    ctx.scale(scale, scale);
+    ctx.translate(w / 2, h / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'bold ' + fontSize + 'pt Helvetica, Arial, sans-serif';
+    ctx.fillStyle = '#000000';
+    ctx.fillText(text, 0, 0);
+    return { image: canvas.toDataURL('image/png'), fit: [w, h] };
 }
 
 function setCell(label, rowSpan, rowHeightTarget, rowPad) {
@@ -627,7 +622,7 @@ function buildBCIProformaContent(bciFormData, singleSpanIdx) {
             var spareRow = [];
 
             if (i === 0) {
-                spareRow.push(setCell('Spare', BCI_SPARE.length, dataRowHeightTarget, dataRowPad));
+                spareRow.push(setCell('Others', BCI_SPARE.length, dataRowHeightTarget, dataRowPad));
             } else {
                 spareRow.push({ text: '' });
             }
@@ -682,7 +677,21 @@ function buildBCIProformaContent(bciFormData, singleSpanIdx) {
         };
 
         content.push(centeredTable({
-            table: { widths: COL_WIDTHS, body: padTableBody(tableBody) },
+            // .slice() - pdfMake's table layout mutates a table's `widths`
+            // array in place, replacing each plain number with an internal
+            // {width, _minWidth, _maxWidth, _calcWidth} measurement object
+            // once it lays the table out. Handing it the shared COL_WIDTHS
+            // array directly (as this did before) meant the *first* BCI
+            // Proforma rendered in a page session permanently corrupted that
+            // module-level constant for every later render: rotatedLabel's
+            // `w` (read from COL_WIDTHS[0] elsewhere) silently became one of
+            // those objects, `w * scale` went NaN, and a NaN canvas.width
+            // clamps to 0 - a 0x0 canvas's toDataURL() is exactly the
+            // `'data:,'` pdfMake choked on, and before that, string-
+            // concatenating that object into the old SVG's width attribute
+            // is what silently produced the offset/oversized "Set" column
+            // labels. A fresh array per render can't leak into the next one.
+            table: { widths: COL_WIDTHS.slice(), body: padTableBody(tableBody) },
             layout: page1Layout,
         }));
     }
@@ -957,7 +966,21 @@ function buildBCIPage2Content(bciFormData, singleSpanIdx) {
         };
 
         content.push(centeredTable({
-            table: { widths: COL_WIDTHS, body: padTableBody(tableBody) },
+            // .slice() - pdfMake's table layout mutates a table's `widths`
+            // array in place, replacing each plain number with an internal
+            // {width, _minWidth, _maxWidth, _calcWidth} measurement object
+            // once it lays the table out. Handing it the shared COL_WIDTHS
+            // array directly (as this did before) meant the *first* BCI
+            // Proforma rendered in a page session permanently corrupted that
+            // module-level constant for every later render: rotatedLabel's
+            // `w` (read from COL_WIDTHS[0] elsewhere) silently became one of
+            // those objects, `w * scale` went NaN, and a NaN canvas.width
+            // clamps to 0 - a 0x0 canvas's toDataURL() is exactly the
+            // `'data:,'` pdfMake choked on, and before that, string-
+            // concatenating that object into the old SVG's width attribute
+            // is what silently produced the offset/oversized "Set" column
+            // labels. A fresh array per render can't leak into the next one.
+            table: { widths: COL_WIDTHS.slice(), body: padTableBody(tableBody) },
             layout: page2Layout,
         }));
     }
