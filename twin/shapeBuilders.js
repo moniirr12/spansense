@@ -708,7 +708,7 @@ function buildCavershamStructure(bridge, ctx) {
 
     return {
         camDistance: Math.min(Math.max(40, TOTAL_LEN * 1.05), 130),
-        camHeight: Math.min(Math.max(10, archRise + springDrop + pierDrop * 0.6), 22),
+        camHeight: Math.min(Math.max(10, archRise + springDrop + 8), 20),
         // The shared ground grid otherwise sits fixed partway up the pier
         // shaft (-8.4, well above riverbedY here), making the piers look
         // like they stop short of the ground instead of reaching it.
