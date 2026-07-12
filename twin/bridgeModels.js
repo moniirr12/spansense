@@ -52,6 +52,14 @@ const KIND_DEFAULTS = {
         deckWidth: 4, trussHeight: 0, panelsPerSpan: 1,
         postHeight: 4.2, postWidth: 1.1, lintelThickness: 0.7,
         numTrilithons: 5, irregularSpacing: true
+    },
+    // Overhead sign gantry - no deck/piers at all (nothing carries traffic
+    // here, the structure just spans over it). deckWidth is repurposed as
+    // the lattice beam's own depth for the kind-agnostic sensor/stress
+    // overlay code, not a real carriageway width.
+    gantry: {
+        deckWidth: 1.4, trussHeight: 0, panelsPerSpan: 1,
+        columnHeight: 6.6, columnWidth: 0.6, beamWidth: 1.0, numSignPanels: 3
     }
 };
 
@@ -85,6 +93,7 @@ function inferKindFromType(type) {
     var t = (type || '').toLowerCase();
     if (t === 'retaining wall') return 'wall';
     if (t === 'culvert') return 'culvert';
+    if (t === 'sign gantry') return 'gantry';
     return DEFAULT_KIND;
 }
 

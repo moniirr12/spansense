@@ -523,6 +523,58 @@ function buildBasculeStructure(bridge, ctx) {
     };
 }
 
+// Overhead sign gantry - twin support columns either side of the
+// carriageway with a horizontal lattice beam between them at clearance
+// height, carrying a row of sign panels on its downstream face. No deck/
+// piers at all - unlike every other kind here, nothing carries traffic
+// through this structure, it just spans over it.
+function buildSignGantryStructure(bridge, ctx) {
+    var TOTAL_LEN = ctx.TOTAL_LEN, X0 = ctx.X0, deckY = ctx.deckY;
+    var model = bridge.model || {};
+    var columnHeight = model.columnHeight || 6.6;
+    var columnWidth = model.columnWidth || 0.6;
+    var beamDepth = ctx.DECK_W || 1.4; // deckWidth is repurposed as beam depth for this kind
+    var beamWidth = model.beamWidth || 1.0;
+    var numPanels = model.numSignPanels || 3;
+    var beamY = deckY + columnHeight;
+
+    [X0, X0 + TOTAL_LEN].forEach(function(x) {
+        var col = new THREE.Mesh(new THREE.BoxGeometry(columnWidth, columnHeight, columnWidth), ctx.matPier);
+        col.position.set(x, deckY + columnHeight / 2, 0);
+        ctx.structureGroup.add(col);
+    });
+
+    // Horizontal lattice beam spanning between the columns (buildTrussPanelRun
+    // builds a truss "run" between two x positions at one z - reused here as
+    // the gantry's own spanning beam rather than a bridge's side truss).
+    var panelCount = Math.max(4, Math.round(TOTAL_LEN / 3));
+    buildTrussPanelRun(ctx, X0, X0 + TOTAL_LEN, 0, beamY - beamDepth / 2, beamY + beamDepth / 2, panelCount, ctx.matSteel);
+
+    // Sign panels along the downstream face of the beam - deliberately much
+    // smaller than the beam itself (a fixed ~3m width, well under beamDepth
+    // in height) so they read as individual signs mounted on the lattice
+    // rather than merging into one solid slab across it.
+    var gap = Math.max(1.5, (TOTAL_LEN * 0.7 - numPanels * 3) / Math.max(1, numPanels - 1));
+    var panelW = Math.min(3, TOTAL_LEN * 0.7 / numPanels);
+    var panelH = beamDepth * 0.55;
+    var rowWidth = numPanels * panelW + (numPanels - 1) * gap;
+    var startX = -rowWidth / 2 + panelW / 2;
+    for (var i = 0; i < numPanels; i++) {
+        var panel = new THREE.Mesh(new THREE.BoxGeometry(panelW, panelH, 0.12), ctx.matDeck);
+        panel.position.set(startX + i * (panelW + gap), beamY, beamWidth / 2 + 0.1);
+        ctx.structureGroup.add(panel);
+    }
+
+    // Wider/flatter than most other kinds (a real gantry spans the full
+    // carriageway width but stands barely taller than a lorry) - the
+    // default camDistance-vs-length ratio other builders use crops the far
+    // column out of frame, so this needs a noticeably wider multiplier.
+    return {
+        camDistance: Math.min(Math.max(30, TOTAL_LEN * 1.7), 90),
+        camHeight: Math.min(Math.max(6, columnHeight + 3), 14)
+    };
+}
+
 var BUILDERS = {
     truss: buildTrussStructure,
     wall: buildWallStructure,
@@ -532,5 +584,6 @@ var BUILDERS = {
     cable_stay_low: buildCableStayLowStructure,
     suspension: buildSuspensionStructure,
     cantilever: buildCantileverStructure,
-    bascule: buildBasculeStructure
+    bascule: buildBasculeStructure,
+    gantry: buildSignGantryStructure
 };
