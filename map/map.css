@@ -1959,6 +1959,10 @@ body.modal-open {
     font-size: 0.9rem;
     color: #6a7c8e;
     border-radius: 14px;
+    /* Always reserve the 1px .selected adds below, so selecting a row only
+       changes its border's color, not its width - a border appearing out of
+       nowhere shrank the content box and made the icon/text visibly jump. */
+    border: 1px solid transparent;
 }
 
 .file-list li:hover {
