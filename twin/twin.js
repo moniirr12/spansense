@@ -879,7 +879,7 @@ function showDefectPopup(d, positionExact, clientX, clientY) {
     var defectCode = d.defectType && d.defectNumber ? (d.defectType + '.' + d.defectNumber) : null;
 
     var rows = [];
-    if (d.severityLabel) rows.push(['Severity', d.severityLabel]);
+    if (d.severity != null) rows.push(['Severity', String(d.severity)]);
     if (d.extent) rows.push(['Extent', d.extent]);
     rows.push(['Works required', d.worksRequired ? 'Yes' : 'No']);
     if (d.worksRequired && d.priority) rows.push(['Priority', d.priority]);
@@ -911,10 +911,21 @@ function showDefectPopup(d, positionExact, clientX, clientY) {
     var maxY = stageRect.height - defectPopup.offsetHeight - 12;
     defectPopup.style.left = Math.max(12, Math.min(x + 14, maxX)) + 'px';
     defectPopup.style.top = Math.max(12, Math.min(y + 14, maxY)) + 'px';
+
+    // The model auto-rotating out from under an open popup (which stays
+    // anchored to the screen point it was opened at, not the marker itself)
+    // would immediately misalign it from the marker it describes - freeze
+    // rotation for as long as the popup is open.
+    autoRotate = false;
+    clearTimeout(idleTimer);
 }
 
 function hideDefectPopup() {
     defectPopup.style.display = 'none';
+    // Same idle delay the drag-to-orbit interaction already uses before
+    // resuming auto-rotate, rather than snapping straight back to spinning.
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(function() { autoRotate = true; }, 3000);
 }
 
 function escapeHtmlTwin(s) {
