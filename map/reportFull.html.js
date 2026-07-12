@@ -332,14 +332,6 @@ async function buildFullInspectionReportHtml(doc) {
     var bciCrit = inspectionData.overallBcicrit != null ? parseFloat(inspectionData.overallBcicrit) : localBci.bciCrit;
     var bciCategory = htmlBCICategory(bciAv);
 
-    var severityCounts = {
-        5: defectsData.filter(function (d) { return Number(d.severity) === 5; }).length,
-        4: defectsData.filter(function (d) { return Number(d.severity) === 4; }).length,
-        3: defectsData.filter(function (d) { return Number(d.severity) === 3; }).length,
-        2: defectsData.filter(function (d) { return Number(d.severity) === 2; }).length,
-        1: defectsData.filter(function (d) { return Number(d.severity) === 1; }).length
-    };
-
     var spanNumbers = Array.from(new Set(defectsData.map(function (d) { return d.spanNumber; }))).sort(function (a, b) { return a - b; });
     if (spanNumbers.length === 0) spanNumbers.push(1);
     var defectsBySpan = {};
@@ -442,10 +434,11 @@ async function buildFullInspectionReportHtml(doc) {
             } else { spanBciAv = 100; spanBciCrit = 100; }
         }
         var spanCat = htmlBCICategory(spanBciAv);
+        var spanCritCat = htmlBCICategory(spanBciCrit);
         if (spansList.length > 1) section2Body += '<div class="span-label">Span ' + esc(spanNum) + '</div>';
         section2Body += '<div class="bci-strip">' +
             htmlBciStatCell('BCI Average', spanBciAv.toFixed(2), 'accent', spanCat.text) +
-            htmlBciStatCell('BCI Critical', spanBciCrit.toFixed(2)) +
+            htmlBciStatCell('BCI Critical', spanBciCrit.toFixed(2), null, spanCritCat.text) +
             htmlBciStatCell('Defects Recorded', String(spanDefects.length)) +
             '</div>' + htmlBandStrip(spanBciAv);
         if (span.comments) section2Body += '<p class="span-comment"><b>Comments</b><br>' + nl2br(span.comments) + '</p>';
@@ -523,7 +516,6 @@ async function buildFullInspectionReportHtml(doc) {
     }
 
     section4Html += '<a id="section4_3"></a>' + htmlSubhead('4.3 Next Inspection');
-    var highSeverity = (severityCounts[5] || 0) + (severityCounts[4] || 0);
     var scheduleLine;
     if (nextDueData && nextDueData.date) {
         var formatted = new Date(nextDueData.date).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
@@ -531,8 +523,7 @@ async function buildFullInspectionReportHtml(doc) {
     } else {
         scheduleLine = "This structure has no inspection cycle configured, so the next due date can't be calculated automatically.";
     }
-    var noteText = scheduleLine + (highSeverity > 0 ? '\n\nInterim safety inspections should be conducted monthly due to identified severe or critical defects.' : '');
-    section4Html += htmlCallout(noteText, highSeverity > 0) + '</div>';
+    section4Html += htmlCallout(scheduleLine) + '</div>';
 
     // ---------- APPENDIX A: PHOTOGRAPHIC RECORD ----------
     // The heading gets its own page - photos always start on a fresh page
@@ -540,7 +531,7 @@ async function buildFullInspectionReportHtml(doc) {
     var appendixAHtml = '<div class="page"><a id="appendixA"></a>' + htmlSectionHeading('A', 'Appendix A: Photographs') +
         '<p class="lede">Site photographs referenced against the defects in Section 3.</p>';
     if (!photosWithDataURLs.length) {
-        appendixAHtml += '<p class="no-defect" style="text-align:center;">No photographs available for this inspection.</p></div>';
+        appendixAHtml += '</div><div class="page"><p class="no-defect" style="text-align:center;">No photographs available for this inspection.</p></div>';
     } else {
         appendixAHtml += '</div>';
         photosWithDataURLs.forEach(function (photo, i) {

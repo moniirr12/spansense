@@ -66,6 +66,26 @@ async function captureLocationMap(lat, lng, locationName) {
 
         let map = null;
         let hiddenContainer = null;
+        let settled = false;
+
+        function finish(result) {
+            if (settled) return;
+            settled = true;
+            try { if (map) map.remove(); } catch (e) {}
+            if (hiddenContainer) hiddenContainer.innerHTML = '';
+            resolve(result);
+        }
+
+        function capture() {
+            const mapElement = document.getElementById('tempMap');
+            html2canvas(mapElement, {
+                scale: 2,
+                backgroundColor: '#ffffff',
+                useCORS: true,
+                logging: false
+            }).then((canvas) => finish(canvas.toDataURL('image/png')))
+              .catch((err) => { console.warn('Could not capture location map:', err); finish(null); });
+        }
 
         try {
             hiddenContainer = document.getElementById('hiddenMapContainer');
@@ -87,7 +107,7 @@ async function captureLocationMap(lat, lng, locationName) {
                 zoomControl: false  // This removes the zoom buttons (+/-)
             }).setView([lat, lng], 14);
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; OpenStreetMap contributors'
             }).addTo(map);
 
@@ -117,32 +137,24 @@ async function captureLocationMap(lat, lng, locationName) {
             });
 
             map.addControl(new NorthControl());
+
+            // Capture once the tile layer actually reports every visible tile
+            // loaded, instead of a blind fixed delay - on a slower connection
+            // the old 1500ms wait could fire before OSM's tiles finished
+            // painting, silently baking a blank grey map into the report. A
+            // safety-net timeout still covers the case where 'load' never
+            // fires (e.g. the tile server is unreachable).
+            let captured = false;
+            tileLayer.on('load', () => {
+                if (captured) return;
+                captured = true;
+                setTimeout(capture, 200); // let the paint settle
+            });
+            setTimeout(() => { if (!captured) { captured = true; capture(); } }, 4000);
         } catch (err) {
             console.warn('Could not set up location map:', err);
-            if (map) { try { map.remove(); } catch (e) {} }
-            if (hiddenContainer) hiddenContainer.innerHTML = '';
-            resolve(null);
-            return;
+            finish(null);
         }
-
-        setTimeout(async () => {
-            try {
-                const mapElement = document.getElementById('tempMap');
-                const canvas = await html2canvas(mapElement, {
-                    scale: 2,
-                    backgroundColor: '#ffffff',
-                    useCORS: true,
-                    logging: false
-                });
-                resolve(canvas.toDataURL('image/png'));
-            } catch (err) {
-                console.warn('Could not capture location map:', err);
-                resolve(null);
-            } finally {
-                try { map.remove(); } catch (e) {}
-                hiddenContainer.innerHTML = '';
-            }
-        }, 1500);
     });
 }
 
