@@ -671,6 +671,37 @@ body {
     text-align:right;
     pointer-events:none;
 }
+
+.defect-popup {
+    display: none;
+    position: absolute;
+    z-index: 8;
+    width: 240px;
+    background: #2c4a48;
+    color: #f2f6f5;
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    box-shadow: 0 10px 28px rgba(0,0,0,0.28);
+}
+.night-mode .defect-popup { background: #0f1619; }
+.defect-popup-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.defect-popup-head b { display: block; font-size: 0.86rem; }
+.defect-popup-type { display: block; font-size: 0.72rem; color: #8ab4b0; margin-top: 2px; }
+.defect-popup-close {
+    background: none; border: none; color: rgba(242,246,245,0.6); font-size: 1.1rem;
+    line-height: 1; cursor: pointer; padding: 0 2px; flex-shrink: 0;
+}
+.defect-popup-close:hover { color: #f2f6f5; }
+.defect-popup-row { display: flex; justify-content: space-between; gap: 10px; padding: 2px 0; }
+.defect-popup-row span { color: rgba(242,246,245,0.65); }
+.defect-popup-note { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(242,246,245,0.14); color: rgba(242,246,245,0.85); }
+.defect-popup-remedial { margin-top: 6px; color: rgba(242,246,245,0.85); }
+.defect-popup-remedial b { color: #f2f6f5; }
+.defect-popup-approx { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(242,246,245,0.14); color: #e8a87c; font-size: 0.72rem; }
+.defect-popup-approx i { margin-right: 4px; }
+
 .stage-bci-chip {
     position:absolute; top:16px; left:48px;
     background:rgba(10,16,16,0.55);
@@ -1042,6 +1073,7 @@ body.night-mode .glass-scrollbar .thumb {
                         <span>ZOOM <b id="zoom-readout">1.00x</b></span>
                     </div>
                     <div class="stage-hint">drag to orbit · scroll to zoom</div>
+                    <div class="defect-popup" id="defectPopup"></div>
                 </div>
             </div>
 

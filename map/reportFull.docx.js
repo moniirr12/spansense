@@ -24,6 +24,15 @@ var REPORT_COLORS = {
     link: '2563EB',
 };
 
+// Same bands as test.js's getBCICategory, used to label BCI Average/Critical.
+function docxBCICategory(score) {
+    if (score >= 90) return 'Very Good';
+    if (score >= 80) return 'Good';
+    if (score >= 65) return 'Fair';
+    if (score >= 40) return 'Poor';
+    return 'Critical';
+}
+
 // Same per-structure-type element/category list as test.js's
 // generateSimplePDFReport (kept separate since it uses report-numbering
 // ("3.x") rather than the BCI Proforma's ("4.x") element list).
@@ -322,8 +331,6 @@ async function buildFullInspectionReportDocx(doc) {
 
     var spanNumbers = Array.from(new Set(defectsData.map(function(dd) { return dd.spanNumber; }))).sort(function(a, b) { return a - b; });
     if (spanNumbers.length === 0) spanNumbers.push(1);
-    var severityCounts = {};
-    [1, 2, 3, 4, 5].forEach(function(n) { severityCounts[n] = defectsData.filter(function(dd) { return dd.severity === n; }).length; });
 
     var children = [];
 
@@ -415,11 +422,13 @@ async function buildFullInspectionReportDocx(doc) {
                 rows: [new d.TableRow({ children: [
                     new d.TableCell({ width: { size: 34, type: d.WidthType.PERCENTAGE }, children: [
                         reportBciLabelPara(d, 'avg', { alignment: d.AlignmentType.CENTER, bold: true, size: 16, color: REPORT_COLORS.muted, after: 40 }),
-                        reportPara(d, String(spanBciAv), { alignment: d.AlignmentType.CENTER, bold: true, size: 32 })
+                        reportPara(d, String(spanBciAv), { alignment: d.AlignmentType.CENTER, bold: true, size: 32 }),
+                        reportPara(d, docxBCICategory(spanBciAv), { alignment: d.AlignmentType.CENTER, bold: true, size: 16, color: REPORT_COLORS.subheading, after: 0 })
                     ] }),
                     new d.TableCell({ width: { size: 33, type: d.WidthType.PERCENTAGE }, children: [
                         reportBciLabelPara(d, 'crit', { alignment: d.AlignmentType.CENTER, bold: true, size: 16, color: REPORT_COLORS.muted, after: 40 }),
-                        reportPara(d, String(spanBciCrit), { alignment: d.AlignmentType.CENTER, bold: true, size: 32, color: 'DC2626' })
+                        reportPara(d, String(spanBciCrit), { alignment: d.AlignmentType.CENTER, bold: true, size: 32, color: 'DC2626' }),
+                        reportPara(d, docxBCICategory(spanBciCrit), { alignment: d.AlignmentType.CENTER, bold: true, size: 16, color: REPORT_COLORS.subheading, after: 0 })
                     ] }),
                     new d.TableCell({ width: { size: 33, type: d.WidthType.PERCENTAGE }, children: [
                         reportPara(d, 'Defects', { alignment: d.AlignmentType.CENTER, bold: true, size: 16, color: REPORT_COLORS.muted, after: 40 }),
@@ -492,8 +501,14 @@ async function buildFullInspectionReportDocx(doc) {
             { label: 'HIGH PRIORITY', code: 'H', color: 'DC2626' },
             { label: 'MEDIUM PRIORITY', code: 'M', color: 'F97316' },
             { label: 'LOW PRIORITY', code: 'L', color: '22C55E' },
+            // Catch-all for defects that have remedial-works text but no
+            // priority (works_required isn't 'Y') - the tier-only filtering
+            // used to silently drop these from the report entirely.
+            { label: 'OTHER', code: null, color: REPORT_COLORS.muted },
         ].forEach(function(tier) {
-            var tierDefects = defectsWithRemedial.filter(function(dd) { return dd.priority === tier.code; });
+            var tierDefects = defectsWithRemedial.filter(function(dd) {
+                return tier.code === null ? !dd.priority : dd.priority === tier.code;
+            });
             if (tierDefects.length === 0) return;
             children.push(reportPara(d, tier.label, { bold: true, color: tier.color, size: 20, after: 100 }));
             children.push(priorityTable(d, tierDefects, getElementDesc));
@@ -502,14 +517,10 @@ async function buildFullInspectionReportDocx(doc) {
     }
 
     children.push(bookmarkedHeading(d, '4.3 Next Inspection', d.HeadingLevel.HEADING_2, 'section4_3'));
-    var highSeverity = severityCounts[5] + severityCounts[4];
     var scheduleLine = (nextDueData && nextDueData.date)
         ? 'The next inspection (' + nextDueData.type + ') is scheduled for ' + new Date(nextDueData.date).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' }) + ", in line with this structure's inspection cycle."
         : 'The next inspection date could not be determined from this structure\'s inspection history.';
-    var nextInspText = highSeverity > 0
-        ? scheduleLine + '\n\nNote: Interim safety inspections should be conducted monthly due to identified severe/critical defects.'
-        : scheduleLine;
-    children.push(reportPara(d, nextInspText, { color: highSeverity > 0 ? 'DC2626' : REPORT_COLORS.heading }));
+    children.push(reportPara(d, scheduleLine, { color: REPORT_COLORS.heading }));
 
     // ── APPENDIX A: PHOTOGRAPHS ──
     children.push(new d.Paragraph({ children: [], pageBreakBefore: true }));

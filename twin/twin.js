@@ -24,6 +24,66 @@ var API_BASE = window.location.hostname === 'localhost'
     : 'https://spansense.onrender.com';
 
 /* ============================================================
+   DEFECT INFO LOOKUP (element names + defect type labels) - same
+   per-structure-type element lists and defect-type/number -> label
+   map as test.js/reportFull.docx.js's report generators, duplicated
+   here for the same reason those do: this page never loads test.js.
+   ============================================================ */
+var TWIN_ELEMENTS_BY_TYPE = {
+    Bridge: [
+        'Primary deck element', 'Transverse beams', 'Secondary deck element', 'Half joints', 'Tie beam/rod',
+        'Parapet beam or cantilever', 'Deck bracing', 'Foundations', 'Abutments (incl. arch springing)',
+        'Spandrel wall/head wall', 'Pier/column', 'Cross-head/capping beam', 'Bearings', 'Bearing plinth/shelf',
+        'Superstructure drainage', 'Substructure drainage', 'Waterproofing', 'Movement/expansion joints',
+        'Finishes: deck elements', 'Finishes: substructure elements', 'Finishes: parapets/safety fences',
+        'Access/walkways/gantries', 'Handrail/parapets/safety fences', 'Carriageway surfacing',
+        'Footway/verge/footbridge surfacing', 'Invert/river bed', 'Aprons', 'Fenders/cutwaters/collision prot.',
+        'River training works', 'Revetment/batter paving', 'Wing walls', 'Retaining walls', 'Embankments',
+        'Machinery', 'Approach rails/barriers/walls', 'Signs', 'Lighting', 'Services'
+    ],
+    'Retaining wall': [
+        'Foundations', 'Retaining wall: Primary', 'Retaining wall: Secondary', 'Parapet beam/plinth',
+        'Drainage', 'Movement/Expansion Joints', 'Surface finishes: wall', 'Surface finishes: handrail/parapet',
+        'Handrail/parapets/safety fences', 'Carriageway: Top of Wall', 'Carriageway: Foot of Wall',
+        'Footway/verge: Top of Wall', 'Footway/verge: Foot of Wall', 'Embankment', 'Superstructure drainage',
+        'Invert/river bed', 'Aprons', 'Signs', 'Lighting', 'Services'
+    ],
+    'Sign Gantry': [
+        'Foundations', 'Truss/beams/cantilever', 'Transverse/horiz. bracing elements', 'Columns/supports/legs',
+        'Surface finishes: truss/beams/cantilever', 'Surface finishes: columns/supports/legs',
+        'Surface finishes: other elements', 'Access/walkway/deck', 'Access ladder', 'Handrails/guard rails',
+        'Base connections', 'Support to longitudinal connection', 'Sign and signal supports',
+        'Signs/signals', 'Lighting', 'Services'
+    ]
+};
+var TWIN_DEFECT_TYPE_LABEL = {
+    1: { 1: 'Rusting', 2: 'Section loss', 3: 'Rusting or damage to bolts', 4: 'Damage to weld' },
+    2: { 2: 'Spalling', 3: 'Cracking', 4: 'Prestressing damage', 5: 'Delamination', 6: 'Freeze thaw' },
+    3: { 1: 'Deformation', 2: 'Pointing', 3: 'Arch ring damage', 4: 'Arch barrel crack', 5: 'Cracking', 6: 'Section loss', 7: 'Bulging or leaning' },
+    4: { 1: 'Coating damage' },
+    5: { 1: 'Structural damage', 2: 'Inspection obstruction' },
+    6: { 1: 'Settlement', 2: 'Differential movement', 3: 'Sliding', 4: 'Rotation', 5: 'Scour', 6: 'Foundation faults' },
+    7: { 1: 'Scour', 2: 'Vegetation or silt' },
+    8: { 1: 'Blockage', 2: 'Causing stains', 3: 'Structural damage', 4: 'Weep hole blockage' },
+    9: { 1: 'Wear and weathering', 2: 'Crazing, tracking & fretting', 3: 'Poor texture', 4: 'Cracking', 5: 'Slippery', 6: 'Cracked flagged surfacing' },
+    10: { 1: 'Asphaltic plug debonding', 2: 'Asphaltic plug material loss', 3: 'Asphaltic plug tracking', 4: 'Cracking along nosing', 5: 'Elastomeric and others missing bolts', 6: 'Elastomeric and others sealant breached', 7: 'Elastomeric and others road breaking', 8: 'Elastomeric and others loose fixings', 9: 'Elastomeric and others component damage', 10: 'Buried joint cracking', 11: 'Buried joint sealant damage', 12: 'Joint leakage' },
+    11: { 1: 'Deformation or settlement' },
+    12: { 1: 'Rusting', 2: 'Offset or dislodged', 3: 'Sliding', 4: 'Crazing', 5: 'Sliding plate damage', 6: 'Bearing damage' },
+    13: { 1: 'Impact' },
+    14: { 1: 'Non structural damage', 2: 'Structural damage' },
+    15: { 1: 'Cracking or displacement' },
+    16: { 1: 'Damage', 2: 'Section loss' }
+};
+function twinElementName(bridgeType, elementNo) {
+    var list = TWIN_ELEMENTS_BY_TYPE[bridgeType] || TWIN_ELEMENTS_BY_TYPE.Bridge;
+    return (elementNo && list[elementNo - 1]) || ('Element ' + elementNo);
+}
+function twinDefectTypeLabel(defectType, defectNumber) {
+    var byType = TWIN_DEFECT_TYPE_LABEL[Number(defectType)];
+    return (byType && byType[Number(defectNumber)]) || null;
+}
+
+/* ============================================================
    PROCEDURAL SENSORS (no real telemetry exists yet - these are
    plausible monitoring points derived from real span/pier geometry)
    ============================================================ */
@@ -696,6 +756,8 @@ function rebuildModel(bridge) {
         var pos = worksMarkerPosition(d, X0, SPAN_LEN, NUM_SPANS, DECK_W, deckY);
         var m = createWorksMarker(pos.exact);
         m.position.set(pos.x, pos.y, pos.z);
+        m.userData.defect = d;
+        m.userData.positionExact = pos.exact;
         worksGroup.add(m);
     });
 
@@ -706,6 +768,8 @@ function rebuildModel(bridge) {
     }).forEach(function(p) {
         var m = new THREE.Mesh(new THREE.OctahedronGeometry(0.5, 0), matDefect);
         m.position.set(p.x, p.y, p.z);
+        m.userData.defect = p;
+        m.userData.positionExact = true;
         defectGroup.add(m);
     });
 
@@ -747,15 +811,28 @@ function onResize() {
 window.addEventListener('resize', onResize);
 new ResizeObserver(onResize).observe(canvas);
 
+let downX = 0, downY = 0;
 canvas.addEventListener('pointerdown', function(e) {
     dragging = true; autoRotate = false;
     lastX = e.clientX; lastY = e.clientY;
+    downX = e.clientX; downY = e.clientY;
     clearTimeout(idleTimer);
 });
-window.addEventListener('pointerup', function() {
+window.addEventListener('pointerup', function(e) {
+    // Captured before resetting - true only when the pointerdown that
+    // started this gesture came from canvas's own listener below, so this
+    // stands in for "did this gesture start on the 3D view" without
+    // requiring pointerup's own target to still be exactly canvas (which a
+    // little pointer jitter near the canvas edge can defeat even though the
+    // click plainly happened on it).
+    var wasOnCanvas = dragging;
     dragging = false;
     clearTimeout(idleTimer);
     idleTimer = setTimeout(function() { autoRotate = true; }, 3000);
+    // A "click" (not a drag-to-orbit) is a pointerdown/up pair with barely
+    // any movement between them - anything more is treated as orbiting.
+    var moved = Math.hypot(e.clientX - downX, e.clientY - downY);
+    if (wasOnCanvas && moved < 6) handleCanvasClick(e);
 });
 window.addEventListener('pointermove', function(e) {
     if (!dragging) return;
@@ -768,6 +845,87 @@ canvas.addEventListener('wheel', function(e) {
     e.preventDefault();
     camDistance = Math.min(120, Math.max(20, camDistance + e.deltaY * 0.04));
 }, {passive: false});
+
+/* ============================================================
+   DEFECT MARKER CLICK -> INFO POPUP
+   ============================================================ */
+const raycaster = new THREE.Raycaster();
+const defectPopup = document.getElementById('defectPopup');
+const modelStage = document.querySelector('.model-stage');
+
+function handleCanvasClick(e) {
+    var rect = canvas.getBoundingClientRect();
+    var ndc = new THREE.Vector2(
+        ((e.clientX - rect.left) / rect.width) * 2 - 1,
+        -((e.clientY - rect.top) / rect.height) * 2 + 1
+    );
+    raycaster.setFromCamera(ndc, camera);
+    var targets = defectGroup.visible ? defectGroup.children.slice() : [];
+    if (worksGroup.visible) targets = targets.concat(worksGroup.children);
+    if (!targets.length) { hideDefectPopup(); return; }
+
+    var hits = raycaster.intersectObjects(targets, false);
+    if (!hits.length) { hideDefectPopup(); return; }
+
+    var hit = hits[0].object;
+    showDefectPopup(hit.userData.defect, hit.userData.positionExact, e.clientX, e.clientY);
+}
+
+function showDefectPopup(d, positionExact, clientX, clientY) {
+    if (!d) return;
+    var bridgeType = (selectedBridge && selectedBridge.type) || 'Bridge';
+    var elementName = twinElementName(bridgeType, d.elementNo);
+    var typeLabel = twinDefectTypeLabel(d.defectType, d.defectNumber);
+    var defectCode = d.defectType && d.defectNumber ? (d.defectType + '.' + d.defectNumber) : null;
+
+    var rows = [];
+    if (d.severityLabel) rows.push(['Severity', d.severityLabel]);
+    if (d.extent) rows.push(['Extent', d.extent]);
+    rows.push(['Works required', d.worksRequired ? 'Yes' : 'No']);
+    if (d.worksRequired && d.priority) rows.push(['Priority', d.priority]);
+    if (d.worksRequired && d.cost != null && d.cost > 0) rows.push(['Est. cost', '£' + d.cost.toLocaleString()]);
+
+    var html = '<div class="defect-popup-head">' +
+        '<div><b>' + escapeHtmlTwin(elementName) + '</b>' +
+        (typeLabel ? '<span class="defect-popup-type">' + escapeHtmlTwin(typeLabel) + (defectCode ? ' (' + defectCode + ')' : '') + '</span>' : '') +
+        '</div>' +
+        '<button type="button" class="defect-popup-close" aria-label="Close">&times;</button>' +
+        '</div>' +
+        '<div class="defect-popup-body">' +
+        rows.map(function(r) { return '<div class="defect-popup-row"><span>' + r[0] + '</span><b>' + escapeHtmlTwin(r[1]) + '</b></div>'; }).join('') +
+        (d.comments ? '<div class="defect-popup-note"><i>' + escapeHtmlTwin(d.comments) + '</i></div>' : '') +
+        (d.remedialWorks ? '<div class="defect-popup-remedial"><b>Remedial: </b>' + escapeHtmlTwin(d.remedialWorks) + '</div>' : '') +
+        (!positionExact ? '<div class="defect-popup-approx"><i class="fa-solid fa-triangle-exclamation"></i> Approximate location - not yet placed on the model</div>' : '') +
+        '</div>';
+
+    defectPopup.innerHTML = html;
+    defectPopup.querySelector('.defect-popup-close').addEventListener('click', hideDefectPopup);
+
+    var stageRect = modelStage.getBoundingClientRect();
+    var x = clientX - stageRect.left;
+    var y = clientY - stageRect.top;
+    defectPopup.style.display = 'block';
+    // Clamp so the card can't spill past model-stage's edges (it clips
+    // overflow:hidden content rather than letting the card push outside).
+    var maxX = stageRect.width - defectPopup.offsetWidth - 12;
+    var maxY = stageRect.height - defectPopup.offsetHeight - 12;
+    defectPopup.style.left = Math.max(12, Math.min(x + 14, maxX)) + 'px';
+    defectPopup.style.top = Math.max(12, Math.min(y + 14, maxY)) + 'px';
+}
+
+function hideDefectPopup() {
+    defectPopup.style.display = 'none';
+}
+
+function escapeHtmlTwin(s) {
+    return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+document.addEventListener('click', function(e) {
+    if (defectPopup.style.display === 'block' && !defectPopup.contains(e.target) && e.target !== canvas) {
+        hideDefectPopup();
+    }
+});
 
 function bindLayerPills(selector) {
     document.querySelectorAll(selector).forEach(function(pill) {
