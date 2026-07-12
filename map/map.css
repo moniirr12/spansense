@@ -1966,9 +1966,13 @@ body.modal-open {
     color: #5b8c8a;
 }
 
+/* Deliberately stronger/more saturated than :hover (which shares this same
+   tint) - otherwise a selected row looks identical to whatever the mouse
+   happens to be resting on, and reads as "barely visible" once it isn't. */
 .file-list li.selected {
-    background: #eef4f2;
-    color: #5b8c8a;
+    background: rgba(91, 140, 138, 0.18);
+    border: 1px solid #5b8c8a;
+    color: #2c5a57;
 }
 
 #folderForm {
@@ -2067,6 +2071,16 @@ body.modal-open {
     border-color: #8ab4b0;
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+}
+
+/* Needed in addition to the plain .file-list li.selected rule above - same
+   specificity as .file-list.folder-view li but that one comes later in the
+   cascade, so without this override a selected card's highlight silently
+   disappeared the moment the mouse stopped hovering it. */
+.file-list.folder-view li.selected {
+    background: rgba(91, 140, 138, 0.18);
+    border-color: #5b8c8a;
+    color: #2c5a57;
 }
 
 .file-list.folder-view .file-icon {
@@ -2660,6 +2674,14 @@ body.modal-open {
 .night-mode .file-list.folder-view li:hover {
     background: #3a6b62;
     border-color: #7aaea4;
+}
+
+/* Same cascade-order fix as the light-mode rule above - without this, a
+   selected card's teal highlight only ever showed while also hovered. */
+.night-mode .file-list.folder-view li.selected {
+    background: #3a6b62;
+    border-color: #7aaea4;
+    color: white;
 }
 
 .night-mode #folderForm input {

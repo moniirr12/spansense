@@ -264,7 +264,7 @@ function renderContents(folders, files) {
         li.dataset.type = 'folder';
         li.innerHTML = `
             <span class="file-icon">📁</span>
-            <span>${folder.name}</span>
+            <span class="file-name">${folder.name}</span>
         `;
         
         li.addEventListener('click', () => selectItem(li));
@@ -283,7 +283,7 @@ function renderContents(folders, files) {
         li.dataset.name = file.name;
         li.innerHTML = `
             <span class="file-icon">${getFileIcon(file.name)}</span>
-            <span>${file.name}</span>
+            <span class="file-name">${file.name}</span>
         `;
         
         li.addEventListener('click', () => selectItem(li));
@@ -292,10 +292,15 @@ function renderContents(folders, files) {
         fileList.appendChild(li);
     });
     
-    // Add "Add New" option
+    // Add "Add New" option - same icon+name-span structure as real items so
+    // it picks up the same intrinsic sizing in folder view instead of
+    // collapsing to a short pill next to the taller file/folder cells.
     const addNew = document.createElement('li');
     addNew.className = `file-item add-new ${isFolderView ? 'folder-view-item' : ''}`;
-    addNew.textContent = '+ Add New File';
+    addNew.innerHTML = `
+        <span class="file-icon">➕</span>
+        <span class="file-name">Add New File</span>
+    `;
     addNew.addEventListener('click', () => fileInput.click());
     fileList.appendChild(addNew);
 }
