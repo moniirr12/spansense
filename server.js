@@ -333,6 +333,20 @@ async function initDatabase() {
             )
         `);
 
+        // Author branding: one row per organization, keyed the same loose
+        // way organization_id is used everywhere else in this app (no real
+        // `organizations` table exists yet). Reused automatically for every
+        // report Author generates for that org, not re-picked per report.
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS author_branding (
+                organization_id INTEGER PRIMARY KEY,
+                accent_color TEXT DEFAULT '#5b8c8a',
+                template TEXT DEFAULT 'modern',
+                logo_path TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
         console.log('All tables initialized');
 
         // Auto-resync all SERIAL sequences to prevent duplicate key errors
@@ -1881,6 +1895,193 @@ app.get('/api/inspection/full', requireAuth, async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+// GET /api/author/diff — Author's core differentiator: for every element on
+// the structure's checklist (not just ones with a defect row), compares this
+// inspection's status against the structure's own previous inspection, so
+// the inspector only has to actively review what actually changed instead of
+// re-describing everything from scratch. "No Defects"/"Not Inspected" are
+// real rows in `defects` using the reserved 0.0/0.1 codes (see
+// inspection.js's quickRecordElement) - an element with no row at all for
+// this inspection is treated as not applicable to this structure.
+app.get('/api/author/diff', requireAuth, async (req, res) => {
+    try {
+        const { structureId, date } = req.query;
+        if (!structureId || !date) {
+            return res.status(400).json({ error: 'structureId and date are required' });
+        }
+
+        const bridge = await dbGet('SELECT type, organization_id FROM bridges WHERE id = $1', [structureId]);
+        if (!bridge) return res.status(404).json({ error: 'Structure not found' });
+        const structureType = resolveElementsType(bridge.type);
+
+        const elements = await dbAll(
+            'SELECT element_number, description FROM elements WHERE structure_type = $1 ORDER BY display_order ASC',
+            [structureType]
+        );
+
+        const currentInspection = await dbGet(
+            'SELECT id, inspection_date FROM inspections WHERE structure_id = $1 AND inspection_date = $2',
+            [structureId, date]
+        );
+        if (!currentInspection) return res.status(404).json({ error: 'Inspection not found for that date' });
+
+        const previousInspection = await dbGet(
+            `SELECT id, inspection_date FROM inspections
+             WHERE structure_id = $1 AND inspection_date < $2
+             ORDER BY inspection_date DESC LIMIT 1`,
+            [structureId, date]
+        );
+
+        const inspectionIds = [currentInspection.id, previousInspection ? previousInspection.id : null].filter(Boolean);
+        const placeholders = inspectionIds.map((_, i) => `$${i + 1}`).join(',');
+        const allDefects = await dbAll(
+            `SELECT inspection_id, element_no, defect_type, defect_number, severity, extent,
+                    works_required, priority, cost, comments, remedial_works
+             FROM defects WHERE inspection_id IN (${placeholders})
+             ORDER BY element_no, defect_no`,
+            inspectionIds
+        );
+
+        // An element can have more than one defect row per inspection - the
+        // primary one (or the first, if none is flagged) drives the
+        // comparison, matching how BCI scoring already picks one per element.
+        function elementRowsFor(inspectionId, elementNo) {
+            return allDefects.filter(d => d.inspection_id === inspectionId && d.element_no === elementNo);
+        }
+        function summarize(rows) {
+            if (!rows.length) return { status: 'na' };
+            const real = rows.find(r => !(r.defect_type === '0' && (r.defect_number === '0' || r.defect_number === '1')));
+            if (!real) {
+                const marker = rows[0];
+                return { status: marker.defect_number === '0' ? 'good' : 'ninsp' };
+            }
+            return {
+                status: 'defect',
+                defectType: real.defect_type, defectNumber: real.defect_number,
+                severity: real.severity, extent: real.extent,
+                worksRequired: real.works_required, priority: real.priority, cost: real.cost,
+                comments: real.comments, remedialWorks: real.remedial_works || ''
+            };
+        }
+        function compare(current, previous) {
+            if (!previousInspection) return 'first';
+            if (current.status === 'defect' && previous.status !== 'defect') return 'new';
+            if (current.status !== 'defect' && previous.status === 'defect') return 'resolved';
+            if (current.status === 'defect' && previous.status === 'defect') {
+                const cs = parseInt(current.severity, 10) || 0, ps = parseInt(previous.severity, 10) || 0;
+                if (cs > ps) return 'worsened';
+                if (cs < ps) return 'improved';
+                if (current.extent !== previous.extent) return 'changed';
+                return 'unchanged';
+            }
+            return current.status === previous.status ? 'unchanged' : 'changed';
+        }
+
+        const result = elements.map(el => {
+            const current = summarize(elementRowsFor(currentInspection.id, el.element_number));
+            const previous = previousInspection ? summarize(elementRowsFor(previousInspection.id, el.element_number)) : null;
+            return {
+                elementNumber: el.element_number,
+                name: el.description,
+                current,
+                previous,
+                comparison: compare(current, previous || { status: null })
+            };
+        });
+
+        res.json({
+            structureType,
+            currentDate: currentInspection.inspection_date,
+            previousDate: previousInspection ? previousInspection.inspection_date : null,
+            organizationId: bridge.organization_id,
+            elements: result
+        });
+    } catch (err) {
+        console.error('Error building author diff:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Author branding - set once per organization/client, reused automatically
+// for every future report for them (same intent as the style profile).
+app.get('/api/author/branding/:organizationId', requireAuth, async (req, res) => {
+    try {
+        const { organizationId } = req.params;
+        const row = await dbGet('SELECT accent_color, template, logo_path FROM author_branding WHERE organization_id = $1', [organizationId]);
+        if (!row) {
+            return res.json({ accentColor: '#5b8c8a', template: 'modern', logoUrl: null });
+        }
+        res.json({
+            accentColor: row.accent_color,
+            template: row.template,
+            logoUrl: row.logo_path ? await storage.getSignedUrl(row.logo_path) : null
+        });
+    } catch (err) {
+        console.error('Error fetching author branding:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/author/branding/:organizationId', requireAuth, async (req, res) => {
+    try {
+        const { organizationId } = req.params;
+        const { accentColor, template } = req.body;
+        await pool.query(
+            `INSERT INTO author_branding (organization_id, accent_color, template, updated_at)
+             VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+             ON CONFLICT (organization_id) DO UPDATE SET
+                accent_color = EXCLUDED.accent_color, template = EXCLUDED.template, updated_at = CURRENT_TIMESTAMP`,
+            [organizationId, accentColor || '#5b8c8a', template || 'modern']
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Error saving author branding:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+const uploadBrandLogo = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) cb(null, true);
+        else cb(new Error('Only image files are allowed for a logo'), false);
+    }
+});
+
+app.post('/api/author/branding/:organizationId/logo', requireAuth,
+    (req, res, next) => {
+        uploadBrandLogo.single('logo')(req, res, (err) => {
+            if (!err) return next();
+            if (err.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: 'Logo exceeds the 5MB limit.' });
+            return res.status(400).json({ error: err.message });
+        });
+    },
+    async (req, res) => {
+        try {
+            const { organizationId } = req.params;
+            if (!req.file) return res.status(400).json({ error: 'No logo file provided' });
+
+            const existing = await dbGet('SELECT logo_path FROM author_branding WHERE organization_id = $1', [organizationId]);
+            const ext = (req.file.originalname.split('.').pop() || 'png').toLowerCase();
+            const logoPath = `branding/org_${organizationId}/logo_${Date.now()}.${ext}`;
+            await storage.uploadFile(logoPath, req.file.buffer, req.file.mimetype);
+            if (existing && existing.logo_path) await storage.deleteFile(existing.logo_path);
+
+            await pool.query(
+                `INSERT INTO author_branding (organization_id, logo_path, updated_at)
+                 VALUES ($1, $2, CURRENT_TIMESTAMP)
+                 ON CONFLICT (organization_id) DO UPDATE SET logo_path = EXCLUDED.logo_path, updated_at = CURRENT_TIMESTAMP`,
+                [organizationId, logoPath]
+            );
+            res.json({ success: true, logoUrl: await storage.getSignedUrl(logoPath) });
+        } catch (err) {
+            console.error('Error uploading brand logo:', err);
+            res.status(500).json({ success: false, error: err.message });
+        }
+    }
+);
 
 // GET /api/worksrequired
 app.get('/api/worksrequired', requireAuth, async (req, res) => {
