@@ -272,7 +272,16 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .cmp-chip.first{background:var(--ai-bg); color:var(--ai);}
 .mini-lbl{font-size:.62rem; font-weight:700; text-transform:uppercase; color:var(--text-mute); display:block; margin-bottom:4px;}
 
-.draft-toolbar{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:18px;}
+/* Cleaner rhythm for the header block sitting above the white card:
+   title/subtitle tightened, BCI trend flush against them with no extra
+   top gap, then a single divider before the action toolbar. */
+.draft-header{margin-bottom:16px;}
+.draft-header .card-title{margin-bottom:5px;}
+.draft-header .card-sub{margin-bottom:14px;}
+.draft-header #draftBciTrend:empty{display:none;}
+.draft-header .bci-trend{margin-top:0;}
+.draft-toolbar{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; padding-top:16px; border-top:1px solid var(--border2); margin-bottom:20px;}
+.draft-toolbar-actions{display:flex; gap:10px; flex-wrap:wrap;}
 .filter-pills{display:flex; gap:8px; flex-wrap:wrap;}
 .f-pill{font-size:.74rem; font-weight:600; color:var(--text-mute2); background:#fff; border:1px solid var(--border); padding:7px 14px; border-radius:30px; cursor:pointer; transition:.15s;}
 .f-pill:hover{border-color:var(--teal);}
@@ -357,9 +366,13 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .defect-card.collapsed .dc-body{display:none;}
 .defect-card.collapsed .dc-collapse-btn i{transform:rotate(-90deg);}
 
-/* Fixed right-side structure info panel */
+/* Fixed right-side structure info panel - right:12.5% (not a fixed px
+   offset) matches .page-wrapper's own implicit right margin (max-width:75%
+   centered leaves 12.5% on each side), same convention as inspection1.html's
+   .bridge-sidebar, so this panel's right edge lines up with the page
+   content's right edge instead of sitting flush against the viewport. */
 .struct-info-panel{
-  position:fixed; right:26px; top:50%; transform:translateY(-50%); z-index:900;
+  position:fixed; right:12.5%; top:50%; transform:translateY(-50%); z-index:900;
   width:250px; max-height:76vh; overflow-y:auto;
   background:rgba(255,255,255,.9); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
   border:1px solid var(--border2); border-radius:20px; padding:18px; box-shadow:0 10px 28px rgba(44,90,87,.08);
@@ -530,6 +543,7 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .tsw-corporate{background:#1c2733;}
 
 .night-mode .cat-title{color:#8ab4b0; border-color:#2f3e45;}
+.night-mode .draft-toolbar{border-color:#2f3e45;}
 .night-mode .status-pill.defect{background:#3a3020; color:#e0b060;}
 .night-mode .status-pill.good{background:#1e3a38; color:#7ec9ba;}
 .night-mode .status-pill.na{background:#2a343a; color:#7d939b;}
@@ -767,12 +781,14 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
     <!-- ================= SCREEN 2: DRAFT REPORT ================= -->
     <div class="screen" id="screen-draft">
         <div class="draft-main">
-            <h2 class="card-title"><i class="fas fa-sparkles" style="color:var(--ai);"></i> Drafted Narrative — <span id="draftStructureName">—</span></h2>
-            <p class="card-sub">A card per defect, drafted from this inspection's real data and automatically compared against the structure's own previous inspection. Review, edit, and mark off as you go — elements with nothing to report are listed compactly below each category.</p>
-            <div id="draftBciTrend"></div>
+            <div class="draft-header">
+                <h2 class="card-title"><i class="fas fa-sparkles" style="color:var(--ai);"></i> Drafted Narrative — <span id="draftStructureName">—</span></h2>
+                <p class="card-sub">A card per defect, drafted from this inspection's real data and automatically compared against the structure's own previous inspection. Review, edit, and mark off as you go — elements with nothing to report are listed compactly below each category.</p>
+                <div id="draftBciTrend"></div>
+            </div>
             <div class="draft-toolbar">
                 <div class="filter-pills" id="draftFilterPills"></div>
-                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <div class="draft-toolbar-actions">
                     <button class="btn-mini" id="toggleCollapseAllBtn"><i class="fas fa-compress"></i> Collapse all</button>
                     <button class="btn-bulk" id="markUnchangedBtn"><i class="fas fa-check-double"></i> Mark all unchanged as reviewed</button>
                 </div>
