@@ -672,7 +672,6 @@ function createActionButtons(doc) {
 
 // Replace your existing updateBridgeModalData with this:
 async function updateBridgeModalData(structureId) {
-    console.log('Updating bridge modal for structure:', structureId);
 
     // Quick-info grid (location badge + span/length/built/type) - independent
     // of the BCI/last-inspected fetch below, so a failure here doesn't affect that.
@@ -705,10 +704,6 @@ async function updateBridgeModalData(structureId) {
             });
             
             const latestDoc = sortedDocs[0];
-            console.log('Latest inspection:', latestDoc);
-            console.log('BCI Av:', latestDoc.bci_av);
-            console.log('BCI Crit:', latestDoc.bci_crit);
-            console.log('Date:', latestDoc.date);
             
             // Update Last Inspected Date
             const lastInspectedElement = document.getElementById('lastInspected');
@@ -726,27 +721,22 @@ async function updateBridgeModalData(structureId) {
                     console.error('Date parsing error:', e);
                 }
                 lastInspectedElement.textContent = formattedDate;
-                console.log('Date set to:', formattedDate);
             }
             
             // Update BCI Score - SAME logic as Previous Inspections modal
             const bciScoreElement = document.getElementById('bciScore');
             if (bciScoreElement && latestDoc.bci_av !== null && latestDoc.bci_av !== undefined) {
                 const bciValue = Math.round(parseFloat(latestDoc.bci_av));
-                console.log('BCI Value:', bciValue);
 
                 const tier = bciTier(bciValue); // shared with map.js's marker-ring coloring - see condRing there
 
                 bciScoreElement.innerHTML = `${bciValue} - ${tier.label}`;
                 bciScoreElement.style.color = tier.color;
-                console.log('BCI set to:', bciScoreElement.innerHTML);
             } else if (bciScoreElement) {
-                console.log('No bci_av found in latest inspection');
                 bciScoreElement.innerHTML = 'No data - Pending';
                 bciScoreElement.style.color = '#8a9ba8';
             }
         } else {
-            console.log('No inspections found for bridge:', structureId);
             // No inspections found - show pending state
             const bciScoreElement = document.getElementById('bciScore');
             const lastInspectedElement = document.getElementById('lastInspected');

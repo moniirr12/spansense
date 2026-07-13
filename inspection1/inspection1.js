@@ -418,7 +418,6 @@ async function fetchLatestInspectionDate(bridgeId) {
 // Function to fetch bridge data from database and update sidebar
 async function fetchAndUpdateBridgeData(bridgeId) {
     try {
-        console.log('Fetching bridge data for ID:', bridgeId);
         
         const spanCountEl = document.getElementById('sidebarSpanCount');
         const lengthEl = document.getElementById('sidebarLength');
@@ -436,7 +435,6 @@ async function fetchAndUpdateBridgeData(bridgeId) {
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         
         const bridgeData = await response.json();
-        console.log('Bridge data received:', bridgeData);
 
         // Drives which element list/BCI scoring config applies (Bridge,
         // Retaining wall, ...) - see inspection.js/bci.js.
@@ -478,7 +476,6 @@ async function loadBridgePhoto(bridgeId) {
         return;
     }
     
-    console.log('Loading photo for bridge ID:', bridgeId);
     
     try {
         mockImageDiv.innerHTML = `<i class="fas fa-spinner fa-spin"></i><span style="font-size: 0.7rem;">Loading photo...</span>`;
@@ -508,7 +505,6 @@ async function loadBridgePhoto(bridgeId) {
 // ============================================
 
 function populateInspectionForm(data) {
-    console.log('Populating inspection form with data:', data);
     
     inspectionData = {
         ...inspectionData,
@@ -564,7 +560,6 @@ function populateInspectionForm(data) {
 
 async function fetchSpans(bridgeId) {
     try {
-        console.log("Fetching spans for bridgeId:", bridgeId);
         
         const sidebarSpanCount = document.getElementById('sidebarSpanCount');
         if (sidebarSpanCount) sidebarSpanCount.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
@@ -573,7 +568,6 @@ async function fetchSpans(bridgeId) {
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         
         const data = await response.json();
-        console.log("Fetched spans data:", data);
         
         if (data.error) {
             console.error('Error from server:', data.error);
@@ -784,7 +778,6 @@ document.addEventListener("DOMContentLoaded", function () {
     if (inspectorNameInput) {
         inspectorNameInput.addEventListener('input', function() {
             inspectionData.inspectorName = this.value;
-            console.log('inspectorName updated:', this.value);
         });
     }
 
@@ -794,7 +787,6 @@ document.addEventListener("DOMContentLoaded", function () {
             inspectionTypeButtons.forEach(btn => btn.classList.remove('selected'));
             button.classList.add('selected');
             inspectionData.inspectionType = selectedType;
-            console.log('inspectionType updated:', selectedType);
 
             const headerEl = document.getElementById('bridgeHeader');
             if (headerEl && inspectionData.structureName) {
@@ -809,7 +801,6 @@ document.addEventListener("DOMContentLoaded", function () {
     if (savedInspectionData) {
         try {
             const parsedData = JSON.parse(savedInspectionData);
-            console.log('🔄 Restoring saved inspection data:', parsedData);
             
             populateInspectionForm(parsedData);
             Object.assign(inspectionData, parsedData);
@@ -827,7 +818,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (sidebarBridgeId) sidebarBridgeId.textContent = `STR #${structureId}`;
             }
             
-            console.log('✅ Inspection data restored successfully');
             return;
         } catch (error) {
             console.error('Error restoring saved inspection data:', error);
@@ -843,7 +833,6 @@ document.addEventListener("DOMContentLoaded", function () {
             fetch(`${API_BASE}/api/inspection/full?structure_id=${inspectionStructureNumber}&date=${inspectionDate}`)
                 .then(response => response.json())
                 .then(data => {
-                    console.log('📊 Loaded existing inspection:', data);
                     populateInspectionForm(data);
                     inspectionData.inspectionType = data.inspectionType;
                     const headerEl = document.getElementById('bridgeHeader');
@@ -867,7 +856,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // SCENARIO 3: New inspection
-    console.log('🆕 Starting NEW inspection');
 
     // Most inspections are recorded the day they happen, so default the
     // date to today instead of making every inspection start with a click

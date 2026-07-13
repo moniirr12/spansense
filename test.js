@@ -457,8 +457,6 @@ async function generateSimplePDFReport(doc, mode = 'download', targetWindow = nu
         const structureName = doc.structure_name;
         const inspectionDate = doc.date;
         
-        console.log('=== SIMPLE REPORT GENERATION START ===');
-        console.log('Structure:', structureName, 'ID:', structureId, 'Date:', inspectionDate);
         
         if (!structureId || !structureName || !inspectionDate) {
             throw new Error('Missing inspection information');
@@ -475,24 +473,10 @@ async function generateSimplePDFReport(doc, mode = 'download', targetWindow = nu
             fetch(`${API_BASE}/api/inspection/next-due?structure_id=${structureId}&date=${inspectionDate}`).then(res => res.ok ? res.json() : null).catch(() => null)
         ]);
 
-        console.log('Bridge data received:', bridgeData);
 
         const inspectionData = fullInspectionData || {};
         let defectsData = fullInspectionData?.defects || []; // DEFINE defectsData HERE
         const allPhotos = photosResponse.success ? photosResponse.photos : [];
-
-        // Debug: Check defects data
-        console.log('=== DEFECTS DATA DEBUG ===');
-        console.log('Total defects:', defectsData.length);
-        defectsData.forEach((defect, idx) => {
-            console.log(`Defect ${idx + 1}:`, {
-                defectId: defect.defectId,
-                elementNumber: defect.elementNumber,
-                hasElementNumber: !!defect.elementNumber,
-                priority: defect.priority,
-                remedialWorks: defect.remedialWorks || defect.remedial_works
-            });
-        });
 
         // SECOND: Define all elements list (after defectsData is defined)
         const ALL_ELEMENTS_LIST_BY_TYPE = {
@@ -590,7 +574,6 @@ async function generateSimplePDFReport(doc, mode = 'download', targetWindow = nu
             const elementDescription = elementNameMap[defect.elementNumber] || `Element ${defect.elementNumber}`;
             const category = allElementsList.find(e => e.elementNo === defect.elementNumber)?.category || 'Unknown';
             
-            console.log(`Mapping element ${defect.elementNumber} -> "${elementDescription}"`);
             
             return {
                 ...defect,
