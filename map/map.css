@@ -903,7 +903,6 @@ body.modal-open {
 }
 #bridgeModal .stat-pill:hover {
     border-color: #c5dbd8;
-    transform: translateY(-2px);
     box-shadow: 0 4px 16px rgba(0,0,0,0.04);
 }
 #bridgeModal .stat-icon {
@@ -4143,7 +4142,7 @@ body.modal-open {
 }
 .ss-card:hover {
   background: #f5f8fa; border-color: #c5dbd8;
-  transform: translateX(4px); box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
 }
 .ss-card.ss-very-poor {
   background: linear-gradient(135deg, #fdf8f5 0%, #fdf5f0 100%);
