@@ -1,4 +1,9 @@
-const API_BASE = window.location.origin;
+// Dynamic API Base URL (same convention as map.js) - lets the page still
+// reach the real API when previewed from a static file server like Live
+// Server on port 5500, which has no /api/* routes of its own.
+const API_BASE = window.location.origin.includes('localhost')
+    ? 'http://localhost:3000'
+    : window.location.origin;
 
 // bciProforma.pdfmake.js expects a global formatDate (normally supplied by
 // test.js on pages that load it) - matches test.js's exact implementation.
