@@ -2,7 +2,7 @@
 // Matches database.js's resolution: bare relative fetches below resolve
 // against whatever origin happens to be serving this file (e.g. Live
 // Server on 127.0.0.1:5500), which has no /api/* routes of its own.
-var API_BASE = (window.location.hostname === 'localhost')
+var API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? 'http://localhost:3000'
     : 'https://spansense.onrender.com';
 
