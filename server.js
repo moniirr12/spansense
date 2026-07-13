@@ -1361,8 +1361,6 @@ app.get('/api/debug/count-test', requireAuth, async (req, res) => {
 app.post('/save-inspection', requireAuth, async (req, res) => {
     const { inspection, defects, photoData = {} } = req.body;
 
-    console.log('[1/6] Starting inspection save...');
-    console.log('[DEBUG] Received photoData keys:', Object.keys(photoData));
 
     const client = await pool.connect();
 
@@ -1377,7 +1375,6 @@ app.post('/save-inspection', requireAuth, async (req, res) => {
         const bciAvs   = inspection.spans.map(s => { const v = parseFloat(s.bciAv);   return Number.isNaN(v) ? 100 : v; });
         const overallBciCrit = parseFloat((bciCrits.reduce((a, b) => a + b, 0) / bciCrits.length).toFixed(2));
         const overallBciAve  = parseFloat((bciAvs.reduce((a, b) => a + b, 0) / bciAvs.length).toFixed(2));
-        console.log(`[INFO] Overall BCI - Crit: ${overallBciCrit}, Ave: ${overallBciAve}`);
 
         // 1. Insert inspection with overall BCI
         const inspectionResult = await client.query(
@@ -1400,7 +1397,6 @@ app.post('/save-inspection', requireAuth, async (req, res) => {
         );
 
         const inspectionId = inspectionResult.rows[0].id;
-        console.log(`[SUCCESS] Inserted inspection ID: ${inspectionId}`);
         const insertedDefects = [];
 
         // 2. Insert spans
@@ -1424,7 +1420,6 @@ app.post('/save-inspection', requireAuth, async (req, res) => {
 
         // 3. Insert defects
         if (defects.length > 0) {
-            console.log(`[4/6] Processing ${defects.length} defects...`);
             const defectCounts = {};
 
             for (const defect of defects) {
@@ -1434,7 +1429,6 @@ app.post('/save-inspection', requireAuth, async (req, res) => {
                 const defectCombined = `${defect.defectType}.${defect.defectNumber}`;
                 const tempDefectKey = `${inspection.structure_id}_${inspection.inspection_date}_${defect.spanNumber}_${defect.elementNumber}_${defectCombined}`;
 
-                console.log(`[DEBUG] Generated temp key for defect: ${tempDefectKey}`);
 
                 const defectResult = await client.query(
                     `INSERT INTO defects (
@@ -1472,7 +1466,6 @@ app.post('/save-inspection', requireAuth, async (req, res) => {
                 );
 
                 const defectId = defectResult.rows[0].id;
-                console.log(`[SUCCESS] Inserted defect ID: ${defectId} (TempKey: ${tempDefectKey})`);
                 insertedDefects.push({
                     defectId: defectId,
                     tempDefectKey: tempDefectKey,
@@ -1485,7 +1478,6 @@ app.post('/save-inspection', requireAuth, async (req, res) => {
 
         // 4. Insert photos
         if (Object.keys(photoData).length > 0) {
-            console.log('[5/6] Processing photo data...');
             let totalPhotos = 0;
 
             for (const defect of insertedDefects) {
@@ -1509,11 +1501,9 @@ app.post('/save-inspection', requireAuth, async (req, res) => {
                     }
                 }
             }
-            console.log(`[INFO] Inserted ${totalPhotos} photos`);
         }
 
         await client.query('COMMIT');
-        console.log('[SUCCESS] Transaction completed successfully');
 
         res.json({ 
             success: true, 
@@ -1560,7 +1550,6 @@ app.put('/update-inspection', requireAuth, async (req, res) => {
         const bciAvs   = inspection.spans.map(s => { const v = parseFloat(s.bciAv);   return Number.isNaN(v) ? 100 : v; });
         const overallBciCrit = parseFloat((bciCrits.reduce((a, b) => a + b, 0) / bciCrits.length).toFixed(2));
         const overallBciAve  = parseFloat((bciAvs.reduce((a, b) => a + b, 0) / bciAvs.length).toFixed(2));
-        console.log(`[INFO] Update - Overall BCI - Crit: ${overallBciCrit}, Ave: ${overallBciAve}`);
 
         // 2. Update inspection with overall BCI. Editing an inspection that
         // was already approved/rejected sends it back for re-review — the
@@ -2190,7 +2179,6 @@ app.post('/api/login', async (req, res) => {
     try {
         const { username, password } = req.body;
 
-        console.log('Login attempt:', username);
 
         if (!username || !password) {
             return res.status(400).json({ 
@@ -2205,7 +2193,6 @@ app.post('/api/login', async (req, res) => {
         );
 
         if (!user) {
-            console.log('User not found:', username);
             return res.status(401).json({ 
                 success: false, 
                 message: 'Invalid username or password' 
@@ -2220,7 +2207,6 @@ app.post('/api/login', async (req, res) => {
             req.session.organizationId = user.organization_id;
             req.session.role = user.role;
 
-            console.log('Login successful for:', username);
 
             await pool.query(
                 'UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1',
@@ -2236,7 +2222,6 @@ app.post('/api/login', async (req, res) => {
                 }
             });
         } else {
-            console.log('Invalid password for:', username);
             res.status(401).json({ 
                 success: false, 
                 message: 'Invalid username or password' 
@@ -2389,7 +2374,6 @@ app.get('/api/condition-distribution', requireAuth, async (req, res) => {
             ORDER BY year ASC
         `);
 
-        console.log('Condition distribution data:', rows);
         res.json({ success: true, data: rows });
     } catch (err) {
         console.error('Condition distribution error:', err);

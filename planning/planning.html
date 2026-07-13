@@ -1824,6 +1824,12 @@
             scheduleEditBridgeId = null;
         }
 
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && document.getElementById('scheduleModalOverlay').classList.contains('active')) {
+                closeScheduleModal();
+            }
+        });
+
         async function saveScheduleModal() {
             if (!scheduleEditBridgeId) return;
             const giYears = document.getElementById('scheduleGiYears').value.trim();

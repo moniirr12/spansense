@@ -1,5 +1,4 @@
 function openModal(isEditMode = false, preferredState = null) {
-    console.log('openModal called', isEditMode, 'preferredState:', preferredState);
 
     const modal = document.getElementById('modal');
     if (!modal) {
@@ -113,7 +112,6 @@ function openModal(isEditMode = false, preferredState = null) {
     document.removeEventListener('keydown', escapeHandler);
     document.addEventListener('keydown', escapeHandler);
 
-    console.log('Modal opened successfully, state:', modal.dataset.modalState);
 }
 
 // ============================================
@@ -278,7 +276,6 @@ document.getElementById('modalCloseBtn')?.addEventListener('click', function(e) 
 });
 
 function closeModal() {
-    console.log('closeModal called');
     const modal = document.getElementById('modal');
     if (modal) {
         modal.style.display = 'none';
@@ -300,7 +297,6 @@ function closeModal() {
     }
     const backdrops = document.querySelectorAll('.modal-backdrop');
     backdrops.forEach(backdrop => backdrop.remove());
-    console.log('Modal closed successfully, display =', modal ? modal.style.display : 'modal not found');
 }
 
 function updateConditionalFieldsVisibility(worksValue) {
@@ -401,7 +397,6 @@ function refreshBCIScores() {
         bciCrit = parseFloat(spanData.bciCrit);
         if (bciAvElement) setBciValue(bciAvElement, bciAv);
         if (bciCritElement) setBciValue(bciCritElement, bciCrit);
-        console.log("Edit mode, no defects loaded yet - using stored BCI:", spanData.bciAv, spanData.bciCrit);
         return { bciAv, bciCrit };
     }
     if (spanDefects.length > 0) {
@@ -432,7 +427,6 @@ function refreshBCIScores() {
                 bciCrit = calculated.bciCrit;
                 if (bciAvElement) setBciValue(bciAvElement, bciAv);
                 if (bciCritElement) setBciValue(bciCritElement, bciCrit);
-                console.log(`BCI calculated: Av=${bciAv.toFixed(2)}, Crit=${bciCrit.toFixed(2)}`);
             } catch (error) {
                 console.error("Error calculating BCI:", error);
                 bciAv = 100;
@@ -446,7 +440,6 @@ function refreshBCIScores() {
     } else {
         if (bciAvElement) setBciValue(bciAvElement, 100);
         if (bciCritElement) setBciValue(bciCritElement, 100);
-        console.log("No defects - BCI set to 100/100");
     }
     spanData.bciAv = bciAv.toFixed(2);
     spanData.bciCrit = bciCrit.toFixed(2);
@@ -485,14 +478,12 @@ function quickRecordElement(buttonRow, status, comment, existingRow) {
 // leaves the modal open, same alert as a manual Save) when the form is
 // invalid, so navigation never silently commits or silently drops bad data.
 function persistCurrentDefectForm() {
-  console.group("===== SAVING DEFECT DATA =====");
   const structureId = sessionStorage.getItem('structureId');
   const inspectionDate = sessionStorage.getItem('inspectionDate');
   const selectedSpan = sessionStorage.getItem('selectedSpan');
   if (!selectedSpan) {
     console.error("No span selected - aborting save");
     showAlertModal("No span selected! Please select a span first.");
-    console.groupEnd();
     return false;
   }
   const sevVal = document.getElementById('severity')?.value;
@@ -500,7 +491,6 @@ function persistCurrentDefectForm() {
   const isValidCombo = (sevVal === '1' && extVal === 'A') || (parseInt(sevVal) >= 2 && extVal !== 'A');
   if (!isValidCombo) {
     showAlertModal('Invalid Severity/Extent combination. Only 1A or 2-5 with B-E are valid.');
-    console.groupEnd();
     return false;
   }
   let mainRow = null;
@@ -523,11 +513,9 @@ function persistCurrentDefectForm() {
   if (!mainRow?.classList?.contains("main-row")) {
     console.error("CRITICAL: No valid main row found");
     showAlertModal("System error: Could not determine element location. Please refresh the page and try again.");
-    console.groupEnd();
     return false;
   }
   const elementNumber = mainRow.dataset.rowId;
-  console.log("Using main row:", { elementNumber });
 
   // FIX #2: Get modal state FIRST to determine which comment field to read
   const modalState = window.getModalState ? window.getModalState() : 
@@ -626,16 +614,13 @@ function persistCurrentDefectForm() {
     if (index >= 0) {
       defectData.timestamp = defects[index].timestamp;
       defects[index] = defectData;
-      console.log("Updated existing defect at index:", index);
     } else {
       console.error("Original defect not found in storage");
       showAlertModal("Error: Could not find original defect data.");
-      console.groupEnd();
       return false;
     }
   } else {
     defects.push(defectData);
-    console.log("Added new defect");
   }
 
   sessionStorage.setItem('defects', JSON.stringify(defects));
@@ -716,7 +701,6 @@ function persistCurrentDefectForm() {
     currentExpandableRow.dataset.timestamp = defectData.timestamp;
     updateConditionalFields(currentExpandableRow, finalWorks);
   } else {
-    console.log("Creating new defect row");
     const newRow = addDefectToTable(mainRow, defectData, false, true);
     if (newRow && !mainRow.classList.contains("expanded")) {
       toggleButtonRow(mainRow);
@@ -728,11 +712,8 @@ function persistCurrentDefectForm() {
   }
 
   const result = refreshBCIScores();
-  console.log("BCI refresh result:", result);
   inspectionData = JSON.parse(sessionStorage.getItem('inspectionData') || '{}');
   updateMainRow(mainRow);
-  console.log("===== SAVE COMPLETE =====");
-  console.groupEnd();
   return true;
 }
 
@@ -790,7 +771,6 @@ async function loadInspectionElements() {
 }
 
 async function loadDefectsFromAPI(structureId, inspectionDate, currentSpan) {
-    console.log("Loading defects for span:", currentSpan);
     try {
         const url = `/api/inspection/full?structure_id=${structureId}&date=${inspectionDate}`;
         const response = await fetch(url);
@@ -816,7 +796,6 @@ async function loadDefectsFromAPI(structureId, inspectionDate, currentSpan) {
                     if (barIcon) barIcon.innerHTML = '<i class="fas fa-pen"></i>';
                 }
             }
-            console.log('Conclusions loaded from API:', inspectionData.conclusions);
         }
         const currentDefects = JSON.parse(sessionStorage.getItem('defects')) || [];
         const allApiDefects = (inspectionData.defects || []).map(defect => {
@@ -876,7 +855,6 @@ async function loadDefectsFromAPI(structureId, inspectionDate, currentSpan) {
                     }
                 });
                 sessionStorage.setItem('inspectionData', JSON.stringify(storedInspectionData));
-                console.log("Edit mode - BCI values carried over from API");
             }
         } else if (!isEditMode) {
             const storedInspectionData = JSON.parse(sessionStorage.getItem('inspectionData') || '{}');
@@ -886,7 +864,6 @@ async function loadDefectsFromAPI(structureId, inspectionDate, currentSpan) {
                     span.bciCrit = null;
                 });
                 sessionStorage.setItem('inspectionData', JSON.stringify(storedInspectionData));
-                console.log("New inspection - BCI values cleared from spans");
             }
         }
         const spanDefects = mergedDefects.filter(defect => defect.spanNumber == currentSpan);
@@ -1153,7 +1130,6 @@ function addButtonRowForMainRow(mainRow) {
     }
     insertAfter.parentNode.insertBefore(buttonRow, insertAfter.nextSibling);
     buttonRow.style.display = "none";
-    console.log("Button row added for main row:", mainRow.dataset.rowId);
   }
   return buttonRow;
 }
@@ -1245,7 +1221,6 @@ function hideRowAnimated(rowEl) {
 }
 
 function toggleButtonRow(row) {
-  console.log("toggleButtonRow called for row:", row);
   const allRows = document.querySelectorAll("#inspectionElementsTable tbody tr.main-row");
   allRows.forEach((otherRow) => {
     if (otherRow !== row && otherRow.classList.contains("expanded")) {
@@ -1255,12 +1230,10 @@ function toggleButtonRow(row) {
     }
   });
   if (row.classList.contains("expanded")) {
-    console.log("Row is expanded. Collapsing...");
     row.classList.remove("expanded");
     hideRowAnimated(findButtonRow(row));
     findAllExpandableRows(row).forEach(hideRowAnimated);
   } else {
-    console.log("Row is not expanded. Expanding...");
     row.classList.add("expanded");
     let buttonRow = findButtonRow(row);
     if (!buttonRow) buttonRow = addButtonRowForMainRow(row);
@@ -1294,30 +1267,24 @@ function extentBadgeHTML(value) {
 }
 
 function addDefectToTable(mainRow, defectData, isRetrieved, isEditable = false) {
-  console.group('addDefectToTable Debug');
-  console.error('>>> addDefectToTable CALLED', {isRetrieved, isEditable, defect: defectData?.defectCombined});
   const currentSpan = sessionStorage.getItem('selectedSpan');
   if (!currentSpan) {
     console.error("No span selected - cannot add defect");
-    console.groupEnd();
     return null;
   }
   if (!defectData || typeof defectData !== 'object') {
     console.error("Invalid defect data");
-    console.groupEnd();
     return null;
   }
   const template = document.getElementById("templateRow");
   if (!template) {
     console.error("Template not found");
-    console.groupEnd();
     return null;
   }
   const clone = template.content.cloneNode(true);
   const expandableRow = clone.querySelector("tr.expandable-row");
   if (!expandableRow) {
     console.error("Expandable row not found in template");
-    console.groupEnd();
     return null;
   }
   if (isRetrieved) {
@@ -1388,11 +1355,9 @@ function addDefectToTable(mainRow, defectData, isRetrieved, isEditable = false) 
   if (worksValue === 'Y' || worksValue === 'Yes') {
     if (priorityRow) priorityRow.classList.add('visible');
     if (costRow) costRow.classList.add('visible');
-    console.log("Priority and Cost rows shown (Works = Yes)");
   } else {
     if (priorityRow) priorityRow.classList.remove('visible');
     if (costRow) costRow.classList.remove('visible');
-    console.log("Priority and Cost rows hidden (Works = No/Monitor)");
   }
   const worksRow = expandableRow.querySelector('.works-row');
   if (worksRow && (worksValue === 'Y' || worksValue === 'Yes')) {
@@ -1433,10 +1398,8 @@ function addDefectToTable(mainRow, defectData, isRetrieved, isEditable = false) 
       : (insertBeforeRow || lastOwnRow.nextSibling);
     mainRow.parentNode.insertBefore(expandableRow, insertionPoint);
     expandableRow.style.display = "none";
-    console.log("Row inserted successfully");
   } catch (e) {
     console.error("Insertion failed:", e);
-    console.groupEnd();
     return null;
   }
   if (!isRetrieved) {
@@ -1447,12 +1410,10 @@ function addDefectToTable(mainRow, defectData, isRetrieved, isEditable = false) 
   addButtonRowForMainRow(mainRow);
   if (typeof updateMainRow === 'function') updateMainRow(mainRow);
   refreshBCIScores();
-  console.groupEnd();
   return expandableRow;
 }
 
 document.addEventListener("DOMContentLoaded", function () {
-  console.log("DOM fully loaded. Initializing event listeners...");
   // inspection.js is also loaded on map.html (for shared report helpers),
   // which has no inspection-element-table UI - skip the rest of this
   // inspection-editor-specific setup there instead of throwing.
@@ -1870,7 +1831,6 @@ window.setAsPrimaryDefect = function(primaryTagElement) {
     }
     const isCurrentlyPrimary = currentDefect.isPrimary === true;
     if (isCurrentlyPrimary) {
-        console.log('This defect is already primary');
         return;
     }
     defects.forEach(defect => {
@@ -1903,7 +1863,6 @@ window.setAsPrimaryDefect = function(primaryTagElement) {
     // Primary defect always sits right under the main row.
     mainRow.parentNode.insertBefore(expandableRow, mainRow.nextSibling);
     updateMainRow(mainRow);
-    console.log(`Primary defect set for element ${elementNumber}: ${currentDefect.defectCombined}`);
     showPrimaryFeedback(primaryTagElement);
 };
 

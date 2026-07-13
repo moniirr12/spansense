@@ -157,7 +157,7 @@ body {
 .export-card {
     background: white;
     border-radius: 24px;
-    border: 1px solid #e9edf2;
+    border: 1px solid #cbd5df;
     padding: 28px 24px;
     transition: all 0.3s ease;
     cursor: pointer;
@@ -333,14 +333,14 @@ body {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    border-bottom: 1px solid #e9edf2;
+    border-bottom: 1px solid #cbd5df;
 }
 .data-table th sub { text-transform: none; }
 .data-table td {
     padding: 14px 16px;
     color: #2c3e44;
     font-size: 0.85rem;
-    border-bottom: 1px solid #f0f4f8;
+    border-bottom: 1px solid #cbd5df;
     transition: background 0.15s;
 }
 .data-table tbody tr:hover td { background: #fafbfc; }
@@ -403,17 +403,17 @@ body {
 }
 .data-table.card-rows tbody tr td {
     background: white;
-    border-top: 1px solid #e9edf2;
-    border-bottom: 1px solid #e9edf2;
+    border-top: 1px solid #cbd5df;
+    border-bottom: 1px solid #cbd5df;
 }
 .data-table.card-rows tbody tr:hover td { background: #fafbfc; border-color: #c5dbd8; }
 .data-table.card-rows tbody tr td:first-child {
-    border-left: 1px solid #e9edf2;
+    border-left: 1px solid #cbd5df;
     border-top-left-radius: 30px;
     border-bottom-left-radius: 30px;
 }
 .data-table.card-rows tbody tr td:last-child {
-    border-right: 1px solid #e9edf2;
+    border-right: 1px solid #cbd5df;
     border-top-right-radius: 30px;
     border-bottom-right-radius: 30px;
 }
@@ -461,7 +461,7 @@ body {
     background: #fafbfc;
     border-radius: 16px;
     padding: 20px;
-    border: 1px solid #e9edf2;
+    border: 1px solid #cbd5df;
 }
 .option-group h3 {
     font-size: 0.85rem;
@@ -569,7 +569,7 @@ body {
 .activity-panel {
     background: white;
     border-radius: 28px;
-    border: 1px solid #e9edf2;
+    border: 1px solid #cbd5df;
     padding: 28px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
 }
@@ -645,7 +645,7 @@ body {
     border-radius: 16px;
     padding: 16px 20px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-    border: 1px solid #e9edf2;
+    border: 1px solid #cbd5df;
     display: flex;
     align-items: center;
     gap: 12px;

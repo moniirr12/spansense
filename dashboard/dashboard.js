@@ -78,7 +78,6 @@ async function fetchBridgeCount() {
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     
     const data = await response.json();
-    console.log('Full API response:', data); // Debug the complete response
 
     if (data.success && data.bridge_count !== undefined) {
       countElement.textContent = data.bridge_count;
@@ -105,7 +104,6 @@ async function fetchTypeDistribution() {
     
     const result = await response.json();
 
-      console.log('BCI API response:', result);
     
     if (result.success && result.data) {
       renderTypeBarChart(result.data);
@@ -461,7 +459,6 @@ function renderConditionDistributionChart(data) {
     const filteredData = data.filter(item => item.period !== null);
     const labels = filteredData.map(item => item.period.toString());
     
-    console.log('Condition distribution labels (years):', labels);
     
     // Calculate max value for Y-axis
     const allValues = [];
@@ -531,7 +528,6 @@ function renderConditionDistributionChart(data) {
 (function() {
     const toggleBtn = document.getElementById('nightModeToggle');
     if (!toggleBtn) {
-        console.log('Dark mode button not found');
         return;
     }
     
@@ -543,11 +539,9 @@ function renderConditionDistributionChart(data) {
         if (document.body.classList.contains('night-mode')) {
             this.innerHTML = '<i class="fas fa-sun"></i>';
             localStorage.setItem('nightMode', 'on');
-            console.log('Dark mode ON');
         } else {
             this.innerHTML = '<i class="fas fa-moon"></i>';
             localStorage.setItem('nightMode', 'off');
-            console.log('Dark mode OFF');
         }
     };
     
@@ -562,7 +556,6 @@ function renderConditionDistributionChart(data) {
     if (savedNightMode === 'on' || (savedNightMode === null && !systemPrefersLight)) {
         document.body.classList.add('night-mode');
         toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
-        console.log('Restored dark mode from storage');
     }
 })();
 
@@ -990,6 +983,12 @@ function closeReviewModal() {
     document.getElementById('reviewModalOverlay').classList.remove('active');
     reviewingInspectionId = null;
 }
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && document.getElementById('reviewModalOverlay').classList.contains('active')) {
+        closeReviewModal();
+    }
+});
 
 async function submitReviewDecision(decision) {
     if (!reviewingInspectionId) return;

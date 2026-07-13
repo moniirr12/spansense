@@ -842,12 +842,12 @@ function populateDocumentsQuickStats(documents) {
             </div>
           </div>
           <div class="ss-card-acts">
-            <button class="ss-act-btn" title="Download report"
-              data-action="report" data-date="${doc.date}"><i class="fas fa-file-pdf"></i></button>
             <button class="ss-act-btn" title="Edit Inspection"
               data-action="edit" data-date="${doc.date}"><i class="fas fa-pen"></i></button>
             <button class="ss-act-btn" title="Download BCI proforma"
               data-action="bci" data-date="${doc.date}"><i class="fas fa-file-invoice"></i></button>
+            <button class="ss-act-btn" title="Download report"
+              data-action="report" data-date="${doc.date}"><i class="fas fa-file-pdf"></i></button>
           </div>
         </div>`;
     }).join('');
@@ -1051,6 +1051,26 @@ function populateDocumentsQuickStats(documents) {
 
         ssOpenModal(structureId, bridgeName);
       });
+    }
+  });
+
+  // Escape closes the topmost of the three stackable modals this page can
+  // have open: Previous Inspections opens on top of the bridge info card
+  // (ssCloseModal already restores it), Documents/file-explorer is
+  // independent of both and mirrors its own close-button's restore logic.
+  document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Escape') return;
+    const ssModal = document.getElementById('ssPrevModal');
+    const explorerModal = document.getElementById('fileExplorerModal');
+    const bridgeModalEl = document.getElementById('bridgeModal');
+    if (ssModal && getComputedStyle(ssModal).display !== 'none') {
+      ssCloseModal();
+    } else if (explorerModal && getComputedStyle(explorerModal).display !== 'none') {
+      explorerModal.style.display = 'none';
+      document.body.style.overflow = 'auto';
+      if (bridgeModalEl) bridgeModalEl.style.display = 'flex';
+    } else if (bridgeModalEl && getComputedStyle(bridgeModalEl).display !== 'none') {
+      bridgeModalEl.style.display = 'none';
     }
   });
 })();

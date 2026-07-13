@@ -6,7 +6,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const inspectionData = JSON.parse(sessionStorage.getItem('inspectionData') || '{}');
     const inspectionType = inspectionData.inspectionType;
     
-    console.log('Retrieved inspectionType:', inspectionType); // Should log "GI"
 
     if (structureId && structureName) {
         let headerText = `${structureName} (Bridge #${structureId})`;
@@ -20,7 +19,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         
         document.getElementById('bridgeHeader').textContent = headerText;
-        console.log('Header set to:', headerText);
 
         // Store structureId in a hidden form field
         const structureIdInput = document.createElement('input');
@@ -435,10 +433,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const inspectionDate = sessionStorage.getItem("inspectionDate");
     const displayDateElement = document.getElementById("displayDate");
     if (inspectionDate && displayDateElement) {
-        console.log("Retrieved inspection date:", inspectionDate);
         displayDateElement.textContent = inspectionDate;
     } else {
-        console.log("No inspection date found in sessionStorage.");
     }
 });
 
@@ -454,7 +450,6 @@ async function loadInspectionDates() {
         const response = await fetch(`/api/inspection-dates/${structureId}`);
         const data = await response.json();
         
-        console.log('API Response:', data);
         
         dropdown.innerHTML = '<option value="">Select inspection date</option>';
         
@@ -586,10 +581,8 @@ if (inspectionDatesElement) {
         const selectedSpan = sessionStorage.getItem('selectedSpan');
         const tableBody = document.querySelector('#inspectionElementsTable tbody');
         
-        console.log('Loading defects with:', { date, structureId, selectedSpan });
 
         if (!date || !structureId) {
-            console.log('No date or structureId - loading basic elements');
             if (typeof loadInspectionElements === 'function') {
                 await loadInspectionElements();
             }
@@ -617,7 +610,6 @@ if (inspectionDatesElement) {
             if (jsonDefectContent) {
                 jsonDefectContent.textContent = 'Loading defects...';
             }
-            console.log('Fetching defects from API...');
             
             const response = await fetch(
                 `/api/defects-by-date?structure_number=${structureId}&date=${date}`
@@ -656,7 +648,6 @@ if (inspectionDatesElement) {
 
             // Load base table if needed
             if (tableBody && tableBody.querySelectorAll('tr.main-row').length === 0) {
-                console.log('Loading base table elements');
                 if (typeof loadInspectionElements === 'function') {
                     await loadInspectionElements();
                 }
@@ -673,7 +664,6 @@ if (inspectionDatesElement) {
                 const mainRow = tableBody ? tableBody.querySelector(`tr[data-row-id="${element_no}"]`) : null;
                 if (!mainRow) return;
 
-                console.log(`Adding ${defects.length} historical defects for element ${element_no}`);
                 
                 defects.forEach((defect) => {
                     // Check if this defect already exists in session (avoid duplicates).
@@ -692,7 +682,6 @@ if (inspectionDatesElement) {
                     );
 
                     if (alreadyExists) {
-                        console.log(`Skipping duplicate defect`);
                         return;
                     }
                     
@@ -777,7 +766,6 @@ if (inspectionDatesElement) {
                 updateBCIScores(firstDefect.bci_av, firstDefect.bci_crit);
             }
 
-            console.log('Historical defects merged successfully');
 
             // NEW: Refresh all conditional fields after loading
             refreshAllConditionalFields();
@@ -930,7 +918,6 @@ window.onclick = function (event) {
 // Function to toggle between showing only non-empty rows or all rows
 function view() {
     showOnlyNonEmptyRows = !showOnlyNonEmptyRows;
-    console.log('showOnlyNonEmptyRows is now:', showOnlyNonEmptyRows);
     updateTableVisibility();
 }
 
