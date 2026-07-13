@@ -198,10 +198,9 @@ function bciTrendHTML(trend){
     }
     const critHtml = t.bciCrit != null ? `<div class="bc-score-row crit"><span>Crit</span><b>${t.bciCrit.toFixed(1)}</b></div>` : '';
     return delta + `<div class="bci-chip${isLast ? ' current' : ''}">
-      <div class="bc-date">${t.date}</div>
+      <div class="bc-date">${t.date} <span class="bc-type">${t.type}</span></div>
       <div class="bc-score-row avg"><span>Avg</span><b>${t.bciAvg.toFixed(1)}</b></div>
       ${critHtml}
-      <div class="bc-type">${t.type}</div>
     </div>`;
   }).join('');
   const label = scored.length > shown.length
@@ -385,6 +384,59 @@ function elPhotosHTML(photos, containerCls){
   ).join('')}</div>`;
 }
 
+// Draft screen's own photo section - unlike elPhotosHTML (read-only, used
+// in the report preview), this one supports uploading new photos (with a
+// caption) and deleting/re-captioning existing ones, wired to the app's
+// real photo endpoints - these persist to the actual inspection record,
+// unlike the narrative/severity/extent edits which are draft-only.
+function photoSectionHTML(el){
+  const existing = (el.photos || []).map(p => `
+    <div class="dc-photo-item" data-photo-id="${p.id || ''}">
+      <img src="${p.url}" alt="${(p.description||'Site photo').replace(/"/g,'')}" onclick="window.open('${p.url}','_blank')">
+      ${p.id ? `<button class="dc-photo-del" data-delete-photo="${p.id}" data-el="${el.elementNumber}" title="Delete photo"><i class="fas fa-xmark"></i></button>` : ''}
+      ${p.id ? `<input class="dc-photo-caption" data-caption-photo="${p.id}" data-el="${el.elementNumber}" value="${(p.description||'').replace(/"/g,'&quot;')}" placeholder="Add a caption…">` : ''}
+    </div>`).join('');
+  const addTile = el.current.defectDbId
+    ? `<div class="dc-photo-add" data-add-photo="${el.elementNumber}"><i class="fas fa-plus"></i> Add photo</div>
+       <input type="file" data-photo-input="${el.elementNumber}" accept="image/*" multiple hidden>
+       <div class="dc-photo-pending" data-photo-pending="${el.elementNumber}" style="display:none;"></div>`
+    : '';
+  const placeholder = (!el.photos || !el.photos.length) && !addTile ? `<div class="dc-photo-placeholder"><i class="fas fa-camera"></i></div>` : '';
+  return `<div class="dc-photos" data-photos-for="${el.elementNumber}">${placeholder}${existing}${addTile}</div>`;
+}
+function pendingPhotoRowHTML(file, idx){
+  const url = URL.createObjectURL(file);
+  return `<div class="dc-pending-item" data-pending-idx="${idx}">
+    <img src="${url}">
+    <input type="text" data-pending-caption="${idx}" placeholder="Caption for this photo…">
+  </div>`;
+}
+async function uploadPendingPhotos(el, files){
+  const container = document.querySelector(`[data-photo-pending="${el.elementNumber}"]`);
+  const captions = files.map((f, i) => {
+    const input = container.querySelector(`[data-pending-caption="${i}"]`);
+    return input ? input.value : '';
+  });
+  container.innerHTML = `<div style="font-size:.76rem; color:var(--text-mute2);"><i class="fas fa-spinner fa-spin"></i> Uploading…</div>`;
+  try {
+    const formData = new FormData();
+    files.forEach(f => formData.append('photos', f));
+    captions.forEach(c => formData.append('descriptions', c));
+    formData.append('defectId', String(el.current.defectDbId));
+    formData.append('inspectionDate', AUTHOR.inspectionDate);
+    const res = await fetch(`${API_BASE}/api/bridges/${AUTHOR.structureId}/inspection-photos`, { method: 'POST', body: formData });
+    const result = await res.json();
+    if (!res.ok || !result.success) throw new Error(result.error || 'Upload failed');
+    result.photos.forEach(p => {
+      el.photos.push({ id: p.id, url: p.url, description: p.photo_description, displayOrder: p.display_order });
+    });
+    renderDraft();
+  } catch (err) {
+    console.error('Photo upload failed:', err);
+    container.innerHTML = `<div style="font-size:.76rem; color:var(--red);">Upload failed: ${err.message}</div>`;
+  }
+}
+
 let draftFilter = 'all';
 let draftOnlyDefects = false;
 let draftAllCollapsed = false;
@@ -440,7 +492,7 @@ function renderDraft(){
 }
 function clearRowHTML(el){
   const [cls, label] = statusInfo(el.current.status);
-  return `<div class="clear-row"><span class="cr-name">${el.name}</span><span class="status-pill ${cls}" style="margin:0;">${label}</span></div>`;
+  return `<div class="clear-row"><span class="cr-name"><b class="cr-num">${el.elementNumber}</b> ${el.name}</span><span class="status-pill ${cls}" style="margin:0;">${label}</span></div>`;
 }
 function trendBadgeHTML(el){
   if (!el.comparison) return '';
@@ -484,9 +536,7 @@ function defectCardHTML(el){
     whyBanner = `<div class="dc-why"><i class="fas fa-circle-info"></i> The previous inspection didn't cover this element, so there's nothing to compare against.</div>`;
   }
 
-  const photosHtml = (el.photos && el.photos.length)
-    ? `<div class="dc-photos">${el.photos.slice(0,2).map(p => `<img src="${p.url}" alt="${(p.description||'Site photo').replace(/"/g,'')}" title="${(p.description||'').replace(/"/g,'')}" onclick="window.open('${p.url}','_blank')">`).join('')}</div>`
-    : `<div class="dc-photo-placeholder"><i class="fas fa-camera"></i></div>`;
+  const photosHtml = photoSectionHTML(el);
 
   const sevSteps = [1,2,3,4,5].map(s => `<button class="dc-step ${el.current.severity==String(s)?'active sev-'+s:''}" data-field="severity" data-el="${el.elementNumber}" data-val="${s}">${s}</button>`).join('');
   const extSteps = ['A','B','C','D','E'].map(x => `<button class="dc-step ${el.current.extent===x?'active ext-'+x:''}" data-field="extent" data-el="${el.elementNumber}" data-val="${x}">${x}</button>`).join('');
@@ -496,7 +546,7 @@ function defectCardHTML(el){
     <div class="dc-top" data-collapse-toggle="${el.elementNumber}">
       <button class="dc-collapse-btn"><i class="fas fa-chevron-down"></i></button>
       <div style="flex:1;">
-        <div class="dc-elem">${el.name}</div>
+        <div class="dc-elem"><b class="cr-num">${el.elementNumber}</b> ${el.name}</div>
         <div class="dc-code">${code}${codeLabel ? ' · ' + codeLabel.toUpperCase() : ''}</div>
       </div>
       <div class="dc-actions">
@@ -587,6 +637,61 @@ function attachDraftEditors(){
       if(input.dataset.field === 'priority') el.current.priority = input.value;
       else el.current.cost = input.value ? parseFloat(input.value) : null;
       refreshCardNarrative(el);
+    });
+  });
+  document.querySelectorAll('[data-add-photo]').forEach(tile => {
+    tile.addEventListener('click', () => {
+      document.querySelector(`[data-photo-input="${tile.dataset.addPhoto}"]`).click();
+    });
+  });
+  document.querySelectorAll('[data-photo-input]').forEach(input => {
+    input.addEventListener('change', () => {
+      const elNum = input.dataset.photoInput;
+      const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === elNum);
+      const files = Array.from(input.files || []);
+      if (!el || !files.length) return;
+      const pending = document.querySelector(`[data-photo-pending="${elNum}"]`);
+      pending.style.display = 'block';
+      pending.innerHTML = files.map((f, i) => pendingPhotoRowHTML(f, i)).join('') +
+        `<div class="dc-pending-actions">
+          <button class="dc-pending-upload" data-confirm-upload="${elNum}"><i class="fas fa-cloud-arrow-up"></i> Upload ${files.length > 1 ? files.length + ' photos' : 'photo'}</button>
+          <button class="dc-pending-cancel" data-cancel-upload="${elNum}">Cancel</button>
+        </div>`;
+      pending.querySelector(`[data-confirm-upload="${elNum}"]`).addEventListener('click', () => uploadPendingPhotos(el, files));
+      pending.querySelector(`[data-cancel-upload="${elNum}"]`).addEventListener('click', () => { pending.style.display = 'none'; pending.innerHTML = ''; input.value = ''; });
+    });
+  });
+  document.querySelectorAll('[data-delete-photo]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === btn.dataset.el);
+      if (!el || !confirm('Delete this photo?')) return;
+      try {
+        const res = await fetch(`${API_BASE}/api/inspection-photos/${btn.dataset.deletePhoto}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Delete failed');
+        el.photos = el.photos.filter(p => String(p.id) !== btn.dataset.deletePhoto);
+        renderDraft();
+      } catch (err) {
+        console.error('Photo delete failed:', err);
+        alert('Could not delete photo: ' + err.message);
+      }
+    });
+  });
+  document.querySelectorAll('[data-caption-photo]').forEach(input => {
+    input.addEventListener('change', async () => {
+      const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === input.dataset.el);
+      try {
+        const res = await fetch(`${API_BASE}/api/inspection-photos/${input.dataset.captionPhoto}`, {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ photo_description: input.value })
+        });
+        if (!res.ok) throw new Error('Save failed');
+        if (el) {
+          const photo = el.photos.find(p => String(p.id) === input.dataset.captionPhoto);
+          if (photo) photo.description = input.value;
+        }
+      } catch (err) {
+        console.error('Caption save failed:', err);
+      }
     });
   });
 }
