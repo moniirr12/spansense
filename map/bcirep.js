@@ -733,7 +733,7 @@ async function updateBridgeModalData(structureId) {
                 bciScoreElement.innerHTML = `${bciValue} - ${tier.label}`;
                 bciScoreElement.style.color = tier.color;
             } else if (bciScoreElement) {
-                bciScoreElement.innerHTML = 'No data - Pending';
+                bciScoreElement.innerHTML = 'No data';
                 bciScoreElement.style.color = '#8a9ba8';
             }
         } else {
@@ -742,7 +742,7 @@ async function updateBridgeModalData(structureId) {
             const lastInspectedElement = document.getElementById('lastInspected');
             
             if (bciScoreElement) {
-                bciScoreElement.innerHTML = 'No data - Pending';
+                bciScoreElement.innerHTML = 'No data';
                 bciScoreElement.style.color = '#8a9ba8';
             }
             if (lastInspectedElement) {
