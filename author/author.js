@@ -79,6 +79,7 @@ function goTo(step){
     el.classList.toggle('filled', i < idx);
   });
   if(step === 'draft') renderDraft();
+  else document.getElementById('structInfoPanel').classList.remove('show');
   if(step === 'author') { renderDataPane(); renderReportPane(); }
   if(step === 'export') renderExport();
 }
@@ -355,6 +356,8 @@ function elPhotosHTML(photos, containerCls){
 }
 
 let draftFilter = 'all';
+let draftOnlyDefects = false;
+let draftAllCollapsed = false;
 function draftFilterPillsHTML(){
   const defects = AUTHOR.diffElements.filter(e => e.current.status === 'defect');
   const flagged = defects.filter(e => e.comparison === 'new' || e.comparison === 'worsened' || e.comparison === 'first');
@@ -365,7 +368,9 @@ function draftFilterPillsHTML(){
     { key:'unreviewed', label:`Needs review (${defects.length - reviewed.length})` },
     { key:'reviewed', label:`Reviewed (${reviewed.length})` }
   ];
-  return pills.map(p => `<button class="f-pill ${draftFilter===p.key?'on':''}" data-filter="${p.key}">${p.label}</button>`).join('');
+  const filterHtml = pills.map(p => `<button class="f-pill" data-filter="${p.key}" data-active="${draftFilter===p.key}">${p.label}</button>`).join('');
+  const onlyDefectsHtml = `<button class="f-pill" data-only-defects="1" data-active="${draftOnlyDefects}"><i class="fas fa-filter"></i> Only defects</button>`;
+  return filterHtml + onlyDefectsHtml;
 }
 function passesDraftFilter(el){
   if (draftFilter === 'flagged') return el.comparison === 'new' || el.comparison === 'worsened' || el.comparison === 'first';
@@ -377,6 +382,7 @@ function passesDraftFilter(el){
 function renderDraft(){
   document.getElementById('draftStructureName').textContent = AUTHOR.structureName || '—';
   document.getElementById('draftFilterPills').innerHTML = draftFilterPillsHTML();
+  document.querySelectorAll('#draftFilterPills .f-pill').forEach(b => b.classList.toggle('on', b.dataset.active === 'true'));
   const order = categoryOrderFor(AUTHOR.structureType);
   const wrap = document.getElementById('draftGroups');
   wrap.innerHTML = order.map(cat => {
@@ -384,8 +390,8 @@ function renderDraft(){
     if (!els.length) return '';
     const clearEls = els.filter(e => e.current.status !== 'defect');
     const defectEls = els.filter(e => e.current.status === 'defect').filter(passesDraftFilter);
-    if (!clearEls.length && !defectEls.length) return '';
-    const clearHtml = clearEls.length ? `<div class="clear-table">${clearEls.map(clearRowHTML).join('')}</div>` : '';
+    if (!defectEls.length && (draftOnlyDefects || !clearEls.length)) return '';
+    const clearHtml = (!draftOnlyDefects && clearEls.length) ? `<div class="clear-table">${clearEls.map(clearRowHTML).join('')}</div>` : '';
     return `<div class="cat-group">
       <div class="cat-title">${cat}</div>
       ${clearHtml}
@@ -398,6 +404,7 @@ function renderDraft(){
     ? `${reviewedDefects} of ${totalDefects} defects reviewed`
     : 'No defects recorded for this inspection';
   document.getElementById('markUnchangedBtn').disabled = !AUTHOR.diffElements.some(e => e.current.status === 'defect' && e.comparison === 'unchanged' && !e.reviewed);
+  renderStructInfoPanel();
   attachDraftEditors();
 }
 function clearRowHTML(el){
@@ -409,9 +416,25 @@ function trendBadgeHTML(el){
   const label = { new:'New finding', worsened:'Worsened since last visit', improved:'Improved since last visit', resolved:'Resolved', unchanged:'Stable', changed:'Changed', first:'First record' }[el.comparison] || cmpLabel(el.comparison);
   return `<span class="trend-badge ${el.comparison}">${label}</span>`;
 }
+function workDetailsHTML(el){
+  const show = el.current.worksRequired === 'Y';
+  return `<div class="dc-works-detail${show?' show':''}" data-works-detail="${el.elementNumber}">
+    <div class="dc-works-field">
+      <span class="mini-lbl">Priority</span>
+      <select data-field="priority" data-el="${el.elementNumber}">
+        <option value="L" ${el.current.priority==='L'?'selected':''}>Low</option>
+        <option value="M" ${el.current.priority==='M'?'selected':''}>Medium</option>
+        <option value="H" ${el.current.priority==='H'?'selected':''}>High</option>
+      </select>
+    </div>
+    <div class="dc-works-field">
+      <span class="mini-lbl">Est. cost (£)</span>
+      <input type="number" min="0" data-field="cost" data-el="${el.elementNumber}" value="${el.current.cost != null ? el.current.cost : ''}" placeholder="Enter amount">
+    </div>
+  </div>`;
+}
 function defectCardHTML(el){
   const codeLabel = (typeof defectTypeLabel === 'function') ? defectTypeLabel(el.current.defectType, el.current.defectNumber) : null;
-  const sevLabel = (typeof severityLabel === 'function') ? severityLabel(el.current.severity) : null;
   const code = el.current.defectType && el.current.defectNumber ? `${el.current.defectType}.${el.current.defectNumber}` : '';
 
   const historyBits = [];
@@ -434,9 +457,14 @@ function defectCardHTML(el){
     ? `<div class="dc-photos">${el.photos.slice(0,2).map(p => `<img src="${p.url}" alt="${(p.description||'Site photo').replace(/"/g,'')}" title="${(p.description||'').replace(/"/g,'')}" onclick="window.open('${p.url}','_blank')">`).join('')}</div>`
     : `<div class="dc-photo-placeholder"><i class="fas fa-camera"></i></div>`;
 
-  return `<div class="defect-card cmp-${el.comparison||''} ${el.reviewed?'reviewed':''}" data-el="${el.elementNumber}">
+  const sevSteps = [1,2,3,4,5].map(s => `<button class="dc-step ${el.current.severity==String(s)?'active sev-'+s:''}" data-field="severity" data-el="${el.elementNumber}" data-val="${s}">${s}</button>`).join('');
+  const extSteps = ['A','B','C','D','E'].map(x => `<button class="dc-step ${el.current.extent===x?'active ext-'+x:''}" data-field="extent" data-el="${el.elementNumber}" data-val="${x}">${x}</button>`).join('');
+  const worksSteps = [['N','No'],['Y','Yes'],['M','Monitor']].map(([v,l]) => `<button class="dc-step works-btn ${el.current.worksRequired===v?'active works-'+v:''}" data-field="works" data-el="${el.elementNumber}" data-val="${v}">${l}</button>`).join('');
+
+  return `<div class="defect-card cmp-${el.comparison||''} ${el.reviewed?'reviewed':''}${draftAllCollapsed?' collapsed':''}" data-el="${el.elementNumber}">
     <div class="dc-top">
-      <div>
+      <button class="dc-collapse-btn" data-collapse-toggle="${el.elementNumber}"><i class="fas fa-chevron-down"></i></button>
+      <div style="flex:1;">
         <div class="dc-elem">${el.name}</div>
         <div class="dc-code">${code}${codeLabel ? ' · ' + codeLabel.toUpperCase() : ''}</div>
       </div>
@@ -447,27 +475,36 @@ function defectCardHTML(el){
         </label>
       </div>
     </div>
-    <div class="dc-history">
-      <span>${historyBits.join(' · ')}</span>
-      ${trendBadgeHTML(el)}
-    </div>
-    <div class="dc-grid">
-      ${photosHtml}
-      <div>
-        <div class="dc-facts">
-          <span>Severity: <b>${el.current.severity || '—'}${sevLabel ? ' (' + sevLabel + ')' : ''}</b></span>
-          <span>Extent: <b>${el.current.extent || '—'}</b></span>
-          <span>Works required: <b>${el.current.worksRequired === 'Y' ? 'Yes' : 'No'}</b></span>
-        </div>
-        <div class="dc-narrative-lbl">
-          <span class="mini-lbl" style="margin:0;">Drafted narrative</span>
-          <button class="dc-reset-btn" data-reset="${el.elementNumber}"><i class="fas fa-rotate-left"></i> Reset to drafted text</button>
-        </div>
-        <textarea class="dc-narrative" data-field="narrative" data-el="${el.elementNumber}">${narrativeFor(el)}</textarea>
+    <div class="dc-body">
+      <div class="dc-history">
+        <span>${historyBits.join(' · ')}</span>
+        ${trendBadgeHTML(el)}
       </div>
+      <div class="dc-grid">
+        ${photosHtml}
+        <div>
+          <div class="dc-stepper-row">
+            <div><span class="dc-stepper-lbl">Severity</span><div class="dc-step-track">${sevSteps}</div></div>
+            <div><span class="dc-stepper-lbl">Extent</span><div class="dc-step-track">${extSteps}</div></div>
+            <div><span class="dc-stepper-lbl">Works required</span><div class="dc-step-track">${worksSteps}</div></div>
+          </div>
+          ${workDetailsHTML(el)}
+          <div class="dc-narrative-lbl">
+            <span class="mini-lbl" style="margin:0;">Drafted narrative</span>
+            <button class="dc-reset-btn" data-reset="${el.elementNumber}"><i class="fas fa-rotate-left"></i> Reset to drafted text</button>
+          </div>
+          <textarea class="dc-narrative" data-field="narrative" data-el="${el.elementNumber}">${narrativeFor(el)}</textarea>
+        </div>
+      </div>
+      ${whyBanner}
     </div>
-    ${whyBanner}
   </div>`;
+}
+function refreshCardNarrative(el){
+  el.editedNarrative = null;
+  const ta = document.querySelector(`.dc-narrative[data-el="${el.elementNumber}"]`);
+  if(ta) ta.value = narrativeFor(el);
+  if(document.getElementById('screen-author').classList.contains('active')){ renderDataPane(); renderReportPane(); }
 }
 function attachDraftEditors(){
   document.querySelectorAll('.dc-narrative').forEach(ta => {
@@ -481,11 +518,7 @@ function attachDraftEditors(){
   document.querySelectorAll('[data-reset]').forEach(btn => {
     btn.addEventListener('click', () => {
       const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === btn.dataset.reset);
-      if(!el) return;
-      el.editedNarrative = null;
-      const ta = document.querySelector(`.dc-narrative[data-el="${btn.dataset.reset}"]`);
-      if(ta) ta.value = narrativeFor(el);
-      if(document.getElementById('screen-author').classList.contains('active')){ renderDataPane(); renderReportPane(); }
+      if(el) refreshCardNarrative(el);
     });
   });
   document.querySelectorAll('[data-reviewed]').forEach(cb => {
@@ -496,11 +529,37 @@ function attachDraftEditors(){
       renderDraft();
     });
   });
+  document.querySelectorAll('[data-collapse-toggle]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.closest('.defect-card').classList.toggle('collapsed');
+    });
+  });
+  document.querySelectorAll('.dc-step[data-field="severity"], .dc-step[data-field="extent"], .dc-step[data-field="works"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === btn.dataset.el);
+      if(!el) return;
+      if(btn.dataset.field === 'severity') el.current.severity = btn.dataset.val;
+      else if(btn.dataset.field === 'extent') el.current.extent = btn.dataset.val;
+      else if(btn.dataset.field === 'works') el.current.worksRequired = btn.dataset.val;
+      refreshCardNarrative(el);
+      renderDraft();
+    });
+  });
+  document.querySelectorAll('[data-field="priority"], [data-field="cost"]').forEach(input => {
+    input.addEventListener('change', () => {
+      const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === input.dataset.el);
+      if(!el) return;
+      if(input.dataset.field === 'priority') el.current.priority = input.value;
+      else el.current.cost = input.value ? parseFloat(input.value) : null;
+      refreshCardNarrative(el);
+    });
+  });
 }
 document.getElementById('draftFilterPills').addEventListener('click', function(e){
   const btn = e.target.closest('.f-pill');
   if(!btn) return;
-  draftFilter = btn.dataset.filter;
+  if(btn.dataset.onlyDefects){ draftOnlyDefects = !draftOnlyDefects; }
+  else { draftFilter = btn.dataset.filter; }
   renderDraft();
 });
 document.getElementById('markUnchangedBtn').addEventListener('click', function(){
@@ -509,7 +568,36 @@ document.getElementById('markUnchangedBtn').addEventListener('click', function()
   });
   renderDraft();
 });
+document.getElementById('toggleCollapseAllBtn').addEventListener('click', function(){
+  draftAllCollapsed = !draftAllCollapsed;
+  this.innerHTML = draftAllCollapsed ? '<i class="fas fa-expand"></i> Expand all' : '<i class="fas fa-compress"></i> Collapse all';
+  document.querySelectorAll('.defect-card').forEach(card => card.classList.toggle('collapsed', draftAllCollapsed));
+});
 document.getElementById('toAuthorBtn').addEventListener('click', () => goTo('author'));
+
+// Fixed right-side structure info panel - BCI trend + description, shown
+// only while reviewing the draft (matches the left stepper's "stay in
+// view while scrolling a long list" idea).
+function renderStructInfoPanel(){
+  const panel = document.getElementById('structInfoPanel');
+  if (!AUTHOR.structureId) { panel.classList.remove('show'); return; }
+  panel.innerHTML = `
+    <div class="sip-name">${AUTHOR.structureName || ''}</div>
+    <div class="sip-meta">${AUTHOR.structureType || ''} · Inspected ${fmtDate(AUTHOR.inspectionDate)}</div>
+    ${AUTHOR.structureDescription ? `<div class="sip-label">Description</div><div class="sip-desc">${AUTHOR.structureDescription}</div>` : ''}
+    <div class="sip-label">BCI trend</div>
+    <div class="sip-bci-track">${sipBciTrendHTML()}</div>
+  `;
+  panel.classList.add('show');
+}
+function sipBciTrendHTML(){
+  const scored = (AUTHOR.bciTrend || []).filter(t => t.bciAvg != null).slice(-6);
+  if (!scored.length) return '<div style="font-size:.74rem; color:var(--text-mute);">No BCI history recorded.</div>';
+  return scored.map((t, i) => `<div class="sip-bci-chip${i===scored.length-1?' current':''}">
+    <span class="sc-date">${t.date}</span>
+    <span class="sc-vals">${t.bciAvg.toFixed(1)}${t.bciCrit != null ? `<span class="crit">${t.bciCrit.toFixed(1)}</span>` : ''}</span>
+  </div>`).join('');
+}
 
 // ============================================================
 // SCREEN 3 — AUTHOR VIEW (split / data / report)

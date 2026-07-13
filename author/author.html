@@ -278,7 +278,6 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .clear-table{border:1px solid var(--border2); border-radius:12px; overflow:hidden; margin-bottom:10px;}
 .clear-row{display:flex; align-items:center; justify-content:space-between; padding:9px 14px; font-size:.82rem; color:var(--text); border-bottom:1px solid var(--border2);}
 .clear-row:last-child{border-bottom:none;}
-.clear-row .cr-name{color:var(--text);}
 
 .defect-card{border:1px solid var(--border2); border-left:3px solid var(--amber); border-radius:16px; padding:16px 20px; margin-bottom:14px; background:#fff; transition:.2s;}
 .defect-card.cmp-new, .defect-card.cmp-worsened{border-left-color:var(--red);}
@@ -299,13 +298,38 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .dc-history .trend-badge.unchanged{background:#eef0f2; color:var(--text-mute2);}
 .dc-history .trend-badge.changed, .dc-history .trend-badge.first{background:var(--amber-bg); color:var(--amber);}
 
-.dc-grid{display:grid; grid-template-columns:140px 1fr; gap:18px;}
-@media (max-width:640px){ .dc-grid{grid-template-columns:1fr;} }
-.dc-photos{display:flex; flex-direction:column; gap:6px;}
-.dc-photos img{width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:10px; border:1px solid var(--border2); cursor:pointer;}
-.dc-photo-placeholder{width:100%; aspect-ratio:4/3; border-radius:10px; background:var(--bg-soft); border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; color:var(--text-mute); font-size:1.3rem;}
-.dc-facts{display:flex; gap:14px; flex-wrap:wrap; font-size:.78rem; color:var(--text-mute2); margin-bottom:10px;}
-.dc-facts b{color:var(--text); font-weight:700;}
+.dc-grid{display:grid; grid-template-columns:210px 1fr; gap:20px;}
+@media (max-width:700px){ .dc-grid{grid-template-columns:1fr;} }
+.dc-photos{display:flex; flex-direction:column; gap:7px;}
+.dc-photos img{width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:12px; border:1px solid var(--border2); cursor:pointer;}
+.dc-photo-placeholder{width:100%; aspect-ratio:4/3; border-radius:12px; background:var(--bg-soft); border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; color:var(--text-mute); font-size:1.6rem;}
+
+/* Editable severity/extent/works steppers - same idea as the main
+   inspection editor's button-row steppers, color-coded the same way. */
+.dc-stepper-row{display:flex; gap:22px; flex-wrap:wrap; margin-bottom:14px;}
+.dc-stepper-lbl{font-size:.64rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-mute); margin-bottom:6px; display:block;}
+.dc-step-track{display:flex; gap:4px;}
+.dc-step{width:28px; height:28px; border-radius:8px; border:1px solid var(--border); background:#fff; font-size:.74rem; font-weight:700; color:var(--text-mute2); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:.12s;}
+.dc-step:hover{border-color:var(--teal); transform:translateY(-1px);}
+.dc-step.active.sev-1{background:#2d7a6e; border-color:#2d7a6e; color:#fff;}
+.dc-step.active.sev-2{background:#7a9a3a; border-color:#7a9a3a; color:#fff;}
+.dc-step.active.sev-3{background:#ba7517; border-color:#ba7517; color:#fff;}
+.dc-step.active.sev-4{background:#d9722f; border-color:#d9722f; color:#fff;}
+.dc-step.active.sev-5{background:#c0392b; border-color:#c0392b; color:#fff;}
+.dc-step.active.ext-A{background:#5b8c8a; border-color:#5b8c8a; color:#fff;}
+.dc-step.active.ext-B{background:#4a9ab0; border-color:#4a9ab0; color:#fff;}
+.dc-step.active.ext-C{background:#3a88c0; border-color:#3a88c0; color:#fff;}
+.dc-step.active.ext-D{background:#378add; border-color:#378add; color:#fff;}
+.dc-step.active.ext-E{background:#2a6fd4; border-color:#2a6fd4; color:#fff;}
+.dc-step.works-btn{width:auto; padding:0 12px; font-size:.7rem; text-transform:uppercase; letter-spacing:.03em;}
+.dc-step.active.works-N{background:var(--text-mute2); border-color:var(--text-mute2); color:#fff;}
+.dc-step.active.works-Y{background:var(--red); border-color:var(--red); color:#fff;}
+.dc-step.active.works-M{background:var(--amber); border-color:var(--amber); color:#fff;}
+
+.dc-works-detail{display:none; gap:14px; flex-wrap:wrap; margin:-4px 0 14px; padding:12px 14px; background:var(--bg-soft); border-radius:12px;}
+.dc-works-detail.show{display:flex;}
+.dc-works-field{flex:1; min-width:130px;}
+.dc-works-field select, .dc-works-field input{width:100%; border:1px solid var(--border); border-radius:9px; padding:7px 10px; font-size:.82rem; font-family:inherit; color:var(--text); background:#fff;}
 
 .dc-narrative-lbl{display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;}
 .dc-reset-btn{font-size:.68rem; font-weight:700; color:var(--teal-dark); background:var(--bg-mint); border:1px solid #d6e6e3; padding:4px 10px; border-radius:20px; cursor:pointer; display:inline-flex; align-items:center; gap:5px;}
@@ -314,6 +338,34 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .dc-narrative:focus{outline:none; border-color:var(--teal); background:#fff;}
 
 .dc-why{margin-top:12px; display:flex; align-items:flex-start; gap:8px; background:var(--ai-bg); border:1px solid var(--ai-border); color:var(--ai); font-size:.76rem; font-weight:600; padding:9px 12px; border-radius:12px; line-height:1.45;}
+
+/* Collapse/expand */
+.dc-collapse-btn{background:none; border:none; color:var(--text-mute); cursor:pointer; padding:4px; font-size:.9rem; flex-shrink:0;}
+.dc-collapse-btn:hover{color:var(--teal);}
+.defect-card .dc-body{overflow:hidden;}
+.defect-card.collapsed .dc-body{display:none;}
+.defect-card.collapsed .dc-collapse-btn i{transform:rotate(-90deg);}
+
+/* Fixed right-side structure info panel */
+.struct-info-panel{
+  position:fixed; right:26px; top:50%; transform:translateY(-50%); z-index:900;
+  width:250px; max-height:76vh; overflow-y:auto;
+  background:rgba(255,255,255,.9); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--border2); border-radius:20px; padding:18px; box-shadow:0 10px 28px rgba(44,90,87,.08);
+  display:none;
+}
+.struct-info-panel.show{display:block;}
+@media (max-width:1650px){ .struct-info-panel{display:none !important;} }
+.sip-name{font-size:1rem; font-weight:800; color:var(--green-dark); margin-bottom:2px;}
+.sip-meta{font-size:.74rem; color:var(--text-mute2); margin-bottom:14px;}
+.sip-label{font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-mute); margin-bottom:6px;}
+.sip-desc{font-size:.78rem; color:var(--text-mute2); line-height:1.55; margin-bottom:16px;}
+.sip-bci-track{display:flex; flex-direction:column; gap:6px;}
+.sip-bci-chip{display:flex; align-items:center; justify-content:space-between; background:var(--bg-soft); border:1px solid var(--border2); border-radius:10px; padding:7px 10px; font-size:.72rem;}
+.sip-bci-chip.current{background:var(--bg-mint); border-color:#cfe4e0;}
+.sip-bci-chip .sc-date{color:var(--text-mute2);}
+.sip-bci-chip .sc-vals{font-weight:700; color:var(--text); font-variant-numeric:tabular-nums;}
+.sip-bci-chip .sc-vals .crit{color:var(--red); margin-left:6px;}
 
 /* ===== STEP 3: AUTHOR VIEW ===== */
 .view-toolbar{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:18px;}
@@ -479,12 +531,26 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .dc-history .trend-badge.unchanged{background:#2a343a; color:#7d939b;}
 .night-mode .dc-history .trend-badge.changed, .night-mode .dc-history .trend-badge.first{background:#3a3020; color:#e0b060;}
 .night-mode .dc-photo-placeholder{background:#1a2428; border-color:#3a4b53; color:#7d939b;}
-.night-mode .dc-facts{color:#8aa4ac;}
-.night-mode .dc-facts b{color:#d4dfe3;}
+.night-mode .dc-stepper-lbl{color:#7d939b;}
+.night-mode .dc-step{background:#1a2428; border-color:#3a4b53; color:#9ab0b8;}
+.night-mode .dc-works-detail{background:#1a2428;}
+.night-mode .dc-works-field select, .night-mode .dc-works-field input{background:#212f33; border-color:#3a4b53; color:#d4dfe3;}
+.night-mode .dc-collapse-btn{color:#7d939b;}
+.night-mode .dc-collapse-btn:hover{color:#8ab4b0;}
 .night-mode .dc-reset-btn{background:#1e3a38; border-color:#3a6b62; color:#8ab4b0;}
 .night-mode .dc-reset-btn:hover{background:#26443f;}
 .night-mode .dc-narrative{background:#1a2428; border-color:#3a4b53; color:#d4dfe3;}
 .night-mode .dc-narrative:focus{background:#212f33; border-color:#6e9c98;}
+.night-mode .struct-info-panel{background:rgba(35,46,52,.9); border-color:#2f3e45; box-shadow:0 10px 28px rgba(0,0,0,.3);}
+.night-mode .sip-name{color:#8ab4b0;}
+.night-mode .sip-meta{color:#8aa4ac;}
+.night-mode .sip-label{color:#7d939b;}
+.night-mode .sip-desc{color:#9ab0b8;}
+.night-mode .sip-bci-chip{background:#1a2428; border-color:#2f3e45;}
+.night-mode .sip-bci-chip.current{background:#1e3a38; border-color:#3a6b62;}
+.night-mode .sip-bci-chip .sc-date{color:#8aa4ac;}
+.night-mode .sip-bci-chip .sc-vals{color:#d4dfe3;}
+.night-mode .sip-bci-chip .sc-vals .crit{color:#e57373;}
 .night-mode .dc-why{background:#2a2450; border-color:#3c3266; color:#a794f5;}
 .night-mode .btn-bulk{background:#3a6b62;}
 .night-mode .btn-bulk:hover{background:#4a8579;}
@@ -544,6 +610,8 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 </nav>
 
 <div class="glass-scrollbar" id="glassScrollbar"><div class="thumb" id="glassThumb"></div></div>
+
+<div class="struct-info-panel" id="structInfoPanel"></div>
 
 <div class="page-wrapper">
 
@@ -674,7 +742,10 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
             <p class="card-sub">A card per defect, drafted from this inspection's real data and automatically compared against the structure's own previous inspection. Review, edit, and mark off as you go — elements with nothing to report are listed compactly below each category.</p>
             <div class="draft-toolbar">
                 <div class="filter-pills" id="draftFilterPills"></div>
-                <button class="btn-bulk" id="markUnchangedBtn"><i class="fas fa-check-double"></i> Mark all unchanged as reviewed</button>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button class="btn-mini" id="toggleCollapseAllBtn"><i class="fas fa-compress"></i> Collapse all</button>
+                    <button class="btn-bulk" id="markUnchangedBtn"><i class="fas fa-check-double"></i> Mark all unchanged as reviewed</button>
+                </div>
             </div>
             <div id="draftGroups"></div>
             <div class="bottom-nav">
