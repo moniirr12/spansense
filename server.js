@@ -1,6 +1,13 @@
 require("dotenv").config();
 const express = require("express");
-const { Pool } = require("pg");
+const { Pool, types } = require("pg");
+// node-postgres's default DATE (OID 1082) parser converts to a JS Date at
+// LOCAL midnight, which then serializes to JSON via toISOString() in UTC -
+// on any server whose local timezone isn't UTC (this one runs in
+// Europe/London/BST, UTC+1), that silently shifts every date back by a day
+// (e.g. a stored '2022-05-30' round-trips as '2022-05-29T23:00:00.000Z').
+// Returning the raw 'YYYY-MM-DD' string instead avoids the shift entirely.
+types.setTypeParser(1082, val => val);
 const bodyParser = require("body-parser");
 const cors = require("cors");
 

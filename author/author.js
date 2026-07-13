@@ -55,22 +55,25 @@ const AUTHOR = {
   structureId: null, structureName: null, structureType: null, organizationId: null,
   inspectionDate: null, inspectionType: null, previousDate: null,
   diffElements: [], // [{ elementNumber, name, category, current, previous, comparison, editedNarrative? }]
-  branding: { accentColor: '#5b8c8a', template: 'modern', logoUrl: null }
+  branding: { accentColor: '#5b8c8a', template: 'modern', logoUrl: null },
+  maxStepReached: 0
 };
 
 // ============================================================
 // SCREEN NAVIGATION
 // ============================================================
+const WIZARD_ORDER = ['setup','draft','author','export'];
 function goTo(step){
+  const idx = WIZARD_ORDER.indexOf(step);
+  AUTHOR.maxStepReached = Math.max(AUTHOR.maxStepReached, idx);
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + step).classList.add('active');
-  const order = ['setup','draft','author','export'];
-  const idx = order.indexOf(step);
   document.querySelectorAll('.wizard-step').forEach(el => {
-    const i = order.indexOf(el.dataset.step);
+    const i = WIZARD_ORDER.indexOf(el.dataset.step);
     el.classList.remove('active','done');
     if(i < idx) el.classList.add('done');
     else if(i === idx) el.classList.add('active');
+    el.classList.toggle('clickable', i <= AUTHOR.maxStepReached && i !== idx);
   });
   document.querySelectorAll('.wizard-connector').forEach((el, i) => {
     el.classList.toggle('filled', i < idx);
@@ -79,10 +82,26 @@ function goTo(step){
   if(step === 'author') { renderDataPane(); renderReportPane(); }
   if(step === 'export') renderExport();
 }
+document.getElementById('wizardSteps').addEventListener('click', function(e){
+  const stepEl = e.target.closest('.wizard-step');
+  if(!stepEl) return;
+  const idx = WIZARD_ORDER.indexOf(stepEl.dataset.step);
+  if(idx <= AUTHOR.maxStepReached) goTo(stepEl.dataset.step);
+});
 
 // ============================================================
 // SCREEN 1 — SETUP: real structure/inspection picker
 // ============================================================
+document.getElementById('sourceTabs').addEventListener('click', function(e){
+  const tab = e.target.closest('.source-tab');
+  if(!tab) return;
+  document.querySelectorAll('.source-tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  const isUpload = tab.dataset.source === 'upload';
+  document.getElementById('sourceRecords').style.display = isUpload ? 'none' : 'block';
+  document.getElementById('sourceUpload').style.display = isUpload ? 'block' : 'none';
+});
+
 async function loadStructures(){
   const sel = document.getElementById('structureSelect');
   try {
@@ -117,10 +136,15 @@ async function onStructureChange(){
       inspSel.innerHTML = '<option value="">No inspections recorded for this structure</option>';
       return;
     }
-    inspSel.innerHTML = dates.map(d => {
-      const iso = new Date(d.date).toISOString().slice(0,10);
-      return `<option value="${iso}">${fmtDate(d.date)} — ${d.type}</option>`;
-    }).join('');
+    // d.date is already a plain 'YYYY-MM-DD' string from the server - using
+    // it as-is (rather than round-tripping through `new Date(...).toISOString()`)
+    // avoids a timezone-shift-by-a-day bug when the server's local timezone
+    // isn't UTC. dates is newest-first, so the first entry is the most
+    // recent inspection - pre-selected by default since that's almost
+    // always the one being authored, while still letting the user pick an
+    // older one if they want.
+    inspSel.innerHTML = dates.map(d => `<option value="${d.date}">${fmtDate(d.date)} — ${d.type}</option>`).join('');
+    inspSel.value = dates[0].date;
     inspSel.disabled = false;
     loadBtn.disabled = false;
   } catch (err) {
@@ -132,7 +156,7 @@ async function onStructureChange(){
 // BCI trend strip - twin.inspections is already sorted oldest-to-newest by
 // /api/twin/:structureId, with a null bciAvg for inspections that predate BCI
 // scoring or never had one recorded.
-const BCI_TREND_MAX_CHIPS = 6;
+const BCI_TREND_MAX_CHIPS = 4;
 function bciTrendHTML(trend){
   const scored = trend.filter(t => t.bciAvg != null);
   if (!scored.length) return '';
@@ -147,9 +171,11 @@ function bciTrendHTML(trend){
       const dir = d > 0 ? 'up' : d < 0 ? 'down' : 'flat';
       delta = `<div class="bci-delta ${dir}"><i class="fas fa-arrow-${dir === 'flat' ? 'right' : dir}"></i>${d > 0 ? '+' : ''}${d}</div>`;
     }
+    const critHtml = t.bciCrit != null ? `<div class="bc-score-row crit"><span>Crit</span><b>${t.bciCrit.toFixed(1)}</b></div>` : '';
     return delta + `<div class="bci-chip${isLast ? ' current' : ''}">
       <div class="bc-date">${t.date}</div>
-      <div class="bc-score">${t.bciAvg.toFixed(1)}</div>
+      <div class="bc-score-row avg"><span>Avg</span><b>${t.bciAvg.toFixed(1)}</b></div>
+      ${critHtml}
       <div class="bc-type">${t.type}</div>
     </div>`;
   }).join('');
@@ -194,7 +220,8 @@ async function onLoad(){
     AUTHOR.previousDate = diff.previousDate;
     AUTHOR.structureDescription = bridge.description || null;
     AUTHOR.bciTrend = twin.inspections || [];
-    AUTHOR.diffElements = diff.elements.map(e => ({ ...e, category: categoryFor(diff.structureType, e.elementNumber) }));
+    AUTHOR.diffElements = diff.elements.map(e => ({ ...e, category: categoryFor(diff.structureType, e.elementNumber), reviewed: false }));
+    draftFilter = 'all';
 
     // Real defect photos, keyed by element number (an element can have more
     // than one defect row with its own photos across the same inspection).
@@ -316,23 +343,6 @@ function statusInfo(status){
 function cmpLabel(cmp){
   return { new:'New', worsened:'Worsened', improved:'Improved', resolved:'Resolved', unchanged:'Unchanged', changed:'Changed', first:'First record' }[cmp] || '';
 }
-function renderDraft(){
-  document.getElementById('draftStructureName').textContent = AUTHOR.structureName || '—';
-  const order = categoryOrderFor(AUTHOR.structureType);
-  const wrap = document.getElementById('draftGroups');
-  wrap.innerHTML = order.map(cat => {
-    const els = AUTHOR.diffElements.filter(e => e.category === cat);
-    if (!els.length) return '';
-    return `<div class="cat-group">
-      <div class="cat-title">${cat}</div>
-      ${els.map(el => elRowHTML(el)).join('')}
-    </div>`;
-  }).join('');
-  const total = AUTHOR.diffElements.length;
-  const cats = order.filter(c => AUTHOR.diffElements.some(e => e.category === c)).length;
-  document.getElementById('draftProgressText').textContent = `${total} elements drafted across ${cats} categories`;
-  attachDraftEditors();
-}
 function narrativeFor(el){
   return el.editedNarrative != null ? el.editedNarrative : buildNarrative(el, AUTHOR.previousDate);
 }
@@ -343,41 +353,162 @@ function elPhotosHTML(photos, containerCls){
     `<img class="${thumbCls}" src="${p.url}" alt="${(p.description||'Site photo').replace(/"/g,'')}" title="${(p.description||'').replace(/"/g,'')}" onclick="window.open('${p.url}','_blank')">`
   ).join('')}</div>`;
 }
-function elRowHTML(el){
+
+let draftFilter = 'all';
+function draftFilterPillsHTML(){
+  const defects = AUTHOR.diffElements.filter(e => e.current.status === 'defect');
+  const flagged = defects.filter(e => e.comparison === 'new' || e.comparison === 'worsened' || e.comparison === 'first');
+  const reviewed = defects.filter(e => e.reviewed);
+  const pills = [
+    { key:'all', label:`All defects (${defects.length})` },
+    { key:'flagged', label:`New or worsened (${flagged.length})` },
+    { key:'unreviewed', label:`Needs review (${defects.length - reviewed.length})` },
+    { key:'reviewed', label:`Reviewed (${reviewed.length})` }
+  ];
+  return pills.map(p => `<button class="f-pill ${draftFilter===p.key?'on':''}" data-filter="${p.key}">${p.label}</button>`).join('');
+}
+function passesDraftFilter(el){
+  if (draftFilter === 'flagged') return el.comparison === 'new' || el.comparison === 'worsened' || el.comparison === 'first';
+  if (draftFilter === 'unreviewed') return !el.reviewed;
+  if (draftFilter === 'reviewed') return !!el.reviewed;
+  return true;
+}
+
+function renderDraft(){
+  document.getElementById('draftStructureName').textContent = AUTHOR.structureName || '—';
+  document.getElementById('draftFilterPills').innerHTML = draftFilterPillsHTML();
+  const order = categoryOrderFor(AUTHOR.structureType);
+  const wrap = document.getElementById('draftGroups');
+  wrap.innerHTML = order.map(cat => {
+    const els = AUTHOR.diffElements.filter(e => e.category === cat);
+    if (!els.length) return '';
+    const clearEls = els.filter(e => e.current.status !== 'defect');
+    const defectEls = els.filter(e => e.current.status === 'defect').filter(passesDraftFilter);
+    if (!clearEls.length && !defectEls.length) return '';
+    const clearHtml = clearEls.length ? `<div class="clear-table">${clearEls.map(clearRowHTML).join('')}</div>` : '';
+    return `<div class="cat-group">
+      <div class="cat-title">${cat}</div>
+      ${clearHtml}
+      ${defectEls.map(defectCardHTML).join('')}
+    </div>`;
+  }).join('');
+  const totalDefects = AUTHOR.diffElements.filter(e => e.current.status === 'defect').length;
+  const reviewedDefects = AUTHOR.diffElements.filter(e => e.current.status === 'defect' && e.reviewed).length;
+  document.getElementById('draftProgressText').textContent = totalDefects
+    ? `${reviewedDefects} of ${totalDefects} defects reviewed`
+    : 'No defects recorded for this inspection';
+  document.getElementById('markUnchangedBtn').disabled = !AUTHOR.diffElements.some(e => e.current.status === 'defect' && e.comparison === 'unchanged' && !e.reviewed);
+  attachDraftEditors();
+}
+function clearRowHTML(el){
   const [cls, label] = statusInfo(el.current.status);
-  const editableFields = el.current.status === 'defect' ? `
-    <div class="el-editor" id="editor-${el.elementNumber}">
-      <span class="mini-lbl">Drafted narrative (edit directly — overrides the generated text)</span>
-      <textarea data-field="narrative" data-el="${el.elementNumber}">${narrativeFor(el)}</textarea>
-    </div>` : '';
-  return `<div class="el-row" data-el="${el.elementNumber}">
-    <div class="el-name">${el.name}</div>
-    <div class="el-body">
-      <span class="status-pill ${cls}">${label}</span>
-      ${el.comparison ? `<span class="cmp-chip ${el.comparison}">${cmpLabel(el.comparison)}</span>` : ''}
-      ${elPhotosHTML(el.photos, 'el-photos')}
-      <div class="el-narrative" id="narrative-${el.elementNumber}">${narrativeFor(el)}</div>
-      ${el.current.status === 'defect' ? `<button class="el-edit-btn" data-toggle="${el.elementNumber}"><i class="fas fa-pen"></i> Edit</button>` : ''}
-      ${editableFields}
+  return `<div class="clear-row"><span class="cr-name">${el.name}</span><span class="status-pill ${cls}" style="margin:0;">${label}</span></div>`;
+}
+function trendBadgeHTML(el){
+  if (!el.comparison) return '';
+  const label = { new:'New finding', worsened:'Worsened since last visit', improved:'Improved since last visit', resolved:'Resolved', unchanged:'Stable', changed:'Changed', first:'First record' }[el.comparison] || cmpLabel(el.comparison);
+  return `<span class="trend-badge ${el.comparison}">${label}</span>`;
+}
+function defectCardHTML(el){
+  const codeLabel = (typeof defectTypeLabel === 'function') ? defectTypeLabel(el.current.defectType, el.current.defectNumber) : null;
+  const sevLabel = (typeof severityLabel === 'function') ? severityLabel(el.current.severity) : null;
+  const code = el.current.defectType && el.current.defectNumber ? `${el.current.defectType}.${el.current.defectNumber}` : '';
+
+  const historyBits = [];
+  if (el.previous && el.previous.status === 'defect') {
+    historyBits.push(`Previously: severity ${el.previous.severity}, extent ${el.previous.extent}`);
+  } else if (el.comparison === 'resolved') {
+    historyBits.push('Previously recorded with a defect');
+  } else if (el.comparison !== 'first') {
+    historyBits.push('No prior record for this element');
+  }
+
+  let whyBanner = '';
+  if (el.comparison === 'first') {
+    whyBanner = `<div class="dc-why"><i class="fas fa-circle-info"></i> First recorded inspection for this structure — no previous data to compare against.</div>`;
+  } else if (el.previous && el.previous.status === 'ninsp') {
+    whyBanner = `<div class="dc-why"><i class="fas fa-circle-info"></i> The previous inspection didn't cover this element, so there's nothing to compare against.</div>`;
+  }
+
+  const photosHtml = (el.photos && el.photos.length)
+    ? `<div class="dc-photos">${el.photos.slice(0,2).map(p => `<img src="${p.url}" alt="${(p.description||'Site photo').replace(/"/g,'')}" title="${(p.description||'').replace(/"/g,'')}" onclick="window.open('${p.url}','_blank')">`).join('')}</div>`
+    : `<div class="dc-photo-placeholder"><i class="fas fa-camera"></i></div>`;
+
+  return `<div class="defect-card cmp-${el.comparison||''} ${el.reviewed?'reviewed':''}" data-el="${el.elementNumber}">
+    <div class="dc-top">
+      <div>
+        <div class="dc-elem">${el.name}</div>
+        <div class="dc-code">${code}${codeLabel ? ' · ' + codeLabel.toUpperCase() : ''}</div>
+      </div>
+      <div class="dc-actions">
+        <label class="dc-review-check ${el.reviewed?'checked':''}">
+          <input type="checkbox" data-reviewed="${el.elementNumber}" ${el.reviewed?'checked':''}>
+          ${el.reviewed ? 'Reviewed' : 'Mark reviewed'}
+        </label>
+      </div>
     </div>
+    <div class="dc-history">
+      <span>${historyBits.join(' · ')}</span>
+      ${trendBadgeHTML(el)}
+    </div>
+    <div class="dc-grid">
+      ${photosHtml}
+      <div>
+        <div class="dc-facts">
+          <span>Severity: <b>${el.current.severity || '—'}${sevLabel ? ' (' + sevLabel + ')' : ''}</b></span>
+          <span>Extent: <b>${el.current.extent || '—'}</b></span>
+          <span>Works required: <b>${el.current.worksRequired === 'Y' ? 'Yes' : 'No'}</b></span>
+        </div>
+        <div class="dc-narrative-lbl">
+          <span class="mini-lbl" style="margin:0;">Drafted narrative</span>
+          <button class="dc-reset-btn" data-reset="${el.elementNumber}"><i class="fas fa-rotate-left"></i> Reset to drafted text</button>
+        </div>
+        <textarea class="dc-narrative" data-field="narrative" data-el="${el.elementNumber}">${narrativeFor(el)}</textarea>
+      </div>
+    </div>
+    ${whyBanner}
   </div>`;
 }
 function attachDraftEditors(){
-  document.querySelectorAll('[data-toggle]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.getElementById('editor-' + btn.dataset.toggle).classList.toggle('open');
-    });
-  });
-  document.querySelectorAll('.el-editor [data-field="narrative"]').forEach(ta => {
+  document.querySelectorAll('.dc-narrative').forEach(ta => {
     ta.addEventListener('input', () => {
       const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === ta.dataset.el);
       if(!el) return;
       el.editedNarrative = ta.value;
-      document.getElementById('narrative-' + el.elementNumber).textContent = ta.value;
       if(document.getElementById('screen-author').classList.contains('active')){ renderDataPane(); renderReportPane(); }
     });
   });
+  document.querySelectorAll('[data-reset]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === btn.dataset.reset);
+      if(!el) return;
+      el.editedNarrative = null;
+      const ta = document.querySelector(`.dc-narrative[data-el="${btn.dataset.reset}"]`);
+      if(ta) ta.value = narrativeFor(el);
+      if(document.getElementById('screen-author').classList.contains('active')){ renderDataPane(); renderReportPane(); }
+    });
+  });
+  document.querySelectorAll('[data-reviewed]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === cb.dataset.reviewed);
+      if(!el) return;
+      el.reviewed = cb.checked;
+      renderDraft();
+    });
+  });
 }
+document.getElementById('draftFilterPills').addEventListener('click', function(e){
+  const btn = e.target.closest('.f-pill');
+  if(!btn) return;
+  draftFilter = btn.dataset.filter;
+  renderDraft();
+});
+document.getElementById('markUnchangedBtn').addEventListener('click', function(){
+  AUTHOR.diffElements.forEach(el => {
+    if (el.current.status === 'defect' && el.comparison === 'unchanged') el.reviewed = true;
+  });
+  renderDraft();
+});
 document.getElementById('toAuthorBtn').addEventListener('click', () => goTo('author'));
 
 // ============================================================
@@ -632,7 +763,7 @@ async function generateBciProformaPdf(){
     if (typeof pdfMake === 'undefined' || typeof buildBCIProformaFullContent !== 'function') {
       throw new Error('PDF libraries not loaded yet - please wait a moment and try again.');
     }
-    const dateStr = new Date(AUTHOR.inspectionDate).toISOString().slice(0,10);
+    const dateStr = AUTHOR.inspectionDate;
     const [bridgeRes, defectsRes, worksRes] = await Promise.all([
       fetch(`${API_BASE}/api/bridges/${AUTHOR.structureId}`),
       fetch(`${API_BASE}/api/defectsbci?structureId=${AUTHOR.structureId}&date=${dateStr}`),
@@ -675,7 +806,7 @@ async function generateFullReportPdf(){
     if (typeof window.generateSimplePDFReport !== 'function') {
       throw new Error('Report generator not loaded yet - please wait a moment and try again.');
     }
-    const dateStr = new Date(AUTHOR.inspectionDate).toISOString().slice(0,10);
+    const dateStr = AUTHOR.inspectionDate;
     const narrativeByElement = {};
     AUTHOR.diffElements.forEach(el => {
       if (el.current.status === 'defect') narrativeByElement[el.elementNumber] = narrativeFor(el);

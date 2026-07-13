@@ -30,19 +30,19 @@ body{font-family:'Inter','Segoe UI',Tahoma,sans-serif; color:var(--text); backgr
 a{color:inherit;}
 
 /* ===== AMBIENT BACKGROUND ===== */
+/* Single-hue depth (teal only) rather than shifting between colours -
+   a subtle vignette, not a visibly multi-toned background. */
 body::before{
   content:''; position:fixed; inset:0; z-index:-1; pointer-events:none;
   background:
-    radial-gradient(560px circle at 6% -4%, rgba(91,140,138,.16), transparent 60%),
-    radial-gradient(520px circle at 96% 14%, rgba(108,92,231,.11), transparent 55%),
-    radial-gradient(720px circle at 50% 110%, rgba(45,122,110,.09), transparent 60%);
+    radial-gradient(900px circle at 12% -6%, rgba(91,140,138,.10), transparent 62%),
+    radial-gradient(900px circle at 88% 105%, rgba(91,140,138,.07), transparent 62%);
   transition:background .3s ease;
 }
 body.night-mode::before{
   background:
-    radial-gradient(560px circle at 6% -4%, rgba(138,180,176,.14), transparent 60%),
-    radial-gradient(520px circle at 96% 14%, rgba(167,148,245,.10), transparent 55%),
-    radial-gradient(720px circle at 50% 110%, rgba(58,107,98,.14), transparent 60%);
+    radial-gradient(900px circle at 12% -6%, rgba(138,180,176,.09), transparent 62%),
+    radial-gradient(900px circle at 88% 105%, rgba(138,180,176,.06), transparent 62%);
 }
 
 /* ---------- NAVIGATION BAR (standard spanSense chrome) ---------- */
@@ -122,7 +122,9 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
   border:1px solid var(--border2); border-radius:20px; padding:16px 8px;
   box-shadow:0 10px 28px rgba(44,90,87,.08); user-select:none;
 }
-.wizard-step{display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:14px; font-size:.78rem; font-weight:600; color:var(--text-mute); transition:.2s;}
+.wizard-step{display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:14px; font-size:.78rem; font-weight:600; color:var(--text-mute); transition:.2s; cursor:default;}
+.wizard-step.clickable{cursor:pointer;}
+.wizard-step.clickable:hover{background:var(--bg-soft);}
 .wizard-step .num{width:24px; height:24px; flex-shrink:0; border-radius:50%; background:#e9edf2; color:var(--text-mute); display:flex; align-items:center; justify-content:center; font-size:.74rem; font-weight:700;}
 .wizard-step.active{color:var(--green-dark); background:var(--bg-mint);}
 .wizard-step.active .num{background:var(--teal); color:#fff;}
@@ -143,6 +145,10 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .card-sub{font-size:.82rem; color:var(--text-mute); margin:0 0 20px;}
 
 /* ===== STEP 1: STRUCTURE & INSPECTION PICKER ===== */
+.source-tabs{display:flex; gap:6px; background:var(--bg-soft); border:1px solid var(--border2); border-radius:30px; padding:4px; margin-bottom:20px; width:fit-content;}
+.source-tab{font-size:.78rem; font-weight:700; color:var(--text-mute2); background:none; border:none; padding:8px 16px; border-radius:26px; cursor:pointer; transition:.2s;}
+.source-tab.active{background:var(--teal); color:#fff;}
+.coming-soon-note{display:flex; align-items:center; gap:9px; background:var(--ai-bg); border:1px solid var(--ai-border); border-radius:14px; padding:11px 15px; margin-top:14px; font-size:.78rem; color:var(--ai);}
 .picker-row{display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;}
 .picker-field{flex:1; min-width:220px;}
 .picker-field label{font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-mute); display:block; margin-bottom:6px;}
@@ -163,14 +169,17 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
    reused here so an inspector sees the structure's trajectory before drafting. */
 .bci-trend{margin-top:16px;}
 .bci-trend-label{font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-mute); margin-bottom:8px;}
-.bci-track{display:flex; align-items:center; gap:0; flex-wrap:wrap;}
-.bci-chip{background:var(--bg-soft); border:1px solid var(--border2); border-radius:14px; padding:10px 14px; min-width:104px;}
+.bci-track{display:flex; align-items:center; gap:0; flex-wrap:nowrap; overflow-x:auto; padding-bottom:2px;}
+.bci-chip{background:var(--bg-soft); border:1px solid var(--border2); border-radius:14px; padding:10px 14px; min-width:112px; flex-shrink:0;}
 .bci-chip.current{background:var(--bg-mint); border-color:#cfe4e0;}
-.bci-chip .bc-date{font-size:.64rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-mute); margin-bottom:4px;}
+.bci-chip .bc-date{font-size:.64rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-mute); margin-bottom:5px;}
 .bci-chip.current .bc-date{color:var(--teal-dark);}
-.bci-chip .bc-score{font-size:1.15rem; font-weight:800; color:var(--text); font-variant-numeric:tabular-nums;}
-.bci-chip .bc-type{font-size:.66rem; color:var(--text-mute2); margin-top:1px;}
-.bci-delta{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; width:44px; flex-shrink:0; font-size:.66rem; font-weight:800; font-variant-numeric:tabular-nums;}
+.bci-chip .bc-score-row{display:flex; align-items:baseline; justify-content:space-between; gap:10px; font-variant-numeric:tabular-nums;}
+.bci-chip .bc-score-row span{font-size:.66rem; font-weight:600; color:var(--text-mute2); text-transform:uppercase; letter-spacing:.03em;}
+.bci-chip .bc-score-row b{font-size:1.02rem; font-weight:800; color:var(--text);}
+.bci-chip .bc-score-row.crit b{color:var(--red);}
+.bci-chip .bc-type{font-size:.66rem; color:var(--text-mute2); margin-top:4px;}
+.bci-delta{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; width:40px; flex-shrink:0; font-size:.64rem; font-weight:800; font-variant-numeric:tabular-nums;}
 .bci-delta.down{color:var(--red);}
 .bci-delta.up{color:var(--ok);}
 .bci-delta.flat{color:var(--text-mute2);}
@@ -234,13 +243,7 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .tsw-corporate{background:#eef1f6;}
 .tsw-corporate .ts-bar{background:#1f3a5f; height:22px; margin:-10px -10px 8px;}
 
-/* ===== STEP 2: DRAFT LIST ===== */
-.cat-group{margin-bottom:18px;}
-.cat-title{font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--teal-dark); margin:0 0 10px; padding-bottom:6px; border-bottom:1px solid var(--border2);}
-.el-row{display:flex; gap:14px; align-items:flex-start; padding:12px 4px; border-bottom:1px solid var(--border2);}
-.el-row:last-child{border-bottom:none;}
-.el-name{width:200px; flex-shrink:0; font-size:.85rem; font-weight:600; color:var(--text); padding-top:2px;}
-.el-body{flex:1; min-width:0;}
+/* ===== STEP 2: DRAFT REPORT - defect review cards ===== */
 .status-pill{font-size:.64rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; padding:3px 9px; border-radius:20px; display:inline-block; margin-bottom:6px; margin-right:6px;}
 .status-pill.defect{background:var(--amber-bg); color:var(--amber);}
 .status-pill.good{background:var(--ok-bg); color:var(--ok);}
@@ -256,16 +259,61 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .cmp-chip.unchanged{background:#eef0f2; color:var(--text-mute2);}
 .cmp-chip.changed{background:var(--amber-bg); color:var(--amber);}
 .cmp-chip.first{background:var(--ai-bg); color:var(--ai);}
-.el-narrative{font-size:.84rem; color:var(--text-mute2); line-height:1.55; font-style:italic;}
-.el-narrative b{font-style:normal; color:var(--text);}
-.el-edit-btn{font-size:.7rem; font-weight:700; color:var(--teal-dark); background:none; border:1px solid var(--border); border-radius:20px; padding:5px 11px; cursor:pointer; margin-top:8px; display:inline-flex; align-items:center; gap:5px;}
-.el-edit-btn:hover{border-color:var(--teal); background:var(--bg-mint);}
-.el-editor{display:none; margin-top:10px; background:var(--bg-soft); border:1px solid var(--border2); border-radius:14px; padding:14px;}
-.el-editor.open{display:block;}
-.el-editor-row{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;}
-.el-editor textarea, .el-editor input, .el-editor select{border:1px solid var(--border); border-radius:9px; padding:7px 10px; font-size:.8rem; font-family:inherit; color:var(--text); background:#fff;}
-.el-editor textarea{width:100%; min-height:56px; resize:vertical;}
 .mini-lbl{font-size:.62rem; font-weight:700; text-transform:uppercase; color:var(--text-mute); display:block; margin-bottom:4px;}
+
+.draft-toolbar{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:18px;}
+.filter-pills{display:flex; gap:8px; flex-wrap:wrap;}
+.f-pill{font-size:.74rem; font-weight:600; color:var(--text-mute2); background:#fff; border:1px solid var(--border); padding:7px 14px; border-radius:30px; cursor:pointer; transition:.15s;}
+.f-pill:hover{border-color:var(--teal);}
+.f-pill.on{background:var(--bg-mint); border-color:var(--teal); color:var(--teal-dark);}
+.btn-bulk{font-size:.78rem; font-weight:700; color:#fff; background:var(--teal); border:none; padding:9px 16px; border-radius:30px; cursor:pointer; display:inline-flex; align-items:center; gap:7px; transition:.15s;}
+.btn-bulk:hover{background:var(--teal-dark);}
+.btn-bulk:disabled{opacity:.45; cursor:not-allowed;}
+
+.cat-group{margin-bottom:20px;}
+.cat-title{font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--teal-dark); margin:0 0 10px; padding-bottom:6px; border-bottom:1px solid var(--border2);}
+
+/* Compact batched rows for elements with nothing to draft (good/na/not
+   inspected) - only elements with an actual defect get a full card below. */
+.clear-table{border:1px solid var(--border2); border-radius:12px; overflow:hidden; margin-bottom:10px;}
+.clear-row{display:flex; align-items:center; justify-content:space-between; padding:9px 14px; font-size:.82rem; color:var(--text); border-bottom:1px solid var(--border2);}
+.clear-row:last-child{border-bottom:none;}
+.clear-row .cr-name{color:var(--text);}
+
+.defect-card{border:1px solid var(--border2); border-left:3px solid var(--amber); border-radius:16px; padding:16px 20px; margin-bottom:14px; background:#fff; transition:.2s;}
+.defect-card.cmp-new, .defect-card.cmp-worsened{border-left-color:var(--red);}
+.defect-card.cmp-improved, .defect-card.cmp-resolved{border-left-color:var(--ok);}
+.defect-card.reviewed{opacity:.6;}
+.dc-top{display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:4px;}
+.dc-elem{font-size:.95rem; font-weight:700; color:var(--text);}
+.dc-code{font-size:.76rem; color:var(--text-mute2); margin-top:1px;}
+.dc-actions{display:flex; align-items:center; gap:8px; flex-shrink:0;}
+.dc-review-check{display:flex; align-items:center; gap:6px; font-size:.72rem; font-weight:700; color:var(--text-mute2); cursor:pointer; user-select:none; background:var(--bg-soft); border:1px solid var(--border); padding:6px 12px; border-radius:30px;}
+.dc-review-check input{accent-color:var(--teal); cursor:pointer;}
+.dc-review-check.checked{background:var(--ok-bg); border-color:var(--ok-border); color:var(--ok);}
+
+.dc-history{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:10px 0 14px; padding:9px 12px; background:var(--bg-soft); border-radius:12px; font-size:.76rem; color:var(--text-mute2);}
+.dc-history .trend-badge{font-size:.68rem; font-weight:700; padding:3px 10px; border-radius:20px; margin-left:auto;}
+.dc-history .trend-badge.worsened, .dc-history .trend-badge.new{background:var(--red-bg); color:var(--red);}
+.dc-history .trend-badge.improved, .dc-history .trend-badge.resolved{background:var(--ok-bg); color:var(--ok);}
+.dc-history .trend-badge.unchanged{background:#eef0f2; color:var(--text-mute2);}
+.dc-history .trend-badge.changed, .dc-history .trend-badge.first{background:var(--amber-bg); color:var(--amber);}
+
+.dc-grid{display:grid; grid-template-columns:140px 1fr; gap:18px;}
+@media (max-width:640px){ .dc-grid{grid-template-columns:1fr;} }
+.dc-photos{display:flex; flex-direction:column; gap:6px;}
+.dc-photos img{width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:10px; border:1px solid var(--border2); cursor:pointer;}
+.dc-photo-placeholder{width:100%; aspect-ratio:4/3; border-radius:10px; background:var(--bg-soft); border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; color:var(--text-mute); font-size:1.3rem;}
+.dc-facts{display:flex; gap:14px; flex-wrap:wrap; font-size:.78rem; color:var(--text-mute2); margin-bottom:10px;}
+.dc-facts b{color:var(--text); font-weight:700;}
+
+.dc-narrative-lbl{display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;}
+.dc-reset-btn{font-size:.68rem; font-weight:700; color:var(--teal-dark); background:var(--bg-mint); border:1px solid #d6e6e3; padding:4px 10px; border-radius:20px; cursor:pointer; display:inline-flex; align-items:center; gap:5px;}
+.dc-reset-btn:hover{background:#dcece9;}
+.dc-narrative{width:100%; min-height:76px; border:1px solid var(--border); border-radius:10px; padding:10px 13px; font-size:.84rem; font-family:inherit; color:var(--text); background:var(--bg-soft); resize:vertical; line-height:1.5;}
+.dc-narrative:focus{outline:none; border-color:var(--teal); background:#fff;}
+
+.dc-why{margin-top:12px; display:flex; align-items:flex-start; gap:8px; background:var(--ai-bg); border:1px solid var(--ai-border); color:var(--ai); font-size:.76rem; font-weight:600; padding:9px 12px; border-radius:12px; line-height:1.45;}
 
 /* ===== STEP 3: AUTHOR VIEW ===== */
 .view-toolbar{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:18px;}
@@ -348,6 +396,7 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 
 .night-mode .wizard-steps{background:rgba(35,46,52,0.85) !important; border-color:#2f3e45 !important; box-shadow:0 10px 28px rgba(0,0,0,.3) !important;}
 .night-mode .wizard-step{color:#5f757d;}
+.night-mode .wizard-step.clickable:hover{background:#1a2428;}
 .night-mode .wizard-step .num{background:#2f3e45; color:#9ab0b8;}
 .night-mode .wizard-step.active{background:#1e3a38; color:#8ab4b0;}
 .night-mode .wizard-step.active .num{background:#3a6b62; color:#fff;}
@@ -378,6 +427,10 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .struct-desc b{color:#d4dfe3;}
 .night-mode .el-photo-thumb, .night-mode .doc-photo-thumb{border-color:#2f3e45;}
 
+.night-mode .source-tabs{background:#1a2428; border-color:#2f3e45;}
+.night-mode .source-tab{color:#9ab0b8;}
+.night-mode .source-tab.active{background:#3a6b62; color:#fff;}
+.night-mode .coming-soon-note{background:#2a2450; border-color:#3c3266; color:#a794f5;}
 .night-mode .upload-zone{background:#1a2428; border-color:#3a4b53;}
 .night-mode .upload-zone:hover{border-color:#6e9c98; background:#1e3a38;}
 .night-mode .upload-zone .u-title{color:#d4dfe3;}
@@ -400,8 +453,6 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .tsw-corporate{background:#1c2733;}
 
 .night-mode .cat-title{color:#8ab4b0; border-color:#2f3e45;}
-.night-mode .el-row{border-color:#2f3e45;}
-.night-mode .el-name{color:#d4dfe3;}
 .night-mode .status-pill.defect{background:#3a3020; color:#e0b060;}
 .night-mode .status-pill.good{background:#1e3a38; color:#7ec9ba;}
 .night-mode .status-pill.na{background:#2a343a; color:#7d939b;}
@@ -411,13 +462,32 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .cmp-chip.unchanged{background:#2a343a; color:#7d939b;}
 .night-mode .cmp-chip.changed{background:#3a3020; color:#e0b060;}
 .night-mode .cmp-chip.first{background:#2a2450; color:#a794f5;}
-.night-mode .el-narrative{color:#9ab0b8;}
-.night-mode .el-narrative b{color:#d4dfe3;}
-.night-mode .el-edit-btn{color:#8ab4b0; border-color:#3a4b53; background:transparent;}
-.night-mode .el-edit-btn:hover{border-color:#6e9c98; background:#1e3a38;}
-.night-mode .el-editor{background:#1a2428; border-color:#2f3e45;}
-.night-mode .el-editor textarea, .night-mode .el-editor input, .night-mode .el-editor select{background:#232e34; border-color:#3a4b53; color:#d4dfe3;}
 .night-mode .mini-lbl{color:#7d939b;}
+
+.night-mode .f-pill{background:#1a2428; border-color:#3a4b53; color:#9ab0b8;}
+.night-mode .f-pill.on{background:#1e3a38; border-color:#3a6b62; color:#8ab4b0;}
+.night-mode .clear-table{border-color:#2f3e45;}
+.night-mode .clear-row{border-color:#2f3e45; color:#d4dfe3;}
+.night-mode .defect-card{background:#212f33; border-color:#2f3e45;}
+.night-mode .dc-elem{color:#d4dfe3;}
+.night-mode .dc-code{color:#8aa4ac;}
+.night-mode .dc-review-check{background:#1a2428; border-color:#3a4b53; color:#9ab0b8;}
+.night-mode .dc-review-check.checked{background:#1e3a38; border-color:#3a6b62; color:#7ec9ba;}
+.night-mode .dc-history{background:#1a2428; color:#9ab0b8;}
+.night-mode .dc-history .trend-badge.worsened, .night-mode .dc-history .trend-badge.new{background:#3a2323; color:#e57373;}
+.night-mode .dc-history .trend-badge.improved, .night-mode .dc-history .trend-badge.resolved{background:#1e3a38; color:#7ec9ba;}
+.night-mode .dc-history .trend-badge.unchanged{background:#2a343a; color:#7d939b;}
+.night-mode .dc-history .trend-badge.changed, .night-mode .dc-history .trend-badge.first{background:#3a3020; color:#e0b060;}
+.night-mode .dc-photo-placeholder{background:#1a2428; border-color:#3a4b53; color:#7d939b;}
+.night-mode .dc-facts{color:#8aa4ac;}
+.night-mode .dc-facts b{color:#d4dfe3;}
+.night-mode .dc-reset-btn{background:#1e3a38; border-color:#3a6b62; color:#8ab4b0;}
+.night-mode .dc-reset-btn:hover{background:#26443f;}
+.night-mode .dc-narrative{background:#1a2428; border-color:#3a4b53; color:#d4dfe3;}
+.night-mode .dc-narrative:focus{background:#212f33; border-color:#6e9c98;}
+.night-mode .dc-why{background:#2a2450; border-color:#3c3266; color:#a794f5;}
+.night-mode .btn-bulk{background:#3a6b62;}
+.night-mode .btn-bulk:hover{background:#4a8579;}
 
 .night-mode .view-toggle{background:#1a2428; border-color:#2f3e45;}
 .night-mode .vt-btn{color:#9ab0b8;}
@@ -485,7 +555,7 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
     </div>
 
     <div class="wizard-steps" id="wizardSteps">
-        <div class="wizard-step" data-step="setup"><span class="num">1</span>Setup</div>
+        <div class="wizard-step" data-step="setup"><span class="num">1</span>Start</div>
         <div class="wizard-connector"></div>
         <div class="wizard-step" data-step="draft"><span class="num">2</span>Draft Report</div>
         <div class="wizard-connector"></div>
@@ -499,18 +569,35 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
         <div class="card" id="pickerCard">
             <h2 class="card-title"><i class="fas fa-magnifying-glass" style="color:var(--teal);"></i> Choose a Structure &amp; Inspection</h2>
             <p class="card-sub">Pick the structure and inspection date to author. Author pulls its real defect data and automatically compares it against that structure's own previous inspection.</p>
-            <div class="picker-row">
-                <div class="picker-field">
-                    <label>Structure</label>
-                    <select id="structureSelect"><option value="">Loading structures…</option></select>
-                </div>
-                <div class="picker-field">
-                    <label>Inspection date</label>
-                    <select id="inspectionSelect" disabled><option value="">Select a structure first</option></select>
-                </div>
-                <button class="btn-load" id="loadBtn" disabled><i class="fas fa-arrow-right"></i> Load</button>
+
+            <div class="source-tabs" id="sourceTabs">
+                <button class="source-tab active" data-source="records">From spanSense records</button>
+                <button class="source-tab" data-source="upload">Upload a previous inspection</button>
             </div>
-            <div id="loadedSummary"></div>
+
+            <div id="sourceRecords">
+                <div class="picker-row">
+                    <div class="picker-field">
+                        <label>Structure</label>
+                        <select id="structureSelect"><option value="">Loading structures…</option></select>
+                    </div>
+                    <div class="picker-field">
+                        <label>Inspection date</label>
+                        <select id="inspectionSelect" disabled><option value="">Select a structure first</option></select>
+                    </div>
+                    <button class="btn-load" id="loadBtn" disabled><i class="fas fa-arrow-right"></i> Load</button>
+                </div>
+                <div id="loadedSummary"></div>
+            </div>
+
+            <div id="sourceUpload" style="display:none;">
+                <div class="upload-zone">
+                    <i class="fas fa-file-arrow-up"></i>
+                    <div class="u-title">Upload a previous inspection report</div>
+                    <div class="u-sub">PDF or Word — for a structure whose last inspection wasn't done in spanSense</div>
+                </div>
+                <div class="coming-soon-note"><i class="fas fa-flask"></i> Not wired up yet — this will let Author read a previous report's defects straight out of the PDF/Word file instead of requiring prior spanSense data.</div>
+            </div>
         </div>
 
         <div class="card" id="brandingCard" style="display:none;">
@@ -584,7 +671,11 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
     <div class="screen" id="screen-draft">
         <div class="card">
             <h2 class="card-title"><i class="fas fa-sparkles" style="color:var(--ai);"></i> Drafted Narrative — <span id="draftStructureName">—</span></h2>
-            <p class="card-sub">One paragraph per element, generated from this inspection's real defect data and automatically compared against the structure's own previous inspection. Edit anything — the report view updates live.</p>
+            <p class="card-sub">A card per defect, drafted from this inspection's real data and automatically compared against the structure's own previous inspection. Review, edit, and mark off as you go — elements with nothing to report are listed compactly below each category.</p>
+            <div class="draft-toolbar">
+                <div class="filter-pills" id="draftFilterPills"></div>
+                <button class="btn-bulk" id="markUnchangedBtn"><i class="fas fa-check-double"></i> Mark all unchanged as reviewed</button>
+            </div>
             <div id="draftGroups"></div>
             <div class="bottom-nav">
                 <span class="progress-text" id="draftProgressText" style="font-size:.8rem; color:var(--text-mute2);"></span>
