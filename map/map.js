@@ -842,12 +842,12 @@ function populateDocumentsQuickStats(documents) {
             </div>
           </div>
           <div class="ss-card-acts">
-            <button class="ss-act-btn" title="Download report"
-              data-action="report" data-date="${doc.date}"><i class="fas fa-file-pdf"></i></button>
             <button class="ss-act-btn" title="Edit Inspection"
               data-action="edit" data-date="${doc.date}"><i class="fas fa-pen"></i></button>
             <button class="ss-act-btn" title="Download BCI proforma"
               data-action="bci" data-date="${doc.date}"><i class="fas fa-file-invoice"></i></button>
+            <button class="ss-act-btn" title="Download report"
+              data-action="report" data-date="${doc.date}"><i class="fas fa-file-pdf"></i></button>
           </div>
         </div>`;
     }).join('');
