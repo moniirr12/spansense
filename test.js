@@ -1103,7 +1103,7 @@ function buildInspectionReportDocDefinition(ctx) {
     const appendixB = [
         { text: '', pageBreak: 'before' },
         sectionHeading('B', 'Appendix B — BCI Proforma', 'appendixB'),
-        { text: 'Highways Agency element checklist, generated from the same inspection data above.', fontSize: 9.5, italics: true, color: RC.muted, margin: [0, 0, 0, 10] },
+        { text: 'Element-by-element condition record for this inspection, in the standard BCI proforma format.', fontSize: 9.5, italics: true, color: RC.muted, margin: [0, 0, 0, 10] },
         { text: '', pageBreak: 'after' }
     ];
     // buildBCIProformaFullContent interleaves span1-page1, span1-page2,
