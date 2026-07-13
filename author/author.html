@@ -122,6 +122,17 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
   border:1px solid var(--border2); border-radius:20px; padding:16px 8px;
   box-shadow:0 10px 28px rgba(44,90,87,.08); user-select:none;
 }
+/* Animated BCI stat boxes, same idea (and animation) as the main
+   inspection editor's stat-card/setBciValue tween - sits above the
+   stepper in the same fixed rail, which is what pushes the stepper down. */
+.left-bci-cards{display:flex; gap:8px; margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid var(--border2);}
+.stat-card-mini{flex:1; background:var(--bg-soft); border-radius:14px; padding:10px 6px; text-align:center;}
+.stat-card-mini.critical{background:#fdf1ea;}
+.stat-label-mini{font-size:.6rem; font-weight:700; color:var(--text-mute); text-transform:uppercase; letter-spacing:.03em;}
+.stat-value-mini{font-size:1.32rem; font-weight:800; color:var(--teal-dark); font-variant-numeric:tabular-nums;}
+.stat-card-mini.critical .stat-value-mini{color:#c0392b;}
+.stat-value-mini.loading{color:#c5d3d9; font-weight:400; letter-spacing:.08em;}
+
 .wizard-step{display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:14px; font-size:.78rem; font-weight:600; color:var(--text-mute); transition:.2s; cursor:default;}
 .wizard-step.clickable{cursor:pointer;}
 .wizard-step.clickable:hover{background:var(--bg-soft);}
@@ -145,6 +156,10 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .card-sub{font-size:.82rem; color:var(--text-mute); margin:0 0 20px;}
 
 /* ===== STEP 1: STRUCTURE & INSPECTION PICKER ===== */
+/* Narrower and more polished than the full-width cards elsewhere - closer
+   to the bridge modal's compact, layered-shadow "fitted" feel than a
+   wide dashboard-style card. */
+#pickerCard{max-width:620px; margin:0 auto; border-radius:28px; box-shadow:0 24px 60px rgba(44,90,87,.10), 0 8px 22px rgba(44,90,87,.06);}
 .source-tabs{display:flex; gap:6px; background:var(--bg-soft); border:1px solid var(--border2); border-radius:30px; padding:4px; margin-bottom:20px; width:fit-content;}
 .source-tab{font-size:.78rem; font-weight:700; color:var(--text-mute2); background:none; border:none; padding:8px 16px; border-radius:26px; cursor:pointer; transition:.2s;}
 .source-tab.active{background:var(--teal); color:#fff;}
@@ -447,6 +462,13 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .page-header p { color: #8aa4ac; }
 
 .night-mode .wizard-steps{background:rgba(35,46,52,0.85) !important; border-color:#2f3e45 !important; box-shadow:0 10px 28px rgba(0,0,0,.3) !important;}
+.night-mode .left-bci-cards{border-color:#2f3e45;}
+.night-mode .stat-card-mini{background:#1a2428;}
+.night-mode .stat-card-mini.critical{background:#3a2a1f;}
+.night-mode .stat-label-mini{color:#7d939b;}
+.night-mode .stat-value-mini{color:#8ab4b0;}
+.night-mode .stat-card-mini.critical .stat-value-mini{color:#e57373;}
+.night-mode .stat-value-mini.loading{color:#4a5b60;}
 .night-mode .wizard-step{color:#5f757d;}
 .night-mode .wizard-step.clickable:hover{background:#1a2428;}
 .night-mode .wizard-step .num{background:#2f3e45; color:#9ab0b8;}
@@ -623,6 +645,10 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
     </div>
 
     <div class="wizard-steps" id="wizardSteps">
+        <div class="left-bci-cards" id="leftBciCards" style="display:none;">
+            <div class="stat-card-mini average"><div class="stat-label-mini">BCI avg</div><div class="stat-value-mini loading" id="leftBciAvg">···</div></div>
+            <div class="stat-card-mini critical"><div class="stat-label-mini">BCI crit</div><div class="stat-value-mini loading" id="leftBciCrit">···</div></div>
+        </div>
         <div class="wizard-step" data-step="setup"><span class="num">1</span>Start</div>
         <div class="wizard-connector"></div>
         <div class="wizard-step" data-step="draft"><span class="num">2</span>Draft Report</div>
@@ -740,6 +766,7 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
         <div class="card">
             <h2 class="card-title"><i class="fas fa-sparkles" style="color:var(--ai);"></i> Drafted Narrative — <span id="draftStructureName">—</span></h2>
             <p class="card-sub">A card per defect, drafted from this inspection's real data and automatically compared against the structure's own previous inspection. Review, edit, and mark off as you go — elements with nothing to report are listed compactly below each category.</p>
+            <div id="draftBciTrend"></div>
             <div class="draft-toolbar">
                 <div class="filter-pills" id="draftFilterPills"></div>
                 <div style="display:flex; gap:10px; flex-wrap:wrap;">
@@ -748,10 +775,11 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
                 </div>
             </div>
             <div id="draftGroups"></div>
-            <div class="bottom-nav">
-                <span class="progress-text" id="draftProgressText" style="font-size:.8rem; color:var(--text-mute2);"></span>
-                <button class="btn-primary-lg" id="toAuthorBtn"><i class="fas fa-arrow-right"></i> Continue to Author View</button>
-            </div>
+        </div>
+        <div class="bottom-nav">
+            <button class="btn-ghost" id="backToSetupBtn"><i class="fas fa-arrow-left"></i> Back</button>
+            <span class="progress-text" id="draftProgressText" style="font-size:.8rem; color:var(--text-mute2);"></span>
+            <button class="btn-primary-lg" id="toAuthorBtn"><i class="fas fa-arrow-right"></i> Continue to Author View</button>
         </div>
     </div>
 

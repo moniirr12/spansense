@@ -154,6 +154,30 @@ async function onStructureChange(){
   }
 }
 
+// Same count-up tween as the main inspection editor's setBciValue
+// (inspection/bci.js) - ease-out cubic over 450ms.
+const bciTweenFrames = new WeakMap();
+function animateBciValue(el, value){
+  if (!el) return;
+  if (value == null) { el.textContent = '—'; el.classList.remove('loading'); return; }
+  const target = parseFloat(value);
+  const current = parseFloat(el.textContent);
+  el.classList.remove('loading');
+  if (isNaN(current)) { el.textContent = target.toFixed(1); return; }
+  const pending = bciTweenFrames.get(el);
+  if (pending) cancelAnimationFrame(pending);
+  const duration = 450;
+  const start = performance.now();
+  function step(now){
+    const t = Math.min(1, (now - start) / duration);
+    const eased = 1 - Math.pow(1 - t, 3);
+    el.textContent = (current + (target - current) * eased).toFixed(1);
+    if (t < 1) bciTweenFrames.set(el, requestAnimationFrame(step));
+    else bciTweenFrames.delete(el);
+  }
+  bciTweenFrames.set(el, requestAnimationFrame(step));
+}
+
 // BCI trend strip - twin.inspections is already sorted oldest-to-newest by
 // /api/twin/:structureId, with a null bciAvg for inspections that predate BCI
 // scoring or never had one recorded.
@@ -221,7 +245,9 @@ async function onLoad(){
     AUTHOR.previousDate = diff.previousDate;
     AUTHOR.structureDescription = bridge.description || null;
     AUTHOR.bciTrend = twin.inspections || [];
-    AUTHOR.diffElements = diff.elements.map(e => ({ ...e, category: categoryFor(diff.structureType, e.elementNumber), reviewed: false }));
+    AUTHOR.bciAvg = full.overallBciave != null ? parseFloat(full.overallBciave) : null;
+    AUTHOR.bciCrit = full.overallBcicrit != null ? parseFloat(full.overallBcicrit) : null;
+    AUTHOR.diffElements = diff.elements.map(e => ({ ...e, category: categoryFor(diff.structureType, e.elementNumber), reviewed: false, collapsed: false }));
     draftFilter = 'all';
 
     // Real defect photos, keyed by element number (an element can have more
@@ -244,6 +270,10 @@ async function onLoad(){
       </div></div>
       ${AUTHOR.structureDescription ? `<div class="struct-desc"><b>Structure description</b>${AUTHOR.structureDescription}</div>` : ''}
       ${bciTrendHTML(AUTHOR.bciTrend)}`;
+
+    document.getElementById('leftBciCards').style.display = 'flex';
+    animateBciValue(document.getElementById('leftBciAvg'), AUTHOR.bciAvg);
+    animateBciValue(document.getElementById('leftBciCrit'), AUTHOR.bciCrit);
 
     document.getElementById('brandingCard').style.display = 'block';
     await loadBranding(diff.organizationId);
@@ -381,6 +411,7 @@ function passesDraftFilter(el){
 
 function renderDraft(){
   document.getElementById('draftStructureName').textContent = AUTHOR.structureName || '—';
+  document.getElementById('draftBciTrend').innerHTML = bciTrendHTML(AUTHOR.bciTrend);
   document.getElementById('draftFilterPills').innerHTML = draftFilterPillsHTML();
   document.querySelectorAll('#draftFilterPills .f-pill').forEach(b => b.classList.toggle('on', b.dataset.active === 'true'));
   const order = categoryOrderFor(AUTHOR.structureType);
@@ -461,9 +492,9 @@ function defectCardHTML(el){
   const extSteps = ['A','B','C','D','E'].map(x => `<button class="dc-step ${el.current.extent===x?'active ext-'+x:''}" data-field="extent" data-el="${el.elementNumber}" data-val="${x}">${x}</button>`).join('');
   const worksSteps = [['N','No'],['Y','Yes'],['M','Monitor']].map(([v,l]) => `<button class="dc-step works-btn ${el.current.worksRequired===v?'active works-'+v:''}" data-field="works" data-el="${el.elementNumber}" data-val="${v}">${l}</button>`).join('');
 
-  return `<div class="defect-card cmp-${el.comparison||''} ${el.reviewed?'reviewed':''}${draftAllCollapsed?' collapsed':''}" data-el="${el.elementNumber}">
-    <div class="dc-top">
-      <button class="dc-collapse-btn" data-collapse-toggle="${el.elementNumber}"><i class="fas fa-chevron-down"></i></button>
+  return `<div class="defect-card cmp-${el.comparison||''} ${el.reviewed?'reviewed':''}${el.collapsed?' collapsed':''}" data-el="${el.elementNumber}">
+    <div class="dc-top" data-collapse-toggle="${el.elementNumber}">
+      <button class="dc-collapse-btn"><i class="fas fa-chevron-down"></i></button>
       <div style="flex:1;">
         <div class="dc-elem">${el.name}</div>
         <div class="dc-code">${code}${codeLabel ? ' · ' + codeLabel.toUpperCase() : ''}</div>
@@ -529,9 +560,13 @@ function attachDraftEditors(){
       renderDraft();
     });
   });
-  document.querySelectorAll('[data-collapse-toggle]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      btn.closest('.defect-card').classList.toggle('collapsed');
+  document.querySelectorAll('[data-collapse-toggle]').forEach(header => {
+    header.addEventListener('click', (e) => {
+      if (e.target.closest('.dc-review-check')) return;
+      const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === header.dataset.collapseToggle);
+      if(!el) return;
+      el.collapsed = !el.collapsed;
+      header.closest('.defect-card').classList.toggle('collapsed', el.collapsed);
     });
   });
   document.querySelectorAll('.dc-step[data-field="severity"], .dc-step[data-field="extent"], .dc-step[data-field="works"]').forEach(btn => {
@@ -571,9 +606,11 @@ document.getElementById('markUnchangedBtn').addEventListener('click', function()
 document.getElementById('toggleCollapseAllBtn').addEventListener('click', function(){
   draftAllCollapsed = !draftAllCollapsed;
   this.innerHTML = draftAllCollapsed ? '<i class="fas fa-expand"></i> Expand all' : '<i class="fas fa-compress"></i> Collapse all';
+  AUTHOR.diffElements.forEach(el => { if (el.current.status === 'defect') el.collapsed = draftAllCollapsed; });
   document.querySelectorAll('.defect-card').forEach(card => card.classList.toggle('collapsed', draftAllCollapsed));
 });
 document.getElementById('toAuthorBtn').addEventListener('click', () => goTo('author'));
+document.getElementById('backToSetupBtn').addEventListener('click', () => goTo('setup'));
 
 // Fixed right-side structure info panel - BCI trend + description, shown
 // only while reviewing the draft (matches the left stepper's "stay in
