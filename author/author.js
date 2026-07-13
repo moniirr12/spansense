@@ -98,6 +98,13 @@ async function loadStructures(){
   const sel = document.getElementById('structureSelect');
   try {
     const res = await fetch(`${API_BASE}/api/bridges`);
+    if (res.status === 401) {
+      sel.innerHTML = '<option value="">Not logged in</option>';
+      document.getElementById('loadedSummary').innerHTML =
+        `<div class="no-history-note"><i class="fas fa-triangle-exclamation"></i> You need to be logged in to use Author. <a href="../index.html">Go to login</a></div>`;
+      return;
+    }
+    if (!res.ok) throw new Error('Server returned ' + res.status);
     const bridges = await res.json();
     AUTHOR.structures = bridges;
     sel.innerHTML = '<option value="">Select a structure…</option>' +
