@@ -25,6 +25,13 @@
 // ============================================================
 
 (function () {
+    // Same local-dev detection as test.js/map.js - without it, a bare
+    // relative fetch resolves against whatever origin is serving this file
+    // (e.g. Live Server on 127.0.0.1:5500), which has no /api/* routes.
+    var API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? 'http://localhost:3000'
+        : window.location.origin;
+
     var ROLE_META = {
         engineer:  { label: 'Engineer',  icon: 'fa-user-check' },
         admin:     { label: 'Admin',     icon: 'fa-user-shield' },
@@ -67,7 +74,7 @@
         }
 
         try {
-            var res = await fetch('/api/check-session');
+            var res = await fetch(API_BASE + '/api/check-session');
             var data = await res.json();
             if (!data.loggedIn || !data.role) return;
 

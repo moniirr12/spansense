@@ -69,6 +69,8 @@ function buildNarrative(elDiff, previousDate){
 
   if (cur.worksRequired === 'Y') {
     text += ` Remedial works are recommended` + (cur.priority ? ` at ${cur.priority === 'H' ? 'high' : cur.priority === 'M' ? 'medium' : 'low'} priority` : '') + (cur.cost ? `, estimated at £${Number(cur.cost).toLocaleString()}` : '') + `.`;
+  } else if (cur.worksRequired === 'M') {
+    text += ` This should be monitored at the next inspection to check for further progression.`;
   }
   return text;
 }
