@@ -112,15 +112,25 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 @media (max-width: 860px) { .glass-scrollbar { display: none !important; } }
 
 /* ===== WIZARD STEPPER ===== */
-.wizard-steps{display:flex; align-items:center; justify-content:center; gap:0; margin-bottom:28px; user-select:none; flex-wrap:wrap; row-gap:8px;}
-.wizard-step{display:flex; align-items:center; gap:10px; padding:8px 18px; border-radius:30px; font-size:.8rem; font-weight:600; color:var(--text-mute); transition:.2s;}
-.wizard-step .num{width:24px; height:24px; border-radius:50%; background:#e9edf2; color:var(--text-mute); display:flex; align-items:center; justify-content:center; font-size:.74rem; font-weight:700;}
+/* Fixed vertical stepper rail, left edge of the viewport - stays in view
+   while scrolling instead of the old horizontal bar scrolling away. Hidden
+   below 1300px since there's no longer room beside the page-wrapper. */
+.wizard-steps{
+  position:fixed; left:26px; top:50%; transform:translateY(-50%); z-index:900;
+  display:flex; flex-direction:column; align-items:stretch; gap:0; width:172px;
+  background:rgba(255,255,255,.85); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--border2); border-radius:20px; padding:16px 8px;
+  box-shadow:0 10px 28px rgba(44,90,87,.08); user-select:none;
+}
+.wizard-step{display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:14px; font-size:.78rem; font-weight:600; color:var(--text-mute); transition:.2s;}
+.wizard-step .num{width:24px; height:24px; flex-shrink:0; border-radius:50%; background:#e9edf2; color:var(--text-mute); display:flex; align-items:center; justify-content:center; font-size:.74rem; font-weight:700;}
 .wizard-step.active{color:var(--green-dark); background:var(--bg-mint);}
 .wizard-step.active .num{background:var(--teal); color:#fff;}
 .wizard-step.done .num{background:var(--ok); color:#fff;}
 .wizard-step.done{color:var(--ok);}
-.wizard-connector{width:40px; height:2px; background:var(--border); margin:0 2px; border-radius:2px; transition:background .4s ease;}
-.wizard-connector.filled{background:linear-gradient(90deg,var(--ok),var(--teal));}
+.wizard-connector{width:2px; height:18px; background:var(--border); margin:2px 0 2px 22px; border-radius:2px; transition:background .4s ease;}
+.wizard-connector.filled{background:linear-gradient(180deg,var(--ok),var(--teal));}
+@media (max-width:1300px){ .wizard-steps{ display:none; } }
 
 .screen{display:none;}
 .screen.active{display:block; animation:fadeIn .25s ease;}
@@ -148,6 +158,33 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .loaded-summary .prev-note{display:block; font-size:.78rem; color:var(--text-mute2); margin-top:2px;}
 .no-history-note{display:flex; align-items:center; gap:10px; background:var(--amber-bg); border:1px solid var(--amber-border); border-radius:16px; padding:12px 16px; margin-top:14px; font-size:.82rem; color:#8a5c15;}
 .no-history-note i{color:var(--amber);}
+
+/* BCI trend strip - same "history at a glance" idea as the twin timeline,
+   reused here so an inspector sees the structure's trajectory before drafting. */
+.bci-trend{margin-top:16px;}
+.bci-trend-label{font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-mute); margin-bottom:8px;}
+.bci-track{display:flex; align-items:center; gap:0; flex-wrap:wrap;}
+.bci-chip{background:var(--bg-soft); border:1px solid var(--border2); border-radius:14px; padding:10px 14px; min-width:104px;}
+.bci-chip.current{background:var(--bg-mint); border-color:#cfe4e0;}
+.bci-chip .bc-date{font-size:.64rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-mute); margin-bottom:4px;}
+.bci-chip.current .bc-date{color:var(--teal-dark);}
+.bci-chip .bc-score{font-size:1.15rem; font-weight:800; color:var(--text); font-variant-numeric:tabular-nums;}
+.bci-chip .bc-type{font-size:.66rem; color:var(--text-mute2); margin-top:1px;}
+.bci-delta{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; width:44px; flex-shrink:0; font-size:.66rem; font-weight:800; font-variant-numeric:tabular-nums;}
+.bci-delta.down{color:var(--red);}
+.bci-delta.up{color:var(--ok);}
+.bci-delta.flat{color:var(--text-mute2);}
+
+/* Structure description - carried into both the report preview and the setup summary */
+.struct-desc{margin-top:14px; padding:14px 16px; background:var(--bg-soft); border:1px solid var(--border2); border-radius:14px; font-size:.82rem; color:var(--text-mute2); line-height:1.6;}
+.struct-desc b{color:var(--text); font-weight:700; display:block; margin-bottom:4px; font-size:.7rem; text-transform:uppercase; letter-spacing:.05em;}
+
+/* Real defect photo thumbnails */
+.el-photos{display:flex; gap:8px; flex-wrap:wrap; margin:8px 0;}
+.el-photo-thumb{width:64px; height:48px; border-radius:8px; object-fit:cover; border:1px solid var(--border2); cursor:pointer; transition:.15s;}
+.el-photo-thumb:hover{transform:scale(1.05); border-color:var(--teal);}
+.doc-photos{display:flex; gap:10px; flex-wrap:wrap; margin:0 0 12px;}
+.doc-photo-thumb{width:120px; height:90px; border-radius:10px; object-fit:cover; border:1px solid var(--border2); cursor:pointer;}
 
 /* Saved-for-client banner - branding is "set once, reused automatically",
    not redone per report. */
@@ -309,6 +346,7 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .page-header h1 { color: #8ab4b0; }
 .night-mode .page-header p { color: #8aa4ac; }
 
+.night-mode .wizard-steps{background:rgba(35,46,52,0.85) !important; border-color:#2f3e45 !important; box-shadow:0 10px 28px rgba(0,0,0,.3) !important;}
 .night-mode .wizard-step{color:#5f757d;}
 .night-mode .wizard-step .num{background:#2f3e45; color:#9ab0b8;}
 .night-mode .wizard-step.active{background:#1e3a38; color:#8ab4b0;}
@@ -325,6 +363,20 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .picker-field select{background:#1a2428; border-color:#3a4b53; color:#d4dfe3;}
 .night-mode .loaded-summary{background:#1e3a38; border-color:#3a6b62; color:#a0c8c4;}
 .night-mode .no-history-note{background:#3a3020; border-color:#5a4a2a; color:#e0b060;}
+
+.night-mode .bci-trend-label{color:#7d939b;}
+.night-mode .bci-chip{background:#1a2428; border-color:#2f3e45;}
+.night-mode .bci-chip.current{background:#1e3a38; border-color:#3a6b62;}
+.night-mode .bci-chip .bc-date{color:#7d939b;}
+.night-mode .bci-chip.current .bc-date{color:#8ab4b0;}
+.night-mode .bci-chip .bc-score{color:#d4dfe3;}
+.night-mode .bci-chip .bc-type{color:#8aa4ac;}
+.night-mode .bci-delta.down{color:#e57373;}
+.night-mode .bci-delta.up{color:#7ec9ba;}
+.night-mode .bci-delta.flat{color:#8aa4ac;}
+.night-mode .struct-desc{background:#1a2428; border-color:#2f3e45; color:#9ab0b8;}
+.night-mode .struct-desc b{color:#d4dfe3;}
+.night-mode .el-photo-thumb, .night-mode .doc-photo-thumb{border-color:#2f3e45;}
 
 .night-mode .upload-zone{background:#1a2428; border-color:#3a4b53;}
 .night-mode .upload-zone:hover{border-color:#6e9c98; background:#1e3a38;}
@@ -573,10 +625,11 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
     <div class="screen" id="screen-export">
         <div class="card">
             <h2 class="card-title"><i class="fas fa-file-export" style="color:var(--teal);"></i> Generate &amp; Export</h2>
-            <p class="card-sub">This assembled structure — categories, per-element narrative, and the priority-banded conclusions — feeds the same document generator spanSense already uses (<code>reportFull.docx.js</code> / <code>bciProforma.pdfmake.js</code>), styled with the branding and template chosen in Setup.</p>
+            <p class="card-sub">The full report (cover, structure details, BCI summary, description of defects, conclusions, photo appendix and BCI Proforma appendix) is spanSense's standard inspection report format — the only difference here is that Author's drafted narrative fills in each defect's description instead of the raw stored comment.</p>
             <div class="export-actions">
-                <button class="btn-primary-lg" id="genWordBtn"><i class="fas fa-file-word"></i> Generate Word Report</button>
-                <button class="btn-ghost" id="genPdfBtn"><i class="fas fa-file-pdf"></i> Download BCI Proforma (PDF)</button>
+                <button class="btn-primary-lg" id="genFullReportBtn"><i class="fas fa-file-pdf"></i> Download Full Report (PDF)</button>
+                <button class="btn-ghost" id="genWordBtn"><i class="fas fa-file-word"></i> Generate Word Report</button>
+                <button class="btn-ghost" id="genPdfBtn"><i class="fas fa-table-list"></i> BCI Proforma only (PDF)</button>
             </div>
             <details class="json-details">
                 <summary><i class="fas fa-code"></i> View assembled report JSON</summary>
@@ -600,6 +653,7 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 
 <script src="authorElements.js"></script>
 <script src="authorNarrative.js"></script>
+<script src="../test.js"></script>
 <script src="author.js"></script>
 </body>
 </html>

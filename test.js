@@ -573,14 +573,25 @@ async function generateSimplePDFReport(doc, mode = 'download', targetWindow = nu
         defectsData = defectsData.map(defect => {
             const elementDescription = elementNameMap[defect.elementNumber] || `Element ${defect.elementNumber}`;
             const category = allElementsList.find(e => e.elementNo === defect.elementNumber)?.category || 'Unknown';
-            
-            
+
+
             return {
                 ...defect,
                 element_description: elementDescription,
                 element_category: category
             };
         });
+
+        // Optional caller-supplied narrative, keyed by element number - lets
+        // spanSense Author substitute its own drafted (previous-inspection-
+        // aware) narrative in place of the raw stored comment, without this
+        // generator needing to know Author exists.
+        if (doc.narrativeByElement) {
+            defectsData = defectsData.map(defect => {
+                const override = doc.narrativeByElement[defect.elementNumber];
+                return override != null ? { ...defect, comments: override } : defect;
+            });
+        }
 
         // Build photosByDefect
         const photosByDefect = {};

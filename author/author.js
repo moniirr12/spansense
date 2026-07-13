@@ -1,18 +1,7 @@
-// Dynamic API Base URL (same convention as map.js) - lets the page still
-// reach the real API when previewed from a static file server like Live
-// Server on port 5500, which has no /api/* routes of its own.
-const API_BASE = window.location.origin.includes('localhost')
-    ? 'http://localhost:3000'
-    : window.location.origin;
-
-// bciProforma.pdfmake.js expects a global formatDate (normally supplied by
-// test.js on pages that load it) - matches test.js's exact implementation.
-function formatDate(dateString) {
-    if (!dateString) return '--';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return dateString;
-    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-}
+// API_BASE, formatDate, and imageUrlToDataURL are provided by test.js
+// (loaded before this file) - same dependency reportFull.docx.js already
+// has on pages that load it, and Author now also uses test.js directly for
+// the full-report PDF export (generateSimplePDFReport).
 
 // ============================================================
 // NIGHT MODE TOGGLE (same convention as the rest of spanSense)
@@ -139,6 +128,37 @@ async function onStructureChange(){
     console.error('Error loading inspection dates:', err);
   }
 }
+
+// BCI trend strip - twin.inspections is already sorted oldest-to-newest by
+// /api/twin/:structureId, with a null bciAvg for inspections that predate BCI
+// scoring or never had one recorded.
+const BCI_TREND_MAX_CHIPS = 6;
+function bciTrendHTML(trend){
+  const scored = trend.filter(t => t.bciAvg != null);
+  if (!scored.length) return '';
+  const shown = scored.slice(-BCI_TREND_MAX_CHIPS);
+  const startIdx = scored.length - shown.length;
+  const chips = shown.map((t, i) => {
+    const isLast = i === shown.length - 1;
+    const prev = i > 0 ? shown[i-1] : (startIdx > 0 ? scored[startIdx - 1] : null);
+    let delta = '';
+    if (prev) {
+      const d = Math.round((t.bciAvg - prev.bciAvg) * 10) / 10;
+      const dir = d > 0 ? 'up' : d < 0 ? 'down' : 'flat';
+      delta = `<div class="bci-delta ${dir}"><i class="fas fa-arrow-${dir === 'flat' ? 'right' : dir}"></i>${d > 0 ? '+' : ''}${d}</div>`;
+    }
+    return delta + `<div class="bci-chip${isLast ? ' current' : ''}">
+      <div class="bc-date">${t.date}</div>
+      <div class="bc-score">${t.bciAvg.toFixed(1)}</div>
+      <div class="bc-type">${t.type}</div>
+    </div>`;
+  }).join('');
+  const label = scored.length > shown.length
+    ? `BCI trend — last ${shown.length} of ${scored.length} inspections`
+    : `BCI trend across ${scored.length} inspection${scored.length===1?'':'s'}`;
+  return `<div class="bci-trend"><div class="bci-trend-label">${label}</div><div class="bci-track">${chips}</div></div>`;
+}
+
 async function onLoad(){
   const structureId = document.getElementById('structureSelect').value;
   const date = document.getElementById('inspectionSelect').value;
@@ -148,13 +168,23 @@ async function onLoad(){
   loadBtn.disabled = true;
   loadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading…';
   try {
-    const [diffRes, bridgeRes] = await Promise.all([
+    const [diffRes, bridgeRes, twinRes, fullRes] = await Promise.all([
       fetch(`${API_BASE}/api/author/diff?structureId=${structureId}&date=${date}`),
-      fetch(`${API_BASE}/api/bridges/${structureId}`)
+      fetch(`${API_BASE}/api/bridges/${structureId}`),
+      fetch(`${API_BASE}/api/twin/${structureId}`),
+      fetch(`${API_BASE}/api/inspection/full?structure_id=${structureId}&date=${date}`)
     ]);
     if (!diffRes.ok) throw new Error((await diffRes.json()).error || 'Failed to load inspection data');
     const diff = await diffRes.json();
     const bridge = await bridgeRes.json();
+    const twin = twinRes.ok ? await twinRes.json() : { inspections: [] };
+    const full = fullRes.ok ? await fullRes.json() : { defects: [] };
+
+    // generateBCIFormForPDF (in test.js) reads these from sessionStorage
+    // rather than accepting them as arguments - set here so the full-report
+    // PDF export's Appendix B (BCI Proforma) can find them.
+    sessionStorage.setItem('structureId', structureId);
+    sessionStorage.setItem('structureName', bridge.name);
 
     AUTHOR.structureId = structureId;
     AUTHOR.structureName = bridge.name;
@@ -162,7 +192,20 @@ async function onLoad(){
     AUTHOR.organizationId = diff.organizationId;
     AUTHOR.inspectionDate = diff.currentDate;
     AUTHOR.previousDate = diff.previousDate;
+    AUTHOR.structureDescription = bridge.description || null;
+    AUTHOR.bciTrend = twin.inspections || [];
     AUTHOR.diffElements = diff.elements.map(e => ({ ...e, category: categoryFor(diff.structureType, e.elementNumber) }));
+
+    // Real defect photos, keyed by element number (an element can have more
+    // than one defect row with its own photos across the same inspection).
+    const photosByElement = {};
+    (full.defects || []).forEach(d => {
+      if (!d.photos || !d.photos.length) return;
+      if (!photosByElement[d.elementNumber]) photosByElement[d.elementNumber] = [];
+      photosByElement[d.elementNumber].push(...d.photos);
+    });
+    AUTHOR.photosByElement = photosByElement;
+    AUTHOR.diffElements.forEach(el => { el.photos = photosByElement[el.elementNumber] || []; });
 
     const summary = document.getElementById('loadedSummary');
     summary.innerHTML = `<div class="loaded-summary"><i class="fas fa-circle-check"></i><div>
@@ -170,7 +213,9 @@ async function onLoad(){
         ${diff.previousDate
           ? `<span class="prev-note">Comparing against the previous inspection on ${fmtDate(diff.previousDate)}.</span>`
           : `<span class="prev-note">No previous inspection found — this is the first recorded inspection for this structure.</span>`}
-      </div></div>`;
+      </div></div>
+      ${AUTHOR.structureDescription ? `<div class="struct-desc"><b>Structure description</b>${AUTHOR.structureDescription}</div>` : ''}
+      ${bciTrendHTML(AUTHOR.bciTrend)}`;
 
     document.getElementById('brandingCard').style.display = 'block';
     await loadBranding(diff.organizationId);
@@ -291,6 +336,13 @@ function renderDraft(){
 function narrativeFor(el){
   return el.editedNarrative != null ? el.editedNarrative : buildNarrative(el, AUTHOR.previousDate);
 }
+function elPhotosHTML(photos, containerCls){
+  if (!photos || !photos.length) return '';
+  const thumbCls = containerCls === 'doc-photos' ? 'doc-photo-thumb' : 'el-photo-thumb';
+  return `<div class="${containerCls}">${photos.map(p =>
+    `<img class="${thumbCls}" src="${p.url}" alt="${(p.description||'Site photo').replace(/"/g,'')}" title="${(p.description||'').replace(/"/g,'')}" onclick="window.open('${p.url}','_blank')">`
+  ).join('')}</div>`;
+}
 function elRowHTML(el){
   const [cls, label] = statusInfo(el.current.status);
   const editableFields = el.current.status === 'defect' ? `
@@ -303,6 +355,7 @@ function elRowHTML(el){
     <div class="el-body">
       <span class="status-pill ${cls}">${label}</span>
       ${el.comparison ? `<span class="cmp-chip ${el.comparison}">${cmpLabel(el.comparison)}</span>` : ''}
+      ${elPhotosHTML(el.photos, 'el-photos')}
       <div class="el-narrative" id="narrative-${el.elementNumber}">${narrativeFor(el)}</div>
       ${el.current.status === 'defect' ? `<button class="el-edit-btn" data-toggle="${el.elementNumber}"><i class="fas fa-pen"></i> Edit</button>` : ''}
       ${editableFields}
@@ -365,15 +418,19 @@ function renderReportPane(){
       <div class="dc-brand">spanSense</div>
       <div class="dc-title">${AUTHOR.structureName || 'Untitled Structure'} — ${AUTHOR.inspectionType || 'Inspection'}</div>
       <div class="dc-sub">Structure ID: ${AUTHOR.structureId || '—'} · Inspected ${fmtDate(AUTHOR.inspectionDate)}</div>
-    </div>
-    <div class="doc-h1">3. Description of Defects</div>`;
+    </div>`;
+  if (AUTHOR.structureDescription) {
+    html += `<div class="doc-h1">2. Structure Description</div><p class="doc-p">${AUTHOR.structureDescription}</p>`;
+  }
+  html += `<div class="doc-h1">3. Description of Defects</div>`;
   order.forEach((cat, ci) => {
     const els = AUTHOR.diffElements.filter(e => e.category === cat);
     if (!els.length) return;
     html += `<div class="doc-h2">3.${ci+1} ${cat}</div>`;
     els.forEach((el, ei) => {
       html += `<div class="doc-h3">3.${ci+1}.${ei+1} ${el.name}</div>
-        <p class="doc-p linked ${el.current.status === 'na' ? 'na' : ''}" data-el="${el.elementNumber}">${narrativeFor(el)}</p>`;
+        <p class="doc-p linked ${el.current.status === 'na' ? 'na' : ''}" data-el="${el.elementNumber}">${narrativeFor(el)}</p>
+        ${elPhotosHTML(el.photos, 'doc-photos')}`;
     });
   });
   html += `<div class="doc-h1">4. Conclusions and Recommendations</div>
@@ -406,12 +463,14 @@ function buildPayload(){
   return {
     structure: AUTHOR.structureName, structureId: AUTHOR.structureId,
     inspectionDate: AUTHOR.inspectionDate, previousDate: AUTHOR.previousDate,
+    description: AUTHOR.structureDescription,
     branding: AUTHOR.branding,
     sections: order.map(cat => ({
       category: cat,
       elements: AUTHOR.diffElements.filter(e => e.category === cat).map(el => ({
         name: el.name, status: el.current.status, comparison: el.comparison, narrative: narrativeFor(el),
-        severity: el.current.severity||null, extent: el.current.extent||null, priority: el.current.priority||null, cost: el.current.cost||null
+        severity: el.current.severity||null, extent: el.current.extent||null, priority: el.current.priority||null, cost: el.current.cost||null,
+        photos: el.photos || []
       }))
     })),
     conclusions: { intro: buildConclusionsIntro(AUTHOR), priorityBands: buildPriorityBands(AUTHOR) }
@@ -437,7 +496,27 @@ const REPORT_FONT = 'Roboto';
 const REPORT_COLORS = { text:'2C3E44', heading:'2C3E44', muted:'888888' };
 const PRIORITY_COLORS = { h:'C0392B', m:'BA7517', l:'2D7A6E' };
 
-function buildAuthorReportDocx(payload){
+// docx's ImageRun requires an explicit type (jpg/png/gif/bmp) - same helper
+// as reportFull.docx.js uses for the same reason.
+function imageTypeFromDataUrl(dataUrl){
+  const m = /^data:image\/(\w+)/i.exec(dataUrl);
+  const subtype = m ? m[1].toLowerCase() : '';
+  if (subtype === 'jpeg') return 'jpg';
+  if (['jpg','png','gif','bmp'].includes(subtype)) return subtype;
+  return 'png';
+}
+function imageParagraph(d, dataUrl, maxWidthPx){
+  if (!dataUrl) return null;
+  const width = maxWidthPx || 220;
+  const height = Math.round(width * 0.75);
+  return new d.Paragraph({
+    alignment: d.AlignmentType.CENTER,
+    spacing: { after: 160 },
+    children: [new d.ImageRun({ data: dataUrl, type: imageTypeFromDataUrl(dataUrl), transformation: { width, height } })]
+  });
+}
+
+async function buildAuthorReportDocx(payload){
   const d = window.docx;
   const accent = (payload.branding.accentColor || '#5B8C8A').replace('#','').toUpperCase();
 
@@ -464,15 +543,25 @@ function buildAuthorReportDocx(payload){
   }
   children.push(new d.Paragraph({ children: [], pageBreakBefore: true }));
 
+  if (payload.description) {
+    children.push(heading('2. Structure Description', d.HeadingLevel.HEADING_1));
+    children.push(para(payload.description, { after: 240 }));
+  }
+
   children.push(heading('3. Description of Defects', d.HeadingLevel.HEADING_1));
-  payload.sections.forEach((sec, ci) => {
-    if (!sec.elements.length) return;
+  for (const [ci, sec] of payload.sections.entries()) {
+    if (!sec.elements.length) continue;
     children.push(heading('3.' + (ci + 1) + ' ' + sec.category, d.HeadingLevel.HEADING_2));
-    sec.elements.forEach((el, ei) => {
+    for (const [ei, el] of sec.elements.entries()) {
       children.push(para('3.' + (ci + 1) + '.' + (ei + 1) + ' ' + el.name, { bold: true, after: 60 }));
-      children.push(para(el.narrative, { after: 160, italics: el.status === 'na', color: el.status === 'na' ? REPORT_COLORS.muted : undefined }));
-    });
-  });
+      children.push(para(el.narrative, { after: el.photos.length ? 100 : 160, italics: el.status === 'na', color: el.status === 'na' ? REPORT_COLORS.muted : undefined }));
+      for (const photo of el.photos.slice(0, 2)) {
+        const dataUrl = await imageUrlToDataURL(photo.url);
+        const imgPara = imageParagraph(d, dataUrl);
+        if (imgPara) children.push(imgPara);
+      }
+    }
+  }
 
   children.push(new d.Paragraph({ children: [], pageBreakBefore: true }));
   children.push(heading('4. Conclusions and Recommendations', d.HeadingLevel.HEADING_1));
@@ -518,7 +607,7 @@ async function generateWordReport(){
       await loadScript('https://cdn.jsdelivr.net/npm/docx@9.7.1/dist/index.iife.js');
     }
     const payload = buildPayload();
-    const doc = buildAuthorReportDocx(payload);
+    const doc = await buildAuthorReportDocx(payload);
     const blob = await window.docx.Packer.toBlob(doc);
     const fileName = payload.structure.replace(/[^a-z0-9]/gi, '_') + '_Author_Report.docx';
     const url = URL.createObjectURL(blob);
@@ -572,8 +661,41 @@ async function generateBciProformaPdf(){
   }
 }
 
+// Full inspection report PDF - reuses the app's real report generator
+// (test.js's generateSimplePDFReport / buildInspectionReportDocDefinition),
+// so cover, TOC, structure details, BCI summary, photo appendix and BCI
+// Proforma appendix are byte-for-byte the same format spanSense already
+// produces elsewhere. Only the per-element narrative differs: Author's
+// drafted (previous-inspection-aware) text stands in for the raw stored
+// comment, via generateSimplePDFReport's narrativeByElement override.
+async function generateFullReportPdf(){
+  if (!AUTHOR.structureId) { alert('Load a structure and inspection first.'); return; }
+  const { overlay, box } = showOverlay('fa-cog fa-spin', 'Generating full report…', 'Assembling structure details, defects, and the BCI Proforma appendix');
+  try {
+    if (typeof window.generateSimplePDFReport !== 'function') {
+      throw new Error('Report generator not loaded yet - please wait a moment and try again.');
+    }
+    const dateStr = new Date(AUTHOR.inspectionDate).toISOString().slice(0,10);
+    const narrativeByElement = {};
+    AUTHOR.diffElements.forEach(el => {
+      if (el.current.status === 'defect') narrativeByElement[el.elementNumber] = narrativeFor(el);
+    });
+    await window.generateSimplePDFReport({
+      structure_id: AUTHOR.structureId,
+      structure_name: AUTHOR.structureName,
+      date: dateStr,
+      narrativeByElement
+    }, 'download');
+    finishOverlay(box, overlay, 'fa-check', 'Downloaded', 'The full inspection report was generated with Author\'s drafted narrative in place of the raw stored comments.');
+  } catch (err) {
+    console.error('Full report generation failed:', err);
+    finishOverlay(box, overlay, 'fa-triangle-exclamation', 'Generation failed', err.message || 'Something went wrong building the report.', true);
+  }
+}
+
 document.getElementById('genWordBtn').addEventListener('click', generateWordReport);
 document.getElementById('genPdfBtn').addEventListener('click', generateBciProformaPdf);
+document.getElementById('genFullReportBtn').addEventListener('click', generateFullReportPdf);
 
 // ============================================================
 // INIT
