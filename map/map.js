@@ -407,6 +407,15 @@ if (twinLink) {
     });
 }
 
+// Author page navigation
+const authorLink = document.getElementById('authorLink');
+if (authorLink) {
+    authorLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        window.location.href = "../author/author.html";
+    });
+}
+
 // Search functionality
 const searchInput = document.getElementById('searchInput');
 const searchResults = document.getElementById('searchResults');
