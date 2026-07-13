@@ -1,3 +1,15 @@
+// Table 4 - Material Type Codes (GI codes rev 2)
+var BCI_MATERIAL_CODE_LABEL = {
+    A: 'Reinforced concrete', B: 'Plain/mass concrete', C: 'Post-tensioned concrete', D: 'Pre-tensioned concrete',
+    E: 'Steel', F: 'Cast iron', G: 'Wrought iron', H: 'Aluminium', I: 'Corrugated steel', J: 'Corrugated aluminium',
+    K: 'Brick', L: 'Stone', M: 'FRP/GRP/Composite', N: 'Timber', P: 'No secondary element / no material', Q: 'Other'
+};
+function bciMaterialSpan(code) {
+    if (!code) return 'N/A';
+    var label = BCI_MATERIAL_CODE_LABEL[String(code).trim().toUpperCase()];
+    return label ? `<span title="${label}">${code}</span>` : code;
+}
+
 // BCI Form Generator - extracted as a standalone function
 async function generateBCIForm(doc) {
     try {
@@ -323,7 +335,7 @@ async function generateBCIForm(doc) {
                                     <td colspan="5">Map Ref: ${bridge.latitude?.toFixed(3) || 'N/A'}, ${bridge.longitude?.toFixed(3) || 'N/A'}</td>
                                     <td colspan="5">OSE: ${bridge.OSE || 'N/A'}</td>
                                     <td colspan="7">OSN: ${bridge.OSN || 'N/A'}</td>
-                                    <td colspan="7"><div style="display: flex; justify-content: space-between;"><span>Primary deck material</span><span>${bridge.primary_material || 'N/A'}</span></div></td>
+                                    <td colspan="7"><div style="display: flex; justify-content: space-between;"><span>Primary deck material</span><span>${bciMaterialSpan(bridge.primary_material)}</span></div></td>
                                 </tr>
                                 <tr>
                                     <td colspan="4">Span: ${spanNum} of ${totalSpans}</td>
@@ -334,7 +346,7 @@ async function generateBCIForm(doc) {
                                 <tr>
                                     <td colspan="10">All above ground elements inspected: ${inspected}</td>
                                     <td colspan="6">Photograph: ${photo}</td>
-                                    <td colspan="7"><div style="display: flex; justify-content: space-between;"><span>Secondary deck material</span><span>${bridge.secondary_material || 'N/A'}</span></div></td>
+                                    <td colspan="7"><div style="display: flex; justify-content: space-between;"><span>Secondary deck material</span><span>${bciMaterialSpan(bridge.secondary_material)}</span></div></td>
                                 </tr>
                             </table>
                         </div>

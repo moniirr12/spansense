@@ -83,6 +83,23 @@ function twinDefectTypeLabel(defectType, defectNumber) {
     return (byType && byType[Number(defectNumber)]) || null;
 }
 
+// Table 4 - Material Type Codes (GI codes rev 2)
+var TWIN_MATERIAL_CODE_LABEL = {
+    A: 'Reinforced concrete', B: 'Plain/mass concrete', C: 'Post-tensioned concrete', D: 'Pre-tensioned concrete',
+    E: 'Steel', F: 'Cast iron', G: 'Wrought iron', H: 'Aluminium', I: 'Corrugated steel', J: 'Corrugated aluminium',
+    K: 'Brick', L: 'Stone', M: 'FRP/GRP/Composite', N: 'Timber', P: 'No secondary element / no material', Q: 'Other'
+};
+// bridge.material is "PRIMARY / SECONDARY" (or just one code) from the server -
+// re-split it here rather than changing that API shape, and wrap each code in
+// a native title tooltip so its meaning shows on hover.
+function twinMaterialHtml(materialStr) {
+    if (!materialStr) return '—';
+    return materialStr.split(' / ').map(function(code) {
+        var label = TWIN_MATERIAL_CODE_LABEL[code.trim().toUpperCase()];
+        return label ? '<span title="' + label + '">' + escapeHtmlTwin(code) + '</span>' : escapeHtmlTwin(code);
+    }).join(' / ');
+}
+
 /* ============================================================
    PROCEDURAL SENSORS (no real telemetry exists yet - these are
    plausible monitoring points derived from real span/pier geometry)
@@ -424,7 +441,7 @@ async function selectBridge(bridgeId, inspectionId) {
 
         document.getElementById('factSpan').textContent = bridge.spanLength ? (bridge.spanLength * bridge.spans).toFixed(1) + ' m' : '—';
         document.getElementById('factSpans').textContent = bridge.spans;
-        document.getElementById('factMaterial').textContent = bridge.material || '—';
+        document.getElementById('factMaterial').innerHTML = twinMaterialHtml(bridge.material);
         document.getElementById('factYear').textContent = bridge.yearBuilt || '—';
 
         document.getElementById('lastInsp').textContent = bridge.lastInspection || 'None recorded';
