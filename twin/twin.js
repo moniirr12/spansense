@@ -901,6 +901,12 @@ document.addEventListener('click', function(e) {
     }
 });
 
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && defectPopup.style.display === 'block') {
+        hideDefectPopup();
+    }
+});
+
 function bindLayerPills(selector) {
     document.querySelectorAll(selector).forEach(function(pill) {
         pill.addEventListener('click', function() {

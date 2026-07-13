@@ -984,6 +984,12 @@ function closeReviewModal() {
     reviewingInspectionId = null;
 }
 
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && document.getElementById('reviewModalOverlay').classList.contains('active')) {
+        closeReviewModal();
+    }
+});
+
 async function submitReviewDecision(decision) {
     if (!reviewingInspectionId) return;
     const comments = document.getElementById('reviewCommentsInput').value.trim();
