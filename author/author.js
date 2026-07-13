@@ -507,13 +507,13 @@ function defectCardHTML(el){
       </div>
     </div>
     <div class="dc-body">
-      <div class="dc-history">
-        <span>${historyBits.join(' · ')}</span>
-        ${trendBadgeHTML(el)}
-      </div>
       <div class="dc-grid">
         ${photosHtml}
         <div>
+          <div class="dc-history">
+            <span>${historyBits.join(' · ')}</span>
+            ${trendBadgeHTML(el)}
+          </div>
           <div class="dc-stepper-row">
             <div><span class="dc-stepper-lbl">Severity</span><div class="dc-step-track">${sevSteps}</div></div>
             <div><span class="dc-stepper-lbl">Extent</span><div class="dc-step-track">${extSteps}</div></div>

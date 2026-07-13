@@ -302,18 +302,18 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .dc-review-check input{accent-color:var(--teal); cursor:pointer;}
 .dc-review-check.checked{background:var(--ok-bg); border-color:var(--ok-border); color:var(--ok);}
 
-.dc-history{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:10px 0 14px; padding:9px 12px; background:var(--bg-soft); border-radius:12px; font-size:.76rem; color:var(--text-mute2);}
+.dc-history{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 14px; padding:9px 12px; background:var(--bg-soft); border-radius:12px; font-size:.76rem; color:var(--text-mute2);}
 .dc-history .trend-badge{font-size:.68rem; font-weight:700; padding:3px 10px; border-radius:20px; margin-left:auto;}
 .dc-history .trend-badge.worsened, .dc-history .trend-badge.new{background:var(--red-bg); color:var(--red);}
 .dc-history .trend-badge.improved, .dc-history .trend-badge.resolved{background:var(--ok-bg); color:var(--ok);}
 .dc-history .trend-badge.unchanged{background:#eef0f2; color:var(--text-mute2);}
 .dc-history .trend-badge.changed, .dc-history .trend-badge.first{background:var(--amber-bg); color:var(--amber);}
 
-.dc-grid{display:grid; grid-template-columns:210px 1fr; gap:20px;}
-@media (max-width:700px){ .dc-grid{grid-template-columns:1fr;} }
-.dc-photos{display:flex; flex-direction:column; gap:7px;}
-.dc-photos img{width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:12px; border:1px solid var(--border2); cursor:pointer;}
-.dc-photo-placeholder{width:100%; aspect-ratio:4/3; border-radius:12px; background:var(--bg-soft); border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; color:var(--text-mute); font-size:1.6rem;}
+.dc-grid{display:grid; grid-template-columns:300px 1fr; gap:22px;}
+@media (max-width:800px){ .dc-grid{grid-template-columns:1fr;} }
+.dc-photos{display:flex; flex-direction:column; gap:8px;}
+.dc-photos img{width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:14px; border:1px solid var(--border2); cursor:pointer;}
+.dc-photo-placeholder{width:100%; aspect-ratio:4/3; border-radius:14px; background:var(--bg-soft); border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; color:var(--text-mute); font-size:2.1rem;}
 
 /* Editable severity/extent/works steppers - same idea as the main
    inspection editor's button-row steppers, color-coded the same way. */
@@ -367,6 +367,13 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 }
 .struct-info-panel.show{display:block;}
 @media (max-width:1650px){ .struct-info-panel{display:none !important;} }
+
+/* Reserves room for the fixed side panel, same idea as inspection1.html's
+   .inspection-main margin-right (panel width + offset + gap) - the panel
+   is out of document flow (position:fixed), so this space isn't reserved
+   automatically. */
+.draft-main{margin-right:300px;}
+@media (max-width:1650px){ .draft-main{margin-right:0;} }
 .sip-name{font-size:1rem; font-weight:800; color:var(--green-dark); margin-bottom:2px;}
 .sip-meta{font-size:.74rem; color:var(--text-mute2); margin-bottom:14px;}
 .sip-label{font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-mute); margin-bottom:6px;}
@@ -759,7 +766,7 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 
     <!-- ================= SCREEN 2: DRAFT REPORT ================= -->
     <div class="screen" id="screen-draft">
-        <div class="card">
+        <div class="draft-main">
             <h2 class="card-title"><i class="fas fa-sparkles" style="color:var(--ai);"></i> Drafted Narrative — <span id="draftStructureName">—</span></h2>
             <p class="card-sub">A card per defect, drafted from this inspection's real data and automatically compared against the structure's own previous inspection. Review, edit, and mark off as you go — elements with nothing to report are listed compactly below each category.</p>
             <div id="draftBciTrend"></div>
@@ -770,12 +777,14 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
                     <button class="btn-bulk" id="markUnchangedBtn"><i class="fas fa-check-double"></i> Mark all unchanged as reviewed</button>
                 </div>
             </div>
-            <div id="draftGroups"></div>
-        </div>
-        <div class="bottom-nav">
-            <button class="btn-ghost" id="backToSetupBtn"><i class="fas fa-arrow-left"></i> Back</button>
-            <span class="progress-text" id="draftProgressText" style="font-size:.8rem; color:var(--text-mute2);"></span>
-            <button class="btn-primary-lg" id="toAuthorBtn"><i class="fas fa-arrow-right"></i> Continue to Author View</button>
+            <div class="card">
+                <div id="draftGroups"></div>
+            </div>
+            <div class="bottom-nav">
+                <button class="btn-ghost" id="backToSetupBtn"><i class="fas fa-arrow-left"></i> Back</button>
+                <span class="progress-text" id="draftProgressText" style="font-size:.8rem; color:var(--text-mute2);"></span>
+                <button class="btn-primary-lg" id="toAuthorBtn"><i class="fas fa-arrow-right"></i> Continue to Author View</button>
+            </div>
         </div>
     </div>
 
