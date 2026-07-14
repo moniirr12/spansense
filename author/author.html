@@ -413,15 +413,20 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .dc-hero-del{position:absolute; top:8px; right:8px; width:24px; height:24px; border-radius:50%; background:rgba(20,30,32,.6); color:#fff; border:none; cursor:pointer; font-size:.7rem; display:flex; align-items:center; justify-content:center; opacity:0; transition:.15s;}
 .dc-hero:hover .dc-hero-del{opacity:1;}
 .dc-photo-placeholder{
-  width:100%; aspect-ratio:4/3; border-radius:14px; cursor:pointer;
+  position:relative; width:100%; aspect-ratio:4/3; border-radius:14px; cursor:pointer; overflow:hidden;
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
-  background:
-    repeating-linear-gradient(135deg, rgba(91,140,138,.08) 0px, rgba(91,140,138,.08) 2px, transparent 2px, transparent 13px),
-    linear-gradient(135deg, var(--bg-mint), var(--bg-soft));
   border:1px solid var(--border2); transition:border-color .15s ease;
 }
-.dc-photo-placeholder-icon{width:52px; height:52px; border-radius:50%; background:#fff; box-shadow:0 4px 14px rgba(44,90,87,.12); display:flex; align-items:center; justify-content:center; color:var(--teal); font-size:1.3rem; transition:transform .15s ease, color .15s ease;}
-.dc-photo-placeholder-txt{font-size:.72rem; font-weight:700; color:var(--text-mute2);}
+/* A simple two-tone landscape (sky/sun/rolling hills) rather than a flat
+   dashed box or a busy texture - the classic "placeholder image" motif,
+   drawn in the app's own palette instead of a generic gray icon. */
+.dc-ph-art{position:absolute; inset:0; width:100%; height:100%;}
+.dc-ph-sky{fill:var(--bg-mint);}
+.dc-ph-sun{fill:var(--teal); opacity:.16;}
+.dc-ph-hill-back{fill:var(--teal); opacity:.14;}
+.dc-ph-hill-front{fill:var(--teal); opacity:.22;}
+.dc-photo-placeholder-icon{position:relative; width:52px; height:52px; border-radius:50%; background:#fff; box-shadow:0 4px 14px rgba(44,90,87,.12); display:flex; align-items:center; justify-content:center; color:var(--teal); font-size:1.3rem; transition:transform .15s ease, color .15s ease;}
+.dc-photo-placeholder-txt{position:relative; font-size:.72rem; font-weight:700; color:var(--text-mute2);}
 .dc-photo-placeholder:hover{border-color:var(--teal);}
 .dc-photo-placeholder:hover .dc-photo-placeholder-icon{color:var(--teal-dark); transform:scale(1.07);}
 .dc-photo-caption{width:100%; border:1px solid transparent; background:none; font-size:.72rem; color:var(--text-mute2); padding:4px 5px; font-family:inherit; border-radius:6px;}
@@ -726,12 +731,11 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .dc-history .trend-badge.changed, .night-mode .dc-history .trend-badge.first{background:#3a3020; color:#e0b060;}
 .night-mode .dc-hero{background:#1a2428; border-color:#2f3e45;}
 .night-mode .dc-hero-del{background:rgba(0,0,0,.55);}
-.night-mode .dc-photo-placeholder{
-  background:
-    repeating-linear-gradient(135deg, rgba(138,180,176,.06) 0px, rgba(138,180,176,.06) 2px, transparent 2px, transparent 13px),
-    linear-gradient(135deg, #1e2f2d, #1a2428);
-  border-color:#3a4b53;
-}
+.night-mode .dc-photo-placeholder{border-color:#3a4b53;}
+.night-mode .dc-ph-sky{fill:#1c2d2b;}
+.night-mode .dc-ph-sun{fill:#8ab4b0; opacity:.18;}
+.night-mode .dc-ph-hill-back{fill:#8ab4b0; opacity:.14;}
+.night-mode .dc-ph-hill-front{fill:#8ab4b0; opacity:.22;}
 .night-mode .dc-photo-placeholder-icon{background:#212f33; color:#8ab4b0; box-shadow:0 4px 14px rgba(0,0,0,.3);}
 .night-mode .dc-photo-placeholder-txt{color:#7d939b;}
 .night-mode .dc-photo-placeholder:hover{border-color:#6e9c98;}
@@ -866,10 +870,9 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 
     <!-- ================= SCREEN 1: SETUP ================= -->
     <div class="screen" id="screen-setup">
+        <h2 class="card-title"><i class="fas fa-magnifying-glass" style="color:var(--teal);"></i> Choose a Structure &amp; Inspection</h2>
+        <p class="card-sub">Pick the structure and inspection date to author. Author pulls its real defect data and automatically compares it against that structure's own previous inspection.</p>
         <div class="card" id="pickerCard">
-            <h2 class="card-title"><i class="fas fa-magnifying-glass" style="color:var(--teal);"></i> Choose a Structure &amp; Inspection</h2>
-            <p class="card-sub">Pick the structure and inspection date to author. Author pulls its real defect data and automatically compares it against that structure's own previous inspection.</p>
-
             <div class="source-tabs" id="sourceTabs">
                 <button class="source-tab active" data-source="records">From spanSense records</button>
                 <button class="source-tab" data-source="upload">Upload a previous inspection</button>
@@ -918,10 +921,10 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
             </div>
         </div>
 
-        <div class="card" id="brandingCard" style="display:none;">
-            <h2 class="card-title"><i class="fas fa-palette" style="color:var(--ai);"></i> Branding &amp; Template</h2>
-            <p class="card-sub">Choose the look reports for this client go out in. spanSense builds the document — this only changes its logo, accent colour, and overall layout. Set once, reused automatically for every future report for this client.</p>
-
+        <div id="brandingCard" style="display:none;">
+        <h2 class="card-title"><i class="fas fa-palette" style="color:var(--ai);"></i> Branding &amp; Template</h2>
+        <p class="card-sub">Choose the look reports for this client go out in. spanSense builds the document — this only changes its logo, accent colour, and overall layout. Set once, reused automatically for every future report for this client.</p>
+        <div class="card">
             <div class="brand-row">
                 <div class="brand-logo-zone">
                     <div class="mini-lbl">Client logo</div>
@@ -982,6 +985,7 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
             <div class="export-actions" style="margin-top:22px;">
                 <button class="btn-primary-lg" id="toDraftBtn"><i class="fas fa-arrow-right"></i> Continue to Draft Report</button>
             </div>
+        </div>
         </div>
     </div>
 

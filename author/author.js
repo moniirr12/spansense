@@ -761,6 +761,12 @@ function photoSectionHTML(el, extraIdx){
       </div>
       ${hero.id ? `<input class="dc-photo-caption" data-caption-photo="${hero.id}" data-el="${key}" value="${(hero.description||'').replace(/"/g,'&quot;')}" placeholder="Add a caption…">` : ''}`
     : `<div class="dc-photo-placeholder" ${canUpload ? `data-add-photo="${key}"` : ''}>
+        <svg class="dc-ph-art" viewBox="0 0 400 300" preserveAspectRatio="none" aria-hidden="true">
+          <rect width="400" height="300" class="dc-ph-sky"/>
+          <circle cx="322" cy="64" r="24" class="dc-ph-sun"/>
+          <path d="M0 214 Q70 164 150 202 T400 178 V300 H0 Z" class="dc-ph-hill-back"/>
+          <path d="M0 240 Q100 196 210 228 T400 208 V300 H0 Z" class="dc-ph-hill-front"/>
+        </svg>
         <span class="dc-photo-placeholder-icon"><i class="fas fa-camera"></i></span>
         ${canUpload ? '<span class="dc-photo-placeholder-txt">Add a photo</span>' : ''}
       </div>`;
@@ -957,10 +963,13 @@ function defectCardHTML(el, extraIdx){
     historyBits.push('No prior record for this element');
   }
 
+  // The 'first' case already shows a "First record" trend badge in the
+  // history row above, so a whole extra banner saying the same thing is
+  // redundant - only the 'ninsp' case genuinely adds information (this
+  // specific element wasn't covered last time, even though the inspection
+  // overall isn't a first record).
   let whyBanner = '';
-  if (!isExtra && el.comparison === 'first') {
-    whyBanner = `<div class="dc-why"><i class="fas fa-circle-info"></i> First recorded inspection for this structure — no previous data to compare against.</div>`;
-  } else if (!isExtra && el.previous && el.previous.status === 'ninsp') {
+  if (!isExtra && el.previous && el.previous.status === 'ninsp') {
     whyBanner = `<div class="dc-why"><i class="fas fa-circle-info"></i> The previous inspection didn't cover this element, so there's nothing to compare against.</div>`;
   }
 
