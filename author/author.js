@@ -909,7 +909,7 @@ function attachDraftEditors(){
   });
   document.querySelectorAll('[data-collapse-toggle]').forEach(header => {
     header.addEventListener('click', (e) => {
-      if (e.target.closest('.dc-review-check') || e.target.closest('.dc-class-row')) return;
+      if (e.target.closest('.dc-actions') || e.target.closest('.dc-class-row')) return;
       const ref = findDefectRef(header.dataset.collapseToggle);
       if(!ref) return;
       ref.defect.collapsed = !ref.defect.collapsed;
