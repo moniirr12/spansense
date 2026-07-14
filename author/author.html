@@ -73,19 +73,6 @@ body.night-mode::before{
 .page-wrapper { max-width: 75%; margin: 0 auto; padding: 100px 0 60px 0; }
 @media (max-width: 1100px) { .page-wrapper { max-width: 90%; } }
 
-/* ---------- BACK PILL ---------- */
-.back-pill {
-    display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; border-radius: 30px;
-    background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(138, 180, 176, 0.3); color: #5b8c8a; font-size: 0.85rem; font-weight: 600;
-    cursor: pointer; transition: all 0.3s ease; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(91, 140, 138, 0.1);
-    user-select: none;
-}
-.back-pill:hover { background: #5b8c8a; color: white; border-color: #5b8c8a; transform: translateX(-4px); box-shadow: 0 4px 20px rgba(91, 140, 138, 0.25); }
-.back-pill:active { transform: translateX(-2px) scale(0.98); }
-.back-pill i { font-size: 0.8rem; transition: transform 0.3s ease; }
-.back-pill:hover i { transform: translateX(-3px); }
-
 /* ---------- PAGE HEADER ---------- */
 .page-header { margin-bottom: 28px; }
 .page-header h1 { font-size: 1.6rem; font-weight: 600; color: #2c5a57; border-left: 4px solid #8ab4b0; padding-left: 14px; margin-bottom: 8px; }
@@ -120,30 +107,24 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
    this page. Hidden below 1300px since there's no room left at all then. */
 .wizard-steps{
   position:fixed; left:26px; top:50%; transform:translateY(-50%); z-index:900;
-  display:flex; flex-direction:column; align-items:stretch; gap:0; width:44px; overflow:hidden;
+  display:flex; flex-direction:column; align-items:stretch; gap:0; width:44px;
   background:rgba(255,255,255,.85); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
-  border:1px solid var(--border2); border-radius:20px; padding:16px 6px;
+  border:1px solid var(--border2); border-radius:20px; padding:16px 0;
   box-shadow:0 10px 28px rgba(44,90,87,.08); user-select:none;
-  transition:width .22s ease, padding .22s ease;
 }
-.wizard-steps:hover{width:190px; padding:16px 8px;}
 
-.wizard-step{display:flex; align-items:center; justify-content:center; gap:0; padding:10px 6px; border-radius:14px; font-size:.78rem; font-weight:600; color:var(--text-mute); transition:background-color .2s, color .2s; cursor:default; white-space:nowrap;}
+/* Permanently icon-only - no hover-expand. A native title attribute gives
+   a plain text tooltip on hover instead, so the rail's width (and the
+   numbered circles' centring) never changes/shifts on hover. */
+.wizard-step{display:flex; align-items:center; justify-content:center; padding:10px 0; border-radius:14px; font-size:.78rem; font-weight:600; color:var(--text-mute); transition:background-color .2s, color .2s; cursor:default;}
 .wizard-step.clickable{cursor:pointer;}
 .wizard-step.clickable:hover{background:var(--bg-soft);}
 .wizard-step .num{width:24px; height:24px; flex-shrink:0; border-radius:50%; background:#e9edf2; color:var(--text-mute); display:flex; align-items:center; justify-content:center; font-size:.74rem; font-weight:700;}
-/* max-width:0 (not just opacity) so the collapsed rail's numbered circle
-   can sit dead-centre in .wizard-step's justify-content:center - an
-   opacity-only hide still reserves the label's full width (and the flex
-   gap) in the row, which is what was throwing the circle off-centre. */
-.wizard-step .wz-label{opacity:0; max-width:0; overflow:hidden; transition:opacity .15s ease, max-width .22s ease;}
-.wizard-steps:hover .wizard-step{justify-content:flex-start; gap:10px;}
-.wizard-steps:hover .wizard-step .wz-label{opacity:1; max-width:140px;}
 .wizard-step.active{color:var(--green-dark); background:var(--bg-mint);}
 .wizard-step.active .num{background:var(--teal); color:#fff;}
 .wizard-step.done .num{background:var(--ok); color:#fff;}
 .wizard-step.done{color:var(--ok);}
-.wizard-connector{width:2px; height:18px; background:var(--border); margin:2px 0 2px 22px; border-radius:2px; transition:background .4s ease;}
+.wizard-connector{width:2px; height:18px; background:var(--border); margin:2px 0 2px 20px; border-radius:2px; transition:background .4s ease;}
 .wizard-connector.filled{background:linear-gradient(180deg,var(--ok),var(--teal));}
 @media (max-width:1300px){ .wizard-steps{ display:none; } }
 
@@ -338,10 +319,15 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
    background, and border-radius only on the first/last <td> - so each
    <tr> reads as an individual pill-shaped card floating on the page's own
    background rather than one long bordered box holding every row. */
-.clear-table{width:100%; border-collapse:separate; border-spacing:0 8px; background:transparent; margin-bottom:8px;}
-.clear-row td{background:#fff; border-top:1px solid var(--border2); border-bottom:1px solid var(--border2); padding:11px 16px; font-size:.82rem; color:var(--text); vertical-align:middle; transition:border-color .15s ease, background-color .15s ease;}
-.clear-row td:first-child{border-left:1px solid var(--border2); border-top-left-radius:16px; border-bottom-left-radius:16px; width:1%; white-space:nowrap;}
-.clear-row td:last-child{border-right:1px solid var(--border2); border-top-right-radius:16px; border-bottom-right-radius:16px; width:1%; white-space:nowrap;}
+.clear-table{width:100%; border-collapse:separate; border-spacing:0 6px; background:transparent; margin-bottom:6px;}
+.clear-row td{background:#fff; border-top:1px solid var(--border2); border-bottom:1px solid var(--border2); padding:7px 16px; font-size:.82rem; color:var(--text); vertical-align:middle; transition:border-color .15s ease, background-color .15s ease;}
+/* A radius bigger than the row is ever tall gets clamped to exactly half
+   the row's height (CSS spec behaviour), which guarantees a true
+   semicircle on each end regardless of the actual computed row height -
+   more robust than picking a fixed px value that only happens to match
+   one particular height. */
+.clear-row td:first-child{border-left:1px solid var(--border2); border-top-left-radius:999px; border-bottom-left-radius:999px; width:1%; white-space:nowrap;}
+.clear-row td:last-child{border-right:1px solid var(--border2); border-top-right-radius:999px; border-bottom-right-radius:999px; width:1%; white-space:nowrap;}
 .clear-row:hover td{border-color:#c5dbd8; background:rgba(91,140,138,.04);}
 .cr-actions-inner{display:flex; align-items:center; gap:10px; justify-content:flex-end;}
 
@@ -377,6 +363,10 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .class-dd-trigger i{font-size:.62rem; color:var(--text-mute); flex-shrink:0; transition:transform .15s;}
 .class-dd.open .class-dd-trigger i{transform:rotate(180deg);}
 .class-dd-menu{position:absolute; top:calc(100% + 4px); left:0; width:260px; background:#fff; border-radius:14px; border:1px solid var(--border2); box-shadow:0 12px 32px rgba(44,90,87,.14); z-index:60; opacity:0; visibility:hidden; transform:translateY(-6px) scale(.98); transition:all .18s cubic-bezier(.34,1.56,.64,1); overflow:hidden;}
+/* Added when there isn't enough room to the right of the trigger (e.g. a
+   dropdown near the card's right edge) - opens flush with the trigger's
+   own right edge instead of always anchoring to its left edge. */
+.class-dd.align-right .class-dd-menu{left:auto; right:0;}
 .class-dd.open .class-dd-menu{opacity:1; visibility:visible; transform:translateY(0) scale(1);}
 .class-dd-search{padding:8px 10px; border-bottom:1px solid var(--border2); position:relative;}
 .class-dd-search input{width:100%; padding:7px 10px 7px 28px; border-radius:8px; border:1px solid var(--border); background:var(--bg-soft); font-family:inherit; font-size:.78rem; color:var(--text); outline:none;}
@@ -613,7 +603,6 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .navbar .account-links a:hover { background: #2f3e45; color: #8ab4b0; }
 .night-mode .night-mode-toggle { background: #2f3e45; color: #9ab0b8; }
 .night-mode .night-mode-toggle:hover { background: #3a4b53; color: #8ab4b0; }
-.night-mode .back-pill { background: rgba(35,46,52,0.8) !important; border-color: rgba(138,180,176,0.3) !important; color:#8ab4b0 !important; }
 .night-mode .page-header h1 { color: #8ab4b0; }
 .night-mode .page-header p { color: #8aa4ac; }
 
@@ -827,8 +816,6 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 
 <div class="page-wrapper">
 
-    <div class="back-pill" onclick="history.back()"><i class="fa-solid fa-arrow-left"></i> Back</div>
-
     <div class="page-header">
         <h1>Author</h1>
         <p>Carries forward what hasn't changed since the structure's last inspection, and helps you write up what has.</p>
@@ -839,13 +826,13 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
         <div class="stat-card-mini critical"><div class="stat-label-mini">BCI crit</div><div class="stat-value-mini loading" id="leftBciCrit">···</div></div>
     </div>
     <div class="wizard-steps" id="wizardSteps">
-        <div class="wizard-step" data-step="setup"><span class="num">1</span><span class="wz-label">Start</span></div>
+        <div class="wizard-step" data-step="setup" title="Start"><span class="num">1</span></div>
         <div class="wizard-connector"></div>
-        <div class="wizard-step" data-step="draft"><span class="num">2</span><span class="wz-label">Draft Report</span></div>
+        <div class="wizard-step" data-step="draft" title="Draft Report"><span class="num">2</span></div>
         <div class="wizard-connector"></div>
-        <div class="wizard-step" data-step="author"><span class="num">3</span><span class="wz-label">Author View</span></div>
+        <div class="wizard-step" data-step="author" title="Author View"><span class="num">3</span></div>
         <div class="wizard-connector"></div>
-        <div class="wizard-step" data-step="export"><span class="num">4</span><span class="wz-label">Export</span></div>
+        <div class="wizard-step" data-step="export" title="Export"><span class="num">4</span></div>
     </div>
 
     <!-- ================= SCREEN 1: SETUP ================= -->

@@ -1171,7 +1171,15 @@ draftGroupsEl.addEventListener('click', (e) => {
     const wasOpen = dd.classList.contains('open');
     closeAllClassDropdowns();
     dd.classList.toggle('open', !wasOpen);
-    if (!wasOpen) { const input = dd.querySelector('[data-dd-search]'); if(input){ input.value=''; dd.querySelectorAll('.class-dd-item').forEach(i=>i.style.display=''); setTimeout(()=>input.focus(),10);} }
+    if (!wasOpen) {
+      // Menu is a fixed 260px wide, anchored to the trigger's left edge by
+      // default - if that would run past the viewport's right edge (e.g.
+      // this dropdown sits near the right side of the card), anchor it to
+      // the trigger's right edge instead so it opens leftward.
+      const rect = dd.getBoundingClientRect();
+      dd.classList.toggle('align-right', rect.left + 260 > window.innerWidth);
+      const input = dd.querySelector('[data-dd-search]'); if(input){ input.value=''; dd.querySelectorAll('.class-dd-item').forEach(i=>i.style.display=''); setTimeout(()=>input.focus(),10);}
+    }
     return;
   }
   const item = e.target.closest('.class-dd-item');
