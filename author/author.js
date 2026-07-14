@@ -138,6 +138,22 @@ function recomputeLiveBCI(){
     sidebar.style.top = `${NAVBAR_H + (NAVBAR_H / 2)}px`;
   }
 
+  // The wizard rail shows on every screen (not just Draft), so it centres
+  // against .page-wrapper - the one element common to all of them - rather
+  // than the draft-specific .draft-groups-wrap the BCI sticky clone uses.
+  // Same formula (half the gutter, minus half the rail's own width) so
+  // both widgets land on the same vertical centreline in that gutter.
+  function positionWizardRail(){
+    const rail = document.getElementById('wizardSteps');
+    const wrap = document.querySelector('.page-wrapper');
+    if (!rail || !wrap) return;
+    const wrapRect = wrap.getBoundingClientRect();
+    const railWidth = rail.offsetWidth || 44;
+    rail.style.left = Math.max(8, (wrapRect.left / 2) - (railWidth / 2)) + 'px';
+  }
+  window.addEventListener('resize', positionWizardRail);
+  positionWizardRail();
+
   function handleScroll(){
     const original = document.getElementById('draftBciOriginal');
     if (!draftScreenActive() || !original) {
@@ -436,45 +452,85 @@ function animateBciValue(el, value){
 // BCI trend strip - twin.inspections is already sorted oldest-to-newest by
 // /api/twin/:structureId, with a null bciAvg for inspections that predate BCI
 // scoring or never had one recorded.
-const BCI_TREND_MAX_CHIPS = 4;
+const BCI_TREND_MAX_POINTS = 8;
 // `live`, when passed, prepends a single combined "this report" chip -
 // same visual language as the historical chips (avg/crit stacked) - onto
 // the very same row, rather than a separate BCI stat row above it. Keeps
 // the ids recomputeLiveBCI() already animates, so live edits update it in
 // place without needing to re-render this whole row.
-function bciTrendHTML(trend, live){
-  const liveChip = live ? `<div class="bci-chip live" id="draftBciOriginal">
-    <div class="bc-date">This report</div>
-    <div class="bc-score-row avg"><span>Avg</span><b id="draftBciAvgOriginal">${live.avg != null ? live.avg.toFixed(1) : '···'}</b></div>
-    <div class="bc-score-row crit"><span>Crit</span><b id="draftBciCritOriginal">${live.crit != null ? live.crit.toFixed(1) : '···'}</b></div>
-  </div>` : '';
-  const scored = trend.filter(t => t.bciAvg != null);
-  if (!scored.length) {
-    if (!liveChip) return '';
-    return `<div class="bci-trend"><div class="bci-trend-label">This report's BCI</div><div class="bci-track">${liveChip}</div></div>`;
+// A line chart reads a multi-inspection trend far better than a row of
+// chips (each carrying 4 numbers - date/type/avg/crit - the more history a
+// structure has, the more numbers get crammed into a fixed-height strip).
+// Two series sharing one 0-100 axis, so a legend (with the live "this
+// report" readout riding it) plus direct end-labels covers identity -
+// no dual axis, no per-point value labels. The connecting stroke is a
+// smoothed Catmull-Rom curve through the real values, run through an
+// feTurbulence/feDisplacementMap filter for a gentle hand-drawn wobble -
+// only the stroke gets the sketchy treatment, the dots stay put exactly on
+// the real data coordinates so the wobble never misrepresents a value.
+function catmullRomPath(pts){
+  if (pts.length < 2) return '';
+  if (pts.length === 2) return `M${pts[0].x},${pts[0].y} L${pts[1].x},${pts[1].y}`;
+  let d = `M${pts[0].x},${pts[0].y}`;
+  for (let i = 0; i < pts.length - 1; i++){
+    const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+    const cp1x = p1.x + (p2.x - p0.x) / 6, cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6, cp2y = p2.y - (p3.y - p1.y) / 6;
+    d += ` C${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
   }
-  const shown = scored.slice(-BCI_TREND_MAX_CHIPS);
-  const startIdx = scored.length - shown.length;
-  const chips = shown.map((t, i) => {
-    const isLast = i === shown.length - 1;
-    const prev = i > 0 ? shown[i-1] : (startIdx > 0 ? scored[startIdx - 1] : null);
-    let delta = '';
-    if (prev) {
-      const d = Math.round((t.bciAvg - prev.bciAvg) * 10) / 10;
-      const dir = d > 0 ? 'up' : d < 0 ? 'down' : 'flat';
-      delta = `<div class="bci-delta ${dir}"><i class="fas fa-arrow-${dir === 'flat' ? 'right' : dir}"></i>${d > 0 ? '+' : ''}${d}</div>`;
-    }
-    const critHtml = t.bciCrit != null ? `<div class="bc-score-row crit"><span>Crit</span><b>${t.bciCrit.toFixed(1)}</b></div>` : '';
-    return delta + `<div class="bci-chip${isLast ? ' current' : ''}">
-      <div class="bc-date">${t.date} <span class="bc-type">${t.type}</span></div>
-      <div class="bc-score-row avg"><span>Avg</span><b>${t.bciAvg.toFixed(1)}</b></div>
-      ${critHtml}
+  return d;
+}
+let bciChartSeq = 0;
+function bciTrendChartHTML(shown){
+  const n = shown.length;
+  const W = 640, H = 120, padX = 4, padT = 10, padB = 20;
+  const innerW = W - padX * 2, innerH = H - padT - padB;
+  const xAt = i => n > 1 ? padX + (i / (n - 1)) * innerW : padX + innerW / 2;
+  const yAt = v => padT + (100 - Math.max(0, Math.min(100, v))) / 100 * innerH;
+  const lastIdx = n - 1;
+  const hasCrit = shown.every(t => t.bciCrit != null);
+  const filterId = `bciSketch${bciChartSeq++}`;
+
+  const avgPath = catmullRomPath(shown.map((t, i) => ({ x: xAt(i), y: yAt(t.bciAvg) })));
+  const critPath = hasCrit ? catmullRomPath(shown.map((t, i) => ({ x: xAt(i), y: yAt(t.bciCrit) }))) : '';
+  const dotsFor = (key, cls) => shown.map((t, i) => t[key] == null ? '' : `<circle cx="${xAt(i)}" cy="${yAt(t[key])}" r="${i === lastIdx ? 5 : 3}" class="bci-dot ${cls}"><title>${t.date} ${t.type} · ${cls === 'avg' ? 'Avg' : 'Crit'} ${t[key].toFixed(1)}</title></circle>`).join('');
+
+  return `<svg class="bci-chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="BCI average and critical trend over time">
+    <defs>
+      <filter id="${filterId}" x="-10%" y="-40%" width="120%" height="180%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.05 0.15" numOctaves="2" seed="7" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="3.5" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+    </defs>
+    <line x1="${padX}" y1="${H - padB}" x2="${W - padX}" y2="${H - padB}" class="bci-chart-baseline"/>
+    <path d="${avgPath}" class="bci-line avg" filter="url(#${filterId})"/>
+    ${hasCrit ? `<path d="${critPath}" class="bci-line crit" filter="url(#${filterId})"/>` : ''}
+    ${dotsFor('bciAvg', 'avg')}
+    ${hasCrit ? dotsFor('bciCrit', 'crit') : ''}
+    <text x="${padX}" y="${H - 4}" class="bci-chart-axis-label">${shown[0].date}</text>
+    <text x="${W - padX}" y="${H - 4}" text-anchor="end" class="bci-chart-axis-label">${shown[lastIdx].date}</text>
+  </svg>`;
+}
+function bciTrendHTML(trend, live){
+  const scored = trend.filter(t => t.bciAvg != null);
+  const legend = `<div class="bci-legend">
+    <span class="bci-legend-item avg"><i></i>Avg <b${live ? ' id="draftBciAvgOriginal"' : ''}>${live ? (live.avg != null ? live.avg.toFixed(1) : '···') : (scored.length ? scored[scored.length - 1].bciAvg.toFixed(1) : '—')}</b></span>
+    <span class="bci-legend-item crit"><i></i>Crit <b${live ? ' id="draftBciCritOriginal"' : ''}>${live ? (live.crit != null ? live.crit.toFixed(1) : '···') : (scored.length && scored[scored.length - 1].bciCrit != null ? scored[scored.length - 1].bciCrit.toFixed(1) : '—')}</b></span>
+  </div>`;
+  if (!scored.length) {
+    if (!live) return '';
+    return `<div class="bci-trend"${live ? ' id="draftBciOriginal"' : ''}>
+      <div class="bci-trend-header"><div class="bci-trend-label">This report's BCI</div>${legend}</div>
     </div>`;
-  }).join('');
+  }
+  const shown = scored.slice(-BCI_TREND_MAX_POINTS);
   const label = scored.length > shown.length
     ? `BCI trend — last ${shown.length} of ${scored.length} inspections`
     : `BCI trend across ${scored.length} inspection${scored.length===1?'':'s'}`;
-  return `<div class="bci-trend"><div class="bci-trend-label">${label}</div><div class="bci-track">${liveChip}${chips}</div></div>`;
+  return `<div class="bci-trend"${live ? ' id="draftBciOriginal"' : ''}>
+    <div class="bci-trend-header"><div class="bci-trend-label">${label}</div>${legend}</div>
+    ${bciTrendChartHTML(shown)}
+  </div>`;
 }
 
 async function onLoad(){
