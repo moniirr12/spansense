@@ -817,14 +817,7 @@ function defectCardHTML(el, extraIdx){
   return `<div class="defect-card cmp-${comparison||''} ${defect.reviewed?'reviewed':''}${defect.collapsed?' collapsed':''}" data-el="${key}">
     <div class="dc-top" data-collapse-toggle="${key}">
       <button class="dc-collapse-btn"><i class="fas fa-chevron-down"></i></button>
-      <div style="flex:1;">
-        <div class="dc-elem"><b class="cr-num">${el.elementNumber}</b> ${el.name}${isExtra ? ' <span style="font-weight:400; color:var(--text-mute2); font-size:.78rem;">(additional defect)</span>' : ''}</div>
-        <div class="dc-class-row">
-          ${defectTypeDropdownHTML(el, extraIdx)}
-          <span class="class-dd-sep">·</span>
-          ${defectNumberDropdownHTML(el, extraIdx)}
-        </div>
-      </div>
+      <div class="dc-elem" style="flex:1;"><b class="cr-num">${el.elementNumber}</b> ${el.name}${isExtra ? ' <span style="font-weight:400; color:var(--text-mute2); font-size:.78rem;">(additional defect)</span>' : ''}</div>
       <div class="dc-actions">
         ${removeOrAddBtn}
         <label class="dc-review-check ${defect.reviewed?'checked':''}">
@@ -836,10 +829,17 @@ function defectCardHTML(el, extraIdx){
     <div class="dc-body">
       <div class="dc-grid">
         ${photosHtml}
-        <div>
+        <div style="min-width:0;">
           <div class="dc-history">
-            <span>${historyBits.join(' · ')}</span>
-            ${trendBadgeHTML(comparison)}
+            <div class="dc-history-left">
+              <span>${historyBits.join(' · ')}</span>
+              ${trendBadgeHTML(comparison)}
+            </div>
+            <div class="dc-class-row">
+              ${defectTypeDropdownHTML(el, extraIdx)}
+              <span class="class-dd-sep">·</span>
+              ${defectNumberDropdownHTML(el, extraIdx)}
+            </div>
           </div>
           <div class="dc-stepper-row">
             <div><span class="dc-stepper-lbl">Severity</span><div class="dc-step-track">${sevSteps}</div></div>
