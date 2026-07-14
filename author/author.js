@@ -98,15 +98,18 @@ function recomputeLiveBCI(){
 
 // ============================================================
 // BCI STICKY SIDEBAR — .left-bci-cards is a fixed clone of the in-flow
-// .draft-bci-original pair in the draft header; it fades/slides into the
-// left gutter (above the icon-only wizard rail, as its own widget) once
-// the original scrolls out of view. Same mechanic/constants as
-// inspection.html's #bciStickySidebar (spans.js), adapted to Author's
-// floating pill navbar instead of a full-width fixed one.
+// "live" trend chip (.bci-chip.live, id draftBciOriginal) that renderDraft()
+// creates fresh inside #draftBciTrend on every render; it fades/slides into
+// the left gutter (above the icon-only wizard rail, as its own widget) once
+// that chip scrolls out of view. Same mechanic/constants as inspection.html's
+// #bciStickySidebar (spans.js), adapted to Author's floating pill navbar.
+// #draftBciOriginal doesn't exist in the static page - it's re-created by
+// every renderDraft() call - so it's looked up fresh each time here rather
+// than cached once (a cached reference would go stale the moment the trend
+// row's innerHTML is replaced).
 (function(){
   const sidebar = document.getElementById('leftBciCards');
-  const original = document.getElementById('draftBciOriginal');
-  if (!sidebar || !original) return;
+  if (!sidebar) return;
   const NAVBAR_H = 90; // Author's floating navbar sits top:20px, height:64px
   const EXTRA_OFFSET = NAVBAR_H / 2;
   const SPEED = 1.5;
@@ -124,7 +127,7 @@ function recomputeLiveBCI(){
   }
 
   function positionSidebar(){
-    if (!draftScreenActive() || original.style.display === 'none') return;
+    if (!draftScreenActive()) return;
     const wrap = document.querySelector('.draft-groups-wrap');
     if (wrap) {
       const wrapRect = wrap.getBoundingClientRect();
@@ -136,7 +139,8 @@ function recomputeLiveBCI(){
   }
 
   function handleScroll(){
-    if (!draftScreenActive() || original.style.display === 'none') {
+    const original = document.getElementById('draftBciOriginal');
+    if (!draftScreenActive() || !original) {
       sidebar.style.opacity = '0';
       sidebar.classList.remove('visible');
       return;
@@ -433,9 +437,22 @@ function animateBciValue(el, value){
 // /api/twin/:structureId, with a null bciAvg for inspections that predate BCI
 // scoring or never had one recorded.
 const BCI_TREND_MAX_CHIPS = 4;
-function bciTrendHTML(trend){
+// `live`, when passed, prepends a single combined "this report" chip -
+// same visual language as the historical chips (avg/crit stacked) - onto
+// the very same row, rather than a separate BCI stat row above it. Keeps
+// the ids recomputeLiveBCI() already animates, so live edits update it in
+// place without needing to re-render this whole row.
+function bciTrendHTML(trend, live){
+  const liveChip = live ? `<div class="bci-chip live" id="draftBciOriginal">
+    <div class="bc-date">This report</div>
+    <div class="bc-score-row avg"><span>Avg</span><b id="draftBciAvgOriginal">${live.avg != null ? live.avg.toFixed(1) : '···'}</b></div>
+    <div class="bc-score-row crit"><span>Crit</span><b id="draftBciCritOriginal">${live.crit != null ? live.crit.toFixed(1) : '···'}</b></div>
+  </div>` : '';
   const scored = trend.filter(t => t.bciAvg != null);
-  if (!scored.length) return '';
+  if (!scored.length) {
+    if (!liveChip) return '';
+    return `<div class="bci-trend"><div class="bci-trend-label">This report's BCI</div><div class="bci-track">${liveChip}</div></div>`;
+  }
   const shown = scored.slice(-BCI_TREND_MAX_CHIPS);
   const startIdx = scored.length - shown.length;
   const chips = shown.map((t, i) => {
@@ -457,7 +474,7 @@ function bciTrendHTML(trend){
   const label = scored.length > shown.length
     ? `BCI trend — last ${shown.length} of ${scored.length} inspections`
     : `BCI trend across ${scored.length} inspection${scored.length===1?'':'s'}`;
-  return `<div class="bci-trend"><div class="bci-trend-label">${label}</div><div class="bci-track">${chips}</div></div>`;
+  return `<div class="bci-trend"><div class="bci-trend-label">${label}</div><div class="bci-track">${liveChip}${chips}</div></div>`;
 }
 
 async function onLoad(){
@@ -535,7 +552,6 @@ async function onLoad(){
       ${bciTrendHTML(AUTHOR.bciTrend)}`;
 
     document.getElementById('leftBciCards').style.display = 'flex';
-    document.getElementById('draftBciOriginal').style.display = 'flex';
     recomputeLiveBCI();
 
     const newInspRow = document.getElementById('newInspRow');
@@ -754,13 +770,13 @@ function draftFilterPillsHTML(){
   const flagged = defects.filter(d => d.comparison === 'new' || d.comparison === 'worsened' || d.comparison === 'first');
   const reviewed = defects.filter(d => d.defect.reviewed);
   const pills = [
-    { key:'all', label:`All defects (${defects.length})` },
-    { key:'flagged', label:`New or worsened (${flagged.length})` },
-    { key:'unreviewed', label:`Needs review (${defects.length - reviewed.length})` },
-    { key:'reviewed', label:`Reviewed (${reviewed.length})` }
+    { key:'all', label:`All (${defects.length})`, title:'All defects' },
+    { key:'flagged', label:`New/worsened (${flagged.length})`, title:'New or worsened' },
+    { key:'unreviewed', label:`Needs review (${defects.length - reviewed.length})`, title:'Needs review' },
+    { key:'reviewed', label:`Reviewed (${reviewed.length})`, title:'Reviewed' }
   ];
-  const filterHtml = pills.map(p => `<button class="f-pill" data-filter="${p.key}" data-active="${draftFilter===p.key}">${p.label}</button>`).join('');
-  const onlyDefectsHtml = `<button class="f-pill" data-only-defects="1" data-active="${draftOnlyDefects}"><i class="fas fa-filter"></i> Only defects</button>`;
+  const filterHtml = pills.map(p => `<button class="f-pill" data-filter="${p.key}" data-active="${draftFilter===p.key}" title="${p.title}">${p.label}</button>`).join('');
+  const onlyDefectsHtml = `<button class="f-pill" data-only-defects="1" data-active="${draftOnlyDefects}" title="Only defects"><i class="fas fa-filter"></i></button>`;
   return filterHtml + onlyDefectsHtml;
 }
 function passesDraftFilter(defect, comparison){
@@ -772,7 +788,7 @@ function passesDraftFilter(defect, comparison){
 
 function renderDraft(){
   document.getElementById('draftStructureName').textContent = AUTHOR.structureName || '—';
-  document.getElementById('draftBciTrend').innerHTML = bciTrendHTML(AUTHOR.bciTrend);
+  document.getElementById('draftBciTrend').innerHTML = bciTrendHTML(AUTHOR.bciTrend, { avg: AUTHOR.bciAvg, crit: AUTHOR.bciCrit });
   document.getElementById('draftFilterPills').innerHTML = draftFilterPillsHTML();
   document.querySelectorAll('#draftFilterPills .f-pill').forEach(b => b.classList.toggle('on', b.dataset.active === 'true'));
   const order = categoryOrderFor(AUTHOR.structureType);
@@ -1206,7 +1222,8 @@ document.getElementById('markUnchangedBtn').addEventListener('click', function()
 });
 document.getElementById('toggleCollapseAllBtn').addEventListener('click', function(){
   draftAllCollapsed = !draftAllCollapsed;
-  this.innerHTML = draftAllCollapsed ? '<i class="fas fa-expand"></i> Expand all' : '<i class="fas fa-compress"></i> Collapse all';
+  this.innerHTML = draftAllCollapsed ? '<i class="fas fa-expand"></i> Expand' : '<i class="fas fa-compress"></i> Collapse';
+  this.title = draftAllCollapsed ? 'Expand all' : 'Collapse all';
   allDraftDefects().forEach(({defect}) => { defect.collapsed = draftAllCollapsed; });
   document.querySelectorAll('.defect-card').forEach(card => card.classList.toggle('collapsed', draftAllCollapsed));
 });
