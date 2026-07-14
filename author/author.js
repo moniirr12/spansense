@@ -127,9 +127,11 @@ function newDefectObject(){
   };
 }
 
+const INSPECTION_TYPE_LABELS = { GI: 'General Inspection (GI)', PI: 'Principal Inspection (PI)', SI: 'Special Inspection (SI)' };
+
 // Defect type category names - same table as inspection/spans.js's
 // DEFECT_TYPE_MAP, duplicated here per this codebase's established
-// per-file convention (spans.js itself isn't loaded on this page).
+// per-file convention (spans.js isn't loaded on this page).
 const DEFECT_TYPE_MAP = {
   1: "Metalwork", 2: "RC & prestressed concrete", 3: "Masonry, brickwork & MC",
   4: "Paintwork & coatings", 5: "Vegetation", 6: "Foundation",
@@ -1171,8 +1173,8 @@ function renderReportPane(){
   let html = `
     <div class="doc-cover">
       <div class="dc-brand">spanSense</div>
-      <div class="dc-title">${AUTHOR.structureName || 'Untitled Structure'} — ${AUTHOR.inspectionType || 'Inspection'}</div>
-      <div class="dc-sub">Structure ID: ${AUTHOR.structureId || '—'} · Inspected ${fmtDate(AUTHOR.inspectionDate)}</div>
+      <div class="dc-title">${AUTHOR.structureName || 'Untitled Structure'} — ${INSPECTION_TYPE_LABELS[AUTHOR.newInspectionType] || 'Inspection'}</div>
+      <div class="dc-sub">Structure ID: ${AUTHOR.structureId || '—'} · Inspected ${fmtDate(AUTHOR.newInspectionDate || AUTHOR.inspectionDate)}</div>
     </div>`;
   if (AUTHOR.structureDescription) {
     html += `<div class="doc-h1">2. Structure Description</div><p class="doc-p">${AUTHOR.structureDescription}</p>`;
@@ -1217,7 +1219,9 @@ function buildPayload(){
   const order = categoryOrderFor(AUTHOR.structureType);
   return {
     structure: AUTHOR.structureName, structureId: AUTHOR.structureId,
-    inspectionDate: AUTHOR.inspectionDate, previousDate: AUTHOR.previousDate,
+    inspectionDate: AUTHOR.newInspectionDate || AUTHOR.inspectionDate,
+    inspectionType: AUTHOR.newInspectionType,
+    previousDate: AUTHOR.previousDate,
     description: AUTHOR.structureDescription,
     branding: AUTHOR.branding,
     sections: order.map(cat => ({
@@ -1233,6 +1237,14 @@ function buildPayload(){
 }
 function renderExport(){
   document.getElementById('jsonPayload').textContent = JSON.stringify(buildPayload(), null, 2);
+  const note = document.getElementById('exportDateNote');
+  const newDate = AUTHOR.newInspectionDate;
+  if (newDate && newDate !== AUTHOR.inspectionDate) {
+    const typeLabel = INSPECTION_TYPE_LABELS[AUTHOR.newInspectionType] || 'the type you picked';
+    note.innerHTML = `<i class="fas fa-circle-info"></i> The Word report is dated ${fmtDate(newDate)} (${typeLabel}). The Full Report and BCI Proforma PDFs still pull their per-span data from the real ${fmtDate(AUTHOR.inspectionDate)} inspection, since nothing has been saved under the new date yet.`;
+  } else {
+    note.innerHTML = '';
+  }
 }
 document.getElementById('backToAuthorBtn').addEventListener('click', () => goTo('author'));
 
@@ -1292,7 +1304,8 @@ async function buildAuthorReportDocx(payload){
   children.push(new d.Paragraph({ alignment: d.AlignmentType.CENTER, spacing: { before: 1600 }, children: [new d.TextRun({ text: 'SPANSENSE', bold: true, size: 40, color: accent })] }));
   children.push(new d.Paragraph({ alignment: d.AlignmentType.CENTER, spacing: { after: 200 }, children: [new d.TextRun({ text: 'INSPECTION REPORT', bold: true, size: 32, color: REPORT_COLORS.heading })] }));
   children.push(new d.Paragraph({ alignment: d.AlignmentType.CENTER, spacing: { after: 100 }, children: [new d.TextRun({ text: payload.structure, bold: true, size: 28 })] }));
-  children.push(new d.Paragraph({ alignment: d.AlignmentType.CENTER, spacing: { after: 60 }, children: [new d.TextRun({ text: 'Structure ID: ' + payload.structureId + ' · Inspected ' + fmtDate(payload.inspectionDate), size: 20, color: REPORT_COLORS.muted })] }));
+  const typePrefix = INSPECTION_TYPE_LABELS[payload.inspectionType] ? INSPECTION_TYPE_LABELS[payload.inspectionType] + ' · ' : '';
+  children.push(new d.Paragraph({ alignment: d.AlignmentType.CENTER, spacing: { after: 60 }, children: [new d.TextRun({ text: typePrefix + 'Structure ID: ' + payload.structureId + ' · Inspected ' + fmtDate(payload.inspectionDate), size: 20, color: REPORT_COLORS.muted })] }));
   if (payload.previousDate) {
     children.push(new d.Paragraph({ alignment: d.AlignmentType.CENTER, spacing: { after: 500 }, children: [new d.TextRun({ text: 'Compared against the previous inspection on ' + fmtDate(payload.previousDate), italics: true, size: 16, color: REPORT_COLORS.muted })] }));
   }
@@ -1364,7 +1377,7 @@ async function generateWordReport(){
     const payload = buildPayload();
     const doc = await buildAuthorReportDocx(payload);
     const blob = await window.docx.Packer.toBlob(doc);
-    const fileName = payload.structure.replace(/[^a-z0-9]/gi, '_') + '_Author_Report.docx';
+    const fileName = payload.structure.replace(/[^a-z0-9]/gi, '_') + '_' + (payload.inspectionDate || 'draft') + '_Author_Report.docx';
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = fileName;
