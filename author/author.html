@@ -113,30 +113,27 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 
 /* ===== WIZARD STEPPER ===== */
 /* Fixed vertical stepper rail, left edge of the viewport - stays in view
-   while scrolling instead of the old horizontal bar scrolling away. Hidden
-   below 1300px since there's no longer room beside the page-wrapper. */
+   while scrolling instead of the old horizontal bar scrolling away. Icon
+   only at rest (collapsed to just the numbered circles, safely inside the
+   gutter at any width down to ~1300px), expands on hover to reveal labels -
+   a real :hover state, no JS, same idea as the rail options explored for
+   this page. Hidden below 1300px since there's no room left at all then. */
 .wizard-steps{
   position:fixed; left:26px; top:50%; transform:translateY(-50%); z-index:900;
-  display:flex; flex-direction:column; align-items:stretch; gap:0; width:172px;
+  display:flex; flex-direction:column; align-items:stretch; gap:0; width:44px; overflow:hidden;
   background:rgba(255,255,255,.85); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
-  border:1px solid var(--border2); border-radius:20px; padding:16px 8px;
+  border:1px solid var(--border2); border-radius:20px; padding:16px 6px;
   box-shadow:0 10px 28px rgba(44,90,87,.08); user-select:none;
+  transition:width .22s ease, padding .22s ease;
 }
-/* Animated BCI stat boxes, same idea (and animation) as the main
-   inspection editor's stat-card/setBciValue tween - sits above the
-   stepper in the same fixed rail, which is what pushes the stepper down. */
-.left-bci-cards{display:flex; gap:8px; margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid var(--border2);}
-.stat-card-mini{flex:1; background:var(--bg-soft); border-radius:14px; padding:10px 6px; text-align:center;}
-.stat-card-mini.critical{background:#fdf1ea;}
-.stat-label-mini{font-size:.6rem; font-weight:700; color:var(--text-mute); text-transform:uppercase; letter-spacing:.03em;}
-.stat-value-mini{font-size:1.32rem; font-weight:800; color:var(--teal-dark); font-variant-numeric:tabular-nums;}
-.stat-card-mini.critical .stat-value-mini{color:#c0392b;}
-.stat-value-mini.loading{color:#c5d3d9; font-weight:400; letter-spacing:.08em;}
+.wizard-steps:hover{width:190px; padding:16px 8px;}
 
-.wizard-step{display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:14px; font-size:.78rem; font-weight:600; color:var(--text-mute); transition:.2s; cursor:default;}
+.wizard-step{display:flex; align-items:center; gap:10px; padding:10px 6px; border-radius:14px; font-size:.78rem; font-weight:600; color:var(--text-mute); transition:.2s; cursor:default; white-space:nowrap;}
 .wizard-step.clickable{cursor:pointer;}
 .wizard-step.clickable:hover{background:var(--bg-soft);}
 .wizard-step .num{width:24px; height:24px; flex-shrink:0; border-radius:50%; background:#e9edf2; color:var(--text-mute); display:flex; align-items:center; justify-content:center; font-size:.74rem; font-weight:700;}
+.wizard-step .wz-label{opacity:0; transition:opacity .15s ease;}
+.wizard-steps:hover .wizard-step .wz-label{opacity:1;}
 .wizard-step.active{color:var(--green-dark); background:var(--bg-mint);}
 .wizard-step.active .num{background:var(--teal); color:#fff;}
 .wizard-step.done .num{background:var(--ok); color:#fff;}
@@ -145,11 +142,42 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .wizard-connector.filled{background:linear-gradient(180deg,var(--ok),var(--teal));}
 @media (max-width:1300px){ .wizard-steps{ display:none; } }
 
+/* BCI mini stat cards - shared look used both in-flow (in the draft
+   header, .draft-bci-original) and as a sticky clone (.left-bci-cards)
+   that fades/slides into the same left gutter, above the icon rail, once
+   the in-flow pair scrolls out of view - same mechanic and constants as
+   inspection.html's #bciStickySidebar/.stats-three-cards, ported in
+   author.js's handleBciStickyScroll(). Two independent widgets, not
+   merged into the wizard-steps rail. */
+.draft-bci-original{display:flex; gap:10px; margin:14px 0;}
+.draft-bci-original .stat-card-mini{flex:0 1 150px;}
+.left-bci-cards{
+  position:fixed; left:26px; z-index:900;
+  display:flex; gap:8px;
+  background:rgba(255,255,255,.85); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+  border:1px solid var(--border2); border-radius:20px; padding:10px; box-shadow:0 10px 28px rgba(44,90,87,.08);
+  opacity:0; transform:translateY(-160px); pointer-events:none;
+  transition:transform .25s cubic-bezier(.16,1,.3,1), opacity .35s ease-out;
+}
+.left-bci-cards.visible{pointer-events:auto;}
+.left-bci-cards .stat-card-mini{width:100px;}
+.stat-card-mini{flex:1; background:var(--bg-soft); border-radius:14px; padding:10px 6px; text-align:center;}
+.stat-card-mini.critical{background:#fdf1ea;}
+.stat-label-mini{font-size:.6rem; font-weight:700; color:var(--text-mute); text-transform:uppercase; letter-spacing:.03em;}
+.stat-value-mini{font-size:1.32rem; font-weight:800; color:var(--teal-dark); font-variant-numeric:tabular-nums;}
+.stat-card-mini.critical .stat-value-mini{color:#c0392b;}
+.stat-value-mini.loading{color:#c5d3d9; font-weight:400; letter-spacing:.08em;}
+
 .screen{display:none;}
 .screen.active{display:block; animation:fadeIn .25s ease;}
 @keyframes fadeIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
 
 .card{background:#fff; border:1px solid var(--border2); border-radius:24px; box-shadow:0 10px 28px rgba(44,90,87,.06); padding:26px 28px; position:relative;}
+/* No white card background behind the element list - same convention as
+   inspection.html's .span-content{background:transparent}, so the
+   pill-shaped clear-rows and defect-cards read as individual cards
+   floating on the page's own background instead of one flat panel. */
+.draft-groups-wrap{position:relative;}
 .card::before{content:''; position:absolute; top:0; left:28px; right:28px; height:3px; border-radius:0 0 3px 3px; background:linear-gradient(90deg,var(--teal),var(--ai)); opacity:.55;}
 .card + .card{margin-top:20px;}
 .card-title{font-size:1.08rem; font-weight:700; color:var(--green-dark); margin:0 0 4px; display:flex; align-items:center; gap:8px;}
@@ -164,6 +192,9 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .picker-field{flex:1; min-width:220px;}
 .picker-field label{font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-mute); display:block; margin-bottom:6px;}
 .picker-field select{width:100%; padding:11px 14px; border:1px solid var(--border); border-radius:12px; font-size:.86rem; font-family:inherit; color:var(--text); background:#fff; cursor:pointer;}
+.picker-field input[type="date"]{width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:12px; font-size:.86rem; font-family:inherit; color:var(--text); background:#fff;}
+.new-insp-row{background:var(--bg-mint); border:1px solid #cfe4e0; border-radius:16px; padding:16px 18px; margin-top:16px;}
+.new-insp-row .picker-row{margin:0;}
 .picker-field select:disabled{opacity:.55; cursor:not-allowed;}
 .btn-load{flex-shrink:0; padding:11px 22px; border-radius:12px; border:none; background:linear-gradient(135deg,var(--teal),var(--teal-dark)); color:#fff; font-weight:700; font-size:.85rem; cursor:pointer; display:flex; align-items:center; gap:8px; transition:.2s;}
 .btn-load:hover{transform:translateY(-1px);}
@@ -293,11 +324,19 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .cat-group{margin-bottom:20px;}
 .cat-title{font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--teal-dark); margin:0 0 10px; padding-bottom:6px; border-bottom:1px solid var(--border2);}
 
-/* Compact batched rows for elements with nothing to draft (good/na/not
-   inspected) - only elements with an actual defect get a full card below. */
-.clear-table{border:1px solid var(--border2); border-radius:12px; overflow:hidden; margin-bottom:10px;}
-.clear-row{display:flex; align-items:center; justify-content:space-between; padding:9px 14px; font-size:.82rem; color:var(--text); border-bottom:1px solid var(--border2);}
-.clear-row:last-child{border-bottom:none;}
+/* Compact rows for elements with nothing to draft (good/na/not inspected)
+   - only elements with an actual defect get a full card below. Exact same
+   technique as inspection.html's #inspectionElementsTable: a <table> with
+   border-collapse:separate + border-spacing for the gaps, transparent
+   background, and border-radius only on the first/last <td> - so each
+   <tr> reads as an individual pill-shaped card floating on the page's own
+   background rather than one long bordered box holding every row. */
+.clear-table{width:100%; border-collapse:separate; border-spacing:0 8px; background:transparent; margin-bottom:8px;}
+.clear-row td{background:#fff; border-top:1px solid var(--border2); border-bottom:1px solid var(--border2); padding:11px 16px; font-size:.82rem; color:var(--text); vertical-align:middle; transition:border-color .15s ease, background-color .15s ease;}
+.clear-row td:first-child{border-left:1px solid var(--border2); border-top-left-radius:16px; border-bottom-left-radius:16px; width:1%; white-space:nowrap;}
+.clear-row td:last-child{border-right:1px solid var(--border2); border-top-right-radius:16px; border-bottom-right-radius:16px; width:1%; white-space:nowrap;}
+.clear-row:hover td{border-color:#c5dbd8; background:rgba(91,140,138,.04);}
+.cr-actions-inner{display:flex; align-items:center; gap:10px; justify-content:flex-end;}
 
 .defect-card{border:1px solid var(--border2); border-left:3px solid var(--amber); border-radius:16px; padding:16px 20px; margin-bottom:14px; background:#fff; transition:.2s;}
 .defect-card.cmp-new, .defect-card.cmp-worsened{border-left-color:var(--red);}
@@ -309,24 +348,54 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .dc-code{font-size:.76rem; color:var(--text-mute2); margin-top:1px;}
 .dc-actions{display:flex; align-items:center; gap:8px; flex-shrink:0;}
 
-/* Editable defect type/number - two connected selects, styled as one pill */
-.dc-class-row{display:flex; align-items:center; gap:6px; margin:6px 0 2px;}
-.dc-class-select{border:1px solid var(--border); background:var(--bg-soft); border-radius:9px; padding:5px 8px; font-size:.76rem; font-weight:600; color:var(--text); font-family:inherit; cursor:pointer; max-width:190px;}
-.dc-class-select:focus{outline:none; border-color:var(--teal);}
-.dc-class-sep{color:var(--text-mute); font-weight:700; font-size:.76rem;}
+/* Add another/Remove + Mark reviewed live at the bottom of the card, after
+   the narrative, since they're the "I'm done with this defect" actions
+   rather than something to reach for before you've looked at it. */
+.dc-footer-actions{display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:10px; margin-top:16px; padding-top:14px; border-top:1px solid var(--border2);}
+
+/* Editable defect type/number - searchable dropdowns matching twinview's
+   bridge selector (.selector-dropdown/.dropdown-menu/.dd-search/.dd-list).
+   Sits inside .dc-history, to the right of the history text, next to the
+   photo column rather than stacked in the card header. */
+.dc-class-row{display:flex; align-items:center; gap:6px; flex-shrink:0; max-width:56%;}
+.dc-class-row .class-dd-trigger{max-width:150px;}
+.class-dd{position:relative;}
+.class-dd-trigger{display:flex; align-items:center; gap:7px; border:1px solid var(--border); background:var(--bg-soft); border-radius:9px; padding:5px 9px; font-size:.76rem; font-weight:600; color:var(--text); font-family:inherit; cursor:pointer; max-width:210px;}
+.class-dd-trigger:hover{border-color:var(--teal);}
+.class-dd.open .class-dd-trigger{border-color:var(--teal); background:#fff;}
+.class-dd-trigger .cdd-val{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.class-dd-trigger i{font-size:.62rem; color:var(--text-mute); flex-shrink:0; transition:transform .15s;}
+.class-dd.open .class-dd-trigger i{transform:rotate(180deg);}
+.class-dd-menu{position:absolute; top:calc(100% + 4px); left:0; width:260px; background:#fff; border-radius:14px; border:1px solid var(--border2); box-shadow:0 12px 32px rgba(44,90,87,.14); z-index:60; opacity:0; visibility:hidden; transform:translateY(-6px) scale(.98); transition:all .18s cubic-bezier(.34,1.56,.64,1); overflow:hidden;}
+.class-dd.open .class-dd-menu{opacity:1; visibility:visible; transform:translateY(0) scale(1);}
+.class-dd-search{padding:8px 10px; border-bottom:1px solid var(--border2); position:relative;}
+.class-dd-search input{width:100%; padding:7px 10px 7px 28px; border-radius:8px; border:1px solid var(--border); background:var(--bg-soft); font-family:inherit; font-size:.78rem; color:var(--text); outline:none;}
+.class-dd-search input:focus{border-color:var(--teal); background:#fff;}
+.class-dd-search i{position:absolute; left:19px; top:50%; transform:translateY(-50%); color:var(--text-mute); font-size:.68rem; pointer-events:none;}
+.class-dd-list{max-height:220px; overflow-y:auto; padding:5px;}
+.class-dd-item{display:flex; align-items:center; gap:9px; padding:7px 9px; border-radius:8px; cursor:pointer; font-size:.78rem;}
+.class-dd-item:hover{background:var(--bg-soft);}
+.class-dd-item.selected{background:var(--bg-mint);}
+.class-dd-item .cdd-num{width:22px; flex-shrink:0; font-weight:800; color:var(--teal-dark); font-variant-numeric:tabular-nums;}
+.class-dd-item .cdd-name{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text);}
+.class-dd-item .cdd-check{color:var(--teal); opacity:0; font-size:.72rem;}
+.class-dd-item.selected .cdd-check{opacity:1;}
+.class-dd-sep{color:var(--text-mute); font-weight:700; font-size:.76rem;}
 .dc-review-check{display:flex; align-items:center; gap:6px; font-size:.72rem; font-weight:700; color:var(--text-mute2); cursor:pointer; user-select:none; background:var(--bg-soft); border:1px solid var(--border); padding:6px 12px; border-radius:30px;}
 .dc-review-check input{accent-color:var(--teal); cursor:pointer;}
 .dc-review-check.checked{background:var(--ok-bg); border-color:var(--ok-border); color:var(--ok);}
 
-.dc-history{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 14px; padding:9px 12px; background:var(--bg-soft); border-radius:12px; font-size:.76rem; color:var(--text-mute2);}
-.dc-history .trend-badge{font-size:.68rem; font-weight:700; padding:3px 10px; border-radius:20px; margin-left:auto;}
+.dc-history{display:flex; align-items:center; justify-content:space-between; gap:14px; margin:0 0 14px; padding:9px 12px; background:var(--bg-soft); border-radius:12px; font-size:.76rem; color:var(--text-mute2);}
+.dc-history-left{display:flex; align-items:center; gap:8px; flex:1; min-width:0;}
+.dc-history-left span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;}
+.dc-history .trend-badge{font-size:.68rem; font-weight:700; padding:3px 10px; border-radius:20px; flex-shrink:0;}
 .dc-history .trend-badge.worsened, .dc-history .trend-badge.new{background:var(--red-bg); color:var(--red);}
 .dc-history .trend-badge.improved, .dc-history .trend-badge.resolved{background:var(--ok-bg); color:var(--ok);}
 .dc-history .trend-badge.unchanged{background:#eef0f2; color:var(--text-mute2);}
 .dc-history .trend-badge.changed, .dc-history .trend-badge.first{background:var(--amber-bg); color:var(--amber);}
 
 .dc-grid{display:grid; grid-template-columns:300px 1fr; gap:22px;}
-@media (max-width:800px){ .dc-grid{grid-template-columns:1fr;} }
+@media (max-width:800px){ .dc-grid{grid-template-columns:1fr;} .dc-history{flex-wrap:wrap;} .dc-history-left span{white-space:normal;} }
 .dc-photos{display:flex; flex-direction:column; gap:8px;}
 .dc-hero{position:relative; width:100%; aspect-ratio:4/3; border-radius:14px; overflow:hidden; background:var(--bg-soft); border:1px solid var(--border2);}
 .dc-hero img{width:100%; height:100%; object-fit:cover; display:block; cursor:pointer;}
@@ -353,30 +422,53 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .dc-pending-upload{background:var(--teal); color:#fff;}
 .dc-pending-cancel{background:none; border:1px solid var(--border) !important; color:var(--text-mute2);}
 
-/* Editable severity/extent/works steppers - same idea as the main
-   inspection editor's button-row steppers, color-coded the same way. */
+/* Editable severity/extent/works - a segmented "switch" control, same
+   pill-with-sliding-fill convention as the app's view-toggle, rather than
+   a row of individually-bordered boxes. Per-value colour coding carries
+   over so meaning (severity/extent scale, works Y/N/M) still reads at a
+   glance once a segment is selected. */
 .dc-stepper-row{display:flex; gap:22px; flex-wrap:wrap; margin-bottom:14px;}
 .dc-stepper-lbl{font-size:.64rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-mute); margin-bottom:6px; display:block;}
-.dc-step-track{display:flex; gap:4px;}
-.dc-step{width:28px; height:28px; border-radius:8px; border:1px solid var(--border); background:#fff; font-size:.74rem; font-weight:700; color:var(--text-mute2); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:.12s;}
-.dc-step:hover{border-color:var(--teal); transform:translateY(-1px);}
-.dc-step.active.sev-1{background:#2d7a6e; border-color:#2d7a6e; color:#fff;}
-.dc-step.active.sev-2{background:#7a9a3a; border-color:#7a9a3a; color:#fff;}
-.dc-step.active.sev-3{background:#ba7517; border-color:#ba7517; color:#fff;}
-.dc-step.active.sev-4{background:#d9722f; border-color:#d9722f; color:#fff;}
-.dc-step.active.sev-5{background:#c0392b; border-color:#c0392b; color:#fff;}
-.dc-step.active.ext-A{background:#5b8c8a; border-color:#5b8c8a; color:#fff;}
-.dc-step.active.ext-B{background:#4a9ab0; border-color:#4a9ab0; color:#fff;}
-.dc-step.active.ext-C{background:#3a88c0; border-color:#3a88c0; color:#fff;}
-.dc-step.active.ext-D{background:#378add; border-color:#378add; color:#fff;}
-.dc-step.active.ext-E{background:#2a6fd4; border-color:#2a6fd4; color:#fff;}
-.dc-step.works-btn{width:auto; padding:0 12px; font-size:.7rem; text-transform:uppercase; letter-spacing:.03em;}
-.dc-step.active.works-N{background:var(--text-mute2); border-color:var(--text-mute2); color:#fff;}
-.dc-step.active.works-Y{background:var(--red); border-color:var(--red); color:#fff;}
-.dc-step.active.works-M{background:var(--amber); border-color:var(--amber); color:#fff;}
+.dc-step-track{display:inline-flex; gap:2px; background:var(--bg-soft); border:1px solid var(--border2); border-radius:30px; padding:3px;}
+.dc-step{width:28px; height:28px; border-radius:26px; border:none; background:none; font-size:.74rem; font-weight:700; color:var(--text-mute2); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background-color .18s ease, color .18s ease, transform .1s ease, box-shadow .18s ease;}
+.dc-step:active{transform:scale(.9);}
+.dc-step:focus{outline:none;}
+.dc-step:focus-visible{box-shadow:0 0 0 3px rgba(91,140,138,.35);}
+/* Hover tints toward the value's own colour (same convention as the main
+   inspection editor's severity stepper) instead of a neutral grey, so
+   there's no "grey, then colour" flash between hovering and selecting. */
+.dc-step.sev-1:hover{background:rgba(45,122,110,.12); color:#2d7a6e;}
+.dc-step.sev-2:hover{background:rgba(122,154,58,.12); color:#7a9a3a;}
+.dc-step.sev-3:hover{background:rgba(186,117,23,.12); color:#ba7517;}
+.dc-step.sev-4:hover{background:rgba(217,114,47,.12); color:#d9722f;}
+.dc-step.sev-5:hover{background:rgba(192,57,43,.14); color:#c0392b;}
+.dc-step.ext-A:hover{background:rgba(91,140,138,.12); color:#5b8c8a;}
+.dc-step.ext-B:hover{background:rgba(74,154,176,.12); color:#4a9ab0;}
+.dc-step.ext-C:hover{background:rgba(58,136,192,.12); color:#3a88c0;}
+.dc-step.ext-D:hover{background:rgba(55,138,221,.12); color:#378add;}
+.dc-step.ext-E:hover{background:rgba(42,111,212,.12); color:#2a6fd4;}
+.dc-step.works-N:hover{background:rgba(106,124,142,.12); color:var(--text-mute2);}
+.dc-step.works-Y:hover{background:rgba(192,57,43,.12); color:var(--red);}
+.dc-step.works-M:hover{background:rgba(186,117,23,.12); color:var(--amber);}
+.dc-step.active.sev-1{background:#2d7a6e; color:#fff; box-shadow:0 2px 8px rgba(45,122,110,.35);}
+.dc-step.active.sev-2{background:#7a9a3a; color:#fff; box-shadow:0 2px 8px rgba(122,154,58,.35);}
+.dc-step.active.sev-3{background:#ba7517; color:#fff; box-shadow:0 2px 8px rgba(186,117,23,.35);}
+.dc-step.active.sev-4{background:#d9722f; color:#fff; box-shadow:0 2px 8px rgba(217,114,47,.35);}
+.dc-step.active.sev-5{background:#c0392b; color:#fff; box-shadow:0 2px 8px rgba(192,57,43,.4);}
+.dc-step.active.ext-A{background:#5b8c8a; color:#fff; box-shadow:0 2px 8px rgba(91,140,138,.35);}
+.dc-step.active.ext-B{background:#4a9ab0; color:#fff; box-shadow:0 2px 8px rgba(74,154,176,.35);}
+.dc-step.active.ext-C{background:#3a88c0; color:#fff; box-shadow:0 2px 8px rgba(58,136,192,.35);}
+.dc-step.active.ext-D{background:#378add; color:#fff; box-shadow:0 2px 8px rgba(55,138,221,.35);}
+.dc-step.active.ext-E{background:#2a6fd4; color:#fff; box-shadow:0 2px 8px rgba(42,111,212,.35);}
+.dc-step.works-btn{width:auto; padding:0 14px; font-size:.7rem; text-transform:uppercase; letter-spacing:.03em;}
+.dc-step.active.works-N{background:var(--text-mute2); color:#fff;}
+.dc-step.active.works-Y{background:var(--red); color:#fff; box-shadow:0 2px 8px rgba(192,57,43,.35);}
+.dc-step.active.works-M{background:var(--amber); color:#fff; box-shadow:0 2px 8px rgba(186,117,23,.35);}
 
-.dc-works-detail{display:none; gap:14px; flex-wrap:wrap; margin:-4px 0 14px; padding:12px 14px; background:var(--bg-soft); border-radius:12px;}
-.dc-works-detail.show{display:flex;}
+.dc-works-detail{display:flex; gap:14px; flex-wrap:wrap; background:var(--bg-soft); border-radius:12px;
+  max-height:0; opacity:0; overflow:hidden; padding:0 14px; margin:0;
+  transition:max-height .32s ease, opacity .22s ease, padding .32s ease, margin .32s ease;}
+.dc-works-detail.show{max-height:140px; opacity:1; padding:12px 14px; margin:-4px 0 14px;}
 .dc-works-field{flex:1; min-width:130px;}
 .dc-works-field select, .dc-works-field input{width:100%; border:1px solid var(--border); border-radius:9px; padding:7px 10px; font-size:.82rem; font-family:inherit; color:var(--text); background:#fff;}
 
@@ -395,27 +487,36 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .defect-card.collapsed .dc-body{display:none;}
 .defect-card.collapsed .dc-collapse-btn i{transform:rotate(-90deg);}
 
-/* Fixed right-side structure info panel - right:12.5% (not a fixed px
-   offset) matches .page-wrapper's own implicit right margin (max-width:75%
-   centered leaves 12.5% on each side), same convention as inspection1.html's
-   .bridge-sidebar, so this panel's right edge lines up with the page
-   content's right edge instead of sitting flush against the viewport. */
-.struct-info-panel{
-  position:fixed; right:12.5%; top:50%; transform:translateY(-50%); z-index:900;
-  width:280px; max-height:76vh; overflow-y:auto;
-  background:rgba(255,255,255,.9); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
-  border:1px solid var(--border2); border-radius:20px; padding:18px; box-shadow:0 10px 28px rgba(44,90,87,.08);
-  display:none;
+/* Structure/inspection info - a real centered modal, same convention as
+   spanSense's own #bridgeModal on the map page (fixed full-screen
+   backdrop, flex-centered glass card), rather than a dropdown anchored to
+   the toolbar button - a dropdown's position depends on scroll offset and
+   how far down the page the button sits, which made it unreliable at
+   smaller window heights. A modal is always dead-centre in the viewport,
+   full stop. */
+body.modal-open{overflow:hidden;}
+.sip-overlay{
+  position:fixed; inset:0; z-index:1000;
+  background:rgba(20,30,32,.5); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px);
+  display:none; align-items:center; justify-content:center; padding:40px 20px;
 }
-.struct-info-panel.show{display:block;}
-@media (max-width:1650px){ .struct-info-panel{display:none !important;} }
-
-/* Reserves room for the fixed side panel, same idea as inspection1.html's
-   .inspection-main margin-right (panel width + offset + gap) - the panel
-   is out of document flow (position:fixed), so this space isn't reserved
-   automatically. */
-.draft-main{margin-right:312px;}
-@media (max-width:1650px){ .draft-main{margin-right:0;} }
+.sip-overlay.show{display:flex;}
+.struct-info-panel{
+  position:relative; width:420px; max-width:100%; max-height:86vh; overflow-y:auto;
+  background:rgba(255,255,255,.97); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,.4); border-radius:22px; padding:26px;
+  box-shadow:0 24px 80px rgba(0,0,0,.16), 0 8px 24px rgba(0,0,0,.08);
+  transform:scale(.96); opacity:0; transition:all .2s cubic-bezier(.34,1.56,.64,1);
+}
+.sip-overlay.show .struct-info-panel{transform:scale(1); opacity:1;}
+.sip-close{position:absolute; top:16px; right:16px; width:34px; height:34px; border-radius:50%; border:none; background:var(--bg-soft); color:var(--text-mute2); font-size:1.3rem; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:.15s;}
+.sip-close:hover{background:var(--red-bg); color:var(--red);}
+.sip-divider{border-top:1px solid var(--border2); margin:14px 0;}
+.sip-edit-grp{display:flex; flex-direction:column; gap:10px;}
+.sip-edit-field{display:flex; flex-direction:column; gap:4px;}
+.sip-edit-field span{font-size:.64rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-mute);}
+.sip-edit-field input, .sip-edit-field select{border:1px solid var(--border); border-radius:9px; padding:7px 10px; font-family:inherit; font-size:.82rem; color:var(--text); background:#fff;}
+.sip-edit-field input:focus, .sip-edit-field select:focus{border-color:var(--teal); outline:none;}
 .sip-name{font-size:1rem; font-weight:800; color:var(--green-dark); margin-bottom:2px;}
 .sip-meta{font-size:.74rem; color:var(--text-mute2); margin-bottom:14px;}
 .sip-label{font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-mute); margin-bottom:6px;}
@@ -507,7 +608,7 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .page-header p { color: #8aa4ac; }
 
 .night-mode .wizard-steps{background:rgba(35,46,52,0.85) !important; border-color:#2f3e45 !important; box-shadow:0 10px 28px rgba(0,0,0,.3) !important;}
-.night-mode .left-bci-cards{border-color:#2f3e45;}
+.night-mode .left-bci-cards{background:rgba(35,46,52,0.85); border-color:#2f3e45; box-shadow:0 10px 28px rgba(0,0,0,.3);}
 .night-mode .stat-card-mini{background:#1a2428;}
 .night-mode .stat-card-mini.critical{background:#3a2a1f;}
 .night-mode .stat-label-mini{color:#7d939b;}
@@ -529,6 +630,8 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 
 .night-mode .picker-field label{color:#7d939b;}
 .night-mode .picker-field select{background:#1a2428; border-color:#3a4b53; color:#d4dfe3;}
+.night-mode .picker-field input[type="date"]{background:#1a2428; border-color:#3a4b53; color:#d4dfe3; color-scheme:dark;}
+.night-mode .new-insp-row{background:#1e3a38; border-color:#3a6b62;}
 .night-mode .loaded-summary{background:#1e3a38; border-color:#3a6b62; color:#a0c8c4;}
 .night-mode .no-history-note{background:#3a3020; border-color:#5a4a2a; color:#e0b060;}
 
@@ -586,8 +689,8 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 
 .night-mode .f-pill{background:#1a2428; border-color:#3a4b53; color:#9ab0b8;}
 .night-mode .f-pill.on{background:#1e3a38; border-color:#3a6b62; color:#8ab4b0;}
-.night-mode .clear-table{border-color:#2f3e45;}
-.night-mode .clear-row{border-color:#2f3e45; color:#d4dfe3;}
+.night-mode .clear-row td{background:#18242a; border-color:#2f3e45; color:#d4dfe3;}
+.night-mode .clear-row:hover td{border-color:#3a6b62; background:rgba(91,140,138,.10);}
 .night-mode .defect-card{background:#212f33; border-color:#2f3e45;}
 .night-mode .dc-elem{color:#d4dfe3;}
 .night-mode .cr-num{background:#1e3a38; color:#8ab4b0;}
@@ -595,6 +698,7 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .dc-review-check{background:#1a2428; border-color:#3a4b53; color:#9ab0b8;}
 .night-mode .dc-review-check.checked{background:#1e3a38; border-color:#3a6b62; color:#7ec9ba;}
 .night-mode .dc-history{background:#1a2428; color:#9ab0b8;}
+.night-mode .dc-footer-actions{border-color:#2f3e45;}
 .night-mode .dc-history .trend-badge.worsened, .night-mode .dc-history .trend-badge.new{background:#3a2323; color:#e57373;}
 .night-mode .dc-history .trend-badge.improved, .night-mode .dc-history .trend-badge.resolved{background:#1e3a38; color:#7ec9ba;}
 .night-mode .dc-history .trend-badge.unchanged{background:#2a343a; color:#7d939b;}
@@ -608,12 +712,23 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .dc-strip-add{border-color:#3a4b53; color:#7d939b;}
 .night-mode .dc-strip-add:hover{border-color:#6e9c98; color:#8ab4b0;}
 .night-mode .dc-photo-pending{background:#1a2428; border-color:#2f3e45;}
-.night-mode .dc-class-select{background:#1a2428; border-color:#3a4b53; color:#d4dfe3;}
-.night-mode .dc-class-sep{color:#7d939b;}
+.night-mode .class-dd-trigger{background:#1a2428; border-color:#3a4b53; color:#d4dfe3;}
+.night-mode .class-dd.open .class-dd-trigger{background:#212f33; border-color:#6e9c98;}
+.night-mode .class-dd-menu{background:#212f33; border-color:#2f3e45; box-shadow:0 12px 32px rgba(0,0,0,.35);}
+.night-mode .class-dd-search{border-color:#2f3e45;}
+.night-mode .class-dd-search input{background:#1a2428; border-color:#3a4b53; color:#d4dfe3;}
+.night-mode .class-dd-search input:focus{border-color:#6e9c98; background:#212f33;}
+.night-mode .class-dd-item:hover{background:#1a2428;}
+.night-mode .class-dd-item.selected{background:#1e3a38;}
+.night-mode .class-dd-item .cdd-num{color:#8ab4b0;}
+.night-mode .class-dd-item .cdd-name{color:#d4dfe3;}
+.night-mode .class-dd-sep{color:#7d939b;}
 .night-mode .dc-pending-item input{background:#212f33; border-color:#3a4b53; color:#d4dfe3;}
 .night-mode .dc-pending-cancel{color:#9ab0b8; border-color:#3a4b53 !important;}
 .night-mode .dc-stepper-lbl{color:#7d939b;}
-.night-mode .dc-step{background:#1a2428; border-color:#3a4b53; color:#9ab0b8;}
+.night-mode .dc-step-track{background:#1a2428; border-color:#3a4b53;}
+.night-mode .dc-step{background:none; color:#9ab0b8;}
+.night-mode .dc-step:hover{background:rgba(255,255,255,.06);}
 .night-mode .dc-works-detail{background:#1a2428;}
 .night-mode .dc-works-field select, .night-mode .dc-works-field input{background:#212f33; border-color:#3a4b53; color:#d4dfe3;}
 .night-mode .dc-collapse-btn{color:#7d939b;}
@@ -622,7 +737,14 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .dc-reset-btn:hover{background:#26443f;}
 .night-mode .dc-narrative{background:#1a2428; border-color:#3a4b53; color:#d4dfe3;}
 .night-mode .dc-narrative:focus{background:#212f33; border-color:#6e9c98;}
-.night-mode .struct-info-panel{background:rgba(35,46,52,.9); border-color:#2f3e45; box-shadow:0 10px 28px rgba(0,0,0,.3);}
+.night-mode .sip-overlay{background:rgba(0,0,0,.6);}
+.night-mode .struct-info-panel{background:rgba(33,47,51,.97); border-color:#2f3e45; box-shadow:0 24px 80px rgba(0,0,0,.5);}
+.night-mode .sip-close{background:#1a2428; color:#9ab0b8;}
+.night-mode .sip-close:hover{background:#3a2323; color:#e57373;}
+.night-mode .sip-divider{border-color:#2f3e45;}
+.night-mode .sip-edit-field span{color:#7d939b;}
+.night-mode .sip-edit-field input, .night-mode .sip-edit-field select{background:#1a2428; border-color:#3a4b53; color:#d4dfe3;}
+.night-mode .sip-edit-field input:focus, .night-mode .sip-edit-field select:focus{border-color:#6e9c98;}
 .night-mode .sip-name{color:#8ab4b0;}
 .night-mode .sip-meta{color:#8aa4ac;}
 .night-mode .sip-label{color:#7d939b;}
@@ -692,8 +814,6 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 
 <div class="glass-scrollbar" id="glassScrollbar"><div class="thumb" id="glassThumb"></div></div>
 
-<div class="struct-info-panel" id="structInfoPanel"></div>
-
 <div class="page-wrapper">
 
     <div class="back-pill" onclick="history.back()"><i class="fa-solid fa-arrow-left"></i> Back</div>
@@ -703,18 +823,18 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
         <p>Carries forward what hasn't changed since the structure's last inspection, and helps you write up what has.</p>
     </div>
 
+    <div class="left-bci-cards" id="leftBciCards" style="display:none;">
+        <div class="stat-card-mini average"><div class="stat-label-mini">BCI avg</div><div class="stat-value-mini loading" id="leftBciAvg">···</div></div>
+        <div class="stat-card-mini critical"><div class="stat-label-mini">BCI crit</div><div class="stat-value-mini loading" id="leftBciCrit">···</div></div>
+    </div>
     <div class="wizard-steps" id="wizardSteps">
-        <div class="left-bci-cards" id="leftBciCards" style="display:none;">
-            <div class="stat-card-mini average"><div class="stat-label-mini">BCI avg</div><div class="stat-value-mini loading" id="leftBciAvg">···</div></div>
-            <div class="stat-card-mini critical"><div class="stat-label-mini">BCI crit</div><div class="stat-value-mini loading" id="leftBciCrit">···</div></div>
-        </div>
-        <div class="wizard-step" data-step="setup"><span class="num">1</span>Start</div>
+        <div class="wizard-step" data-step="setup"><span class="num">1</span><span class="wz-label">Start</span></div>
         <div class="wizard-connector"></div>
-        <div class="wizard-step" data-step="draft"><span class="num">2</span>Draft Report</div>
+        <div class="wizard-step" data-step="draft"><span class="num">2</span><span class="wz-label">Draft Report</span></div>
         <div class="wizard-connector"></div>
-        <div class="wizard-step" data-step="author"><span class="num">3</span>Author View</div>
+        <div class="wizard-step" data-step="author"><span class="num">3</span><span class="wz-label">Author View</span></div>
         <div class="wizard-connector"></div>
-        <div class="wizard-step" data-step="export"><span class="num">4</span>Export</div>
+        <div class="wizard-step" data-step="export"><span class="num">4</span><span class="wz-label">Export</span></div>
     </div>
 
     <!-- ================= SCREEN 1: SETUP ================= -->
@@ -735,12 +855,30 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
                         <select id="structureSelect"><option value="">Loading structures…</option></select>
                     </div>
                     <div class="picker-field">
-                        <label>Inspection date</label>
+                        <label>Compare against (base inspection)</label>
                         <select id="inspectionSelect" disabled><option value="">Select a structure first</option></select>
                     </div>
                     <button class="btn-load" id="loadBtn" disabled><i class="fas fa-arrow-right"></i> Load</button>
                 </div>
                 <div id="loadedSummary"></div>
+                <div class="new-insp-row" id="newInspRow" style="display:none;">
+                    <div class="picker-row">
+                        <div class="picker-field">
+                            <label>New inspection date</label>
+                            <input type="date" id="newInspectionDate">
+                        </div>
+                        <div class="picker-field">
+                            <label>New inspection type</label>
+                            <select id="newInspectionType">
+                                <option value="">Select type…</option>
+                                <option value="GI">GI — General Inspection</option>
+                                <option value="PI">PI — Principal Inspection</option>
+                                <option value="SI">SI — Special Inspection</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="u-sub" style="margin-top:10px;">The base inspection above stays untouched — everything you draft here builds a new inspection dated and typed as set here.</div>
+                </div>
             </div>
 
             <div id="sourceUpload" style="display:none;">
@@ -826,17 +964,25 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
             <div class="draft-header">
                 <h2 class="card-title"><i class="fas fa-sparkles" style="color:var(--ai);"></i> Drafted Narrative — <span id="draftStructureName">—</span></h2>
                 <p class="card-sub">A card per defect, drafted from this inspection's real data and automatically compared against the structure's own previous inspection. Review, edit, and mark off as you go — elements with nothing to report are listed compactly below each category.</p>
+                <div class="draft-bci-original" id="draftBciOriginal" style="display:none;">
+                    <div class="stat-card-mini average"><div class="stat-label-mini">BCI avg</div><div class="stat-value-mini loading" id="draftBciAvgOriginal">···</div></div>
+                    <div class="stat-card-mini critical"><div class="stat-label-mini">BCI crit</div><div class="stat-value-mini loading" id="draftBciCritOriginal">···</div></div>
+                </div>
                 <div id="draftBciTrend"></div>
             </div>
             <div class="draft-toolbar">
                 <div class="filter-pills" id="draftFilterPills"></div>
                 <div class="draft-toolbar-actions">
+                    <button class="btn-mini" id="structInfoToggle"><i class="fas fa-circle-info"></i> Structure &amp; Inspection Info</button>
                     <button class="btn-mini" id="toggleCollapseAllBtn"><i class="fas fa-compress"></i> Collapse all</button>
                     <button class="btn-bulk" id="markUnchangedBtn"><i class="fas fa-check-double"></i> Mark all unchanged as reviewed</button>
                 </div>
             </div>
-            <div class="card">
+            <div class="draft-groups-wrap">
                 <div id="draftGroups"></div>
+            </div>
+            <div class="sip-overlay" id="sipOverlay">
+                <div class="struct-info-panel" id="structInfoPanel"></div>
             </div>
             <div class="bottom-nav">
                 <button class="btn-ghost" id="backToSetupBtn"><i class="fas fa-arrow-left"></i> Back</button>
@@ -879,6 +1025,7 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
         <div class="card">
             <h2 class="card-title"><i class="fas fa-file-export" style="color:var(--teal);"></i> Generate &amp; Export</h2>
             <p class="card-sub">The full report (cover, structure details, BCI summary, description of defects, conclusions, photo appendix and BCI Proforma appendix) is spanSense's standard inspection report format — the only difference here is that Author's drafted narrative fills in each defect's description instead of the raw stored comment.</p>
+            <div class="u-sub" id="exportDateNote" style="margin-bottom:14px;"></div>
             <div class="export-actions">
                 <button class="btn-primary-lg" id="genFullReportBtn"><i class="fas fa-file-pdf"></i> Download Full Report (PDF)</button>
                 <button class="btn-ghost" id="genWordBtn"><i class="fas fa-file-word"></i> Generate Word Report</button>
