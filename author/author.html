@@ -870,9 +870,10 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 
     <!-- ================= SCREEN 1: SETUP ================= -->
     <div class="screen" id="screen-setup">
-        <h2 class="card-title"><i class="fas fa-magnifying-glass" style="color:var(--teal);"></i> Choose a Structure &amp; Inspection</h2>
-        <p class="card-sub">Pick the structure and inspection date to author. Author pulls its real defect data and automatically compares it against that structure's own previous inspection.</p>
         <div class="card" id="pickerCard">
+            <h2 class="card-title"><i class="fas fa-magnifying-glass" style="color:var(--teal);"></i> Choose a Structure &amp; Inspection</h2>
+            <p class="card-sub">Pick the structure and inspection date to author. Author pulls its real defect data and automatically compares it against that structure's own previous inspection.</p>
+
             <div class="source-tabs" id="sourceTabs">
                 <button class="source-tab active" data-source="records">From spanSense records</button>
                 <button class="source-tab" data-source="upload">Upload a previous inspection</button>
@@ -921,10 +922,10 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
             </div>
         </div>
 
-        <div id="brandingCard" style="display:none;">
-        <h2 class="card-title"><i class="fas fa-palette" style="color:var(--ai);"></i> Branding &amp; Template</h2>
-        <p class="card-sub">Choose the look reports for this client go out in. spanSense builds the document — this only changes its logo, accent colour, and overall layout. Set once, reused automatically for every future report for this client.</p>
-        <div class="card">
+        <div class="card" id="brandingCard" style="display:none;">
+            <h2 class="card-title"><i class="fas fa-palette" style="color:var(--ai);"></i> Branding &amp; Template</h2>
+            <p class="card-sub">Choose the look reports for this client go out in. spanSense builds the document — this only changes its logo, accent colour, and overall layout. Set once, reused automatically for every future report for this client.</p>
+
             <div class="brand-row">
                 <div class="brand-logo-zone">
                     <div class="mini-lbl">Client logo</div>
@@ -985,7 +986,6 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
             <div class="export-actions" style="margin-top:22px;">
                 <button class="btn-primary-lg" id="toDraftBtn"><i class="fas fa-arrow-right"></i> Continue to Draft Report</button>
             </div>
-        </div>
         </div>
     </div>
 
