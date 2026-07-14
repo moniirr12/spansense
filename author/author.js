@@ -856,7 +856,7 @@ function defectCardHTML(el, extraIdx){
       </div>
       ${whyBanner}
       <div class="dc-footer-actions">
-        <div class="dc-footer-left">${removeOrAddBtn}</div>
+        ${removeOrAddBtn}
         <label class="dc-review-check ${defect.reviewed?'checked':''}">
           <input type="checkbox" data-reviewed="${key}" ${defect.reviewed?'checked':''}>
           ${defect.reviewed ? 'Reviewed' : 'Mark reviewed'}
@@ -1138,10 +1138,6 @@ function renderStructInfoPanel(){
   panel.innerHTML = `
     <div class="sip-name">${AUTHOR.structureName || ''}</div>
     <div class="sip-meta">${AUTHOR.structureType || ''} · Base inspection ${fmtDate(AUTHOR.inspectionDate)}</div>
-    ${AUTHOR.structureDescription ? `<div class="sip-label">Description</div><div class="sip-desc">${AUTHOR.structureDescription}</div>` : ''}
-    <div class="sip-label">BCI trend</div>
-    <div class="sip-bci-track">${sipBciTrendHTML()}</div>
-    <div class="sip-divider"></div>
     <div class="sip-label">This Report's Details</div>
     <div class="sip-edit-grp">
       <label class="sip-edit-field"><span>Inspection date</span>
@@ -1159,6 +1155,10 @@ function renderStructInfoPanel(){
         <input type="text" id="sipInspectorName" placeholder="Enter inspector's name" value="${(AUTHOR.inspectorName||'').replace(/"/g,'&quot;')}">
       </label>
     </div>
+    <div class="sip-divider"></div>
+    ${AUTHOR.structureDescription ? `<div class="sip-label">Description</div><div class="sip-desc">${AUTHOR.structureDescription}</div>` : ''}
+    <div class="sip-label">BCI trend</div>
+    <div class="sip-bci-track">${sipBciTrendHTML()}</div>
   `;
   panel.classList.add('show');
   document.getElementById('sipInspectionDate').addEventListener('change', function(){
@@ -1173,10 +1173,17 @@ function renderStructInfoPanel(){
     AUTHOR.inspectorName = this.value || null;
   });
 }
-document.getElementById('structInfoToggle').addEventListener('click', () => {
+document.getElementById('structInfoToggle').addEventListener('click', function(){
   const panel = document.getElementById('structInfoPanel');
-  if (panel.classList.contains('show')) panel.classList.remove('show');
-  else renderStructInfoPanel();
+  if (panel.classList.contains('show')) { panel.classList.remove('show'); panel.style.maxHeight = ''; return; }
+  renderStructInfoPanel();
+  // The panel's page position (hence how much viewport space is left
+  // below it) varies with page content, so its usable height is computed
+  // from the actual remaining space rather than a fixed vh guess - keeps
+  // it from opening partly or wholly below the fold on shorter windows.
+  const spaceBelow = window.innerHeight - this.getBoundingClientRect().bottom - 24;
+  panel.style.maxHeight = Math.max(240, Math.min(spaceBelow, window.innerHeight * 0.7)) + 'px';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 });
 document.addEventListener('click', (e) => {
   if (!e.target.closest('.sip-wrap')) document.getElementById('structInfoPanel').classList.remove('show');
