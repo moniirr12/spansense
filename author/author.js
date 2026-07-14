@@ -90,9 +90,87 @@ function recomputeLiveBCI(){
   });
   const { bciAv, bciCrit } = calculateBCI(severityValues, extentValues, itemNumbers, AUTHOR.structureType);
   AUTHOR.bciAvg = bciAv; AUTHOR.bciCrit = bciCrit;
+  animateBciValue(document.getElementById('draftBciAvgOriginal'), bciAv);
+  animateBciValue(document.getElementById('draftBciCritOriginal'), bciCrit);
   animateBciValue(document.getElementById('leftBciAvg'), bciAv);
   animateBciValue(document.getElementById('leftBciCrit'), bciCrit);
 }
+
+// ============================================================
+// BCI STICKY SIDEBAR — .left-bci-cards is a fixed clone of the in-flow
+// .draft-bci-original pair in the draft header; it fades/slides into the
+// left gutter (above the icon-only wizard rail, as its own widget) once
+// the original scrolls out of view. Same mechanic/constants as
+// inspection.html's #bciStickySidebar (spans.js), adapted to Author's
+// floating pill navbar instead of a full-width fixed one.
+(function(){
+  const sidebar = document.getElementById('leftBciCards');
+  const original = document.getElementById('draftBciOriginal');
+  if (!sidebar || !original) return;
+  const NAVBAR_H = 90; // Author's floating navbar sits top:20px, height:64px
+  const EXTRA_OFFSET = NAVBAR_H / 2;
+  const SPEED = 1.5;
+  let ticking = false;
+
+  // getBoundingClientRect() on an element inside a display:none ancestor
+  // (i.e. any screen other than #screen-draft, since screens are toggled
+  // via a class rather than actually navigated) returns an all-zero rect -
+  // which otherwise reads as "scrolled miles past", flashing the sticky
+  // clone in on the Setup screen the moment anything scrolls (e.g. the
+  // branding card's own scrollIntoView after loading a structure).
+  function draftScreenActive(){
+    const screen = document.getElementById('screen-draft');
+    return !!screen && screen.classList.contains('active');
+  }
+
+  function positionSidebar(){
+    if (!draftScreenActive() || original.style.display === 'none') return;
+    const wrap = document.querySelector('.draft-groups-wrap');
+    if (wrap) {
+      const wrapRect = wrap.getBoundingClientRect();
+      const sidebarWidth = sidebar.offsetWidth || 150;
+      const leftPos = (wrapRect.left / 2) - (sidebarWidth / 2);
+      sidebar.style.left = Math.max(8, leftPos) + 'px';
+    }
+    sidebar.style.top = `${NAVBAR_H + (NAVBAR_H / 2)}px`;
+  }
+
+  function handleScroll(){
+    if (!draftScreenActive() || original.style.display === 'none') {
+      sidebar.style.opacity = '0';
+      sidebar.classList.remove('visible');
+      return;
+    }
+    const rect = original.getBoundingClientRect();
+    const triggerPoint = NAVBAR_H + 20;
+    const scrolledPast = triggerPoint - rect.top;
+    if (scrolledPast <= 0) {
+      sidebar.style.opacity = '0';
+      sidebar.style.transform = `translateY(${-200 - EXTRA_OFFSET}px)`;
+      sidebar.classList.remove('visible');
+      return;
+    }
+    const maxTravel = 200 + EXTRA_OFFSET;
+    const travel = Math.min(scrolledPast * SPEED, maxTravel);
+    sidebar.style.transform = `translateY(${(-200 - EXTRA_OFFSET) + travel}px)`;
+    sidebar.style.opacity = Math.min(1, scrolledPast / 90);
+    sidebar.classList.add('visible');
+  }
+
+  // Exposed so goTo() can force an immediate, correct state the instant the
+  // draft screen becomes active, rather than waiting for the user's next
+  // scroll (which might not come at all if they're already at the top).
+  window.refreshBciSticky = () => { positionSidebar(); handleScroll(); };
+
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      requestAnimationFrame(() => { positionSidebar(); handleScroll(); ticking = false; });
+      ticking = true;
+    }
+  }, { passive: true });
+  window.addEventListener('resize', positionSidebar);
+  sidebar.style.transform = `translateY(${-200 - EXTRA_OFFSET}px)`;
+})();
 
 // ============================================================
 // MULTI-DEFECT SUPPORT — an element can carry more than one defect (the
@@ -236,6 +314,11 @@ function goTo(step){
   AUTHOR.maxStepReached = Math.max(AUTHOR.maxStepReached, idx);
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('screen-' + step).classList.add('active');
+  // Screens are toggled via display, not real navigation, so the browser
+  // doesn't reset scroll position on its own - without this, whatever
+  // scrollY the previous screen was left at carries straight over onto the
+  // new one's completely different content.
+  window.scrollTo(0, 0);
   document.querySelectorAll('.wizard-step').forEach(el => {
     const i = WIZARD_ORDER.indexOf(el.dataset.step);
     el.classList.remove('active','done');
@@ -246,8 +329,8 @@ function goTo(step){
   document.querySelectorAll('.wizard-connector').forEach((el, i) => {
     el.classList.toggle('filled', i < idx);
   });
-  if(step === 'draft') renderDraft();
-  else closeStructInfoModal();
+  if(step === 'draft') { renderDraft(); if (window.refreshBciSticky) requestAnimationFrame(window.refreshBciSticky); }
+  else { closeStructInfoModal(); if (window.refreshBciSticky) window.refreshBciSticky(); }
   if(step === 'author') { renderDataPane(); renderReportPane(); }
   if(step === 'export') renderExport();
 }
@@ -452,6 +535,7 @@ async function onLoad(){
       ${bciTrendHTML(AUTHOR.bciTrend)}`;
 
     document.getElementById('leftBciCards').style.display = 'flex';
+    document.getElementById('draftBciOriginal').style.display = 'flex';
     recomputeLiveBCI();
 
     const newInspRow = document.getElementById('newInspRow');
@@ -704,7 +788,7 @@ function renderDraft(){
     let body = '';
     let pending = [];
     let anyVisible = false;
-    const flush = () => { if (pending.length) { body += pending.map(clearRowHTML).join(''); pending = []; } };
+    const flush = () => { if (pending.length) { body += `<table class="clear-table"><tbody>${pending.map(clearRowHTML).join('')}</tbody></table>`; pending = []; } };
     els.forEach(el => {
       if (el.current.status !== 'defect') {
         if (!draftOnlyDefects) { pending.push(el); anyVisible = true; }
@@ -740,13 +824,16 @@ function renderDraft(){
 }
 function clearRowHTML(el){
   const [cls, label] = statusInfo(el.current.status);
-  return `<div class="clear-row">
-    <span class="cr-name"><b class="cr-num">${el.elementNumber}</b> ${el.name}</span>
-    <span style="display:flex; align-items:center; gap:10px;">
-      <span class="status-pill ${cls}" style="margin:0;">${label}</span>
-      <button class="btn-mini" data-add-defect="${el.elementNumber}" style="padding:4px 11px; font-size:.68rem;"><i class="fas fa-plus"></i> Add defect</button>
-    </span>
-  </div>`;
+  return `<tr class="clear-row">
+    <td><b class="cr-num">${el.elementNumber}</b></td>
+    <td>${el.name}</td>
+    <td>
+      <div class="cr-actions-inner">
+        <span class="status-pill ${cls}" style="margin:0;">${label}</span>
+        <button class="btn-mini" data-add-defect="${el.elementNumber}" style="padding:4px 11px; font-size:.68rem;"><i class="fas fa-plus"></i> Add defect</button>
+      </div>
+    </td>
+  </tr>`;
 }
 function trendBadgeHTML(comparison){
   if (!comparison) return '';
