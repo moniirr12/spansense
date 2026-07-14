@@ -4,6 +4,129 @@
 // the full-report PDF export (generateSimplePDFReport). DEFECT_TYPE_LABEL
 // and defectTypeLabel() are also provided by test.js.
 
+// Real BCI formula, ported verbatim from inspection/bci.js (that file isn't
+// loaded on this page) so severity/extent edits here recompute a genuine
+// score instead of leaving the originally-loaded value static.
+const STRUCTURE_TYPE_CONFIG = {
+  "Bridge": {
+    importanceMapping: {1:"Very High",2:"High",3:"Very High",4:"Very High",5:"High",6:"High",7:"High",8:"High",9:"High",10:"High",11:"Very High",12:"Very High",13:"High",14:"Medium",15:"Medium",16:"Medium",17:"Medium",18:"High",19:"Medium",20:"Medium",21:"Medium",22:"Medium",23:"High",24:"Medium",25:"Low",26:"Medium",27:"Medium",28:"Medium",29:"Medium",30:"Low",31:"Medium",32:"Medium",33:"Low",34:"Medium"},
+    criticalElements: [1,2,3,4,11,12],
+    bciAvIncludedElements: Array.from({length:34},(_,i)=>i+1)
+  },
+  "Retaining wall": {
+    importanceMapping: {1:"High",2:"Very High",3:"Very High",4:"High",5:"Medium",6:"Medium",7:"Medium",8:"Medium",9:"High",10:"Low",11:"Low",12:"Low",13:"Low",14:"Low",15:"Low",16:"Medium",17:"Medium"},
+    criticalElements: [1,2,3],
+    bciAvIncludedElements: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17]
+  },
+  "Sign Gantry": {
+    importanceMapping: {1:"High",2:"Very High",3:"Very High",4:"Very High",5:"Medium",6:"Medium",7:"Low",8:"High",9:"High",10:"High",11:"Very High",12:"Very High",13:"Medium"},
+    criticalElements: [2,3,4,11,12],
+    bciAvIncludedElements: [1,2,3,4,5,6,7,8,9,10,11,12,13]
+  }
+};
+function getStructureConfig(structureType){ return STRUCTURE_TYPE_CONFIG[structureType] || STRUCTURE_TYPE_CONFIG["Bridge"]; }
+const BCI_ECS_MAPPING = {"1A":1.0,"2B":2.0,"2C":2.1,"2D":2.3,"2E":2.7,"3B":3.0,"3C":3.1,"3D":3.3,"3E":3.7,"4B":4.0,"4C":4.1,"4D":4.3,"4E":4.7,"5B":5.0,"5C":5.0,"5D":5.0,"5E":5.0};
+function calculateECS(sPlusEx){ if (sPlusEx === "00") return 0; return BCI_ECS_MAPPING[sPlusEx] || 0.0; }
+function calculateECF(importance, ecs){
+  if (importance === "Very High") return 0;
+  if (importance === "High") return 0.3 - ((ecs - 1) * (0.3 / 4));
+  if (importance === "Medium") return 0.6 - ((ecs - 1) * (0.6 / 4));
+  if (importance === "Low") return 1.2 - ((ecs - 1) * (1.2 / 4));
+  return 0;
+}
+function calculateECI(ecs, ecf){ return ecs - ecf >= 1 ? ecs - ecf : 1; }
+function calculateEIF(importance, severity){
+  if (severity === 0) return 0;
+  if (importance === "Very High") return 2;
+  if (importance === "High") return 1.5;
+  if (importance === "Medium") return 1.2;
+  if (importance === "Low") return 1;
+  return 0;
+}
+function calculateBCIAv(bcsValues, eifValues){
+  const bcsSum = bcsValues.reduce((s,v)=>s+v,0), eifSum = eifValues.reduce((s,v)=>s+v,0);
+  const bcsAvg = bcsSum / eifSum;
+  return 100 - 2 * ((bcsAvg ** 2) + (6.5 * bcsAvg) - 7.5);
+}
+function calculateBCICrit(eciValues, structureType){
+  const specificElements = getStructureConfig(structureType).criticalElements;
+  const filtered = eciValues.filter(item => specificElements.includes(item.itemno)).map(item => item.eci);
+  if (!filtered.length) return 100.00;
+  const eciMax = Math.max(...filtered);
+  return 100 - 2 * ((eciMax ** 2) + (6.5 * eciMax) - 7.5);
+}
+function calculateBCI(severityValues, extentValues, itemNumbers, structureType){
+  const config = getStructureConfig(structureType);
+  const eciValues = [], bciAvBcsValues = [], bciAvEifValues = [];
+  itemNumbers.forEach((itemno, i) => {
+    const severity = severityValues[i] || 0, extent = extentValues[i] || 0;
+    const ecs = calculateECS(`${severity}${extent}`);
+    const importance = config.importanceMapping[itemno] || "Medium";
+    const ecf = calculateECF(importance, ecs);
+    const eci = calculateECI(ecs, ecf);
+    eciValues.push({ itemno, eci });
+    const eif = calculateEIF(importance, severity);
+    const bcs = eci * eif;
+    if (config.bciAvIncludedElements.includes(itemno)) { bciAvBcsValues.push(bcs); bciAvEifValues.push(eif); }
+  });
+  return { bciAv: calculateBCIAv(bciAvBcsValues, bciAvEifValues), bciCrit: calculateBCICrit(eciValues, structureType) };
+}
+// Author's live equivalent of inspection.js's refreshBCIScores(): builds
+// the same severity/extent/itemNumber arrays from the current in-memory
+// draft (not the DOM), using each element's primary defect - 'good'
+// (explicitly inspected, no defect) counts as severity 1/extent A (best
+// score); 'ninsp' and 'na' are excluded entirely, same convention the real
+// save flow uses for the reserved marker rows.
+function recomputeLiveBCI(){
+  const severityValues = [], extentValues = [], itemNumbers = [];
+  AUTHOR.diffElements.forEach(el => {
+    if (el.current.status === 'defect') {
+      severityValues.push(parseInt(el.current.severity, 10) || 0);
+      extentValues.push(el.current.extent || 'A');
+      itemNumbers.push(el.elementNumber);
+    } else if (el.current.status === 'good') {
+      severityValues.push(1); extentValues.push('A'); itemNumbers.push(el.elementNumber);
+    }
+  });
+  const { bciAv, bciCrit } = calculateBCI(severityValues, extentValues, itemNumbers, AUTHOR.structureType);
+  AUTHOR.bciAvg = bciAv; AUTHOR.bciCrit = bciCrit;
+  animateBciValue(document.getElementById('leftBciAvg'), bciAv);
+  animateBciValue(document.getElementById('leftBciCrit'), bciCrit);
+}
+
+// ============================================================
+// MULTI-DEFECT SUPPORT — an element can carry more than one defect (the
+// real data model already allows this; only one is "primary" and counts
+// toward BCI, matching how the main inspection editor treats it). Extra
+// defects are addressed by a stable "key" string (plain element number for
+// the primary, "<elementNumber>-x<index>" for an extra) so every handler
+// can be written once and work for both without a parallel set of markup.
+// ============================================================
+function defectKey(elementNumber, extraIdx){
+  return extraIdx == null ? String(elementNumber) : `${elementNumber}-x${extraIdx}`;
+}
+function findDefectRef(key){
+  const m = /^(\d+)(?:-x(\d+))?$/.exec(String(key));
+  if (!m) return null;
+  const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === m[1]);
+  if (!el) return null;
+  if (m[2] != null) {
+    const idx = parseInt(m[2], 10);
+    return { el, defect: el.extraDefects[idx], extraIdx: idx };
+  }
+  return { el, defect: el.current, extraIdx: null };
+}
+function newDefectObject(){
+  const firstType = Object.keys(DEFECT_TYPE_MAP)[0];
+  return {
+    status: 'defect', defectDbId: null,
+    defectType: firstType, defectNumber: Object.keys(DEFECT_TYPE_LABEL[Number(firstType)] || {})[0] || null,
+    severity: '1', extent: 'A', worksRequired: 'N', priority: null, cost: null,
+    comments: '', remedialWorks: '',
+    photos: [], heroIndex: 0, reviewed: false, collapsed: false, editedNarrative: null
+  };
+}
+
 // Defect type category names - same table as inspection/spans.js's
 // DEFECT_TYPE_MAP, duplicated here per this codebase's established
 // per-file convention (spans.js itself isn't loaded on this page).
@@ -17,9 +140,9 @@ const DEFECT_TYPE_MAP = {
 // Searchable dropdown for defect type/number, same pattern as twinview's
 // bridge selector (.selector-dropdown/.dropdown-menu/.dd-search/.dd-list) -
 // replaces a plain <select> so long defect-type lists are easy to scan/find.
-function classDropdownHTML(field, el, current, label, options){
+function classDropdownHTML(field, key, current, label, options){
   const selectedOpt = options.find(o => String(o.val) === String(current));
-  return `<div class="class-dd" data-dd="${field}" data-el="${el.elementNumber}">
+  return `<div class="class-dd" data-dd="${field}" data-el="${key}">
     <button type="button" class="class-dd-trigger" data-dd-trigger>
       <span class="cdd-val">${selectedOpt ? selectedOpt.val + ' · ' + selectedOpt.label : label}</span>
       <i class="fas fa-chevron-down"></i>
@@ -34,14 +157,16 @@ function classDropdownHTML(field, el, current, label, options){
     </div>
   </div>`;
 }
-function defectTypeDropdownHTML(el){
+function defectTypeDropdownHTML(el, extraIdx){
+  const defect = extraIdx != null ? el.extraDefects[extraIdx] : el.current;
   const options = Object.keys(DEFECT_TYPE_MAP).map(t => ({ val: t, label: DEFECT_TYPE_MAP[t] }));
-  return classDropdownHTML('defectType', el, el.current.defectType, 'Select type…', options);
+  return classDropdownHTML('defectType', defectKey(el.elementNumber, extraIdx), defect.defectType, 'Select type…', options);
 }
-function defectNumberDropdownHTML(el){
-  const nums = DEFECT_TYPE_LABEL[Number(el.current.defectType)] || {};
+function defectNumberDropdownHTML(el, extraIdx){
+  const defect = extraIdx != null ? el.extraDefects[extraIdx] : el.current;
+  const nums = DEFECT_TYPE_LABEL[Number(defect.defectType)] || {};
   const options = Object.keys(nums).map(n => ({ val: n, label: nums[n] }));
-  return classDropdownHTML('defectNumber', el, el.current.defectNumber, 'Select…', options);
+  return classDropdownHTML('defectNumber', defectKey(el.elementNumber, extraIdx), defect.defectNumber, 'Select…', options);
 }
 
 // ============================================================
@@ -287,19 +412,31 @@ async function onLoad(){
     AUTHOR.bciTrend = twin.inspections || [];
     AUTHOR.bciAvg = full.overallBciave != null ? parseFloat(full.overallBciave) : null;
     AUTHOR.bciCrit = full.overallBcicrit != null ? parseFloat(full.overallBcicrit) : null;
-    AUTHOR.diffElements = diff.elements.map(e => ({ ...e, category: categoryFor(diff.structureType, e.elementNumber), reviewed: false, collapsed: false }));
+    AUTHOR.diffElements = diff.elements.map(e => {
+      e.current.reviewed = false; e.current.collapsed = false; e.current.editedNarrative = null; e.current.heroIndex = 0;
+      return { ...e, category: categoryFor(diff.structureType, e.elementNumber), extraDefects: [], hadBaseDefect: e.current.status === 'defect' };
+    });
     draftFilter = 'all';
 
-    // Real defect photos, keyed by element number (an element can have more
-    // than one defect row with its own photos across the same inspection).
-    const photosByElement = {};
+    // Real defect photos. el.photos is the read-only aggregate used by the
+    // report/docx preview (every photo across all of the element's defect
+    // rows); el.current.photos is the draft screen's editable set, matched
+    // to the one real defect row driving el.current via defectDbId so it
+    // doesn't get mixed up with other defect rows on the same element.
+    const photosByElement = {}, photosByDefectId = {};
     (full.defects || []).forEach(d => {
+      photosByDefectId[d.defectDbId] = d.photos || [];
       if (!d.photos || !d.photos.length) return;
       if (!photosByElement[d.elementNumber]) photosByElement[d.elementNumber] = [];
       photosByElement[d.elementNumber].push(...d.photos);
     });
     AUTHOR.photosByElement = photosByElement;
-    AUTHOR.diffElements.forEach(el => { el.photos = photosByElement[el.elementNumber] || []; });
+    AUTHOR.diffElements.forEach(el => {
+      el.photos = photosByElement[el.elementNumber] || [];
+      if (el.current.status === 'defect' && el.current.defectDbId != null) {
+        el.current.photos = photosByDefectId[el.current.defectDbId] || [];
+      }
+    });
 
     const summary = document.getElementById('loadedSummary');
     summary.innerHTML = `<div class="loaded-summary"><i class="fas fa-circle-check"></i><div>
@@ -312,8 +449,14 @@ async function onLoad(){
       ${bciTrendHTML(AUTHOR.bciTrend)}`;
 
     document.getElementById('leftBciCards').style.display = 'flex';
-    animateBciValue(document.getElementById('leftBciAvg'), AUTHOR.bciAvg);
-    animateBciValue(document.getElementById('leftBciCrit'), AUTHOR.bciCrit);
+    recomputeLiveBCI();
+
+    const newInspRow = document.getElementById('newInspRow');
+    newInspRow.style.display = 'block';
+    const dateInput = document.getElementById('newInspectionDate');
+    if (!dateInput.value) dateInput.value = new Date().toISOString().slice(0,10);
+    AUTHOR.newInspectionDate = dateInput.value;
+    AUTHOR.newInspectionType = document.getElementById('newInspectionType').value || null;
 
     document.getElementById('brandingCard').style.display = 'block';
     await loadBranding(diff.organizationId);
@@ -329,6 +472,8 @@ async function onLoad(){
 }
 document.getElementById('structureSelect').addEventListener('change', onStructureChange);
 document.getElementById('loadBtn').addEventListener('click', onLoad);
+document.getElementById('newInspectionDate').addEventListener('change', function(){ AUTHOR.newInspectionDate = this.value; });
+document.getElementById('newInspectionType').addEventListener('change', function(){ AUTHOR.newInspectionType = this.value || null; });
 loadStructures();
 
 // ---- Branding & Template picker (real, persisted per organization) ----
@@ -414,7 +559,16 @@ function statusInfo(status){
 function cmpLabel(cmp){
   return { new:'New', worsened:'Worsened', improved:'Improved', resolved:'Resolved', unchanged:'Unchanged', changed:'Changed', first:'First record' }[cmp] || '';
 }
-function narrativeFor(el){
+// narrativeFor/photoSectionHTML work for either the primary defect (extraIdx
+// omitted) or an extra one on the same element (extraIdx given) - extras
+// have no history of their own (they didn't exist in the base inspection by
+// definition), so they always narrate as a first-time finding.
+function narrativeFor(el, extraIdx){
+  if (extraIdx != null) {
+    const defect = el.extraDefects[extraIdx];
+    if (defect.editedNarrative != null) return defect.editedNarrative;
+    return buildNarrative({ name: el.name, current: defect, previous: null, comparison: 'new' }, AUTHOR.inspectionDate);
+  }
   return el.editedNarrative != null ? el.editedNarrative : buildNarrative(el, AUTHOR.previousDate);
 }
 function elPhotosHTML(photos, containerCls){
@@ -429,31 +583,35 @@ function elPhotosHTML(photos, containerCls){
 // in the report preview), this one supports uploading new photos (with a
 // caption) and deleting/re-captioning existing ones, wired to the app's
 // real photo endpoints - these persist to the actual inspection record,
-// unlike the narrative/severity/extent edits which are draft-only.
-function photoSectionHTML(el){
-  const photos = el.photos || [];
-  if (el.heroIndex == null) el.heroIndex = 0;
-  const heroIdx = Math.min(el.heroIndex, Math.max(0, photos.length - 1));
+// unlike the narrative/severity/extent edits which are draft-only. A
+// newly-added defect has no real defectDbId yet (nothing to link photos to
+// until it's actually saved), so it gets a placeholder with no upload option.
+function photoSectionHTML(el, extraIdx){
+  const defect = extraIdx != null ? el.extraDefects[extraIdx] : el.current;
+  const key = defectKey(el.elementNumber, extraIdx);
+  const photos = defect.photos || [];
+  if (defect.heroIndex == null) defect.heroIndex = 0;
+  const heroIdx = Math.min(defect.heroIndex, Math.max(0, photos.length - 1));
   const hero = photos[heroIdx];
-  const canUpload = !!el.current.defectDbId;
+  const canUpload = !!defect.defectDbId;
 
   const heroHtml = hero
     ? `<div class="dc-hero">
         <img src="${hero.url}" onclick="window.open('${hero.url}','_blank')">
-        ${hero.id ? `<button class="dc-hero-del" data-delete-photo="${hero.id}" data-el="${el.elementNumber}" title="Delete photo"><i class="fas fa-xmark"></i></button>` : ''}
+        ${hero.id ? `<button class="dc-hero-del" data-delete-photo="${hero.id}" data-el="${key}" title="Delete photo"><i class="fas fa-xmark"></i></button>` : ''}
       </div>
-      ${hero.id ? `<input class="dc-photo-caption" data-caption-photo="${hero.id}" data-el="${el.elementNumber}" value="${(hero.description||'').replace(/"/g,'&quot;')}" placeholder="Add a caption…">` : ''}`
-    : `<div class="dc-photo-placeholder" ${canUpload ? `data-add-photo="${el.elementNumber}"` : ''}><i class="fas fa-camera"></i></div>`;
+      ${hero.id ? `<input class="dc-photo-caption" data-caption-photo="${hero.id}" data-el="${key}" value="${(hero.description||'').replace(/"/g,'&quot;')}" placeholder="Add a caption…">` : ''}`
+    : `<div class="dc-photo-placeholder" ${canUpload ? `data-add-photo="${key}"` : ''}><i class="fas fa-camera"></i></div>`;
 
-  const stripThumbs = photos.map((p, i) => `<img class="dc-strip-thumb ${i===heroIdx?'active':''}" data-strip-thumb="${el.elementNumber}" data-idx="${i}" src="${p.url}">`).join('');
-  const addTileInStrip = canUpload ? `<div class="dc-strip-add" data-add-photo="${el.elementNumber}" title="Add photos"><i class="fas fa-plus"></i></div>` : '';
+  const stripThumbs = photos.map((p, i) => `<img class="dc-strip-thumb ${i===heroIdx?'active':''}" data-strip-thumb="${key}" data-idx="${i}" src="${p.url}">`).join('');
+  const addTileInStrip = canUpload ? `<div class="dc-strip-add" data-add-photo="${key}" title="Add photos"><i class="fas fa-plus"></i></div>` : '';
   const stripHtml = (photos.length > 1 || (photos.length && canUpload)) ? `<div class="dc-strip">${stripThumbs}${addTileInStrip}</div>` : '';
   const inputAndPending = canUpload
-    ? `<input type="file" data-photo-input="${el.elementNumber}" accept="image/*" multiple hidden>
-       <div class="dc-photo-pending" data-photo-pending="${el.elementNumber}" style="display:none;"></div>`
+    ? `<input type="file" data-photo-input="${key}" accept="image/*" multiple hidden>
+       <div class="dc-photo-pending" data-photo-pending="${key}" style="display:none;"></div>`
     : '';
 
-  return `<div class="dc-photos" data-photos-for="${el.elementNumber}">${heroHtml}${stripHtml}${inputAndPending}</div>`;
+  return `<div class="dc-photos" data-photos-for="${key}">${heroHtml}${stripHtml}${inputAndPending}</div>`;
 }
 function pendingPhotoRowHTML(file, idx){
   const url = URL.createObjectURL(file);
@@ -462,8 +620,8 @@ function pendingPhotoRowHTML(file, idx){
     <input type="text" data-pending-caption="${idx}" placeholder="Caption for this photo…">
   </div>`;
 }
-async function uploadPendingPhotos(el, files){
-  const container = document.querySelector(`[data-photo-pending="${el.elementNumber}"]`);
+async function uploadPendingPhotos(key, defect, files){
+  const container = document.querySelector(`[data-photo-pending="${key}"]`);
   const captions = files.map((f, i) => {
     const input = container.querySelector(`[data-pending-caption="${i}"]`);
     return input ? input.value : '';
@@ -473,15 +631,15 @@ async function uploadPendingPhotos(el, files){
     const formData = new FormData();
     files.forEach(f => formData.append('photos', f));
     captions.forEach(c => formData.append('descriptions', c));
-    formData.append('defectId', String(el.current.defectDbId));
+    formData.append('defectId', String(defect.defectDbId));
     formData.append('inspectionDate', AUTHOR.inspectionDate);
     const res = await fetch(`${API_BASE}/api/bridges/${AUTHOR.structureId}/inspection-photos`, { method: 'POST', body: formData });
     const result = await res.json();
     if (!res.ok || !result.success) throw new Error(result.error || 'Upload failed');
     result.photos.forEach(p => {
-      el.photos.push({ id: p.id, url: p.url, description: p.photo_description, displayOrder: p.display_order });
+      defect.photos.push({ id: p.id, url: p.url, description: p.photo_description, displayOrder: p.display_order });
     });
-    el.heroIndex = el.photos.length - 1;
+    defect.heroIndex = defect.photos.length - 1;
     renderDraft();
   } catch (err) {
     console.error('Photo upload failed:', err);
@@ -492,10 +650,22 @@ async function uploadPendingPhotos(el, files){
 let draftFilter = 'all';
 let draftOnlyDefects = false;
 let draftAllCollapsed = false;
+// All defects across every element, each paired with its comparison value
+// (the primary's is el.comparison; an extra's is always 'new' by
+// definition - see defectCardHTML) - used for both the pill counts and the
+// actual filtering, so the two can never disagree.
+function allDraftDefects(){
+  const out = [];
+  AUTHOR.diffElements.forEach(el => {
+    if (el.current.status === 'defect') out.push({ defect: el.current, comparison: el.comparison });
+    (el.extraDefects || []).forEach(extra => out.push({ defect: extra, comparison: 'new' }));
+  });
+  return out;
+}
 function draftFilterPillsHTML(){
-  const defects = AUTHOR.diffElements.filter(e => e.current.status === 'defect');
-  const flagged = defects.filter(e => e.comparison === 'new' || e.comparison === 'worsened' || e.comparison === 'first');
-  const reviewed = defects.filter(e => e.reviewed);
+  const defects = allDraftDefects();
+  const flagged = defects.filter(d => d.comparison === 'new' || d.comparison === 'worsened' || d.comparison === 'first');
+  const reviewed = defects.filter(d => d.defect.reviewed);
   const pills = [
     { key:'all', label:`All defects (${defects.length})` },
     { key:'flagged', label:`New or worsened (${flagged.length})` },
@@ -506,10 +676,10 @@ function draftFilterPillsHTML(){
   const onlyDefectsHtml = `<button class="f-pill" data-only-defects="1" data-active="${draftOnlyDefects}"><i class="fas fa-filter"></i> Only defects</button>`;
   return filterHtml + onlyDefectsHtml;
 }
-function passesDraftFilter(el){
-  if (draftFilter === 'flagged') return el.comparison === 'new' || el.comparison === 'worsened' || el.comparison === 'first';
-  if (draftFilter === 'unreviewed') return !el.reviewed;
-  if (draftFilter === 'reviewed') return !!el.reviewed;
+function passesDraftFilter(defect, comparison){
+  if (draftFilter === 'flagged') return comparison === 'new' || comparison === 'worsened' || comparison === 'first';
+  if (draftFilter === 'unreviewed') return !defect.reviewed;
+  if (draftFilter === 'reviewed') return !!defect.reviewed;
   return true;
 }
 
@@ -535,11 +705,19 @@ function renderDraft(){
     els.forEach(el => {
       if (el.current.status !== 'defect') {
         if (!draftOnlyDefects) { pending.push(el); anyVisible = true; }
-      } else if (passesDraftFilter(el)) {
+        return;
+      }
+      if (passesDraftFilter(el.current, el.comparison)) {
         flush();
         body += defectCardHTML(el);
         anyVisible = true;
       }
+      (el.extraDefects || []).forEach((extra, i) => {
+        if (!passesDraftFilter(extra, 'new')) return;
+        flush();
+        body += defectCardHTML(el, i);
+        anyVisible = true;
+      });
     });
     flush();
     if (!anyVisible) return '';
@@ -548,45 +726,66 @@ function renderDraft(){
       ${body}
     </div>`;
   }).join('');
-  const totalDefects = AUTHOR.diffElements.filter(e => e.current.status === 'defect').length;
-  const reviewedDefects = AUTHOR.diffElements.filter(e => e.current.status === 'defect' && e.reviewed).length;
+  const allDefects = AUTHOR.diffElements.flatMap(e => (e.current.status === 'defect' ? [e.current] : []).concat(e.extraDefects || []));
+  const totalDefects = allDefects.length;
+  const reviewedDefects = allDefects.filter(d => d.reviewed).length;
   document.getElementById('draftProgressText').textContent = totalDefects
     ? `${reviewedDefects} of ${totalDefects} defects reviewed`
     : 'No defects recorded for this inspection';
-  document.getElementById('markUnchangedBtn').disabled = !AUTHOR.diffElements.some(e => e.current.status === 'defect' && e.comparison === 'unchanged' && !e.reviewed);
+  document.getElementById('markUnchangedBtn').disabled = !AUTHOR.diffElements.some(e => e.current.status === 'defect' && e.comparison === 'unchanged' && !e.current.reviewed);
   renderStructInfoPanel();
   attachDraftEditors();
 }
 function clearRowHTML(el){
   const [cls, label] = statusInfo(el.current.status);
-  return `<div class="clear-row"><span class="cr-name"><b class="cr-num">${el.elementNumber}</b> ${el.name}</span><span class="status-pill ${cls}" style="margin:0;">${label}</span></div>`;
+  return `<div class="clear-row">
+    <span class="cr-name"><b class="cr-num">${el.elementNumber}</b> ${el.name}</span>
+    <span style="display:flex; align-items:center; gap:10px;">
+      <span class="status-pill ${cls}" style="margin:0;">${label}</span>
+      <button class="btn-mini" data-add-defect="${el.elementNumber}" style="padding:4px 11px; font-size:.68rem;"><i class="fas fa-plus"></i> Add defect</button>
+    </span>
+  </div>`;
 }
-function trendBadgeHTML(el){
-  if (!el.comparison) return '';
-  const label = { new:'New finding', worsened:'Worsened since last visit', improved:'Improved since last visit', resolved:'Resolved', unchanged:'Stable', changed:'Changed', first:'First record' }[el.comparison] || cmpLabel(el.comparison);
-  return `<span class="trend-badge ${el.comparison}">${label}</span>`;
+function trendBadgeHTML(comparison){
+  if (!comparison) return '';
+  const label = { new:'New finding', worsened:'Worsened since last visit', improved:'Improved since last visit', resolved:'Resolved', unchanged:'Stable', changed:'Changed', first:'First record' }[comparison] || cmpLabel(comparison);
+  return `<span class="trend-badge ${comparison}">${label}</span>`;
 }
-function workDetailsHTML(el){
-  const show = el.current.worksRequired === 'Y';
-  return `<div class="dc-works-detail${show?' show':''}" data-works-detail="${el.elementNumber}">
+function workDetailsHTML(el, extraIdx){
+  const defect = extraIdx != null ? el.extraDefects[extraIdx] : el.current;
+  const key = defectKey(el.elementNumber, extraIdx);
+  const show = defect.worksRequired === 'Y';
+  return `<div class="dc-works-detail${show?' show':''}" data-works-detail="${key}">
     <div class="dc-works-field">
       <span class="mini-lbl">Priority</span>
-      <select data-field="priority" data-el="${el.elementNumber}">
-        <option value="L" ${el.current.priority==='L'?'selected':''}>Low</option>
-        <option value="M" ${el.current.priority==='M'?'selected':''}>Medium</option>
-        <option value="H" ${el.current.priority==='H'?'selected':''}>High</option>
+      <select data-field="priority" data-el="${key}">
+        <option value="L" ${defect.priority==='L'?'selected':''}>Low</option>
+        <option value="M" ${defect.priority==='M'?'selected':''}>Medium</option>
+        <option value="H" ${defect.priority==='H'?'selected':''}>High</option>
       </select>
     </div>
     <div class="dc-works-field">
       <span class="mini-lbl">Est. cost (£)</span>
-      <input type="number" min="0" data-field="cost" data-el="${el.elementNumber}" value="${el.current.cost != null ? el.current.cost : ''}" placeholder="Enter amount">
+      <input type="number" min="0" data-field="cost" data-el="${key}" value="${defect.cost != null ? defect.cost : ''}" placeholder="Enter amount">
     </div>
   </div>`;
 }
-function defectCardHTML(el){
+// Renders one card - the primary defect (extraIdx omitted) or an extra one
+// added on top of the same element (extraIdx given). Both share the same
+// markup/behaviour; only the header actions differ (primary gets "add
+// another defect", extras get "remove this defect", and primary can only
+// be removed if the base inspection didn't actually have a defect there -
+// deleting a real historical finding from the draft would misrepresent it).
+function defectCardHTML(el, extraIdx){
+  const defect = extraIdx != null ? el.extraDefects[extraIdx] : el.current;
+  const key = defectKey(el.elementNumber, extraIdx);
+  const isExtra = extraIdx != null;
+  const comparison = isExtra ? 'new' : el.comparison;
 
   const historyBits = [];
-  if (el.previous && el.previous.status === 'defect') {
+  if (isExtra) {
+    historyBits.push('Added on top of this element\'s existing record');
+  } else if (el.previous && el.previous.status === 'defect') {
     historyBits.push(`Previously: severity ${el.previous.severity}, extent ${el.previous.extent}`);
   } else if (el.comparison === 'resolved') {
     historyBits.push('Previously recorded with a defect');
@@ -595,33 +794,40 @@ function defectCardHTML(el){
   }
 
   let whyBanner = '';
-  if (el.comparison === 'first') {
+  if (!isExtra && el.comparison === 'first') {
     whyBanner = `<div class="dc-why"><i class="fas fa-circle-info"></i> First recorded inspection for this structure — no previous data to compare against.</div>`;
-  } else if (el.previous && el.previous.status === 'ninsp') {
+  } else if (!isExtra && el.previous && el.previous.status === 'ninsp') {
     whyBanner = `<div class="dc-why"><i class="fas fa-circle-info"></i> The previous inspection didn't cover this element, so there's nothing to compare against.</div>`;
   }
 
-  const photosHtml = photoSectionHTML(el);
+  const photosHtml = photoSectionHTML(el, extraIdx);
 
-  const sevSteps = [1,2,3,4,5].map(s => `<button class="dc-step ${el.current.severity==String(s)?'active sev-'+s:''}" data-field="severity" data-el="${el.elementNumber}" data-val="${s}">${s}</button>`).join('');
-  const extSteps = ['A','B','C','D','E'].map(x => `<button class="dc-step ${el.current.extent===x?'active ext-'+x:''}" data-field="extent" data-el="${el.elementNumber}" data-val="${x}">${x}</button>`).join('');
-  const worksSteps = [['N','No'],['Y','Yes'],['M','Monitor']].map(([v,l]) => `<button class="dc-step works-btn ${el.current.worksRequired===v?'active works-'+v:''}" data-field="works" data-el="${el.elementNumber}" data-val="${v}">${l}</button>`).join('');
+  const sevSteps = [1,2,3,4,5].map(s => `<button class="dc-step ${defect.severity==String(s)?'active sev-'+s:''}" data-field="severity" data-el="${key}" data-val="${s}">${s}</button>`).join('');
+  const extSteps = ['A','B','C','D','E'].map(x => `<button class="dc-step ${defect.extent===x?'active ext-'+x:''}" data-field="extent" data-el="${key}" data-val="${x}">${x}</button>`).join('');
+  const worksSteps = [['N','No'],['Y','Yes'],['M','Monitor']].map(([v,l]) => `<button class="dc-step works-btn ${defect.worksRequired===v?'active works-'+v:''}" data-field="works" data-el="${key}" data-val="${v}">${l}</button>`).join('');
 
-  return `<div class="defect-card cmp-${el.comparison||''} ${el.reviewed?'reviewed':''}${el.collapsed?' collapsed':''}" data-el="${el.elementNumber}">
-    <div class="dc-top" data-collapse-toggle="${el.elementNumber}">
+  const canRemovePrimary = !isExtra && !el.hadBaseDefect;
+  const removeOrAddBtn = isExtra
+    ? `<button class="btn-mini" data-remove-defect="${key}" title="Remove this defect"><i class="fas fa-trash"></i></button>`
+    : `<button class="btn-mini" data-add-extra="${el.elementNumber}" title="Add another defect on this element"><i class="fas fa-plus"></i> Add another</button>
+       ${canRemovePrimary ? `<button class="btn-mini" data-remove-defect="${key}" title="Remove this defect"><i class="fas fa-trash"></i></button>` : ''}`;
+
+  return `<div class="defect-card cmp-${comparison||''} ${defect.reviewed?'reviewed':''}${defect.collapsed?' collapsed':''}" data-el="${key}">
+    <div class="dc-top" data-collapse-toggle="${key}">
       <button class="dc-collapse-btn"><i class="fas fa-chevron-down"></i></button>
       <div style="flex:1;">
-        <div class="dc-elem"><b class="cr-num">${el.elementNumber}</b> ${el.name}</div>
+        <div class="dc-elem"><b class="cr-num">${el.elementNumber}</b> ${el.name}${isExtra ? ' <span style="font-weight:400; color:var(--text-mute2); font-size:.78rem;">(additional defect)</span>' : ''}</div>
         <div class="dc-class-row">
-          ${defectTypeDropdownHTML(el)}
+          ${defectTypeDropdownHTML(el, extraIdx)}
           <span class="class-dd-sep">·</span>
-          ${defectNumberDropdownHTML(el)}
+          ${defectNumberDropdownHTML(el, extraIdx)}
         </div>
       </div>
       <div class="dc-actions">
-        <label class="dc-review-check ${el.reviewed?'checked':''}">
-          <input type="checkbox" data-reviewed="${el.elementNumber}" ${el.reviewed?'checked':''}>
-          ${el.reviewed ? 'Reviewed' : 'Mark reviewed'}
+        ${removeOrAddBtn}
+        <label class="dc-review-check ${defect.reviewed?'checked':''}">
+          <input type="checkbox" data-reviewed="${key}" ${defect.reviewed?'checked':''}>
+          ${defect.reviewed ? 'Reviewed' : 'Mark reviewed'}
         </label>
       </div>
     </div>
@@ -631,98 +837,106 @@ function defectCardHTML(el){
         <div>
           <div class="dc-history">
             <span>${historyBits.join(' · ')}</span>
-            ${trendBadgeHTML(el)}
+            ${trendBadgeHTML(comparison)}
           </div>
           <div class="dc-stepper-row">
             <div><span class="dc-stepper-lbl">Severity</span><div class="dc-step-track">${sevSteps}</div></div>
             <div><span class="dc-stepper-lbl">Extent</span><div class="dc-step-track">${extSteps}</div></div>
             <div><span class="dc-stepper-lbl">Works required</span><div class="dc-step-track">${worksSteps}</div></div>
           </div>
-          ${workDetailsHTML(el)}
+          ${workDetailsHTML(el, extraIdx)}
           <div class="dc-narrative-lbl">
             <span class="mini-lbl" style="margin:0;">Drafted narrative</span>
             <div style="display:flex; gap:6px;">
-              ${el.photos && el.photos.length ? `<button class="dc-reset-btn" data-mention-photo="${el.elementNumber}"><i class="fas fa-image"></i> Mention photo</button>` : ''}
-              <button class="dc-reset-btn" data-reset="${el.elementNumber}"><i class="fas fa-rotate-left"></i> Reset to drafted text</button>
+              ${defect.photos && defect.photos.length ? `<button class="dc-reset-btn" data-mention-photo="${key}"><i class="fas fa-image"></i> Mention photo</button>` : ''}
+              <button class="dc-reset-btn" data-reset="${key}"><i class="fas fa-rotate-left"></i> Reset to drafted text</button>
             </div>
           </div>
-          <textarea class="dc-narrative" data-field="narrative" data-el="${el.elementNumber}">${narrativeFor(el)}</textarea>
+          <textarea class="dc-narrative" data-field="narrative" data-el="${key}">${narrativeFor(el, extraIdx)}</textarea>
         </div>
       </div>
       ${whyBanner}
     </div>
   </div>`;
 }
-function refreshCardNarrative(el){
-  el.editedNarrative = null;
-  const ta = document.querySelector(`.dc-narrative[data-el="${el.elementNumber}"]`);
-  if(ta) ta.value = narrativeFor(el);
+function refreshCardNarrative(el, extraIdx){
+  const defect = extraIdx != null ? el.extraDefects[extraIdx] : el.current;
+  const key = defectKey(el.elementNumber, extraIdx);
+  defect.editedNarrative = null;
+  const ta = document.querySelector(`.dc-narrative[data-el="${key}"]`);
+  if(ta) ta.value = narrativeFor(el, extraIdx);
   if(document.getElementById('screen-author').classList.contains('active')){ renderDataPane(); renderReportPane(); }
 }
 function attachDraftEditors(){
   document.querySelectorAll('.dc-narrative').forEach(ta => {
     ta.addEventListener('input', () => {
-      const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === ta.dataset.el);
-      if(!el) return;
-      el.editedNarrative = ta.value;
+      const ref = findDefectRef(ta.dataset.el);
+      if(!ref) return;
+      ref.defect.editedNarrative = ta.value;
       if(document.getElementById('screen-author').classList.contains('active')){ renderDataPane(); renderReportPane(); }
     });
   });
   document.querySelectorAll('[data-reset]').forEach(btn => {
     btn.addEventListener('click', () => {
-      const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === btn.dataset.reset);
-      if(el) refreshCardNarrative(el);
+      const ref = findDefectRef(btn.dataset.reset);
+      if(ref) refreshCardNarrative(ref.el, ref.extraIdx);
     });
   });
   document.querySelectorAll('[data-mention-photo]').forEach(btn => {
     btn.addEventListener('click', () => {
-      const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === btn.dataset.mentionPhoto);
-      if(!el || !el.photos || !el.photos.length) return;
-      const hero = el.photos[Math.min(el.heroIndex || 0, el.photos.length - 1)];
+      const ref = findDefectRef(btn.dataset.mentionPhoto);
+      if(!ref) return;
+      const { el, defect, extraIdx } = ref;
+      if(!defect.photos || !defect.photos.length) return;
+      const hero = defect.photos[Math.min(defect.heroIndex || 0, defect.photos.length - 1)];
       const mention = hero.description ? ` (see photo: "${hero.description}")` : ' (see attached photo)';
-      const ta = document.querySelector(`.dc-narrative[data-el="${el.elementNumber}"]`);
-      const current = narrativeFor(el);
+      const key = defectKey(el.elementNumber, extraIdx);
+      const ta = document.querySelector(`.dc-narrative[data-el="${key}"]`);
+      const current = narrativeFor(el, extraIdx);
       const updated = current.trim() + mention;
-      el.editedNarrative = updated;
+      defect.editedNarrative = updated;
       if(ta) ta.value = updated;
       if(document.getElementById('screen-author').classList.contains('active')){ renderDataPane(); renderReportPane(); }
     });
   });
   document.querySelectorAll('[data-reviewed]').forEach(cb => {
     cb.addEventListener('change', () => {
-      const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === cb.dataset.reviewed);
-      if(!el) return;
-      el.reviewed = cb.checked;
+      const ref = findDefectRef(cb.dataset.reviewed);
+      if(!ref) return;
+      ref.defect.reviewed = cb.checked;
       renderDraft();
     });
   });
   document.querySelectorAll('[data-collapse-toggle]').forEach(header => {
     header.addEventListener('click', (e) => {
       if (e.target.closest('.dc-review-check') || e.target.closest('.dc-class-row')) return;
-      const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === header.dataset.collapseToggle);
-      if(!el) return;
-      el.collapsed = !el.collapsed;
-      header.closest('.defect-card').classList.toggle('collapsed', el.collapsed);
+      const ref = findDefectRef(header.dataset.collapseToggle);
+      if(!ref) return;
+      ref.defect.collapsed = !ref.defect.collapsed;
+      header.closest('.defect-card').classList.toggle('collapsed', ref.defect.collapsed);
     });
   });
   document.querySelectorAll('.dc-step[data-field="severity"], .dc-step[data-field="extent"], .dc-step[data-field="works"]').forEach(btn => {
     btn.addEventListener('click', () => {
-      const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === btn.dataset.el);
-      if(!el) return;
-      if(btn.dataset.field === 'severity') el.current.severity = btn.dataset.val;
-      else if(btn.dataset.field === 'extent') el.current.extent = btn.dataset.val;
-      else if(btn.dataset.field === 'works') el.current.worksRequired = btn.dataset.val;
-      refreshCardNarrative(el);
+      const ref = findDefectRef(btn.dataset.el);
+      if(!ref) return;
+      const { el, defect, extraIdx } = ref;
+      if(btn.dataset.field === 'severity') defect.severity = btn.dataset.val;
+      else if(btn.dataset.field === 'extent') defect.extent = btn.dataset.val;
+      else if(btn.dataset.field === 'works') defect.worksRequired = btn.dataset.val;
+      refreshCardNarrative(el, extraIdx);
+      recomputeLiveBCI();
       renderDraft();
     });
   });
   document.querySelectorAll('[data-field="priority"], [data-field="cost"]').forEach(input => {
     input.addEventListener('change', () => {
-      const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === input.dataset.el);
-      if(!el) return;
-      if(input.dataset.field === 'priority') el.current.priority = input.value;
-      else el.current.cost = input.value ? parseFloat(input.value) : null;
-      refreshCardNarrative(el);
+      const ref = findDefectRef(input.dataset.el);
+      if(!ref) return;
+      const { el, defect, extraIdx } = ref;
+      if(input.dataset.field === 'priority') defect.priority = input.value;
+      else defect.cost = input.value ? parseFloat(input.value) : null;
+      refreshCardNarrative(el, extraIdx);
     });
   });
   document.querySelectorAll('[data-add-photo]').forEach(tile => {
@@ -732,37 +946,37 @@ function attachDraftEditors(){
   });
   document.querySelectorAll('[data-strip-thumb]').forEach(thumb => {
     thumb.addEventListener('click', () => {
-      const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === thumb.dataset.stripThumb);
-      if(!el) return;
-      el.heroIndex = parseInt(thumb.dataset.idx, 10);
+      const ref = findDefectRef(thumb.dataset.stripThumb);
+      if(!ref) return;
+      ref.defect.heroIndex = parseInt(thumb.dataset.idx, 10);
       renderDraft();
     });
   });
   document.querySelectorAll('[data-photo-input]').forEach(input => {
     input.addEventListener('change', () => {
-      const elNum = input.dataset.photoInput;
-      const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === elNum);
+      const key = input.dataset.photoInput;
+      const ref = findDefectRef(key);
       const files = Array.from(input.files || []);
-      if (!el || !files.length) return;
-      const pending = document.querySelector(`[data-photo-pending="${elNum}"]`);
+      if (!ref || !files.length) return;
+      const pending = document.querySelector(`[data-photo-pending="${key}"]`);
       pending.style.display = 'block';
       pending.innerHTML = files.map((f, i) => pendingPhotoRowHTML(f, i)).join('') +
         `<div class="dc-pending-actions">
-          <button class="dc-pending-upload" data-confirm-upload="${elNum}"><i class="fas fa-cloud-arrow-up"></i> Upload ${files.length > 1 ? files.length + ' photos' : 'photo'}</button>
-          <button class="dc-pending-cancel" data-cancel-upload="${elNum}">Cancel</button>
+          <button class="dc-pending-upload" data-confirm-upload="${key}"><i class="fas fa-cloud-arrow-up"></i> Upload ${files.length > 1 ? files.length + ' photos' : 'photo'}</button>
+          <button class="dc-pending-cancel" data-cancel-upload="${key}">Cancel</button>
         </div>`;
-      pending.querySelector(`[data-confirm-upload="${elNum}"]`).addEventListener('click', () => uploadPendingPhotos(el, files));
-      pending.querySelector(`[data-cancel-upload="${elNum}"]`).addEventListener('click', () => { pending.style.display = 'none'; pending.innerHTML = ''; input.value = ''; });
+      pending.querySelector(`[data-confirm-upload="${key}"]`).addEventListener('click', () => uploadPendingPhotos(key, ref.defect, files));
+      pending.querySelector(`[data-cancel-upload="${key}"]`).addEventListener('click', () => { pending.style.display = 'none'; pending.innerHTML = ''; input.value = ''; });
     });
   });
   document.querySelectorAll('[data-delete-photo]').forEach(btn => {
     btn.addEventListener('click', async () => {
-      const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === btn.dataset.el);
-      if (!el || !confirm('Delete this photo?')) return;
+      const ref = findDefectRef(btn.dataset.el);
+      if (!ref || !confirm('Delete this photo?')) return;
       try {
         const res = await fetch(`${API_BASE}/api/inspection-photos/${btn.dataset.deletePhoto}`, { method: 'DELETE' });
         if (!res.ok) throw new Error('Delete failed');
-        el.photos = el.photos.filter(p => String(p.id) !== btn.dataset.deletePhoto);
+        ref.defect.photos = ref.defect.photos.filter(p => String(p.id) !== btn.dataset.deletePhoto);
         renderDraft();
       } catch (err) {
         console.error('Photo delete failed:', err);
@@ -772,20 +986,55 @@ function attachDraftEditors(){
   });
   document.querySelectorAll('[data-caption-photo]').forEach(input => {
     input.addEventListener('change', async () => {
-      const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === input.dataset.el);
+      const ref = findDefectRef(input.dataset.el);
       try {
         const res = await fetch(`${API_BASE}/api/inspection-photos/${input.dataset.captionPhoto}`, {
           method: 'PATCH', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ photo_description: input.value })
         });
         if (!res.ok) throw new Error('Save failed');
-        if (el) {
-          const photo = el.photos.find(p => String(p.id) === input.dataset.captionPhoto);
+        if (ref) {
+          const photo = ref.defect.photos.find(p => String(p.id) === input.dataset.captionPhoto);
           if (photo) photo.description = input.value;
         }
       } catch (err) {
         console.error('Caption save failed:', err);
       }
+    });
+  });
+  document.querySelectorAll('[data-add-defect]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === btn.dataset.addDefect);
+      if(!el) return;
+      el.baseNonDefectStatus = el.current.status;
+      el.current = newDefectObject();
+      el.comparison = 'new';
+      recomputeLiveBCI();
+      renderDraft();
+    });
+  });
+  document.querySelectorAll('[data-add-extra]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === btn.dataset.addExtra);
+      if(!el) return;
+      el.extraDefects = el.extraDefects || [];
+      el.extraDefects.push(newDefectObject());
+      renderDraft();
+    });
+  });
+  document.querySelectorAll('[data-remove-defect]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const ref = findDefectRef(btn.dataset.removeDefect);
+      if(!ref) return;
+      const { el, extraIdx } = ref;
+      if (extraIdx != null) {
+        el.extraDefects.splice(extraIdx, 1);
+      } else {
+        el.current = { status: el.baseNonDefectStatus || 'na' };
+        el.comparison = null;
+      }
+      recomputeLiveBCI();
+      renderDraft();
     });
   });
 }
@@ -810,17 +1059,18 @@ draftGroupsEl.addEventListener('click', (e) => {
   const item = e.target.closest('.class-dd-item');
   if (item) {
     const dd = item.closest('.class-dd');
-    const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === dd.dataset.el);
-    if (!el) return;
+    const ref = findDefectRef(dd.dataset.el);
+    if (!ref) return;
+    const { el, defect, extraIdx } = ref;
     if (dd.dataset.dd === 'defectType') {
-      el.current.defectType = item.dataset.val;
+      defect.defectType = item.dataset.val;
       // A different type's numbers rarely line up with the old one's, so
       // default to the first available number for it.
-      el.current.defectNumber = Object.keys(DEFECT_TYPE_LABEL[Number(item.dataset.val)] || {})[0] || null;
+      defect.defectNumber = Object.keys(DEFECT_TYPE_LABEL[Number(item.dataset.val)] || {})[0] || null;
     } else {
-      el.current.defectNumber = item.dataset.val;
+      defect.defectNumber = item.dataset.val;
     }
-    refreshCardNarrative(el);
+    refreshCardNarrative(el, extraIdx);
     renderDraft();
   }
 });
@@ -848,14 +1098,14 @@ document.getElementById('draftFilterPills').addEventListener('click', function(e
 });
 document.getElementById('markUnchangedBtn').addEventListener('click', function(){
   AUTHOR.diffElements.forEach(el => {
-    if (el.current.status === 'defect' && el.comparison === 'unchanged') el.reviewed = true;
+    if (el.current.status === 'defect' && el.comparison === 'unchanged') el.current.reviewed = true;
   });
   renderDraft();
 });
 document.getElementById('toggleCollapseAllBtn').addEventListener('click', function(){
   draftAllCollapsed = !draftAllCollapsed;
   this.innerHTML = draftAllCollapsed ? '<i class="fas fa-expand"></i> Expand all' : '<i class="fas fa-compress"></i> Collapse all';
-  AUTHOR.diffElements.forEach(el => { if (el.current.status === 'defect') el.collapsed = draftAllCollapsed; });
+  allDraftDefects().forEach(({defect}) => { defect.collapsed = draftAllCollapsed; });
   document.querySelectorAll('.defect-card').forEach(card => card.classList.toggle('collapsed', draftAllCollapsed));
 });
 document.getElementById('toAuthorBtn').addEventListener('click', () => goTo('author'));

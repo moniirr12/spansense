@@ -164,6 +164,9 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .picker-field{flex:1; min-width:220px;}
 .picker-field label{font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-mute); display:block; margin-bottom:6px;}
 .picker-field select{width:100%; padding:11px 14px; border:1px solid var(--border); border-radius:12px; font-size:.86rem; font-family:inherit; color:var(--text); background:#fff; cursor:pointer;}
+.picker-field input[type="date"]{width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:12px; font-size:.86rem; font-family:inherit; color:var(--text); background:#fff;}
+.new-insp-row{background:var(--bg-mint); border:1px solid #cfe4e0; border-radius:16px; padding:16px 18px; margin-top:16px;}
+.new-insp-row .picker-row{margin:0;}
 .picker-field select:disabled{opacity:.55; cursor:not-allowed;}
 .btn-load{flex-shrink:0; padding:11px 22px; border-radius:12px; border:none; background:linear-gradient(135deg,var(--teal),var(--teal-dark)); color:#fff; font-weight:700; font-size:.85rem; cursor:pointer; display:flex; align-items:center; gap:8px; transition:.2s;}
 .btn-load:hover{transform:translateY(-1px);}
@@ -549,6 +552,8 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 
 .night-mode .picker-field label{color:#7d939b;}
 .night-mode .picker-field select{background:#1a2428; border-color:#3a4b53; color:#d4dfe3;}
+.night-mode .picker-field input[type="date"]{background:#1a2428; border-color:#3a4b53; color:#d4dfe3; color-scheme:dark;}
+.night-mode .new-insp-row{background:#1e3a38; border-color:#3a6b62;}
 .night-mode .loaded-summary{background:#1e3a38; border-color:#3a6b62; color:#a0c8c4;}
 .night-mode .no-history-note{background:#3a3020; border-color:#5a4a2a; color:#e0b060;}
 
@@ -764,12 +769,30 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
                         <select id="structureSelect"><option value="">Loading structures…</option></select>
                     </div>
                     <div class="picker-field">
-                        <label>Inspection date</label>
+                        <label>Compare against (base inspection)</label>
                         <select id="inspectionSelect" disabled><option value="">Select a structure first</option></select>
                     </div>
                     <button class="btn-load" id="loadBtn" disabled><i class="fas fa-arrow-right"></i> Load</button>
                 </div>
                 <div id="loadedSummary"></div>
+                <div class="new-insp-row" id="newInspRow" style="display:none;">
+                    <div class="picker-row">
+                        <div class="picker-field">
+                            <label>New inspection date</label>
+                            <input type="date" id="newInspectionDate">
+                        </div>
+                        <div class="picker-field">
+                            <label>New inspection type</label>
+                            <select id="newInspectionType">
+                                <option value="">Select type…</option>
+                                <option value="GI">GI — General Inspection</option>
+                                <option value="PI">PI — Principal Inspection</option>
+                                <option value="SI">SI — Special Inspection</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="u-sub" style="margin-top:10px;">The base inspection above stays untouched — everything you draft here builds a new inspection dated and typed as set here.</div>
+                </div>
             </div>
 
             <div id="sourceUpload" style="display:none;">
