@@ -1824,7 +1824,8 @@ app.get('/api/inspection/full', requireAuth, async (req, res) => {
 
         // 4. Get photos for all defects
         const defectPhotos = await dbAll(`
-            SELECT 
+            SELECT
+                id,
                 defect_id,
                 photo_url,
                 photo_description,
@@ -1846,6 +1847,7 @@ app.get('/api/inspection/full', requireAuth, async (req, res) => {
                 acc[photo.defect_id] = [];
             }
             acc[photo.defect_id].push({
+                id: photo.id,
                 url: photo.signedUrl,
                 description: photo.photo_description,
                 displayOrder: photo.display_order,
@@ -1943,7 +1945,7 @@ app.get('/api/author/diff', requireAuth, async (req, res) => {
         const inspectionIds = [currentInspection.id, previousInspection ? previousInspection.id : null].filter(Boolean);
         const placeholders = inspectionIds.map((_, i) => `$${i + 1}`).join(',');
         const allDefects = await dbAll(
-            `SELECT inspection_id, element_no, defect_type, defect_number, severity, extent,
+            `SELECT id, inspection_id, element_no, defect_type, defect_number, severity, extent,
                     works_required, priority, cost, comments, remedial_works
              FROM defects WHERE inspection_id IN (${placeholders})
              ORDER BY element_no, defect_no`,
@@ -1964,7 +1966,7 @@ app.get('/api/author/diff', requireAuth, async (req, res) => {
                 return { status: marker.defect_number === '0' ? 'good' : 'ninsp' };
             }
             return {
-                status: 'defect',
+                status: 'defect', defectDbId: real.id,
                 defectType: real.defect_type, defectNumber: real.defect_number,
                 severity: real.severity, extent: real.extent,
                 worksRequired: real.works_required, priority: real.priority, cost: real.cost,
@@ -2188,8 +2190,13 @@ app.post('/api/bridges/:structureId/inspection-photos', requireAuth,
                 });
             }
 
-            const descriptions = req.body.descriptions || [];
-            const displayOrders = req.body.displayOrders || [];
+            // multer/busboy only produces an array when a field name repeats
+            // more than once - a single file's descriptions/displayOrders
+            // field arrives as a bare string, and indexing a string with [0]
+            // silently returns its first CHARACTER instead of the whole
+            // value. Normalizing to an array avoids that one-photo trap.
+            const descriptions = [].concat(req.body.descriptions || []);
+            const displayOrders = [].concat(req.body.displayOrders || []);
             const defectId = req.body.defectId;
 
             // A brand-new defect (not saved yet) is identified by a temporary
