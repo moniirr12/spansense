@@ -345,13 +345,16 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .clear-row:hover td{border-color:#c5dbd8; background:rgba(91,140,138,.04);}
 .cr-actions-inner{display:flex; align-items:center; gap:10px; justify-content:flex-end;}
 
-.defect-card{border:1px solid var(--border2); border-left:3px solid var(--amber); border-radius:16px; padding:16px 20px; margin-bottom:14px; background:#fff; transition:.2s;}
+.defect-card{border:1px solid var(--border2); border-left:2px solid var(--amber); border-radius:16px; padding:16px 20px; margin-bottom:10px; background:#fff; transition:.2s;}
 .defect-card.cmp-new, .defect-card.cmp-worsened{border-left-color:var(--red);}
 .defect-card.cmp-improved, .defect-card.cmp-resolved{border-left-color:var(--ok);}
 .defect-card.reviewed{opacity:.6;}
 .dc-top{display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:4px;}
 .dc-elem{font-size:.95rem; font-weight:700; color:var(--text);}
-.cr-num{display:inline-block; min-width:20px; padding:1px 5px; border-radius:6px; background:var(--bg-mint); color:var(--teal-dark); font-size:.72rem; font-weight:800; text-align:center; font-variant-numeric:tabular-nums;}
+/* Neutral circular item-number badge - same shape/size (26px) and plain
+   grey tone as inspection.html's own #inspectionElementsTable td.itemno,
+   rather than a small colour-branded rounded-rect. */
+.cr-num{display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; width:26px; height:26px; border-radius:50%; background:var(--border2); color:var(--text-mute); font-size:.72rem; font-weight:700; font-variant-numeric:tabular-nums; margin-right:8px; vertical-align:middle;}
 .dc-code{font-size:.76rem; color:var(--text-mute2); margin-top:1px;}
 .dc-actions{display:flex; align-items:center; gap:8px; flex-shrink:0;}
 
@@ -701,7 +704,7 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .clear-row:hover td{border-color:#3a6b62; background:rgba(91,140,138,.10);}
 .night-mode .defect-card{background:#212f33; border-color:#2f3e45;}
 .night-mode .dc-elem{color:#d4dfe3;}
-.night-mode .cr-num{background:#1e3a38; color:#8ab4b0;}
+.night-mode .cr-num{background:#2f3e45; color:#9ab0b8;}
 .night-mode .dc-code{color:#8aa4ac;}
 .night-mode .dc-review-check{background:#1a2428; border-color:#3a4b53; color:#9ab0b8;}
 .night-mode .dc-review-check.checked{background:#1e3a38; border-color:#3a6b62; color:#7ec9ba;}

@@ -924,7 +924,7 @@ function defectCardHTML(el, extraIdx){
   return `<div class="defect-card cmp-${comparison||''} ${defect.reviewed?'reviewed':''}${defect.collapsed?' collapsed':''}" data-el="${key}">
     <div class="dc-top" data-collapse-toggle="${key}">
       <button class="dc-collapse-btn"><i class="fas fa-chevron-down"></i></button>
-      <div class="dc-elem" style="flex:1;"><b class="cr-num">${el.elementNumber}</b> ${el.name}${isExtra ? ' <span style="font-weight:400; color:var(--text-mute2); font-size:.78rem;">(additional defect)</span>' : ''}</div>
+      <div class="dc-elem" style="flex:1;"><b class="cr-num">${el.elementNumber}</b>${el.name}${isExtra ? ' <span style="font-weight:400; color:var(--text-mute2); font-size:.78rem;">(additional defect)</span>' : ''}</div>
     </div>
     <div class="dc-body">
       <div class="dc-grid">
