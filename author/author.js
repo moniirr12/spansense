@@ -760,7 +760,10 @@ function photoSectionHTML(el, extraIdx){
         ${hero.id ? `<button class="dc-hero-del" data-delete-photo="${hero.id}" data-el="${key}" title="Delete photo"><i class="fas fa-xmark"></i></button>` : ''}
       </div>
       ${hero.id ? `<input class="dc-photo-caption" data-caption-photo="${hero.id}" data-el="${key}" value="${(hero.description||'').replace(/"/g,'&quot;')}" placeholder="Add a caption…">` : ''}`
-    : `<div class="dc-photo-placeholder" ${canUpload ? `data-add-photo="${key}"` : ''}><i class="fas fa-camera"></i></div>`;
+    : `<div class="dc-photo-placeholder" ${canUpload ? `data-add-photo="${key}"` : ''}>
+        <span class="dc-photo-placeholder-icon"><i class="fas fa-camera"></i></span>
+        ${canUpload ? '<span class="dc-photo-placeholder-txt">Add a photo</span>' : ''}
+      </div>`;
 
   const stripThumbs = photos.map((p, i) => `<img class="dc-strip-thumb ${i===heroIdx?'active':''}" data-strip-thumb="${key}" data-idx="${i}" src="${p.url}">`).join('');
   const addTileInStrip = canUpload ? `<div class="dc-strip-add" data-add-photo="${key}" title="Add photos"><i class="fas fa-plus"></i></div>` : '';
@@ -979,8 +982,8 @@ function defectCardHTML(el, extraIdx){
 
   return `<div class="defect-card cmp-${comparison||''} ${defect.reviewed?'reviewed':''}${defect.collapsed?' collapsed':''}" data-el="${key}">
     <div class="dc-top" data-collapse-toggle="${key}">
+      <div class="dc-elem"><b class="cr-num">${el.elementNumber}</b> ${el.name}${isExtra ? ' <span style="font-weight:400; color:var(--text-mute2); font-size:.78rem;">(additional defect)</span>' : ''}</div>
       <button class="dc-collapse-btn"><i class="fas fa-chevron-down"></i></button>
-      <div class="dc-elem" style="flex:1;"><b class="cr-num">${el.elementNumber}</b>${el.name}${isExtra ? ' <span style="font-weight:400; color:var(--text-mute2); font-size:.78rem;">(additional defect)</span>' : ''}</div>
     </div>
     <div class="dc-body">
       <div class="dc-grid">
