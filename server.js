@@ -2240,7 +2240,11 @@ app.post('/api/bridges/:structureId/inspection-photos', requireAuth,
                     path: url,
                     size: file.size,
                     mimetype: file.mimetype,
-                    url,
+                    // The bucket is private - callers need a signed URL to
+                    // actually display the image, not the bare storage path
+                    // that gets stored in the DB (that part was fine; this
+                    // response just never signed it before handing it back).
+                    url: await storage.getSignedUrl(url),
                     photo_description,
                     display_order,
                     file_name: file.originalname,

@@ -14,16 +14,34 @@ const DEFECT_TYPE_MAP = {
   10: "Expansion joints", 11: "Embankments", 12: "Bearings",
   13: "Impact damage", 14: "Waterproofing", 15: "Stone slab bridges", 16: "Timber"
 };
-function defectTypeOptionsHTML(selectedType){
-  return Object.keys(DEFECT_TYPE_MAP).map(t =>
-    `<option value="${t}" ${String(selectedType)===t?'selected':''}>${t} · ${DEFECT_TYPE_MAP[t]}</option>`
-  ).join('');
+// Searchable dropdown for defect type/number, same pattern as twinview's
+// bridge selector (.selector-dropdown/.dropdown-menu/.dd-search/.dd-list) -
+// replaces a plain <select> so long defect-type lists are easy to scan/find.
+function classDropdownHTML(field, el, current, label, options){
+  const selectedOpt = options.find(o => String(o.val) === String(current));
+  return `<div class="class-dd" data-dd="${field}" data-el="${el.elementNumber}">
+    <button type="button" class="class-dd-trigger" data-dd-trigger>
+      <span class="cdd-val">${selectedOpt ? selectedOpt.val + ' · ' + selectedOpt.label : label}</span>
+      <i class="fas fa-chevron-down"></i>
+    </button>
+    <div class="class-dd-menu">
+      <div class="class-dd-search"><i class="fas fa-magnifying-glass"></i><input type="text" placeholder="Search…" data-dd-search></div>
+      <div class="class-dd-list">
+        ${options.map(o => `<div class="class-dd-item ${String(o.val)===String(current)?'selected':''}" data-dd-item data-val="${o.val}" data-search="${(o.val + ' ' + o.label).toLowerCase()}">
+          <span class="cdd-num">${o.val}</span><span class="cdd-name">${o.label}</span><i class="fas fa-check cdd-check"></i>
+        </div>`).join('')}
+      </div>
+    </div>
+  </div>`;
 }
-function defectNumberOptionsHTML(type, selectedNumber){
-  const nums = DEFECT_TYPE_LABEL[Number(type)] || {};
-  return Object.keys(nums).map(n =>
-    `<option value="${n}" ${String(selectedNumber)===n?'selected':''}>${n} · ${nums[n]}</option>`
-  ).join('');
+function defectTypeDropdownHTML(el){
+  const options = Object.keys(DEFECT_TYPE_MAP).map(t => ({ val: t, label: DEFECT_TYPE_MAP[t] }));
+  return classDropdownHTML('defectType', el, el.current.defectType, 'Select type…', options);
+}
+function defectNumberDropdownHTML(el){
+  const nums = DEFECT_TYPE_LABEL[Number(el.current.defectType)] || {};
+  const options = Object.keys(nums).map(n => ({ val: n, label: nums[n] }));
+  return classDropdownHTML('defectNumber', el, el.current.defectNumber, 'Select…', options);
 }
 
 // ============================================================
@@ -595,9 +613,9 @@ function defectCardHTML(el){
       <div style="flex:1;">
         <div class="dc-elem"><b class="cr-num">${el.elementNumber}</b> ${el.name}</div>
         <div class="dc-class-row">
-          <select class="dc-class-select" data-field="defectType" data-el="${el.elementNumber}">${defectTypeOptionsHTML(el.current.defectType)}</select>
-          <span class="dc-class-sep">·</span>
-          <select class="dc-class-select" data-field="defectNumber" data-el="${el.elementNumber}" style="max-width:150px;">${defectNumberOptionsHTML(el.current.defectType, el.current.defectNumber)}</select>
+          ${defectTypeDropdownHTML(el)}
+          <span class="class-dd-sep">·</span>
+          ${defectNumberDropdownHTML(el)}
         </div>
       </div>
       <div class="dc-actions">
@@ -698,28 +716,6 @@ function attachDraftEditors(){
       renderDraft();
     });
   });
-  document.querySelectorAll('select[data-field="defectType"]').forEach(sel => {
-    sel.addEventListener('change', () => {
-      const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === sel.dataset.el);
-      if(!el) return;
-      el.current.defectType = sel.value;
-      // A different type's defect numbers rarely line up with the old
-      // one's, so default to the first available number for it instead
-      // of keeping a now-meaningless number.
-      el.current.defectNumber = Object.keys(DEFECT_TYPE_LABEL[Number(sel.value)] || {})[0] || null;
-      refreshCardNarrative(el);
-      renderDraft();
-    });
-  });
-  document.querySelectorAll('select[data-field="defectNumber"]').forEach(sel => {
-    sel.addEventListener('change', () => {
-      const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === sel.dataset.el);
-      if(!el) return;
-      el.current.defectNumber = sel.value;
-      refreshCardNarrative(el);
-      renderDraft();
-    });
-  });
   document.querySelectorAll('[data-field="priority"], [data-field="cost"]').forEach(input => {
     input.addEventListener('change', () => {
       const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === input.dataset.el);
@@ -793,6 +789,56 @@ function attachDraftEditors(){
     });
   });
 }
+
+// Defect type/number dropdown - delegated on the stable #draftGroups
+// container rather than re-bound in attachDraftEditors, since delegation
+// survives renderDraft()'s innerHTML rebuilds without re-attaching anything.
+function closeAllClassDropdowns(except){
+  document.querySelectorAll('.class-dd.open').forEach(dd => { if (dd !== except) dd.classList.remove('open'); });
+}
+const draftGroupsEl = document.getElementById('draftGroups');
+draftGroupsEl.addEventListener('click', (e) => {
+  const trigger = e.target.closest('.class-dd-trigger');
+  if (trigger) {
+    const dd = trigger.closest('.class-dd');
+    const wasOpen = dd.classList.contains('open');
+    closeAllClassDropdowns();
+    dd.classList.toggle('open', !wasOpen);
+    if (!wasOpen) { const input = dd.querySelector('[data-dd-search]'); if(input){ input.value=''; dd.querySelectorAll('.class-dd-item').forEach(i=>i.style.display=''); setTimeout(()=>input.focus(),10);} }
+    return;
+  }
+  const item = e.target.closest('.class-dd-item');
+  if (item) {
+    const dd = item.closest('.class-dd');
+    const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === dd.dataset.el);
+    if (!el) return;
+    if (dd.dataset.dd === 'defectType') {
+      el.current.defectType = item.dataset.val;
+      // A different type's numbers rarely line up with the old one's, so
+      // default to the first available number for it.
+      el.current.defectNumber = Object.keys(DEFECT_TYPE_LABEL[Number(item.dataset.val)] || {})[0] || null;
+    } else {
+      el.current.defectNumber = item.dataset.val;
+    }
+    refreshCardNarrative(el);
+    renderDraft();
+  }
+});
+draftGroupsEl.addEventListener('input', (e) => {
+  const searchInput = e.target.closest('[data-dd-search]');
+  if (!searchInput) return;
+  const q = searchInput.value.trim().toLowerCase();
+  searchInput.closest('.class-dd-menu').querySelectorAll('.class-dd-item').forEach(item => {
+    item.style.display = !q || item.dataset.search.includes(q) ? '' : 'none';
+  });
+});
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.class-dd')) closeAllClassDropdowns();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeAllClassDropdowns();
+});
+
 document.getElementById('draftFilterPills').addEventListener('click', function(e){
   const btn = e.target.closest('.f-pill');
   if(!btn) return;

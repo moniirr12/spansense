@@ -309,11 +309,31 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .dc-code{font-size:.76rem; color:var(--text-mute2); margin-top:1px;}
 .dc-actions{display:flex; align-items:center; gap:8px; flex-shrink:0;}
 
-/* Editable defect type/number - two connected selects, styled as one pill */
+/* Editable defect type/number - searchable dropdowns matching twinview's
+   bridge selector (.selector-dropdown/.dropdown-menu/.dd-search/.dd-list). */
 .dc-class-row{display:flex; align-items:center; gap:6px; margin:6px 0 2px;}
-.dc-class-select{border:1px solid var(--border); background:var(--bg-soft); border-radius:9px; padding:5px 8px; font-size:.76rem; font-weight:600; color:var(--text); font-family:inherit; cursor:pointer; max-width:190px;}
-.dc-class-select:focus{outline:none; border-color:var(--teal);}
-.dc-class-sep{color:var(--text-mute); font-weight:700; font-size:.76rem;}
+.class-dd{position:relative;}
+.class-dd-trigger{display:flex; align-items:center; gap:7px; border:1px solid var(--border); background:var(--bg-soft); border-radius:9px; padding:5px 9px; font-size:.76rem; font-weight:600; color:var(--text); font-family:inherit; cursor:pointer; max-width:210px;}
+.class-dd-trigger:hover{border-color:var(--teal);}
+.class-dd.open .class-dd-trigger{border-color:var(--teal); background:#fff;}
+.class-dd-trigger .cdd-val{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.class-dd-trigger i{font-size:.62rem; color:var(--text-mute); flex-shrink:0; transition:transform .15s;}
+.class-dd.open .class-dd-trigger i{transform:rotate(180deg);}
+.class-dd-menu{position:absolute; top:calc(100% + 4px); left:0; width:260px; background:#fff; border-radius:14px; border:1px solid var(--border2); box-shadow:0 12px 32px rgba(44,90,87,.14); z-index:60; opacity:0; visibility:hidden; transform:translateY(-6px) scale(.98); transition:all .18s cubic-bezier(.34,1.56,.64,1); overflow:hidden;}
+.class-dd.open .class-dd-menu{opacity:1; visibility:visible; transform:translateY(0) scale(1);}
+.class-dd-search{padding:8px 10px; border-bottom:1px solid var(--border2); position:relative;}
+.class-dd-search input{width:100%; padding:7px 10px 7px 28px; border-radius:8px; border:1px solid var(--border); background:var(--bg-soft); font-family:inherit; font-size:.78rem; color:var(--text); outline:none;}
+.class-dd-search input:focus{border-color:var(--teal); background:#fff;}
+.class-dd-search i{position:absolute; left:19px; top:50%; transform:translateY(-50%); color:var(--text-mute); font-size:.68rem; pointer-events:none;}
+.class-dd-list{max-height:220px; overflow-y:auto; padding:5px;}
+.class-dd-item{display:flex; align-items:center; gap:9px; padding:7px 9px; border-radius:8px; cursor:pointer; font-size:.78rem;}
+.class-dd-item:hover{background:var(--bg-soft);}
+.class-dd-item.selected{background:var(--bg-mint);}
+.class-dd-item .cdd-num{width:22px; flex-shrink:0; font-weight:800; color:var(--teal-dark); font-variant-numeric:tabular-nums;}
+.class-dd-item .cdd-name{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text);}
+.class-dd-item .cdd-check{color:var(--teal); opacity:0; font-size:.72rem;}
+.class-dd-item.selected .cdd-check{opacity:1;}
+.class-dd-sep{color:var(--text-mute); font-weight:700; font-size:.76rem;}
 .dc-review-check{display:flex; align-items:center; gap:6px; font-size:.72rem; font-weight:700; color:var(--text-mute2); cursor:pointer; user-select:none; background:var(--bg-soft); border:1px solid var(--border); padding:6px 12px; border-radius:30px;}
 .dc-review-check input{accent-color:var(--teal); cursor:pointer;}
 .dc-review-check.checked{background:var(--ok-bg); border-color:var(--ok-border); color:var(--ok);}
@@ -608,8 +628,17 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .dc-strip-add{border-color:#3a4b53; color:#7d939b;}
 .night-mode .dc-strip-add:hover{border-color:#6e9c98; color:#8ab4b0;}
 .night-mode .dc-photo-pending{background:#1a2428; border-color:#2f3e45;}
-.night-mode .dc-class-select{background:#1a2428; border-color:#3a4b53; color:#d4dfe3;}
-.night-mode .dc-class-sep{color:#7d939b;}
+.night-mode .class-dd-trigger{background:#1a2428; border-color:#3a4b53; color:#d4dfe3;}
+.night-mode .class-dd.open .class-dd-trigger{background:#212f33; border-color:#6e9c98;}
+.night-mode .class-dd-menu{background:#212f33; border-color:#2f3e45; box-shadow:0 12px 32px rgba(0,0,0,.35);}
+.night-mode .class-dd-search{border-color:#2f3e45;}
+.night-mode .class-dd-search input{background:#1a2428; border-color:#3a4b53; color:#d4dfe3;}
+.night-mode .class-dd-search input:focus{border-color:#6e9c98; background:#212f33;}
+.night-mode .class-dd-item:hover{background:#1a2428;}
+.night-mode .class-dd-item.selected{background:#1e3a38;}
+.night-mode .class-dd-item .cdd-num{color:#8ab4b0;}
+.night-mode .class-dd-item .cdd-name{color:#d4dfe3;}
+.night-mode .class-dd-sep{color:#7d939b;}
 .night-mode .dc-pending-item input{background:#212f33; border-color:#3a4b53; color:#d4dfe3;}
 .night-mode .dc-pending-cancel{color:#9ab0b8; border-color:#3a4b53 !important;}
 .night-mode .dc-stepper-lbl{color:#7d939b;}
