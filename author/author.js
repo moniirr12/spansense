@@ -1,7 +1,30 @@
 // API_BASE, formatDate, and imageUrlToDataURL are provided by test.js
 // (loaded before this file) - same dependency reportFull.docx.js already
 // has on pages that load it, and Author now also uses test.js directly for
-// the full-report PDF export (generateSimplePDFReport).
+// the full-report PDF export (generateSimplePDFReport). DEFECT_TYPE_LABEL
+// and defectTypeLabel() are also provided by test.js.
+
+// Defect type category names - same table as inspection/spans.js's
+// DEFECT_TYPE_MAP, duplicated here per this codebase's established
+// per-file convention (spans.js itself isn't loaded on this page).
+const DEFECT_TYPE_MAP = {
+  1: "Metalwork", 2: "RC & prestressed concrete", 3: "Masonry, brickwork & MC",
+  4: "Paintwork & coatings", 5: "Vegetation", 6: "Foundation",
+  7: "Invert, apron & riverbed", 8: "Drainage", 9: "Surfacing",
+  10: "Expansion joints", 11: "Embankments", 12: "Bearings",
+  13: "Impact damage", 14: "Waterproofing", 15: "Stone slab bridges", 16: "Timber"
+};
+function defectTypeOptionsHTML(selectedType){
+  return Object.keys(DEFECT_TYPE_MAP).map(t =>
+    `<option value="${t}" ${String(selectedType)===t?'selected':''}>${t} · ${DEFECT_TYPE_MAP[t]}</option>`
+  ).join('');
+}
+function defectNumberOptionsHTML(type, selectedNumber){
+  const nums = DEFECT_TYPE_LABEL[Number(type)] || {};
+  return Object.keys(nums).map(n =>
+    `<option value="${n}" ${String(selectedNumber)===n?'selected':''}>${n} · ${nums[n]}</option>`
+  ).join('');
+}
 
 // ============================================================
 // NIGHT MODE TOGGLE (same convention as the rest of spanSense)
@@ -390,19 +413,29 @@ function elPhotosHTML(photos, containerCls){
 // real photo endpoints - these persist to the actual inspection record,
 // unlike the narrative/severity/extent edits which are draft-only.
 function photoSectionHTML(el){
-  const existing = (el.photos || []).map(p => `
-    <div class="dc-photo-item" data-photo-id="${p.id || ''}">
-      <img src="${p.url}" alt="${(p.description||'Site photo').replace(/"/g,'')}" onclick="window.open('${p.url}','_blank')">
-      ${p.id ? `<button class="dc-photo-del" data-delete-photo="${p.id}" data-el="${el.elementNumber}" title="Delete photo"><i class="fas fa-xmark"></i></button>` : ''}
-      ${p.id ? `<input class="dc-photo-caption" data-caption-photo="${p.id}" data-el="${el.elementNumber}" value="${(p.description||'').replace(/"/g,'&quot;')}" placeholder="Add a caption…">` : ''}
-    </div>`).join('');
-  const addTile = el.current.defectDbId
-    ? `<div class="dc-photo-add" data-add-photo="${el.elementNumber}"><i class="fas fa-plus"></i> Add photo</div>
-       <input type="file" data-photo-input="${el.elementNumber}" accept="image/*" multiple hidden>
+  const photos = el.photos || [];
+  if (el.heroIndex == null) el.heroIndex = 0;
+  const heroIdx = Math.min(el.heroIndex, Math.max(0, photos.length - 1));
+  const hero = photos[heroIdx];
+  const canUpload = !!el.current.defectDbId;
+
+  const heroHtml = hero
+    ? `<div class="dc-hero">
+        <img src="${hero.url}" onclick="window.open('${hero.url}','_blank')">
+        ${hero.id ? `<button class="dc-hero-del" data-delete-photo="${hero.id}" data-el="${el.elementNumber}" title="Delete photo"><i class="fas fa-xmark"></i></button>` : ''}
+      </div>
+      ${hero.id ? `<input class="dc-photo-caption" data-caption-photo="${hero.id}" data-el="${el.elementNumber}" value="${(hero.description||'').replace(/"/g,'&quot;')}" placeholder="Add a caption…">` : ''}`
+    : `<div class="dc-photo-placeholder" ${canUpload ? `data-add-photo="${el.elementNumber}"` : ''}><i class="fas fa-camera"></i></div>`;
+
+  const stripThumbs = photos.map((p, i) => `<img class="dc-strip-thumb ${i===heroIdx?'active':''}" data-strip-thumb="${el.elementNumber}" data-idx="${i}" src="${p.url}">`).join('');
+  const addTileInStrip = canUpload ? `<div class="dc-strip-add" data-add-photo="${el.elementNumber}" title="Add photos"><i class="fas fa-plus"></i></div>` : '';
+  const stripHtml = (photos.length > 1 || (photos.length && canUpload)) ? `<div class="dc-strip">${stripThumbs}${addTileInStrip}</div>` : '';
+  const inputAndPending = canUpload
+    ? `<input type="file" data-photo-input="${el.elementNumber}" accept="image/*" multiple hidden>
        <div class="dc-photo-pending" data-photo-pending="${el.elementNumber}" style="display:none;"></div>`
     : '';
-  const placeholder = (!el.photos || !el.photos.length) && !addTile ? `<div class="dc-photo-placeholder"><i class="fas fa-camera"></i></div>` : '';
-  return `<div class="dc-photos" data-photos-for="${el.elementNumber}">${placeholder}${existing}${addTile}</div>`;
+
+  return `<div class="dc-photos" data-photos-for="${el.elementNumber}">${heroHtml}${stripHtml}${inputAndPending}</div>`;
 }
 function pendingPhotoRowHTML(file, idx){
   const url = URL.createObjectURL(file);
@@ -430,6 +463,7 @@ async function uploadPendingPhotos(el, files){
     result.photos.forEach(p => {
       el.photos.push({ id: p.id, url: p.url, description: p.photo_description, displayOrder: p.display_order });
     });
+    el.heroIndex = el.photos.length - 1;
     renderDraft();
   } catch (err) {
     console.error('Photo upload failed:', err);
@@ -532,8 +566,6 @@ function workDetailsHTML(el){
   </div>`;
 }
 function defectCardHTML(el){
-  const codeLabel = (typeof defectTypeLabel === 'function') ? defectTypeLabel(el.current.defectType, el.current.defectNumber) : null;
-  const code = el.current.defectType && el.current.defectNumber ? `${el.current.defectType}.${el.current.defectNumber}` : '';
 
   const historyBits = [];
   if (el.previous && el.previous.status === 'defect') {
@@ -562,7 +594,11 @@ function defectCardHTML(el){
       <button class="dc-collapse-btn"><i class="fas fa-chevron-down"></i></button>
       <div style="flex:1;">
         <div class="dc-elem"><b class="cr-num">${el.elementNumber}</b> ${el.name}</div>
-        <div class="dc-code">${code}${codeLabel ? ' · ' + codeLabel.toUpperCase() : ''}</div>
+        <div class="dc-class-row">
+          <select class="dc-class-select" data-field="defectType" data-el="${el.elementNumber}">${defectTypeOptionsHTML(el.current.defectType)}</select>
+          <span class="dc-class-sep">·</span>
+          <select class="dc-class-select" data-field="defectNumber" data-el="${el.elementNumber}" style="max-width:150px;">${defectNumberOptionsHTML(el.current.defectType, el.current.defectNumber)}</select>
+        </div>
       </div>
       <div class="dc-actions">
         <label class="dc-review-check ${el.reviewed?'checked':''}">
@@ -587,7 +623,10 @@ function defectCardHTML(el){
           ${workDetailsHTML(el)}
           <div class="dc-narrative-lbl">
             <span class="mini-lbl" style="margin:0;">Drafted narrative</span>
-            <button class="dc-reset-btn" data-reset="${el.elementNumber}"><i class="fas fa-rotate-left"></i> Reset to drafted text</button>
+            <div style="display:flex; gap:6px;">
+              ${el.photos && el.photos.length ? `<button class="dc-reset-btn" data-mention-photo="${el.elementNumber}"><i class="fas fa-image"></i> Mention photo</button>` : ''}
+              <button class="dc-reset-btn" data-reset="${el.elementNumber}"><i class="fas fa-rotate-left"></i> Reset to drafted text</button>
+            </div>
           </div>
           <textarea class="dc-narrative" data-field="narrative" data-el="${el.elementNumber}">${narrativeFor(el)}</textarea>
         </div>
@@ -617,6 +656,20 @@ function attachDraftEditors(){
       if(el) refreshCardNarrative(el);
     });
   });
+  document.querySelectorAll('[data-mention-photo]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === btn.dataset.mentionPhoto);
+      if(!el || !el.photos || !el.photos.length) return;
+      const hero = el.photos[Math.min(el.heroIndex || 0, el.photos.length - 1)];
+      const mention = hero.description ? ` (see photo: "${hero.description}")` : ' (see attached photo)';
+      const ta = document.querySelector(`.dc-narrative[data-el="${el.elementNumber}"]`);
+      const current = narrativeFor(el);
+      const updated = current.trim() + mention;
+      el.editedNarrative = updated;
+      if(ta) ta.value = updated;
+      if(document.getElementById('screen-author').classList.contains('active')){ renderDataPane(); renderReportPane(); }
+    });
+  });
   document.querySelectorAll('[data-reviewed]').forEach(cb => {
     cb.addEventListener('change', () => {
       const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === cb.dataset.reviewed);
@@ -627,7 +680,7 @@ function attachDraftEditors(){
   });
   document.querySelectorAll('[data-collapse-toggle]').forEach(header => {
     header.addEventListener('click', (e) => {
-      if (e.target.closest('.dc-review-check')) return;
+      if (e.target.closest('.dc-review-check') || e.target.closest('.dc-class-row')) return;
       const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === header.dataset.collapseToggle);
       if(!el) return;
       el.collapsed = !el.collapsed;
@@ -645,6 +698,28 @@ function attachDraftEditors(){
       renderDraft();
     });
   });
+  document.querySelectorAll('select[data-field="defectType"]').forEach(sel => {
+    sel.addEventListener('change', () => {
+      const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === sel.dataset.el);
+      if(!el) return;
+      el.current.defectType = sel.value;
+      // A different type's defect numbers rarely line up with the old
+      // one's, so default to the first available number for it instead
+      // of keeping a now-meaningless number.
+      el.current.defectNumber = Object.keys(DEFECT_TYPE_LABEL[Number(sel.value)] || {})[0] || null;
+      refreshCardNarrative(el);
+      renderDraft();
+    });
+  });
+  document.querySelectorAll('select[data-field="defectNumber"]').forEach(sel => {
+    sel.addEventListener('change', () => {
+      const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === sel.dataset.el);
+      if(!el) return;
+      el.current.defectNumber = sel.value;
+      refreshCardNarrative(el);
+      renderDraft();
+    });
+  });
   document.querySelectorAll('[data-field="priority"], [data-field="cost"]').forEach(input => {
     input.addEventListener('change', () => {
       const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === input.dataset.el);
@@ -657,6 +732,14 @@ function attachDraftEditors(){
   document.querySelectorAll('[data-add-photo]').forEach(tile => {
     tile.addEventListener('click', () => {
       document.querySelector(`[data-photo-input="${tile.dataset.addPhoto}"]`).click();
+    });
+  });
+  document.querySelectorAll('[data-strip-thumb]').forEach(thumb => {
+    thumb.addEventListener('click', () => {
+      const el = AUTHOR.diffElements.find(x => String(x.elementNumber) === thumb.dataset.stripThumb);
+      if(!el) return;
+      el.heroIndex = parseInt(thumb.dataset.idx, 10);
+      renderDraft();
     });
   });
   document.querySelectorAll('[data-photo-input]').forEach(input => {
