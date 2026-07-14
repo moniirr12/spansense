@@ -471,14 +471,29 @@ function renderDraft(){
   wrap.innerHTML = order.map(cat => {
     const els = AUTHOR.diffElements.filter(e => e.category === cat);
     if (!els.length) return '';
-    const clearEls = els.filter(e => e.current.status !== 'defect');
-    const defectEls = els.filter(e => e.current.status === 'defect').filter(passesDraftFilter);
-    if (!defectEls.length && (draftOnlyDefects || !clearEls.length)) return '';
-    const clearHtml = (!draftOnlyDefects && clearEls.length) ? `<div class="clear-table">${clearEls.map(clearRowHTML).join('')}</div>` : '';
+    // Walk elements in their real numeric order, batching consecutive
+    // clear (no-defect) elements into one compact table and flushing it
+    // whenever a defect card needs to appear at its correct position -
+    // same pending/flush pattern the exported report itself uses, so a
+    // defect never gets shunted to the end of the category out of order.
+    let body = '';
+    let pending = [];
+    let anyVisible = false;
+    const flush = () => { if (pending.length) { body += `<div class="clear-table">${pending.map(clearRowHTML).join('')}</div>`; pending = []; } };
+    els.forEach(el => {
+      if (el.current.status !== 'defect') {
+        if (!draftOnlyDefects) { pending.push(el); anyVisible = true; }
+      } else if (passesDraftFilter(el)) {
+        flush();
+        body += defectCardHTML(el);
+        anyVisible = true;
+      }
+    });
+    flush();
+    if (!anyVisible) return '';
     return `<div class="cat-group">
       <div class="cat-title">${cat}</div>
-      ${clearHtml}
-      ${defectEls.map(defectCardHTML).join('')}
+      ${body}
     </div>`;
   }).join('');
   const totalDefects = AUTHOR.diffElements.filter(e => e.current.status === 'defect').length;
