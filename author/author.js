@@ -247,7 +247,7 @@ function goTo(step){
     el.classList.toggle('filled', i < idx);
   });
   if(step === 'draft') renderDraft();
-  else document.getElementById('structInfoPanel').classList.remove('show');
+  else closeStructInfoModal();
   if(step === 'author') { renderDataPane(); renderReportPane(); }
   if(step === 'export') renderExport();
 }
@@ -704,7 +704,7 @@ function renderDraft(){
     let body = '';
     let pending = [];
     let anyVisible = false;
-    const flush = () => { if (pending.length) { body += `<div class="clear-table">${pending.map(clearRowHTML).join('')}</div>`; pending = []; } };
+    const flush = () => { if (pending.length) { body += pending.map(clearRowHTML).join(''); pending = []; } };
     els.forEach(el => {
       if (el.current.status !== 'defect') {
         if (!draftOnlyDefects) { pending.push(el); anyVisible = true; }
@@ -1134,8 +1134,9 @@ document.getElementById('backToSetupBtn').addEventListener('click', () => goTo('
 // an inspector name (defaulted from the base inspection's own record).
 function renderStructInfoPanel(){
   const panel = document.getElementById('structInfoPanel');
-  if (!AUTHOR.structureId) { panel.classList.remove('show'); return; }
+  if (!AUTHOR.structureId) return;
   panel.innerHTML = `
+    <button class="sip-close" id="sipClose" title="Close">&times;</button>
     <div class="sip-name">${AUTHOR.structureName || ''}</div>
     <div class="sip-meta">${AUTHOR.structureType || ''} · Base inspection ${fmtDate(AUTHOR.inspectionDate)}</div>
     <div class="sip-label">This Report's Details</div>
@@ -1160,7 +1161,7 @@ function renderStructInfoPanel(){
     <div class="sip-label">BCI trend</div>
     <div class="sip-bci-track">${sipBciTrendHTML()}</div>
   `;
-  panel.classList.add('show');
+  document.getElementById('sipClose').addEventListener('click', closeStructInfoModal);
   document.getElementById('sipInspectionDate').addEventListener('change', function(){
     AUTHOR.newInspectionDate = this.value;
     document.getElementById('newInspectionDate').value = this.value;
@@ -1173,20 +1174,20 @@ function renderStructInfoPanel(){
     AUTHOR.inspectorName = this.value || null;
   });
 }
-document.getElementById('structInfoToggle').addEventListener('click', function(){
-  const panel = document.getElementById('structInfoPanel');
-  if (panel.classList.contains('show')) { panel.classList.remove('show'); panel.style.maxHeight = ''; return; }
+function closeStructInfoModal(){
+  document.getElementById('sipOverlay').classList.remove('show');
+  document.body.classList.remove('modal-open');
+}
+document.getElementById('structInfoToggle').addEventListener('click', () => {
   renderStructInfoPanel();
-  // The panel's page position (hence how much viewport space is left
-  // below it) varies with page content, so its usable height is computed
-  // from the actual remaining space rather than a fixed vh guess - keeps
-  // it from opening partly or wholly below the fold on shorter windows.
-  const spaceBelow = window.innerHeight - this.getBoundingClientRect().bottom - 24;
-  panel.style.maxHeight = Math.max(240, Math.min(spaceBelow, window.innerHeight * 0.7)) + 'px';
-  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  document.getElementById('sipOverlay').classList.add('show');
+  document.body.classList.add('modal-open');
 });
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('.sip-wrap')) document.getElementById('structInfoPanel').classList.remove('show');
+document.getElementById('sipOverlay').addEventListener('click', (e) => {
+  if (e.target.id === 'sipOverlay') closeStructInfoModal();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeStructInfoModal();
 });
 function sipBciTrendHTML(){
   const scored = (AUTHOR.bciTrend || []).filter(t => t.bciAvg != null).slice(-6);
