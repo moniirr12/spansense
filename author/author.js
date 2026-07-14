@@ -221,7 +221,7 @@ function defectNumberDropdownHTML(el, extraIdx){
 const AUTHOR = {
   structures: [],
   structureId: null, structureName: null, structureType: null, organizationId: null,
-  inspectionDate: null, inspectionType: null, previousDate: null,
+  inspectionDate: null, inspectionType: null, previousDate: null, inspectorName: null,
   diffElements: [], // [{ elementNumber, name, category, current, previous, comparison, editedNarrative? }]
   branding: { accentColor: '#5b8c8a', template: 'modern', logoUrl: null },
   maxStepReached: 0
@@ -411,6 +411,7 @@ async function onLoad(){
     AUTHOR.inspectionDate = diff.currentDate;
     AUTHOR.previousDate = diff.previousDate;
     AUTHOR.structureDescription = bridge.description || null;
+    AUTHOR.inspectorName = full.inspectorName || null;
     AUTHOR.bciTrend = twin.inspections || [];
     AUTHOR.bciAvg = full.overallBciave != null ? parseFloat(full.overallBciave) : null;
     AUTHOR.bciCrit = full.overallBcicrit != null ? parseFloat(full.overallBcicrit) : null;
@@ -735,7 +736,6 @@ function renderDraft(){
     ? `${reviewedDefects} of ${totalDefects} defects reviewed`
     : 'No defects recorded for this inspection';
   document.getElementById('markUnchangedBtn').disabled = !AUTHOR.diffElements.some(e => e.current.status === 'defect' && e.comparison === 'unchanged' && !e.current.reviewed);
-  renderStructInfoPanel();
   attachDraftEditors();
 }
 function clearRowHTML(el){
@@ -804,9 +804,13 @@ function defectCardHTML(el, extraIdx){
 
   const photosHtml = photoSectionHTML(el, extraIdx);
 
-  const sevSteps = [1,2,3,4,5].map(s => `<button class="dc-step ${defect.severity==String(s)?'active sev-'+s:''}" data-field="severity" data-el="${key}" data-val="${s}">${s}</button>`).join('');
-  const extSteps = ['A','B','C','D','E'].map(x => `<button class="dc-step ${defect.extent===x?'active ext-'+x:''}" data-field="extent" data-el="${key}" data-val="${x}">${x}</button>`).join('');
-  const worksSteps = [['N','No'],['Y','Yes'],['M','Monitor']].map(([v,l]) => `<button class="dc-step works-btn ${defect.worksRequired===v?'active works-'+v:''}" data-field="works" data-el="${key}" data-val="${v}">${l}</button>`).join('');
+  // Value-indicating classes (sev-N/ext-X/works-V) are always present, not
+  // just when active, so a click only ever needs to toggle 'active' among
+  // siblings in place - the button never gets torn down and recreated, so
+  // its background-color transition can actually animate.
+  const sevSteps = [1,2,3,4,5].map(s => `<button class="dc-step sev-${s}${defect.severity==String(s)?' active':''}" data-field="severity" data-el="${key}" data-val="${s}">${s}</button>`).join('');
+  const extSteps = ['A','B','C','D','E'].map(x => `<button class="dc-step ext-${x}${defect.extent===x?' active':''}" data-field="extent" data-el="${key}" data-val="${x}">${x}</button>`).join('');
+  const worksSteps = [['N','No'],['Y','Yes'],['M','Monitor']].map(([v,l]) => `<button class="dc-step works-btn works-${v}${defect.worksRequired===v?' active':''}" data-field="works" data-el="${key}" data-val="${v}">${l}</button>`).join('');
 
   const canRemovePrimary = !isExtra && !el.hadBaseDefect;
   const removeOrAddBtn = isExtra
@@ -818,13 +822,6 @@ function defectCardHTML(el, extraIdx){
     <div class="dc-top" data-collapse-toggle="${key}">
       <button class="dc-collapse-btn"><i class="fas fa-chevron-down"></i></button>
       <div class="dc-elem" style="flex:1;"><b class="cr-num">${el.elementNumber}</b> ${el.name}${isExtra ? ' <span style="font-weight:400; color:var(--text-mute2); font-size:.78rem;">(additional defect)</span>' : ''}</div>
-      <div class="dc-actions">
-        ${removeOrAddBtn}
-        <label class="dc-review-check ${defect.reviewed?'checked':''}">
-          <input type="checkbox" data-reviewed="${key}" ${defect.reviewed?'checked':''}>
-          ${defect.reviewed ? 'Reviewed' : 'Mark reviewed'}
-        </label>
-      </div>
     </div>
     <div class="dc-body">
       <div class="dc-grid">
@@ -858,6 +855,13 @@ function defectCardHTML(el, extraIdx){
         </div>
       </div>
       ${whyBanner}
+      <div class="dc-footer-actions">
+        <div class="dc-footer-left">${removeOrAddBtn}</div>
+        <label class="dc-review-check ${defect.reviewed?'checked':''}">
+          <input type="checkbox" data-reviewed="${key}" ${defect.reviewed?'checked':''}>
+          ${defect.reviewed ? 'Reviewed' : 'Mark reviewed'}
+        </label>
+      </div>
     </div>
   </div>`;
 }
@@ -910,25 +914,34 @@ function attachDraftEditors(){
     });
   });
   document.querySelectorAll('[data-collapse-toggle]').forEach(header => {
-    header.addEventListener('click', (e) => {
-      if (e.target.closest('.dc-actions') || e.target.closest('.dc-class-row')) return;
+    header.addEventListener('click', () => {
       const ref = findDefectRef(header.dataset.collapseToggle);
       if(!ref) return;
       ref.defect.collapsed = !ref.defect.collapsed;
       header.closest('.defect-card').classList.toggle('collapsed', ref.defect.collapsed);
     });
   });
+  // Toggle the clicked segment in place rather than calling renderDraft() -
+  // a full re-render tears down and recreates every button, so the old and
+  // new "active" states never actually transition, they just snap. Updating
+  // classes on the existing nodes lets the CSS transition animate for real.
   document.querySelectorAll('.dc-step[data-field="severity"], .dc-step[data-field="extent"], .dc-step[data-field="works"]').forEach(btn => {
     btn.addEventListener('click', () => {
       const ref = findDefectRef(btn.dataset.el);
       if(!ref) return;
       const { el, defect, extraIdx } = ref;
-      if(btn.dataset.field === 'severity') defect.severity = btn.dataset.val;
-      else if(btn.dataset.field === 'extent') defect.extent = btn.dataset.val;
-      else if(btn.dataset.field === 'works') defect.worksRequired = btn.dataset.val;
+      const field = btn.dataset.field;
+      if(field === 'severity') defect.severity = btn.dataset.val;
+      else if(field === 'extent') defect.extent = btn.dataset.val;
+      else if(field === 'works') defect.worksRequired = btn.dataset.val;
+
+      btn.closest('.dc-step-track').querySelectorAll('.dc-step').forEach(b => b.classList.toggle('active', b === btn));
+      if (field === 'works') {
+        const detail = document.querySelector(`[data-works-detail="${btn.dataset.el}"]`);
+        if (detail) detail.classList.toggle('show', btn.dataset.val === 'Y');
+      }
       refreshCardNarrative(el, extraIdx);
       recomputeLiveBCI();
-      renderDraft();
     });
   });
   document.querySelectorAll('[data-field="priority"], [data-field="cost"]').forEach(input => {
@@ -1113,21 +1126,61 @@ document.getElementById('toggleCollapseAllBtn').addEventListener('click', functi
 document.getElementById('toAuthorBtn').addEventListener('click', () => goTo('author'));
 document.getElementById('backToSetupBtn').addEventListener('click', () => goTo('setup'));
 
-// Fixed right-side structure info panel - BCI trend + description, shown
-// only while reviewing the draft (matches the left stepper's "stay in
-// view while scrolling a long list" idea).
+// Structure/inspection info - a collapsible popover opened on demand from
+// its toolbar button, not rendered as part of every renderDraft() (which
+// would reset it mid-typing if it happened to be open). BCI trend and
+// description are read-only context; the fields below feed the same
+// AUTHOR.newInspectionDate/newInspectionType the Setup screen sets, plus
+// an inspector name (defaulted from the base inspection's own record).
 function renderStructInfoPanel(){
   const panel = document.getElementById('structInfoPanel');
   if (!AUTHOR.structureId) { panel.classList.remove('show'); return; }
   panel.innerHTML = `
     <div class="sip-name">${AUTHOR.structureName || ''}</div>
-    <div class="sip-meta">${AUTHOR.structureType || ''} · Inspected ${fmtDate(AUTHOR.inspectionDate)}</div>
+    <div class="sip-meta">${AUTHOR.structureType || ''} · Base inspection ${fmtDate(AUTHOR.inspectionDate)}</div>
     ${AUTHOR.structureDescription ? `<div class="sip-label">Description</div><div class="sip-desc">${AUTHOR.structureDescription}</div>` : ''}
     <div class="sip-label">BCI trend</div>
     <div class="sip-bci-track">${sipBciTrendHTML()}</div>
+    <div class="sip-divider"></div>
+    <div class="sip-label">This Report's Details</div>
+    <div class="sip-edit-grp">
+      <label class="sip-edit-field"><span>Inspection date</span>
+        <input type="date" id="sipInspectionDate" value="${AUTHOR.newInspectionDate || ''}">
+      </label>
+      <label class="sip-edit-field"><span>Inspection type</span>
+        <select id="sipInspectionType">
+          <option value="">Select type…</option>
+          <option value="GI" ${AUTHOR.newInspectionType==='GI'?'selected':''}>GI — General Inspection</option>
+          <option value="PI" ${AUTHOR.newInspectionType==='PI'?'selected':''}>PI — Principal Inspection</option>
+          <option value="SI" ${AUTHOR.newInspectionType==='SI'?'selected':''}>SI — Special Inspection</option>
+        </select>
+      </label>
+      <label class="sip-edit-field"><span>Inspector name</span>
+        <input type="text" id="sipInspectorName" placeholder="Enter inspector's name" value="${(AUTHOR.inspectorName||'').replace(/"/g,'&quot;')}">
+      </label>
+    </div>
   `;
   panel.classList.add('show');
+  document.getElementById('sipInspectionDate').addEventListener('change', function(){
+    AUTHOR.newInspectionDate = this.value;
+    document.getElementById('newInspectionDate').value = this.value;
+  });
+  document.getElementById('sipInspectionType').addEventListener('change', function(){
+    AUTHOR.newInspectionType = this.value || null;
+    document.getElementById('newInspectionType').value = this.value;
+  });
+  document.getElementById('sipInspectorName').addEventListener('input', function(){
+    AUTHOR.inspectorName = this.value || null;
+  });
 }
+document.getElementById('structInfoToggle').addEventListener('click', () => {
+  const panel = document.getElementById('structInfoPanel');
+  if (panel.classList.contains('show')) panel.classList.remove('show');
+  else renderStructInfoPanel();
+});
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.sip-wrap')) document.getElementById('structInfoPanel').classList.remove('show');
+});
 function sipBciTrendHTML(){
   const scored = (AUTHOR.bciTrend || []).filter(t => t.bciAvg != null).slice(-6);
   if (!scored.length) return '<div style="font-size:.74rem; color:var(--text-mute);">No BCI history recorded.</div>';
@@ -1174,7 +1227,7 @@ function renderReportPane(){
     <div class="doc-cover">
       <div class="dc-brand">spanSense</div>
       <div class="dc-title">${AUTHOR.structureName || 'Untitled Structure'} — ${INSPECTION_TYPE_LABELS[AUTHOR.newInspectionType] || 'Inspection'}</div>
-      <div class="dc-sub">Structure ID: ${AUTHOR.structureId || '—'} · Inspected ${fmtDate(AUTHOR.newInspectionDate || AUTHOR.inspectionDate)}</div>
+      <div class="dc-sub">Structure ID: ${AUTHOR.structureId || '—'} · Inspected ${fmtDate(AUTHOR.newInspectionDate || AUTHOR.inspectionDate)}${AUTHOR.inspectorName ? ' · Inspector: ' + AUTHOR.inspectorName : ''}</div>
     </div>`;
   if (AUTHOR.structureDescription) {
     html += `<div class="doc-h1">2. Structure Description</div><p class="doc-p">${AUTHOR.structureDescription}</p>`;
@@ -1221,6 +1274,7 @@ function buildPayload(){
     structure: AUTHOR.structureName, structureId: AUTHOR.structureId,
     inspectionDate: AUTHOR.newInspectionDate || AUTHOR.inspectionDate,
     inspectionType: AUTHOR.newInspectionType,
+    inspectorName: AUTHOR.inspectorName,
     previousDate: AUTHOR.previousDate,
     description: AUTHOR.structureDescription,
     branding: AUTHOR.branding,
@@ -1305,7 +1359,8 @@ async function buildAuthorReportDocx(payload){
   children.push(new d.Paragraph({ alignment: d.AlignmentType.CENTER, spacing: { after: 200 }, children: [new d.TextRun({ text: 'INSPECTION REPORT', bold: true, size: 32, color: REPORT_COLORS.heading })] }));
   children.push(new d.Paragraph({ alignment: d.AlignmentType.CENTER, spacing: { after: 100 }, children: [new d.TextRun({ text: payload.structure, bold: true, size: 28 })] }));
   const typePrefix = INSPECTION_TYPE_LABELS[payload.inspectionType] ? INSPECTION_TYPE_LABELS[payload.inspectionType] + ' · ' : '';
-  children.push(new d.Paragraph({ alignment: d.AlignmentType.CENTER, spacing: { after: 60 }, children: [new d.TextRun({ text: typePrefix + 'Structure ID: ' + payload.structureId + ' · Inspected ' + fmtDate(payload.inspectionDate), size: 20, color: REPORT_COLORS.muted })] }));
+  const inspectorSuffix = payload.inspectorName ? ' · Inspector: ' + payload.inspectorName : '';
+  children.push(new d.Paragraph({ alignment: d.AlignmentType.CENTER, spacing: { after: 60 }, children: [new d.TextRun({ text: typePrefix + 'Structure ID: ' + payload.structureId + ' · Inspected ' + fmtDate(payload.inspectionDate) + inspectorSuffix, size: 20, color: REPORT_COLORS.muted })] }));
   if (payload.previousDate) {
     children.push(new d.Paragraph({ alignment: d.AlignmentType.CENTER, spacing: { after: 500 }, children: [new d.TextRun({ text: 'Compared against the previous inspection on ' + fmtDate(payload.previousDate), italics: true, size: 16, color: REPORT_COLORS.muted })] }));
   }
