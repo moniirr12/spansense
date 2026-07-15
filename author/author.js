@@ -372,6 +372,11 @@ document.getElementById('sourceTabs').addEventListener('click', function(e){
   const isUpload = tab.dataset.source === 'upload';
   document.getElementById('sourceRecords').style.display = isUpload ? 'none' : 'block';
   document.getElementById('sourceUpload').style.display = isUpload ? 'block' : 'none';
+  // newInspRow is now its own sibling card rather than nested inside
+  // sourceRecords, so it no longer hides for free when that card does -
+  // only show it back when returning to the records tab, and only if a
+  // structure has actually been loaded (matching its own onLoad() gate).
+  document.getElementById('newInspRow').style.display = (!isUpload && AUTHOR.structureId) ? 'block' : 'none';
 });
 
 async function loadStructures(){

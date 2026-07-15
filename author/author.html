@@ -182,7 +182,7 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .picker-field label{font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-mute); display:block; margin-bottom:6px;}
 .picker-field select{width:100%; padding:11px 14px; border:1px solid var(--border); border-radius:12px; font-size:.86rem; font-family:inherit; color:var(--text); background:#fff; cursor:pointer;}
 .picker-field input[type="date"]{width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:12px; font-size:.86rem; font-family:inherit; color:var(--text); background:#fff;}
-.new-insp-row{background:var(--bg-mint); border:1px solid #cfe4e0; border-radius:16px; padding:16px 18px; margin-top:16px;}
+.new-insp-row{background:var(--bg-mint); border-color:#cfe4e0;}
 .new-insp-row .picker-row{margin:0;}
 .picker-field select:disabled{opacity:.55; cursor:not-allowed;}
 .btn-load{flex-shrink:0; padding:11px 22px; border-radius:12px; border:none; background:linear-gradient(135deg,var(--teal),var(--teal-dark)); color:#fff; font-weight:700; font-size:.85rem; cursor:pointer; display:flex; align-items:center; gap:8px; transition:.2s;}
@@ -870,56 +870,57 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 
     <!-- ================= SCREEN 1: SETUP ================= -->
     <div class="screen" id="screen-setup">
-        <div class="card" id="pickerCard">
-            <h2 class="card-title"><i class="fas fa-magnifying-glass" style="color:var(--teal);"></i> Choose a Structure &amp; Inspection</h2>
-            <p class="card-sub">Pick the structure and inspection date to author. Author pulls its real defect data and automatically compares it against that structure's own previous inspection.</p>
+        <h2 class="card-title"><i class="fas fa-magnifying-glass" style="color:var(--teal);"></i> Choose a Structure &amp; Inspection</h2>
+        <p class="card-sub">Pick the structure and inspection date to author. Author pulls its real defect data and automatically compares it against that structure's own previous inspection.</p>
 
+        <div class="card">
             <div class="source-tabs" id="sourceTabs">
                 <button class="source-tab active" data-source="records">From spanSense records</button>
                 <button class="source-tab" data-source="upload">Upload a previous inspection</button>
             </div>
+        </div>
 
-            <div id="sourceRecords">
-                <div class="picker-row">
-                    <div class="picker-field">
-                        <label>Structure</label>
-                        <select id="structureSelect"><option value="">Loading structures…</option></select>
-                    </div>
-                    <div class="picker-field">
-                        <label>Compare against (base inspection)</label>
-                        <select id="inspectionSelect" disabled><option value="">Select a structure first</option></select>
-                    </div>
-                    <button class="btn-load" id="loadBtn" disabled><i class="fas fa-arrow-right"></i> Load</button>
+        <div class="card" id="sourceRecords">
+            <div class="picker-row">
+                <div class="picker-field">
+                    <label>Structure</label>
+                    <select id="structureSelect"><option value="">Loading structures…</option></select>
                 </div>
-                <div id="loadedSummary"></div>
-                <div class="new-insp-row" id="newInspRow" style="display:none;">
-                    <div class="picker-row">
-                        <div class="picker-field">
-                            <label>New inspection date</label>
-                            <input type="date" id="newInspectionDate">
-                        </div>
-                        <div class="picker-field">
-                            <label>New inspection type</label>
-                            <select id="newInspectionType">
-                                <option value="">Select type…</option>
-                                <option value="GI">GI — General Inspection</option>
-                                <option value="PI">PI — Principal Inspection</option>
-                                <option value="SI">SI — Special Inspection</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="u-sub" style="margin-top:10px;">The base inspection above stays untouched — everything you draft here builds a new inspection dated and typed as set here.</div>
+                <div class="picker-field">
+                    <label>Compare against (base inspection)</label>
+                    <select id="inspectionSelect" disabled><option value="">Select a structure first</option></select>
+                </div>
+                <button class="btn-load" id="loadBtn" disabled><i class="fas fa-arrow-right"></i> Load</button>
+            </div>
+            <div id="loadedSummary"></div>
+        </div>
+
+        <div class="card new-insp-row" id="newInspRow" style="display:none;">
+            <div class="picker-row">
+                <div class="picker-field">
+                    <label>New inspection date</label>
+                    <input type="date" id="newInspectionDate">
+                </div>
+                <div class="picker-field">
+                    <label>New inspection type</label>
+                    <select id="newInspectionType">
+                        <option value="">Select type…</option>
+                        <option value="GI">GI — General Inspection</option>
+                        <option value="PI">PI — Principal Inspection</option>
+                        <option value="SI">SI — Special Inspection</option>
+                    </select>
                 </div>
             </div>
+            <div class="u-sub" style="margin-top:10px;">The base inspection above stays untouched — everything you draft here builds a new inspection dated and typed as set here.</div>
+        </div>
 
-            <div id="sourceUpload" style="display:none;">
-                <div class="upload-zone">
-                    <i class="fas fa-file-arrow-up"></i>
-                    <div class="u-title">Upload a previous inspection report</div>
-                    <div class="u-sub">PDF or Word — for a structure whose last inspection wasn't done in spanSense</div>
-                </div>
-                <div class="coming-soon-note"><i class="fas fa-flask"></i> Not wired up yet — this will let Author read a previous report's defects straight out of the PDF/Word file instead of requiring prior spanSense data.</div>
+        <div class="card" id="sourceUpload" style="display:none;">
+            <div class="upload-zone">
+                <i class="fas fa-file-arrow-up"></i>
+                <div class="u-title">Upload a previous inspection report</div>
+                <div class="u-sub">PDF or Word — for a structure whose last inspection wasn't done in spanSense</div>
             </div>
+            <div class="coming-soon-note"><i class="fas fa-flask"></i> Not wired up yet — this will let Author read a previous report's defects straight out of the PDF/Word file instead of requiring prior spanSense data.</div>
         </div>
 
         <div class="card" id="brandingCard" style="display:none;">
