@@ -309,6 +309,22 @@
   </div>
 </div>
 
+<!-- Styled stand-in for confirm() - same pattern/API as inspection.html's
+     showConfirmModal, ported here for the Previous Inspections modal's
+     delete action (this page had no confirm-dialog precedent of its own). -->
+<div class="modal-overlay" id="confirmModalOverlay">
+    <div class="modal-card">
+        <div class="modal-icon" id="confirmModalIcon">
+            <i class="fas fa-exclamation-circle"></i>
+        </div>
+        <h3 class="modal-title" id="confirmModalTitle">Are you sure?</h3>
+        <p class="modal-message" id="confirmModalMessage">Message goes here</p>
+        <div class="modal-actions" id="confirmModalActions">
+            <button class="modal-btn primary" id="confirmModalConfirmBtn">OK</button>
+        </div>
+    </div>
+</div>
+
     <!-- Chat Container -->
     <div class="chat-container">
         <div class="chat-toggle">

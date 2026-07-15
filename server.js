@@ -2322,6 +2322,57 @@ app.get('/api/bridges/:structureId/inspection-photos', requireAuth, async (req, 
     }
 });
 
+// Delete an entire inspection - cascades through defect_photos, defects and
+// inspection_spans (none of these have DB-level ON DELETE CASCADE set up,
+// so it's done manually here, in a transaction so a failure partway through
+// doesn't leave things half-deleted). Storage file cleanup happens after
+// the transaction commits and is best-effort per photo - a missing/already-
+// gone file shouldn't roll back an otherwise-successful deletion of the
+// real records.
+app.delete('/api/inspections/:id', requireAuth, async (req, res) => {
+    const { id } = req.params;
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const inspection = await client.query('SELECT id FROM inspections WHERE id = $1', [id]);
+        if (inspection.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ success: false, error: 'Inspection not found' });
+        }
+
+        const photos = await client.query(
+            `SELECT dp.photo_url FROM defect_photos dp
+             JOIN defects d ON dp.defect_id = d.id
+             WHERE d.inspection_id = $1`,
+            [id]
+        );
+
+        await client.query(
+            `DELETE FROM defect_photos WHERE defect_id IN (SELECT id FROM defects WHERE inspection_id = $1)`,
+            [id]
+        );
+        await client.query('DELETE FROM defects WHERE inspection_id = $1', [id]);
+        await client.query('DELETE FROM inspection_spans WHERE inspection_id = $1', [id]);
+        await client.query('DELETE FROM inspections WHERE id = $1', [id]);
+
+        await client.query('COMMIT');
+
+        for (const photo of photos.rows) {
+            try { await storage.deleteFile(photo.photo_url); }
+            catch (err) { console.error('Failed to delete storage file during inspection delete:', photo.photo_url, err.message); }
+        }
+
+        res.json({ success: true, photosDeleted: photos.rows.length });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Delete inspection error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    } finally {
+        client.release();
+    }
+});
+
 // Delete a single already-uploaded inspection photo (DB row + file on disk)
 app.delete('/api/inspection-photos/:photoId', requireAuth, async (req, res) => {
     try {

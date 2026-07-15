@@ -760,6 +760,57 @@ function populateDocumentsQuickStats(documents) {
   let ssActiveFilter = 'all';
   let ssSearchQuery = '';
 
+  // Styled stand-in for confirm() - same look/API as inspection.html's
+  // showConfirmModal (this page had no confirm-dialog precedent of its
+  // own before the delete-inspection action needed one).
+  function showConfirmModal(opts) {
+    const overlay = document.getElementById('confirmModalOverlay');
+    if (!overlay) return Promise.resolve(true);
+
+    const iconBox = document.getElementById('confirmModalIcon');
+    const titleBox = document.getElementById('confirmModalTitle');
+    const msgBox = document.getElementById('confirmModalMessage');
+    const actionsBox = document.getElementById('confirmModalActions');
+
+    const type = opts.type || 'error';
+    const confirmText = opts.confirmText || 'OK';
+    const cancelText = opts.cancelText || 'Cancel';
+    const showCancel = opts.showCancel || false;
+
+    return new Promise((resolve) => {
+      iconBox.className = 'modal-icon';
+      if (type === 'warning' || type === 'success' || type === 'error') iconBox.classList.add(type);
+      const iconMap = { error: 'fa-exclamation-circle', warning: 'fa-exclamation-triangle', success: 'fa-check-circle' };
+      iconBox.innerHTML = `<i class="fas ${iconMap[type] || iconMap.error}"></i>`;
+
+      titleBox.textContent = opts.title || '';
+      msgBox.textContent = opts.message || '';
+
+      let buttonsHTML = '';
+      if (showCancel) buttonsHTML += `<button class="modal-btn secondary" id="confirmModalCancelBtn">${cancelText}</button>`;
+      buttonsHTML += `<button class="modal-btn ${type === 'error' ? 'danger' : 'primary'}" id="confirmModalConfirmBtn">${confirmText}</button>`;
+      actionsBox.innerHTML = buttonsHTML;
+
+      const close = (result) => {
+        overlay.classList.remove('active');
+        document.removeEventListener('keydown', escHandler);
+        resolve(result);
+      };
+      const escHandler = (e) => { if (e.key === 'Escape') close(false); };
+
+      document.getElementById('confirmModalConfirmBtn').onclick = () => close(true);
+      const cancelBtn = document.getElementById('confirmModalCancelBtn');
+      if (cancelBtn) cancelBtn.onclick = () => close(false);
+
+      overlay.classList.add('active');
+      document.addEventListener('keydown', escHandler);
+    });
+  }
+  window.showConfirmModal = showConfirmModal;
+  document.getElementById('confirmModalOverlay')?.addEventListener('click', (e) => {
+    if (e.target.id === 'confirmModalOverlay') e.target.classList.remove('active');
+  });
+
   function ssScoreClass(v) {
     if (v >= 65) return 'ss-sg';
     if (v >= 50) return 'ss-sw';
@@ -848,12 +899,14 @@ function populateDocumentsQuickStats(documents) {
               data-action="bci" data-date="${doc.date}"><i class="fas fa-file-invoice"></i></button>
             <button class="ss-act-btn" title="Download report"
               data-action="report" data-date="${doc.date}"><i class="fas fa-file-pdf"></i></button>
+            <button class="ss-act-btn ss-act-danger" title="Delete Inspection"
+              data-action="delete" data-id="${doc.id}" data-date="${doc.date}"><i class="fas fa-trash"></i></button>
           </div>
         </div>`;
     }).join('');
 
     list.querySelectorAll('.ss-act-btn').forEach(btn => {
-      btn.addEventListener('click', function(e) {
+      btn.addEventListener('click', async function(e) {
         e.stopPropagation();
         const action      = this.dataset.action;
         const date        = this.dataset.date;
@@ -892,6 +945,30 @@ function populateDocumentsQuickStats(documents) {
 
         } else if (action === 'bci') {
           generateBCIProformaForDate(structureId, structureName, date);
+
+        } else if (action === 'delete') {
+          const inspectionId = this.dataset.id;
+          const confirmed = await showConfirmModal({
+            type: 'error',
+            title: 'Delete this inspection?',
+            message: `This permanently deletes the ${date} inspection, along with all its defects and photos. This can't be undone.`,
+            confirmText: 'Delete',
+            cancelText: 'Cancel',
+            showCancel: true
+          });
+          if (!confirmed) return;
+
+          try {
+            const res = await fetch(`${API_BASE}/api/inspections/${inspectionId}`, { method: 'DELETE' });
+            const result = await res.json();
+            if (!res.ok || !result.success) throw new Error(result.error || 'Delete failed');
+            ssAllDocs = ssAllDocs.filter(d => String(d.id) !== String(inspectionId));
+            ssPopulateStats(ssAllDocs);
+            ssRenderCards();
+          } catch (err) {
+            console.error('Delete inspection failed:', err);
+            alert('Could not delete inspection: ' + err.message);
+          }
         }
       });
     });
