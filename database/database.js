@@ -848,14 +848,15 @@
     // Add CSS for pagination controls
     var paginationStyles = document.createElement('style');
     paginationStyles.textContent = `
-        /* Pagination Styles */
+        /* Pagination Styles - sits directly on the page background like the
+           rest of this page (see .export-panel above), not in its own boxed
+           panel; just a hairline divider from the table above it. */
         .pagination-container {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 16px 24px;
-            background: white;
-            border-top: 1px solid #eef2f6;
+            padding: 16px 0;
+            border-top: 1px solid #e2e8f0;
             flex-wrap: wrap;
             gap: 16px;
         }
@@ -944,7 +945,6 @@
         
         /* Night mode pagination */
         .night-mode .pagination-container {
-            background: #232e34;
             border-top-color: #2f3e45;
         }
         
