@@ -98,15 +98,18 @@ function recomputeLiveBCI(){
 
 // ============================================================
 // BCI STICKY SIDEBAR — .left-bci-cards is a fixed clone of the in-flow
-// .draft-bci-original pair in the draft header; it fades/slides into the
-// left gutter (above the icon-only wizard rail, as its own widget) once
-// the original scrolls out of view. Same mechanic/constants as
-// inspection.html's #bciStickySidebar (spans.js), adapted to Author's
-// floating pill navbar instead of a full-width fixed one.
+// "live" trend chip (.bci-chip.live, id draftBciOriginal) that renderDraft()
+// creates fresh inside #draftBciTrend on every render; it fades/slides into
+// the left gutter (above the icon-only wizard rail, as its own widget) once
+// that chip scrolls out of view. Same mechanic/constants as inspection.html's
+// #bciStickySidebar (spans.js), adapted to Author's floating pill navbar.
+// #draftBciOriginal doesn't exist in the static page - it's re-created by
+// every renderDraft() call - so it's looked up fresh each time here rather
+// than cached once (a cached reference would go stale the moment the trend
+// row's innerHTML is replaced).
 (function(){
   const sidebar = document.getElementById('leftBciCards');
-  const original = document.getElementById('draftBciOriginal');
-  if (!sidebar || !original) return;
+  if (!sidebar) return;
   const NAVBAR_H = 90; // Author's floating navbar sits top:20px, height:64px
   const EXTRA_OFFSET = NAVBAR_H / 2;
   const SPEED = 1.5;
@@ -124,7 +127,7 @@ function recomputeLiveBCI(){
   }
 
   function positionSidebar(){
-    if (!draftScreenActive() || original.style.display === 'none') return;
+    if (!draftScreenActive()) return;
     const wrap = document.querySelector('.draft-groups-wrap');
     if (wrap) {
       const wrapRect = wrap.getBoundingClientRect();
@@ -135,8 +138,25 @@ function recomputeLiveBCI(){
     sidebar.style.top = `${NAVBAR_H + (NAVBAR_H / 2)}px`;
   }
 
+  // The wizard rail shows on every screen (not just Draft), so it centres
+  // against .page-wrapper - the one element common to all of them - rather
+  // than the draft-specific .draft-groups-wrap the BCI sticky clone uses.
+  // Same formula (half the gutter, minus half the rail's own width) so
+  // both widgets land on the same vertical centreline in that gutter.
+  function positionWizardRail(){
+    const rail = document.getElementById('wizardSteps');
+    const wrap = document.querySelector('.page-wrapper');
+    if (!rail || !wrap) return;
+    const wrapRect = wrap.getBoundingClientRect();
+    const railWidth = rail.offsetWidth || 44;
+    rail.style.left = Math.max(8, (wrapRect.left / 2) - (railWidth / 2)) + 'px';
+  }
+  window.addEventListener('resize', positionWizardRail);
+  positionWizardRail();
+
   function handleScroll(){
-    if (!draftScreenActive() || original.style.display === 'none') {
+    const original = document.getElementById('draftBciOriginal');
+    if (!draftScreenActive() || !original) {
       sidebar.style.opacity = '0';
       sidebar.classList.remove('visible');
       return;
@@ -352,6 +372,11 @@ document.getElementById('sourceTabs').addEventListener('click', function(e){
   const isUpload = tab.dataset.source === 'upload';
   document.getElementById('sourceRecords').style.display = isUpload ? 'none' : 'block';
   document.getElementById('sourceUpload').style.display = isUpload ? 'block' : 'none';
+  // newInspRow is now its own sibling card rather than nested inside
+  // sourceRecords, so it no longer hides for free when that card does -
+  // only show it back when returning to the records tab, and only if a
+  // structure has actually been loaded (matching its own onLoad() gate).
+  document.getElementById('newInspRow').style.display = (!isUpload && AUTHOR.structureId) ? 'block' : 'none';
 });
 
 async function loadStructures(){
@@ -432,32 +457,85 @@ function animateBciValue(el, value){
 // BCI trend strip - twin.inspections is already sorted oldest-to-newest by
 // /api/twin/:structureId, with a null bciAvg for inspections that predate BCI
 // scoring or never had one recorded.
-const BCI_TREND_MAX_CHIPS = 4;
-function bciTrendHTML(trend){
+const BCI_TREND_MAX_POINTS = 8;
+// `live`, when passed, prepends a single combined "this report" chip -
+// same visual language as the historical chips (avg/crit stacked) - onto
+// the very same row, rather than a separate BCI stat row above it. Keeps
+// the ids recomputeLiveBCI() already animates, so live edits update it in
+// place without needing to re-render this whole row.
+// A line chart reads a multi-inspection trend far better than a row of
+// chips (each carrying 4 numbers - date/type/avg/crit - the more history a
+// structure has, the more numbers get crammed into a fixed-height strip).
+// Two series sharing one 0-100 axis, so a legend (with the live "this
+// report" readout riding it) plus direct end-labels covers identity -
+// no dual axis, no per-point value labels. The connecting stroke is a
+// smoothed Catmull-Rom curve through the real values, run through an
+// feTurbulence/feDisplacementMap filter for a gentle hand-drawn wobble -
+// only the stroke gets the sketchy treatment, the dots stay put exactly on
+// the real data coordinates so the wobble never misrepresents a value.
+function catmullRomPath(pts){
+  if (pts.length < 2) return '';
+  if (pts.length === 2) return `M${pts[0].x},${pts[0].y} L${pts[1].x},${pts[1].y}`;
+  let d = `M${pts[0].x},${pts[0].y}`;
+  for (let i = 0; i < pts.length - 1; i++){
+    const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+    const cp1x = p1.x + (p2.x - p0.x) / 6, cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6, cp2y = p2.y - (p3.y - p1.y) / 6;
+    d += ` C${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
+  }
+  return d;
+}
+let bciChartSeq = 0;
+function bciTrendChartHTML(shown){
+  const n = shown.length;
+  const W = 640, H = 120, padX = 4, padT = 10, padB = 20;
+  const innerW = W - padX * 2, innerH = H - padT - padB;
+  const xAt = i => n > 1 ? padX + (i / (n - 1)) * innerW : padX + innerW / 2;
+  const yAt = v => padT + (100 - Math.max(0, Math.min(100, v))) / 100 * innerH;
+  const lastIdx = n - 1;
+  const hasCrit = shown.every(t => t.bciCrit != null);
+  const filterId = `bciSketch${bciChartSeq++}`;
+
+  const avgPath = catmullRomPath(shown.map((t, i) => ({ x: xAt(i), y: yAt(t.bciAvg) })));
+  const critPath = hasCrit ? catmullRomPath(shown.map((t, i) => ({ x: xAt(i), y: yAt(t.bciCrit) }))) : '';
+  const dotsFor = (key, cls) => shown.map((t, i) => t[key] == null ? '' : `<circle cx="${xAt(i)}" cy="${yAt(t[key])}" r="${i === lastIdx ? 5 : 3}" class="bci-dot ${cls}"><title>${t.date} ${t.type} · ${cls === 'avg' ? 'Avg' : 'Crit'} ${t[key].toFixed(1)}</title></circle>`).join('');
+
+  return `<svg class="bci-chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="BCI average and critical trend over time">
+    <defs>
+      <filter id="${filterId}" x="-10%" y="-40%" width="120%" height="180%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.05 0.15" numOctaves="2" seed="7" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="3.5" xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+    </defs>
+    <line x1="${padX}" y1="${H - padB}" x2="${W - padX}" y2="${H - padB}" class="bci-chart-baseline"/>
+    <path d="${avgPath}" class="bci-line avg" filter="url(#${filterId})"/>
+    ${hasCrit ? `<path d="${critPath}" class="bci-line crit" filter="url(#${filterId})"/>` : ''}
+    ${dotsFor('bciAvg', 'avg')}
+    ${hasCrit ? dotsFor('bciCrit', 'crit') : ''}
+    <text x="${padX}" y="${H - 4}" class="bci-chart-axis-label">${shown[0].date}</text>
+    <text x="${W - padX}" y="${H - 4}" text-anchor="end" class="bci-chart-axis-label">${shown[lastIdx].date}</text>
+  </svg>`;
+}
+function bciTrendHTML(trend, live){
   const scored = trend.filter(t => t.bciAvg != null);
-  if (!scored.length) return '';
-  const shown = scored.slice(-BCI_TREND_MAX_CHIPS);
-  const startIdx = scored.length - shown.length;
-  const chips = shown.map((t, i) => {
-    const isLast = i === shown.length - 1;
-    const prev = i > 0 ? shown[i-1] : (startIdx > 0 ? scored[startIdx - 1] : null);
-    let delta = '';
-    if (prev) {
-      const d = Math.round((t.bciAvg - prev.bciAvg) * 10) / 10;
-      const dir = d > 0 ? 'up' : d < 0 ? 'down' : 'flat';
-      delta = `<div class="bci-delta ${dir}"><i class="fas fa-arrow-${dir === 'flat' ? 'right' : dir}"></i>${d > 0 ? '+' : ''}${d}</div>`;
-    }
-    const critHtml = t.bciCrit != null ? `<div class="bc-score-row crit"><span>Crit</span><b>${t.bciCrit.toFixed(1)}</b></div>` : '';
-    return delta + `<div class="bci-chip${isLast ? ' current' : ''}">
-      <div class="bc-date">${t.date} <span class="bc-type">${t.type}</span></div>
-      <div class="bc-score-row avg"><span>Avg</span><b>${t.bciAvg.toFixed(1)}</b></div>
-      ${critHtml}
+  const legend = `<div class="bci-legend">
+    <span class="bci-legend-item avg"><i></i>Avg <b${live ? ' id="draftBciAvgOriginal"' : ''}>${live ? (live.avg != null ? live.avg.toFixed(1) : '···') : (scored.length ? scored[scored.length - 1].bciAvg.toFixed(1) : '—')}</b></span>
+    <span class="bci-legend-item crit"><i></i>Crit <b${live ? ' id="draftBciCritOriginal"' : ''}>${live ? (live.crit != null ? live.crit.toFixed(1) : '···') : (scored.length && scored[scored.length - 1].bciCrit != null ? scored[scored.length - 1].bciCrit.toFixed(1) : '—')}</b></span>
+  </div>`;
+  if (!scored.length) {
+    if (!live) return '';
+    return `<div class="bci-trend"${live ? ' id="draftBciOriginal"' : ''}>
+      <div class="bci-trend-header"><div class="bci-trend-label">This report's BCI</div>${legend}</div>
     </div>`;
-  }).join('');
+  }
+  const shown = scored.slice(-BCI_TREND_MAX_POINTS);
   const label = scored.length > shown.length
     ? `BCI trend — last ${shown.length} of ${scored.length} inspections`
     : `BCI trend across ${scored.length} inspection${scored.length===1?'':'s'}`;
-  return `<div class="bci-trend"><div class="bci-trend-label">${label}</div><div class="bci-track">${chips}</div></div>`;
+  return `<div class="bci-trend"${live ? ' id="draftBciOriginal"' : ''}>
+    <div class="bci-trend-header"><div class="bci-trend-label">${label}</div>${legend}</div>
+    ${bciTrendChartHTML(shown)}
+  </div>`;
 }
 
 async function onLoad(){
@@ -524,18 +602,15 @@ async function onLoad(){
       }
     });
 
+    // Structure/date are already visible in the selects themselves, and the
+    // description + BCI trend are shown again on the Draft screen - this
+    // just needs to confirm the load succeeded, not restate everything,
+    // except the one thing that isn't otherwise visible: no previous
+    // inspection to compare against.
     const summary = document.getElementById('loadedSummary');
-    summary.innerHTML = `<div class="loaded-summary"><i class="fas fa-circle-check"></i><div>
-        Loaded <b>${bridge.name}</b> — inspection dated ${fmtDate(diff.currentDate)}.
-        ${diff.previousDate
-          ? `<span class="prev-note">Comparing against the previous inspection on ${fmtDate(diff.previousDate)}.</span>`
-          : `<span class="prev-note">No previous inspection found — this is the first recorded inspection for this structure.</span>`}
-      </div></div>
-      ${AUTHOR.structureDescription ? `<div class="struct-desc"><b>Structure description</b>${AUTHOR.structureDescription}</div>` : ''}
-      ${bciTrendHTML(AUTHOR.bciTrend)}`;
+    summary.innerHTML = `<div class="loaded-chip"><i class="fas fa-circle-check"></i> Loaded${diff.previousDate ? '' : ' — first recorded inspection, no previous data to compare against'}</div>`;
 
     document.getElementById('leftBciCards').style.display = 'flex';
-    document.getElementById('draftBciOriginal').style.display = 'flex';
     recomputeLiveBCI();
 
     const newInspRow = document.getElementById('newInspRow');
@@ -546,6 +621,7 @@ async function onLoad(){
     AUTHOR.newInspectionType = document.getElementById('newInspectionType').value || null;
 
     document.getElementById('brandingCard').style.display = 'block';
+    document.getElementById('setupBottomNav').style.display = 'flex';
     await loadBranding(diff.organizationId);
     document.getElementById('brandingCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   } catch (err) {
@@ -688,7 +764,16 @@ function photoSectionHTML(el, extraIdx){
         ${hero.id ? `<button class="dc-hero-del" data-delete-photo="${hero.id}" data-el="${key}" title="Delete photo"><i class="fas fa-xmark"></i></button>` : ''}
       </div>
       ${hero.id ? `<input class="dc-photo-caption" data-caption-photo="${hero.id}" data-el="${key}" value="${(hero.description||'').replace(/"/g,'&quot;')}" placeholder="Add a caption…">` : ''}`
-    : `<div class="dc-photo-placeholder" ${canUpload ? `data-add-photo="${key}"` : ''}><i class="fas fa-camera"></i></div>`;
+    : `<div class="dc-photo-placeholder" ${canUpload ? `data-add-photo="${key}"` : ''}>
+        <svg class="dc-ph-art" viewBox="0 0 400 300" preserveAspectRatio="none" aria-hidden="true">
+          <rect width="400" height="300" class="dc-ph-sky"/>
+          <circle cx="322" cy="64" r="24" class="dc-ph-sun"/>
+          <path d="M0 214 Q70 164 150 202 T400 178 V300 H0 Z" class="dc-ph-hill-back"/>
+          <path d="M0 240 Q100 196 210 228 T400 208 V300 H0 Z" class="dc-ph-hill-front"/>
+        </svg>
+        <span class="dc-photo-placeholder-icon"><i class="fas fa-camera"></i></span>
+        ${canUpload ? '<span class="dc-photo-placeholder-txt">Add a photo</span>' : ''}
+      </div>`;
 
   const stripThumbs = photos.map((p, i) => `<img class="dc-strip-thumb ${i===heroIdx?'active':''}" data-strip-thumb="${key}" data-idx="${i}" src="${p.url}">`).join('');
   const addTileInStrip = canUpload ? `<div class="dc-strip-add" data-add-photo="${key}" title="Add photos"><i class="fas fa-plus"></i></div>` : '';
@@ -754,13 +839,13 @@ function draftFilterPillsHTML(){
   const flagged = defects.filter(d => d.comparison === 'new' || d.comparison === 'worsened' || d.comparison === 'first');
   const reviewed = defects.filter(d => d.defect.reviewed);
   const pills = [
-    { key:'all', label:`All defects (${defects.length})` },
-    { key:'flagged', label:`New or worsened (${flagged.length})` },
-    { key:'unreviewed', label:`Needs review (${defects.length - reviewed.length})` },
-    { key:'reviewed', label:`Reviewed (${reviewed.length})` }
+    { key:'all', label:`All (${defects.length})`, title:'All defects' },
+    { key:'flagged', label:`New/worsened (${flagged.length})`, title:'New or worsened' },
+    { key:'unreviewed', label:`Needs review (${defects.length - reviewed.length})`, title:'Needs review' },
+    { key:'reviewed', label:`Reviewed (${reviewed.length})`, title:'Reviewed' }
   ];
-  const filterHtml = pills.map(p => `<button class="f-pill" data-filter="${p.key}" data-active="${draftFilter===p.key}">${p.label}</button>`).join('');
-  const onlyDefectsHtml = `<button class="f-pill" data-only-defects="1" data-active="${draftOnlyDefects}"><i class="fas fa-filter"></i> Only defects</button>`;
+  const filterHtml = pills.map(p => `<button class="f-pill" data-filter="${p.key}" data-active="${draftFilter===p.key}" title="${p.title}">${p.label}</button>`).join('');
+  const onlyDefectsHtml = `<button class="f-pill" data-only-defects="1" data-active="${draftOnlyDefects}" title="Only defects"><i class="fas fa-filter"></i></button>`;
   return filterHtml + onlyDefectsHtml;
 }
 function passesDraftFilter(defect, comparison){
@@ -772,7 +857,7 @@ function passesDraftFilter(defect, comparison){
 
 function renderDraft(){
   document.getElementById('draftStructureName').textContent = AUTHOR.structureName || '—';
-  document.getElementById('draftBciTrend').innerHTML = bciTrendHTML(AUTHOR.bciTrend);
+  document.getElementById('draftBciTrend').innerHTML = bciTrendHTML(AUTHOR.bciTrend, { avg: AUTHOR.bciAvg, crit: AUTHOR.bciCrit });
   document.getElementById('draftFilterPills').innerHTML = draftFilterPillsHTML();
   document.querySelectorAll('#draftFilterPills .f-pill').forEach(b => b.classList.toggle('on', b.dataset.active === 'true'));
   const order = categoryOrderFor(AUTHOR.structureType);
@@ -882,10 +967,13 @@ function defectCardHTML(el, extraIdx){
     historyBits.push('No prior record for this element');
   }
 
+  // The 'first' case already shows a "First record" trend badge in the
+  // history row above, so a whole extra banner saying the same thing is
+  // redundant - only the 'ninsp' case genuinely adds information (this
+  // specific element wasn't covered last time, even though the inspection
+  // overall isn't a first record).
   let whyBanner = '';
-  if (!isExtra && el.comparison === 'first') {
-    whyBanner = `<div class="dc-why"><i class="fas fa-circle-info"></i> First recorded inspection for this structure — no previous data to compare against.</div>`;
-  } else if (!isExtra && el.previous && el.previous.status === 'ninsp') {
+  if (!isExtra && el.previous && el.previous.status === 'ninsp') {
     whyBanner = `<div class="dc-why"><i class="fas fa-circle-info"></i> The previous inspection didn't cover this element, so there's nothing to compare against.</div>`;
   }
 
@@ -907,8 +995,8 @@ function defectCardHTML(el, extraIdx){
 
   return `<div class="defect-card cmp-${comparison||''} ${defect.reviewed?'reviewed':''}${defect.collapsed?' collapsed':''}" data-el="${key}">
     <div class="dc-top" data-collapse-toggle="${key}">
+      <div class="dc-elem"><b class="cr-num">${el.elementNumber}</b> ${el.name}${isExtra ? ' <span style="font-weight:400; color:var(--text-mute2); font-size:.78rem;">(additional defect)</span>' : ''}</div>
       <button class="dc-collapse-btn"><i class="fas fa-chevron-down"></i></button>
-      <div class="dc-elem" style="flex:1;"><b class="cr-num">${el.elementNumber}</b> ${el.name}${isExtra ? ' <span style="font-weight:400; color:var(--text-mute2); font-size:.78rem;">(additional defect)</span>' : ''}</div>
     </div>
     <div class="dc-body">
       <div class="dc-grid">
@@ -1155,7 +1243,15 @@ draftGroupsEl.addEventListener('click', (e) => {
     const wasOpen = dd.classList.contains('open');
     closeAllClassDropdowns();
     dd.classList.toggle('open', !wasOpen);
-    if (!wasOpen) { const input = dd.querySelector('[data-dd-search]'); if(input){ input.value=''; dd.querySelectorAll('.class-dd-item').forEach(i=>i.style.display=''); setTimeout(()=>input.focus(),10);} }
+    if (!wasOpen) {
+      // Menu is a fixed 260px wide, anchored to the trigger's left edge by
+      // default - if that would run past the viewport's right edge (e.g.
+      // this dropdown sits near the right side of the card), anchor it to
+      // the trigger's right edge instead so it opens leftward.
+      const rect = dd.getBoundingClientRect();
+      dd.classList.toggle('align-right', rect.left + 260 > window.innerWidth);
+      const input = dd.querySelector('[data-dd-search]'); if(input){ input.value=''; dd.querySelectorAll('.class-dd-item').forEach(i=>i.style.display=''); setTimeout(()=>input.focus(),10);}
+    }
     return;
   }
   const item = e.target.closest('.class-dd-item');
@@ -1206,7 +1302,8 @@ document.getElementById('markUnchangedBtn').addEventListener('click', function()
 });
 document.getElementById('toggleCollapseAllBtn').addEventListener('click', function(){
   draftAllCollapsed = !draftAllCollapsed;
-  this.innerHTML = draftAllCollapsed ? '<i class="fas fa-expand"></i> Expand all' : '<i class="fas fa-compress"></i> Collapse all';
+  this.innerHTML = draftAllCollapsed ? '<i class="fas fa-expand"></i> Expand' : '<i class="fas fa-compress"></i> Collapse';
+  this.title = draftAllCollapsed ? 'Expand all' : 'Collapse all';
   allDraftDefects().forEach(({defect}) => { defect.collapsed = draftAllCollapsed; });
   document.querySelectorAll('.defect-card').forEach(card => card.classList.toggle('collapsed', draftAllCollapsed));
 });
@@ -1540,9 +1637,27 @@ async function generateWordReport(){
   }
 }
 
+// Every current defect (primary + extras) across all elements, in Author's
+// own live-edited state - the one place both PDF exporters below pull from,
+// so a severity/extent/narrative edit (or an added/removed defect) actually
+// shows up in what gets downloaded instead of whatever's still saved in
+// the database.
+function liveDefectList(){
+  const out = [];
+  AUTHOR.diffElements.forEach(el => {
+    if (el.current.status === 'defect') out.push({ el, defect: el.current, extraIdx: null, isExtra: false });
+    (el.extraDefects || []).forEach((extra, i) => out.push({ el, defect: extra, extraIdx: i, isExtra: true }));
+  });
+  return out;
+}
+
 // Real BCI Proforma PDF export - same generator/data shape as
 // map.js's generateBCIProformaForDate, so the output is identical to the
-// one downloadable from the Previous Inspections list.
+// one downloadable from the Previous Inspections list. The fetched
+// spansData/worksRequired are the last-saved DB state; span 1's defect
+// list and BCI figures are then rebuilt from Author's live state so edits
+// actually appear (Author doesn't support multi-span yet, so this only
+// ever touches span 1).
 async function generateBciProformaPdf(){
   if (!AUTHOR.structureId) { alert('Load a structure and inspection first.'); return; }
   const { overlay, box } = showOverlay('fa-cog fa-spin', 'Generating BCI Proforma…', 'Building the per-span defect grid');
@@ -1560,6 +1675,38 @@ async function generateBciProformaPdf(){
     const spansData = await defectsRes.json();
     const worksRequired = await worksRes.json();
 
+    const span1 = spansData.find(s => Number(s.span_number) === 1) || spansData[0];
+    if (span1) {
+      const liveDefects = [];
+      const liveWorksRequired = [];
+      AUTHOR.diffElements.forEach(el => {
+        const pushLive = (defect, isPrimary) => {
+          liveDefects.push({
+            element_no: el.elementNumber, element_description: el.name, is_primary: isPrimary,
+            s: defect.severity, ex: defect.extent, def: defect.defectType, defn: defect.defectNumber,
+            w: defect.worksRequired, p: defect.priority, cost: defect.cost,
+            comments_remarks: defect.comments || ''
+          });
+          if (defect.worksRequired === 'Y') {
+            liveWorksRequired.push({
+              spanNumber: 1, elementNumber: el.elementNumber, elementDescription: el.name,
+              worksRequired: 'Y', priority: defect.priority,
+              cost: defect.cost ? `£${Number(defect.cost).toFixed(2)}` : 'Not specified',
+              remedialWorks: defect.remedialWorks || '', comments: defect.comments || ''
+            });
+          }
+        };
+        if (el.current.status === 'defect') pushLive(el.current, true);
+        (el.extraDefects || []).forEach(extra => pushLive(extra, false));
+        if (el.current.status === 'good') liveDefects.push({ element_no: el.elementNumber, element_description: el.name, is_primary: true, def: '0', defn: '0' });
+        else if (el.current.status === 'ninsp') liveDefects.push({ element_no: el.elementNumber, element_description: el.name, is_primary: true, def: '0', defn: '1' });
+      });
+      span1.defects = liveDefects;
+      span1.bci_av = AUTHOR.bciAvg;
+      span1.bci_crit = AUTHOR.bciCrit;
+      worksRequired.worksRequired = liveWorksRequired;
+    }
+
     const bciFormData = {
       structureName: AUTHOR.structureName, structureId: AUTHOR.structureId,
       bridgeData: bridge, totalSpans: bridge.span_number || 1,
@@ -1572,7 +1719,7 @@ async function generateBciProformaPdf(){
     };
     const fileName = AUTHOR.structureName.replace(/[^a-z0-9]/gi, '_') + '_BCI_Proforma.pdf';
     pdfMake.createPdf(docDefinition).download(fileName);
-    finishOverlay(box, overlay, 'fa-check', 'Downloaded', `${fileName} was generated from the same BCI Proforma used elsewhere in spanSense.`);
+    finishOverlay(box, overlay, 'fa-check', 'Downloaded', `${fileName} was generated from Author's live severity/extent/works edits.`);
   } catch (err) {
     console.error('BCI Proforma generation failed:', err);
     finishOverlay(box, overlay, 'fa-triangle-exclamation', 'Generation failed', err.message || 'Something went wrong building the PDF.', true);
@@ -1581,11 +1728,12 @@ async function generateBciProformaPdf(){
 
 // Full inspection report PDF - reuses the app's real report generator
 // (test.js's generateSimplePDFReport / buildInspectionReportDocDefinition),
-// so cover, TOC, structure details, BCI summary, photo appendix and BCI
-// Proforma appendix are byte-for-byte the same format spanSense already
-// produces elsewhere. Only the per-element narrative differs: Author's
-// drafted (previous-inspection-aware) text stands in for the raw stored
-// comment, via generateSimplePDFReport's narrativeByElement override.
+// so cover, TOC, structure details, photo appendix and BCI Proforma
+// appendix are byte-for-byte the same format spanSense already produces
+// elsewhere. defectOverrides/bciOverride replace its per-defect content
+// and BCI summary with Author's live state (see generateSimplePDFReport
+// in test.js) - narrative, severity/extent/works/priority/cost edits and
+// any added or removed defects, not just the drafted text.
 async function generateFullReportPdf(){
   if (!AUTHOR.structureId) { alert('Load a structure and inspection first.'); return; }
   const { overlay, box } = showOverlay('fa-cog fa-spin', 'Generating full report…', 'Assembling structure details, defects, and the BCI Proforma appendix');
@@ -1594,17 +1742,21 @@ async function generateFullReportPdf(){
       throw new Error('Report generator not loaded yet - please wait a moment and try again.');
     }
     const dateStr = AUTHOR.inspectionDate;
-    const narrativeByElement = {};
-    AUTHOR.diffElements.forEach(el => {
-      if (el.current.status === 'defect') narrativeByElement[el.elementNumber] = narrativeFor(el);
-    });
+    const defectOverrides = liveDefectList().map(({ el, defect, extraIdx, isExtra }) => ({
+      elementNumber: el.elementNumber, isExtra,
+      defectDbId: defect.defectDbId, defectType: defect.defectType, defectNumber: defect.defectNumber,
+      severity: defect.severity, extent: defect.extent, worksRequired: defect.worksRequired,
+      priority: defect.priority, cost: defect.cost, remedialWorks: defect.remedialWorks,
+      comments: narrativeFor(el, extraIdx)
+    }));
     await window.generateSimplePDFReport({
       structure_id: AUTHOR.structureId,
       structure_name: AUTHOR.structureName,
       date: dateStr,
-      narrativeByElement
+      defectOverrides,
+      bciOverride: { bciAv: AUTHOR.bciAvg, bciCrit: AUTHOR.bciCrit }
     }, 'download');
-    finishOverlay(box, overlay, 'fa-check', 'Downloaded', 'The full inspection report was generated with Author\'s drafted narrative in place of the raw stored comments.');
+    finishOverlay(box, overlay, 'fa-check', 'Downloaded', 'The full inspection report was generated from Author\'s live drafted state - narrative, severity/extent/works edits, and any added or removed defects.');
   } catch (err) {
     console.error('Full report generation failed:', err);
     finishOverlay(box, overlay, 'fa-triangle-exclamation', 'Generation failed', err.message || 'Something went wrong building the report.', true);

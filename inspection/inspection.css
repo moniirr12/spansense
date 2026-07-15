@@ -389,6 +389,27 @@ body {
     background: transparent;
 }
 
+/* Category section headers (Deck Elements, Load-bearing Substructure, etc.
+   - same taxonomy/order as spanSense Author) - plain text on a hairline
+   rule, not a pill row, so it reads as a divider between groups rather
+   than another element. */
+#inspectionElementsTable tr.category-header-row:first-child .category-header {
+    padding-top: 0;
+}
+#inspectionElementsTable .category-header {
+    padding: 16px 6px 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #2c5a57;
+    border-bottom: 1px solid #e9edf2;
+}
+.night-mode #inspectionElementsTable .category-header {
+    color: #8ab4b0;
+    border-bottom-color: #2f3e45;
+}
+
 
 
 

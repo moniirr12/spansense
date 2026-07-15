@@ -593,6 +593,32 @@ async function generateSimplePDFReport(doc, mode = 'download', targetWindow = nu
             });
         }
 
+        // Full defect override, keyed by element number - unlike
+        // narrativeByElement (text only), this lets a caller like Author
+        // replace severity/extent/works-required/priority/cost/comments
+        // entirely, and add or drop defect rows outright, so an edited (or
+        // newly added/removed) defect actually shows up here instead of
+        // whatever was last saved to the DB. One caller-supplied entry per
+        // real defect row (an element with more than one defect - see
+        // Author's extraDefects - simply appears more than once here).
+        if (doc.defectOverrides) {
+            const overriddenElements = new Set(doc.defectOverrides.map(o => o.elementNumber));
+            defectsData = defectsData.filter(d => !overriddenElements.has(d.elementNumber));
+            doc.defectOverrides.forEach(o => {
+                defectsData.push({
+                    defectDbId: o.defectDbId || null,
+                    spanNumber: 1,
+                    elementNumber: o.elementNumber,
+                    element_description: elementNameMap[o.elementNumber] || `Element ${o.elementNumber}`,
+                    element_category: allElementsList.find(e => e.elementNo === o.elementNumber)?.category || 'Unknown',
+                    defectId: (o.defectType && o.defectNumber) ? `${o.defectType}.${o.defectNumber}` : null,
+                    severity: o.severity, extent: o.extent, worksRequired: o.worksRequired,
+                    remedialWorks: o.remedialWorks || '', priority: o.priority, cost: o.cost,
+                    comments: o.comments, isPrimary: !o.isExtra
+                });
+            });
+        }
+
         // Build photosByDefect
         const photosByDefect = {};
         let globalPhotoCounter = 0;
@@ -691,8 +717,21 @@ async function generateSimplePDFReport(doc, mode = 'download', targetWindow = nu
         // string, well off the real BCI.
         const severityScores = defectsData.map(d => Number(d.severity) || 0);
         const localBci = calculateBCI(severityScores);
-        const bciAv = inspectionData.overallBciave != null ? parseFloat(inspectionData.overallBciave) : localBci.bciAv;
-        const bciCrit = inspectionData.overallBcicrit != null ? parseFloat(inspectionData.overallBcicrit) : localBci.bciCrit;
+        // A caller-supplied bciOverride (Author, once defectOverrides above
+        // have changed severity/extent) takes priority over both the stored
+        // value and the local fallback - otherwise the summary would show a
+        // BCI that no longer matches the defect details printed below it.
+        const bciAv = doc.bciOverride?.bciAv != null ? doc.bciOverride.bciAv
+          : inspectionData.overallBciave != null ? parseFloat(inspectionData.overallBciave) : localBci.bciAv;
+        const bciCrit = doc.bciOverride?.bciCrit != null ? doc.bciOverride.bciCrit
+          : inspectionData.overallBcicrit != null ? parseFloat(inspectionData.overallBcicrit) : localBci.bciCrit;
+        // Section 2.1's per-span breakdown reads inspectionData.spans[].bciAv/
+        // bciCrit independently of the overall figure above - override those
+        // too (in place, so comments/other span fields survive) or the cover
+        // page and the per-span table would disagree with each other.
+        if (doc.bciOverride && inspectionData.spans && inspectionData.spans.length) {
+            inspectionData.spans = inspectionData.spans.map(s => ({ ...s, bciAv: doc.bciOverride.bciAv, bciCrit: doc.bciOverride.bciCrit }));
+        }
 
         // Get unique span numbers
         const spanNumbers = [...new Set(defectsData.map(d => d.spanNumber))].sort((a, b) => a - b);

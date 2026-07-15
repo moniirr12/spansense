@@ -73,19 +73,6 @@ body.night-mode::before{
 .page-wrapper { max-width: 75%; margin: 0 auto; padding: 100px 0 60px 0; }
 @media (max-width: 1100px) { .page-wrapper { max-width: 90%; } }
 
-/* ---------- BACK PILL ---------- */
-.back-pill {
-    display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; border-radius: 30px;
-    background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(138, 180, 176, 0.3); color: #5b8c8a; font-size: 0.85rem; font-weight: 600;
-    cursor: pointer; transition: all 0.3s ease; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(91, 140, 138, 0.1);
-    user-select: none;
-}
-.back-pill:hover { background: #5b8c8a; color: white; border-color: #5b8c8a; transform: translateX(-4px); box-shadow: 0 4px 20px rgba(91, 140, 138, 0.25); }
-.back-pill:active { transform: translateX(-2px) scale(0.98); }
-.back-pill i { font-size: 0.8rem; transition: transform 0.3s ease; }
-.back-pill:hover i { transform: translateX(-3px); }
-
 /* ---------- PAGE HEADER ---------- */
 .page-header { margin-bottom: 28px; }
 .page-header h1 { font-size: 1.6rem; font-weight: 600; color: #2c5a57; border-left: 4px solid #8ab4b0; padding-left: 14px; margin-bottom: 8px; }
@@ -115,53 +102,55 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 /* Fixed vertical stepper rail, left edge of the viewport - stays in view
    while scrolling instead of the old horizontal bar scrolling away. Icon
    only at rest (collapsed to just the numbered circles, safely inside the
-   gutter at any width down to ~1300px), expands on hover to reveal labels -
-   a real :hover state, no JS, same idea as the rail options explored for
-   this page. Hidden below 1300px since there's no room left at all then. */
+   gutter at any width down to ~1300px). Hidden below 1300px since there's
+   no room left at all then. top is a fixed clearance below the BCI sticky
+   card's own fixed zone (top:135px + ~150px max height) rather than
+   top:50%, which could otherwise land the rail right on top of the BCI
+   card depending on viewport height; left is recomputed in author.js
+   alongside the BCI sticky's own gutter-centering (positionSidebar()) so
+   both land on the same horizontal centreline in the gutter. */
 .wizard-steps{
-  position:fixed; left:26px; top:50%; transform:translateY(-50%); z-index:900;
-  display:flex; flex-direction:column; align-items:stretch; gap:0; width:44px; overflow:hidden;
+  position:fixed; left:26px; top:310px; z-index:900;
+  display:flex; flex-direction:column; align-items:stretch; gap:0; width:44px;
   background:rgba(255,255,255,.85); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
-  border:1px solid var(--border2); border-radius:20px; padding:16px 6px;
+  border:1px solid var(--border2); border-radius:20px; padding:16px 0;
   box-shadow:0 10px 28px rgba(44,90,87,.08); user-select:none;
-  transition:width .22s ease, padding .22s ease;
 }
-.wizard-steps:hover{width:190px; padding:16px 8px;}
 
-.wizard-step{display:flex; align-items:center; gap:10px; padding:10px 6px; border-radius:14px; font-size:.78rem; font-weight:600; color:var(--text-mute); transition:.2s; cursor:default; white-space:nowrap;}
+/* Permanently icon-only - no hover-expand. A native title attribute gives
+   a plain text tooltip on hover instead, so the rail's width (and the
+   numbered circles' centring) never changes/shifts on hover. */
+.wizard-step{display:flex; align-items:center; justify-content:center; padding:10px 0; border-radius:14px; font-size:.78rem; font-weight:600; color:var(--text-mute); transition:background-color .2s, color .2s; cursor:default;}
 .wizard-step.clickable{cursor:pointer;}
 .wizard-step.clickable:hover{background:var(--bg-soft);}
 .wizard-step .num{width:24px; height:24px; flex-shrink:0; border-radius:50%; background:#e9edf2; color:var(--text-mute); display:flex; align-items:center; justify-content:center; font-size:.74rem; font-weight:700;}
-.wizard-step .wz-label{opacity:0; transition:opacity .15s ease;}
-.wizard-steps:hover .wizard-step .wz-label{opacity:1;}
 .wizard-step.active{color:var(--green-dark); background:var(--bg-mint);}
 .wizard-step.active .num{background:var(--teal); color:#fff;}
 .wizard-step.done .num{background:var(--ok); color:#fff;}
 .wizard-step.done{color:var(--ok);}
-.wizard-connector{width:2px; height:18px; background:var(--border); margin:2px 0 2px 22px; border-radius:2px; transition:background .4s ease;}
+.wizard-connector{width:2px; height:18px; background:var(--border); margin:2px 0 2px 20px; border-radius:2px; transition:background .4s ease;}
 .wizard-connector.filled{background:linear-gradient(180deg,var(--ok),var(--teal));}
 @media (max-width:1300px){ .wizard-steps{ display:none; } }
 
-/* BCI mini stat cards - shared look used both in-flow (in the draft
-   header, .draft-bci-original) and as a sticky clone (.left-bci-cards)
-   that fades/slides into the same left gutter, above the icon rail, once
-   the in-flow pair scrolls out of view - same mechanic and constants as
-   inspection.html's #bciStickySidebar/.stats-three-cards, ported in
-   author.js's handleBciStickyScroll(). Two independent widgets, not
-   merged into the wizard-steps rail. */
-.draft-bci-original{display:flex; gap:10px; margin:14px 0;}
-.draft-bci-original .stat-card-mini{flex:0 1 150px;}
+/* Sticky BCI clone (.left-bci-cards) - fades/slides into the left gutter,
+   above the icon rail, once the in-flow "live" trend chip (.bci-chip.live,
+   in the draft header's trend row) scrolls out of view - same mechanic
+   and constants as inspection.html's #bciStickySidebar/.stats-three-cards.
+   Stacked vertically (avg over crit) so its footprint roughly matches the
+   narrow icon rail beneath it, rather than a wide horizontal pair. The
+   wrapper itself carries no background/border of its own - same as
+   inspection.html's #bciStickySidebar - each .stat-card-mini is its own
+   independently-elevated card (own background/border/shadow), not one
+   merged pill split into two colours. */
 .left-bci-cards{
   position:fixed; left:26px; z-index:900;
-  display:flex; gap:8px;
-  background:rgba(255,255,255,.85); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
-  border:1px solid var(--border2); border-radius:20px; padding:10px; box-shadow:0 10px 28px rgba(44,90,87,.08);
+  display:flex; flex-direction:column; gap:8px;
   opacity:0; transform:translateY(-160px); pointer-events:none;
   transition:transform .25s cubic-bezier(.16,1,.3,1), opacity .35s ease-out;
 }
 .left-bci-cards.visible{pointer-events:auto;}
 .left-bci-cards .stat-card-mini{width:100px;}
-.stat-card-mini{flex:1; background:var(--bg-soft); border-radius:14px; padding:10px 6px; text-align:center;}
+.stat-card-mini{flex:1; background:#fff; border:1px solid var(--border2); border-radius:14px; padding:10px 6px; text-align:center; box-shadow:0 4px 14px rgba(44,90,87,.07);}
 .stat-card-mini.critical{background:#fdf1ea;}
 .stat-label-mini{font-size:.6rem; font-weight:700; color:var(--text-mute); text-transform:uppercase; letter-spacing:.03em;}
 .stat-value-mini{font-size:1.32rem; font-weight:800; color:var(--teal-dark); font-variant-numeric:tabular-nums;}
@@ -191,44 +180,52 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .picker-row{display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;}
 .picker-field{flex:1; min-width:220px;}
 .picker-field label{font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-mute); display:block; margin-bottom:6px;}
-.picker-field select{width:100%; padding:11px 14px; border:1px solid var(--border); border-radius:12px; font-size:.86rem; font-family:inherit; color:var(--text); background:#fff; cursor:pointer;}
-.picker-field input[type="date"]{width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:12px; font-size:.86rem; font-family:inherit; color:var(--text); background:#fff;}
-.new-insp-row{background:var(--bg-mint); border:1px solid #cfe4e0; border-radius:16px; padding:16px 18px; margin-top:16px;}
+.picker-field select{width:100%; padding:11px 16px; border:1px solid var(--border); border-radius:40px; font-size:.86rem; font-weight:500; font-family:inherit; color:var(--text); background:var(--bg-soft); cursor:pointer; transition:all .2s ease;}
+.picker-field select:hover{border-color:#8ab4b0; background:#fff;}
+.picker-field input[type="date"]{width:100%; padding:10px 16px; border:1px solid var(--border); border-radius:40px; font-size:.86rem; font-weight:500; font-family:inherit; color:var(--text); background:var(--bg-soft); transition:all .2s ease;}
+.picker-field input[type="date"]:hover{border-color:#8ab4b0; background:#fff;}
+.new-insp-row{background:var(--bg-mint); border-color:#cfe4e0;}
 .new-insp-row .picker-row{margin:0;}
 .picker-field select:disabled{opacity:.55; cursor:not-allowed;}
 .btn-load{flex-shrink:0; padding:11px 22px; border-radius:12px; border:none; background:linear-gradient(135deg,var(--teal),var(--teal-dark)); color:#fff; font-weight:700; font-size:.85rem; cursor:pointer; display:flex; align-items:center; gap:8px; transition:.2s;}
 .btn-load:hover{transform:translateY(-1px);}
 .btn-load:disabled{opacity:.5; cursor:not-allowed; transform:none;}
 
-.loaded-summary{display:flex; align-items:center; gap:12px; background:var(--ok-bg); border:1px solid var(--ok-border); border-radius:16px; padding:14px 18px; margin-top:18px; font-size:.85rem; color:var(--green-dark);}
-.loaded-summary i{color:var(--ok); font-size:1.1rem;}
-.loaded-summary b{font-weight:700;}
-.loaded-summary .prev-note{display:block; font-size:.78rem; color:var(--text-mute2); margin-top:2px;}
+.loaded-chip{display:inline-flex; align-items:center; gap:8px; margin-top:14px; font-size:.82rem; font-weight:700; color:var(--ok);}
+.loaded-chip i{font-size:1rem;}
 .no-history-note{display:flex; align-items:center; gap:10px; background:var(--amber-bg); border:1px solid var(--amber-border); border-radius:16px; padding:12px 16px; margin-top:14px; font-size:.82rem; color:#8a5c15;}
 .no-history-note i{color:var(--amber);}
 
-/* BCI trend strip - same "history at a glance" idea as the twin timeline,
-   reused here so an inspector sees the structure's trajectory before drafting. */
+/* BCI trend chart - a real line chart reads a multi-inspection trend far
+   better than a row of chips (each chip carried 4 numbers - date/type/
+   avg/crit - the more inspection history, the more numbers crammed into a
+   fixed-height strip). Avg/crit keep the exact colours already used
+   everywhere else in Author (stat cards, the info modal) for consistency,
+   even though a strict categorical-palette check flags their chroma as
+   low - both series carry a direct label (the legend below) rather than
+   relying on colour alone, which is the validator's own documented
+   exception for that case. */
 .bci-trend{margin-top:16px;}
-.bci-trend-label{font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-mute); margin-bottom:8px;}
-.bci-track{display:flex; align-items:center; gap:0; flex-wrap:nowrap; overflow-x:auto; padding-bottom:2px;}
-.bci-chip{background:var(--bg-soft); border:1px solid var(--border2); border-radius:14px; padding:10px 14px; min-width:112px; flex-shrink:0;}
-.bci-chip.current{background:var(--bg-mint); border-color:#cfe4e0;}
-.bci-chip .bc-date{font-size:.64rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-mute); margin-bottom:5px;}
-.bci-chip.current .bc-date{color:var(--teal-dark);}
-.bci-chip .bc-score-row{display:flex; align-items:baseline; justify-content:space-between; gap:10px; font-variant-numeric:tabular-nums;}
-.bci-chip .bc-score-row span{font-size:.66rem; font-weight:600; color:var(--text-mute2); text-transform:uppercase; letter-spacing:.03em;}
-.bci-chip .bc-score-row b{font-size:1.02rem; font-weight:800; color:var(--text);}
-.bci-chip .bc-score-row.crit b{color:var(--red);}
-.bci-chip .bc-type{font-size:.62rem; font-weight:600; color:var(--text-mute2); text-transform:none; letter-spacing:0;}
-.bci-delta{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; width:40px; flex-shrink:0; font-size:.64rem; font-weight:800; font-variant-numeric:tabular-nums;}
-.bci-delta.down{color:var(--red);}
-.bci-delta.up{color:var(--ok);}
-.bci-delta.flat{color:var(--text-mute2);}
+.bci-trend-header{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:8px;}
+.bci-trend-label{font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-mute);}
+.bci-legend{display:flex; align-items:center; gap:16px;}
+.bci-legend-item{display:flex; align-items:baseline; gap:6px; font-size:.78rem; font-weight:600; color:var(--text-mute2); font-variant-numeric:tabular-nums;}
+.bci-legend-item i{width:9px; height:9px; border-radius:50%; display:inline-block; flex-shrink:0; position:relative; top:-1px;}
+.bci-legend-item.avg i{background:var(--teal-dark);}
+.bci-legend-item.crit i{background:var(--red);}
+.bci-legend-item b{font-size:.92rem; font-weight:800; color:var(--text);}
+.bci-legend-item.crit b{color:var(--red);}
+.bci-chart-svg{width:100%; height:120px; display:block; overflow:visible;}
+.bci-chart-baseline{stroke:var(--border2); stroke-width:1;}
+.bci-chart-axis-label{font-size:9px; fill:var(--text-mute); font-family:inherit;}
+.bci-line{fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round;}
+.bci-line.avg{stroke:var(--teal-dark);}
+.bci-line.crit{stroke:var(--red);}
+.bci-dot{stroke:#fff; stroke-width:2;}
+.bci-dot.avg{fill:var(--teal-dark);}
+.bci-dot.crit{fill:var(--red);}
 
 /* Structure description - carried into both the report preview and the setup summary */
-.struct-desc{margin-top:14px; padding:14px 16px; background:var(--bg-soft); border:1px solid var(--border2); border-radius:14px; font-size:.82rem; color:var(--text-mute2); line-height:1.6;}
-.struct-desc b{color:var(--text); font-weight:700; display:block; margin-bottom:4px; font-size:.7rem; text-transform:uppercase; letter-spacing:.05em;}
 
 /* Real defect photo thumbnails */
 .el-photos{display:flex; gap:8px; flex-wrap:wrap; margin:8px 0;}
@@ -311,13 +308,13 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .draft-header .card-sub{margin-bottom:14px;}
 .draft-header #draftBciTrend:empty{display:none;}
 .draft-header .bci-trend{margin-top:0;}
-.draft-toolbar{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; padding-top:16px; border-top:1px solid var(--border2); margin-bottom:20px;}
-.draft-toolbar-actions{display:flex; gap:10px; flex-wrap:wrap;}
-.filter-pills{display:flex; gap:8px; flex-wrap:wrap;}
-.f-pill{font-size:.74rem; font-weight:600; color:var(--text-mute2); background:#fff; border:1px solid var(--border); padding:7px 14px; border-radius:30px; cursor:pointer; transition:.15s;}
+.draft-toolbar{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; padding-top:16px; border-top:1px solid var(--border2); margin-bottom:20px;}
+.draft-toolbar-actions{display:flex; gap:8px; flex-wrap:wrap; flex-shrink:0;}
+.filter-pills{display:flex; gap:6px; flex-wrap:wrap;}
+.f-pill{font-size:.72rem; font-weight:600; color:var(--text-mute2); background:#fff; border:1px solid var(--border); padding:6px 12px; border-radius:30px; cursor:pointer; transition:.15s; white-space:nowrap;}
 .f-pill:hover{border-color:var(--teal);}
 .f-pill.on{background:var(--bg-mint); border-color:var(--teal); color:var(--teal-dark);}
-.btn-bulk{font-size:.78rem; font-weight:700; color:#fff; background:var(--teal); border:none; padding:9px 16px; border-radius:30px; cursor:pointer; display:inline-flex; align-items:center; gap:7px; transition:.15s;}
+.btn-bulk{font-size:.76rem; font-weight:700; color:#fff; background:var(--teal); border:none; padding:7px 14px; border-radius:30px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:.15s; white-space:nowrap;}
 .btn-bulk:hover{background:var(--teal-dark);}
 .btn-bulk:disabled{opacity:.45; cursor:not-allowed;}
 
@@ -331,20 +328,28 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
    background, and border-radius only on the first/last <td> - so each
    <tr> reads as an individual pill-shaped card floating on the page's own
    background rather than one long bordered box holding every row. */
-.clear-table{width:100%; border-collapse:separate; border-spacing:0 8px; background:transparent; margin-bottom:8px;}
-.clear-row td{background:#fff; border-top:1px solid var(--border2); border-bottom:1px solid var(--border2); padding:11px 16px; font-size:.82rem; color:var(--text); vertical-align:middle; transition:border-color .15s ease, background-color .15s ease;}
-.clear-row td:first-child{border-left:1px solid var(--border2); border-top-left-radius:16px; border-bottom-left-radius:16px; width:1%; white-space:nowrap;}
-.clear-row td:last-child{border-right:1px solid var(--border2); border-top-right-radius:16px; border-bottom-right-radius:16px; width:1%; white-space:nowrap;}
+.clear-table{width:100%; border-collapse:separate; border-spacing:0 6px; background:transparent; margin-bottom:6px;}
+.clear-row td{background:#fff; border-top:1px solid var(--border2); border-bottom:1px solid var(--border2); padding:7px 16px; font-size:.82rem; color:var(--text); vertical-align:middle; transition:border-color .15s ease, background-color .15s ease;}
+/* A radius bigger than the row is ever tall gets clamped to exactly half
+   the row's height (CSS spec behaviour), which guarantees a true
+   semicircle on each end regardless of the actual computed row height -
+   more robust than picking a fixed px value that only happens to match
+   one particular height. */
+.clear-row td:first-child{border-left:1px solid var(--border2); border-top-left-radius:999px; border-bottom-left-radius:999px; width:1%; white-space:nowrap;}
+.clear-row td:last-child{border-right:1px solid var(--border2); border-top-right-radius:999px; border-bottom-right-radius:999px; width:1%; white-space:nowrap;}
 .clear-row:hover td{border-color:#c5dbd8; background:rgba(91,140,138,.04);}
 .cr-actions-inner{display:flex; align-items:center; gap:10px; justify-content:flex-end;}
 
-.defect-card{border:1px solid var(--border2); border-left:3px solid var(--amber); border-radius:16px; padding:16px 20px; margin-bottom:14px; background:#fff; transition:.2s;}
+.defect-card{border:1px solid var(--border2); border-left:2px solid var(--amber); border-radius:16px; padding:16px 20px; margin-bottom:10px; background:#fff; transition:.2s;}
 .defect-card.cmp-new, .defect-card.cmp-worsened{border-left-color:var(--red);}
 .defect-card.cmp-improved, .defect-card.cmp-resolved{border-left-color:var(--ok);}
 .defect-card.reviewed{opacity:.6;}
 .dc-top{display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:4px;}
 .dc-elem{font-size:.95rem; font-weight:700; color:var(--text);}
-.cr-num{display:inline-block; min-width:20px; padding:1px 5px; border-radius:6px; background:var(--bg-mint); color:var(--teal-dark); font-size:.72rem; font-weight:800; text-align:center; font-variant-numeric:tabular-nums;}
+/* Neutral circular item-number badge - same shape/size (26px) and plain
+   grey tone as inspection.html's own #inspectionElementsTable td.itemno,
+   rather than a small colour-branded rounded-rect. */
+.cr-num{display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; width:26px; height:26px; border-radius:50%; background:var(--border2); color:var(--text-mute); font-size:.72rem; font-weight:700; font-variant-numeric:tabular-nums; margin-right:8px; vertical-align:middle;}
 .dc-code{font-size:.76rem; color:var(--text-mute2); margin-top:1px;}
 .dc-actions{display:flex; align-items:center; gap:8px; flex-shrink:0;}
 
@@ -367,6 +372,10 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .class-dd-trigger i{font-size:.62rem; color:var(--text-mute); flex-shrink:0; transition:transform .15s;}
 .class-dd.open .class-dd-trigger i{transform:rotate(180deg);}
 .class-dd-menu{position:absolute; top:calc(100% + 4px); left:0; width:260px; background:#fff; border-radius:14px; border:1px solid var(--border2); box-shadow:0 12px 32px rgba(44,90,87,.14); z-index:60; opacity:0; visibility:hidden; transform:translateY(-6px) scale(.98); transition:all .18s cubic-bezier(.34,1.56,.64,1); overflow:hidden;}
+/* Added when there isn't enough room to the right of the trigger (e.g. a
+   dropdown near the card's right edge) - opens flush with the trigger's
+   own right edge instead of always anchoring to its left edge. */
+.class-dd.align-right .class-dd-menu{left:auto; right:0;}
 .class-dd.open .class-dd-menu{opacity:1; visibility:visible; transform:translateY(0) scale(1);}
 .class-dd-search{padding:8px 10px; border-bottom:1px solid var(--border2); position:relative;}
 .class-dd-search input{width:100%; padding:7px 10px 7px 28px; border-radius:8px; border:1px solid var(--border); background:var(--bg-soft); font-family:inherit; font-size:.78rem; color:var(--text); outline:none;}
@@ -385,7 +394,7 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .dc-review-check input{accent-color:var(--teal); cursor:pointer;}
 .dc-review-check.checked{background:var(--ok-bg); border-color:var(--ok-border); color:var(--ok);}
 
-.dc-history{display:flex; align-items:center; justify-content:space-between; gap:14px; margin:0 0 14px; padding:9px 12px; background:var(--bg-soft); border-radius:12px; font-size:.76rem; color:var(--text-mute2);}
+.dc-history{display:flex; align-items:center; justify-content:space-between; gap:14px; margin:0 0 14px; padding:0 0 12px; border-bottom:1px solid var(--border2); font-size:.76rem; color:var(--text-mute2);}
 .dc-history-left{display:flex; align-items:center; gap:8px; flex:1; min-width:0;}
 .dc-history-left span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;}
 .dc-history .trend-badge{font-size:.68rem; font-weight:700; padding:3px 10px; border-radius:20px; flex-shrink:0;}
@@ -401,8 +410,23 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .dc-hero img{width:100%; height:100%; object-fit:cover; display:block; cursor:pointer;}
 .dc-hero-del{position:absolute; top:8px; right:8px; width:24px; height:24px; border-radius:50%; background:rgba(20,30,32,.6); color:#fff; border:none; cursor:pointer; font-size:.7rem; display:flex; align-items:center; justify-content:center; opacity:0; transition:.15s;}
 .dc-hero:hover .dc-hero-del{opacity:1;}
-.dc-photo-placeholder{width:100%; aspect-ratio:4/3; border-radius:14px; background:var(--bg-soft); border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; color:var(--text-mute); font-size:2.1rem; cursor:pointer;}
-.dc-photo-placeholder:hover{border-color:var(--teal); color:var(--teal);}
+.dc-photo-placeholder{
+  position:relative; width:100%; aspect-ratio:4/3; border-radius:14px; cursor:pointer; overflow:hidden;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+  border:1px solid var(--border2); transition:border-color .15s ease;
+}
+/* A simple two-tone landscape (sky/sun/rolling hills) rather than a flat
+   dashed box or a busy texture - the classic "placeholder image" motif,
+   drawn in the app's own palette instead of a generic gray icon. */
+.dc-ph-art{position:absolute; inset:0; width:100%; height:100%;}
+.dc-ph-sky{fill:var(--bg-mint);}
+.dc-ph-sun{fill:var(--teal); opacity:.16;}
+.dc-ph-hill-back{fill:var(--teal); opacity:.14;}
+.dc-ph-hill-front{fill:var(--teal); opacity:.22;}
+.dc-photo-placeholder-icon{position:relative; width:52px; height:52px; border-radius:50%; background:#fff; box-shadow:0 4px 14px rgba(44,90,87,.12); display:flex; align-items:center; justify-content:center; color:var(--teal); font-size:1.3rem; transition:transform .15s ease, color .15s ease;}
+.dc-photo-placeholder-txt{position:relative; font-size:.72rem; font-weight:700; color:var(--text-mute2);}
+.dc-photo-placeholder:hover{border-color:var(--teal);}
+.dc-photo-placeholder:hover .dc-photo-placeholder-icon{color:var(--teal-dark); transform:scale(1.07);}
 .dc-photo-caption{width:100%; border:1px solid transparent; background:none; font-size:.72rem; color:var(--text-mute2); padding:4px 5px; font-family:inherit; border-radius:6px;}
 .dc-photo-caption:hover, .dc-photo-caption:focus{border-color:var(--border); background:var(--bg-soft); outline:none;}
 .dc-photo-caption::placeholder{color:var(--text-mute); font-style:italic;}
@@ -483,7 +507,6 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 /* Collapse/expand */
 .dc-collapse-btn{background:none; border:none; color:var(--text-mute); cursor:pointer; padding:4px; font-size:.9rem; flex-shrink:0;}
 .dc-collapse-btn:hover{color:var(--teal);}
-.defect-card .dc-body{overflow:hidden;}
 .defect-card.collapsed .dc-body{display:none;}
 .defect-card.collapsed .dc-collapse-btn i{transform:rotate(-90deg);}
 
@@ -603,13 +626,11 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .navbar .account-links a:hover { background: #2f3e45; color: #8ab4b0; }
 .night-mode .night-mode-toggle { background: #2f3e45; color: #9ab0b8; }
 .night-mode .night-mode-toggle:hover { background: #3a4b53; color: #8ab4b0; }
-.night-mode .back-pill { background: rgba(35,46,52,0.8) !important; border-color: rgba(138,180,176,0.3) !important; color:#8ab4b0 !important; }
 .night-mode .page-header h1 { color: #8ab4b0; }
 .night-mode .page-header p { color: #8aa4ac; }
 
 .night-mode .wizard-steps{background:rgba(35,46,52,0.85) !important; border-color:#2f3e45 !important; box-shadow:0 10px 28px rgba(0,0,0,.3) !important;}
-.night-mode .left-bci-cards{background:rgba(35,46,52,0.85); border-color:#2f3e45; box-shadow:0 10px 28px rgba(0,0,0,.3);}
-.night-mode .stat-card-mini{background:#1a2428;}
+.night-mode .stat-card-mini{background:#1a2428; border-color:#2f3e45; box-shadow:0 4px 14px rgba(0,0,0,.25);}
 .night-mode .stat-card-mini.critical{background:#3a2a1f;}
 .night-mode .stat-label-mini{color:#7d939b;}
 .night-mode .stat-value-mini{color:#8ab4b0;}
@@ -629,24 +650,27 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .card-sub{color:#8aa4ac;}
 
 .night-mode .picker-field label{color:#7d939b;}
-.night-mode .picker-field select{background:#1a2428; border-color:#3a4b53; color:#d4dfe3;}
-.night-mode .picker-field input[type="date"]{background:#1a2428; border-color:#3a4b53; color:#d4dfe3; color-scheme:dark;}
+.night-mode .picker-field select{background:#1e2a2f; border-color:#3a4b53; color:#c5d3d9;}
+.night-mode .picker-field select:hover{background:#2a3a40; border-color:#8ab4b0;}
+.night-mode .picker-field input[type="date"]{background:#1e2a2f; border-color:#3a4b53; color:#c5d3d9; color-scheme:dark;}
+.night-mode .picker-field input[type="date"]:hover{background:#2a3a40; border-color:#8ab4b0;}
 .night-mode .new-insp-row{background:#1e3a38; border-color:#3a6b62;}
-.night-mode .loaded-summary{background:#1e3a38; border-color:#3a6b62; color:#a0c8c4;}
+.night-mode .loaded-chip{color:#7ec9ba;}
 .night-mode .no-history-note{background:#3a3020; border-color:#5a4a2a; color:#e0b060;}
 
 .night-mode .bci-trend-label{color:#7d939b;}
-.night-mode .bci-chip{background:#1a2428; border-color:#2f3e45;}
-.night-mode .bci-chip.current{background:#1e3a38; border-color:#3a6b62;}
-.night-mode .bci-chip .bc-date{color:#7d939b;}
-.night-mode .bci-chip.current .bc-date{color:#8ab4b0;}
-.night-mode .bci-chip .bc-score{color:#d4dfe3;}
-.night-mode .bci-chip .bc-type{color:#8aa4ac;}
-.night-mode .bci-delta.down{color:#e57373;}
-.night-mode .bci-delta.up{color:#7ec9ba;}
-.night-mode .bci-delta.flat{color:#8aa4ac;}
-.night-mode .struct-desc{background:#1a2428; border-color:#2f3e45; color:#9ab0b8;}
-.night-mode .struct-desc b{color:#d4dfe3;}
+.night-mode .bci-legend-item{color:#8aa4ac;}
+.night-mode .bci-legend-item b{color:#d4dfe3;}
+.night-mode .bci-legend-item.avg i{background:#8ab4b0;}
+.night-mode .bci-legend-item.crit i{background:#e57373;}
+.night-mode .bci-legend-item.crit b{color:#e57373;}
+.night-mode .bci-chart-baseline{stroke:#2f3e45;}
+.night-mode .bci-chart-axis-label{fill:#7d939b;}
+.night-mode .bci-line.avg{stroke:#8ab4b0;}
+.night-mode .bci-line.crit{stroke:#e57373;}
+.night-mode .bci-dot.avg{fill:#8ab4b0;}
+.night-mode .bci-dot.crit{fill:#e57373;}
+.night-mode .bci-dot{stroke:#212f33;}
 .night-mode .el-photo-thumb, .night-mode .doc-photo-thumb{border-color:#2f3e45;}
 
 .night-mode .source-tabs{background:#1a2428; border-color:#2f3e45;}
@@ -693,11 +717,11 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .clear-row:hover td{border-color:#3a6b62; background:rgba(91,140,138,.10);}
 .night-mode .defect-card{background:#212f33; border-color:#2f3e45;}
 .night-mode .dc-elem{color:#d4dfe3;}
-.night-mode .cr-num{background:#1e3a38; color:#8ab4b0;}
+.night-mode .cr-num{background:#2f3e45; color:#9ab0b8;}
 .night-mode .dc-code{color:#8aa4ac;}
 .night-mode .dc-review-check{background:#1a2428; border-color:#3a4b53; color:#9ab0b8;}
 .night-mode .dc-review-check.checked{background:#1e3a38; border-color:#3a6b62; color:#7ec9ba;}
-.night-mode .dc-history{background:#1a2428; color:#9ab0b8;}
+.night-mode .dc-history{border-color:#2f3e45; color:#9ab0b8;}
 .night-mode .dc-footer-actions{border-color:#2f3e45;}
 .night-mode .dc-history .trend-badge.worsened, .night-mode .dc-history .trend-badge.new{background:#3a2323; color:#e57373;}
 .night-mode .dc-history .trend-badge.improved, .night-mode .dc-history .trend-badge.resolved{background:#1e3a38; color:#7ec9ba;}
@@ -705,8 +729,15 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .dc-history .trend-badge.changed, .night-mode .dc-history .trend-badge.first{background:#3a3020; color:#e0b060;}
 .night-mode .dc-hero{background:#1a2428; border-color:#2f3e45;}
 .night-mode .dc-hero-del{background:rgba(0,0,0,.55);}
-.night-mode .dc-photo-placeholder{background:#1a2428; border-color:#3a4b53; color:#7d939b;}
-.night-mode .dc-photo-placeholder:hover{border-color:#6e9c98; color:#8ab4b0;}
+.night-mode .dc-photo-placeholder{border-color:#3a4b53;}
+.night-mode .dc-ph-sky{fill:#1c2d2b;}
+.night-mode .dc-ph-sun{fill:#8ab4b0; opacity:.18;}
+.night-mode .dc-ph-hill-back{fill:#8ab4b0; opacity:.14;}
+.night-mode .dc-ph-hill-front{fill:#8ab4b0; opacity:.22;}
+.night-mode .dc-photo-placeholder-icon{background:#212f33; color:#8ab4b0; box-shadow:0 4px 14px rgba(0,0,0,.3);}
+.night-mode .dc-photo-placeholder-txt{color:#7d939b;}
+.night-mode .dc-photo-placeholder:hover{border-color:#6e9c98;}
+.night-mode .dc-photo-placeholder:hover .dc-photo-placeholder-icon{color:#a3cac4;}
 .night-mode .dc-photo-caption{color:#8aa4ac;}
 .night-mode .dc-photo-caption:hover, .night-mode .dc-photo-caption:focus{border-color:#3a4b53; background:#1a2428; color:#d4dfe3;}
 .night-mode .dc-strip-add{border-color:#3a4b53; color:#7d939b;}
@@ -816,8 +847,6 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 
 <div class="page-wrapper">
 
-    <div class="back-pill" onclick="history.back()"><i class="fa-solid fa-arrow-left"></i> Back</div>
-
     <div class="page-header">
         <h1>Author</h1>
         <p>Carries forward what hasn't changed since the structure's last inspection, and helps you write up what has.</p>
@@ -828,67 +857,67 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
         <div class="stat-card-mini critical"><div class="stat-label-mini">BCI crit</div><div class="stat-value-mini loading" id="leftBciCrit">···</div></div>
     </div>
     <div class="wizard-steps" id="wizardSteps">
-        <div class="wizard-step" data-step="setup"><span class="num">1</span><span class="wz-label">Start</span></div>
+        <div class="wizard-step" data-step="setup" title="Start"><span class="num">1</span></div>
         <div class="wizard-connector"></div>
-        <div class="wizard-step" data-step="draft"><span class="num">2</span><span class="wz-label">Draft Report</span></div>
+        <div class="wizard-step" data-step="draft" title="Draft Report"><span class="num">2</span></div>
         <div class="wizard-connector"></div>
-        <div class="wizard-step" data-step="author"><span class="num">3</span><span class="wz-label">Author View</span></div>
+        <div class="wizard-step" data-step="author" title="Author View"><span class="num">3</span></div>
         <div class="wizard-connector"></div>
-        <div class="wizard-step" data-step="export"><span class="num">4</span><span class="wz-label">Export</span></div>
+        <div class="wizard-step" data-step="export" title="Export"><span class="num">4</span></div>
     </div>
 
     <!-- ================= SCREEN 1: SETUP ================= -->
     <div class="screen" id="screen-setup">
-        <div class="card" id="pickerCard">
-            <h2 class="card-title"><i class="fas fa-magnifying-glass" style="color:var(--teal);"></i> Choose a Structure &amp; Inspection</h2>
-            <p class="card-sub">Pick the structure and inspection date to author. Author pulls its real defect data and automatically compares it against that structure's own previous inspection.</p>
+        <h2 class="card-title"><i class="fas fa-magnifying-glass" style="color:var(--teal);"></i> Choose a Structure &amp; Inspection</h2>
+        <p class="card-sub">Pick the structure and inspection date to author. Author pulls its real defect data and automatically compares it against that structure's own previous inspection.</p>
 
+        <div class="card">
             <div class="source-tabs" id="sourceTabs">
                 <button class="source-tab active" data-source="records">From spanSense records</button>
                 <button class="source-tab" data-source="upload">Upload a previous inspection</button>
             </div>
+        </div>
 
-            <div id="sourceRecords">
-                <div class="picker-row">
-                    <div class="picker-field">
-                        <label>Structure</label>
-                        <select id="structureSelect"><option value="">Loading structures…</option></select>
-                    </div>
-                    <div class="picker-field">
-                        <label>Compare against (base inspection)</label>
-                        <select id="inspectionSelect" disabled><option value="">Select a structure first</option></select>
-                    </div>
-                    <button class="btn-load" id="loadBtn" disabled><i class="fas fa-arrow-right"></i> Load</button>
+        <div class="card new-insp-row" id="newInspRow" style="display:none;">
+            <div class="picker-row">
+                <div class="picker-field">
+                    <label>New inspection date</label>
+                    <input type="date" id="newInspectionDate">
                 </div>
-                <div id="loadedSummary"></div>
-                <div class="new-insp-row" id="newInspRow" style="display:none;">
-                    <div class="picker-row">
-                        <div class="picker-field">
-                            <label>New inspection date</label>
-                            <input type="date" id="newInspectionDate">
-                        </div>
-                        <div class="picker-field">
-                            <label>New inspection type</label>
-                            <select id="newInspectionType">
-                                <option value="">Select type…</option>
-                                <option value="GI">GI — General Inspection</option>
-                                <option value="PI">PI — Principal Inspection</option>
-                                <option value="SI">SI — Special Inspection</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="u-sub" style="margin-top:10px;">The base inspection above stays untouched — everything you draft here builds a new inspection dated and typed as set here.</div>
+                <div class="picker-field">
+                    <label>New inspection type</label>
+                    <select id="newInspectionType">
+                        <option value="">Select type…</option>
+                        <option value="GI">GI — General Inspection</option>
+                        <option value="PI">PI — Principal Inspection</option>
+                        <option value="SI">SI — Special Inspection</option>
+                    </select>
                 </div>
             </div>
+        </div>
 
-            <div id="sourceUpload" style="display:none;">
-                <div class="upload-zone">
-                    <i class="fas fa-file-arrow-up"></i>
-                    <div class="u-title">Upload a previous inspection report</div>
-                    <div class="u-sub">PDF or Word — for a structure whose last inspection wasn't done in spanSense</div>
+        <div class="card" id="sourceRecords">
+            <div class="picker-row">
+                <div class="picker-field">
+                    <label>Structure</label>
+                    <select id="structureSelect"><option value="">Loading structures…</option></select>
                 </div>
-                <div class="coming-soon-note"><i class="fas fa-flask"></i> Not wired up yet — this will let Author read a previous report's defects straight out of the PDF/Word file instead of requiring prior spanSense data.</div>
+                <div class="picker-field">
+                    <label>Compare against (base inspection)</label>
+                    <select id="inspectionSelect" disabled><option value="">Select a structure first</option></select>
+                </div>
+                <button class="btn-load" id="loadBtn" disabled><i class="fas fa-arrow-right"></i> Load</button>
             </div>
+            <div id="loadedSummary"></div>
+        </div>
+
+        <div class="card" id="sourceUpload" style="display:none;">
+            <div class="upload-zone">
+                <i class="fas fa-file-arrow-up"></i>
+                <div class="u-title">Upload a previous inspection report</div>
+                <div class="u-sub">PDF or Word — for a structure whose last inspection wasn't done in spanSense</div>
+            </div>
+            <div class="coming-soon-note"><i class="fas fa-flask"></i> Not wired up yet — this will let Author read a previous report's defects straight out of the PDF/Word file instead of requiring prior spanSense data.</div>
         </div>
 
         <div class="card" id="brandingCard" style="display:none;">
@@ -951,10 +980,10 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
                 <span>This branding is saved for <b id="savedBannerOrg">this client</b> and applied automatically to every future report for them.</span>
             </div>
             <div class="saving-note" id="savingNote"></div>
+        </div>
 
-            <div class="export-actions" style="margin-top:22px;">
-                <button class="btn-primary-lg" id="toDraftBtn"><i class="fas fa-arrow-right"></i> Continue to Draft Report</button>
-            </div>
+        <div class="bottom-nav" id="setupBottomNav" style="justify-content:flex-end; display:none;">
+            <button class="btn-primary-lg" id="toDraftBtn"><i class="fas fa-arrow-right"></i> Continue to Draft Report</button>
         </div>
     </div>
 
@@ -962,20 +991,15 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
     <div class="screen" id="screen-draft">
         <div class="draft-main">
             <div class="draft-header">
-                <h2 class="card-title"><i class="fas fa-sparkles" style="color:var(--ai);"></i> Drafted Narrative — <span id="draftStructureName">—</span></h2>
-                <p class="card-sub">A card per defect, drafted from this inspection's real data and automatically compared against the structure's own previous inspection. Review, edit, and mark off as you go — elements with nothing to report are listed compactly below each category.</p>
-                <div class="draft-bci-original" id="draftBciOriginal" style="display:none;">
-                    <div class="stat-card-mini average"><div class="stat-label-mini">BCI avg</div><div class="stat-value-mini loading" id="draftBciAvgOriginal">···</div></div>
-                    <div class="stat-card-mini critical"><div class="stat-label-mini">BCI crit</div><div class="stat-value-mini loading" id="draftBciCritOriginal">···</div></div>
-                </div>
+                <span id="draftStructureName" style="display:none;">—</span>
                 <div id="draftBciTrend"></div>
             </div>
             <div class="draft-toolbar">
                 <div class="filter-pills" id="draftFilterPills"></div>
                 <div class="draft-toolbar-actions">
-                    <button class="btn-mini" id="structInfoToggle"><i class="fas fa-circle-info"></i> Structure &amp; Inspection Info</button>
-                    <button class="btn-mini" id="toggleCollapseAllBtn"><i class="fas fa-compress"></i> Collapse all</button>
-                    <button class="btn-bulk" id="markUnchangedBtn"><i class="fas fa-check-double"></i> Mark all unchanged as reviewed</button>
+                    <button class="btn-mini" id="structInfoToggle" title="Structure & Inspection Info"><i class="fas fa-circle-info"></i> Info</button>
+                    <button class="btn-mini" id="toggleCollapseAllBtn" title="Collapse all"><i class="fas fa-compress"></i> Collapse</button>
+                    <button class="btn-bulk" id="markUnchangedBtn" title="Mark all unchanged as reviewed"><i class="fas fa-check-double"></i> Mark unchanged</button>
                 </div>
             </div>
             <div class="draft-groups-wrap">
