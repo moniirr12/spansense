@@ -602,15 +602,13 @@ async function onLoad(){
       }
     });
 
+    // Structure/date are already visible in the selects themselves, and the
+    // description + BCI trend are shown again on the Draft screen - this
+    // just needs to confirm the load succeeded, not restate everything,
+    // except the one thing that isn't otherwise visible: no previous
+    // inspection to compare against.
     const summary = document.getElementById('loadedSummary');
-    summary.innerHTML = `<div class="loaded-summary"><i class="fas fa-circle-check"></i><div>
-        Loaded <b>${bridge.name}</b> — inspection dated ${fmtDate(diff.currentDate)}.
-        ${diff.previousDate
-          ? `<span class="prev-note">Comparing against the previous inspection on ${fmtDate(diff.previousDate)}.</span>`
-          : `<span class="prev-note">No previous inspection found — this is the first recorded inspection for this structure.</span>`}
-      </div></div>
-      ${AUTHOR.structureDescription ? `<div class="struct-desc"><b>Structure description</b>${AUTHOR.structureDescription}</div>` : ''}
-      ${bciTrendHTML(AUTHOR.bciTrend)}`;
+    summary.innerHTML = `<div class="loaded-chip"><i class="fas fa-circle-check"></i> Loaded${diff.previousDate ? '' : ' — first recorded inspection, no previous data to compare against'}</div>`;
 
     document.getElementById('leftBciCards').style.display = 'flex';
     recomputeLiveBCI();
@@ -623,6 +621,7 @@ async function onLoad(){
     AUTHOR.newInspectionType = document.getElementById('newInspectionType').value || null;
 
     document.getElementById('brandingCard').style.display = 'block';
+    document.getElementById('setupBottomNav').style.display = 'flex';
     await loadBranding(diff.organizationId);
     document.getElementById('brandingCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   } catch (err) {

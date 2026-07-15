@@ -180,8 +180,10 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .picker-row{display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;}
 .picker-field{flex:1; min-width:220px;}
 .picker-field label{font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-mute); display:block; margin-bottom:6px;}
-.picker-field select{width:100%; padding:11px 14px; border:1px solid var(--border); border-radius:12px; font-size:.86rem; font-family:inherit; color:var(--text); background:#fff; cursor:pointer;}
-.picker-field input[type="date"]{width:100%; padding:10px 14px; border:1px solid var(--border); border-radius:12px; font-size:.86rem; font-family:inherit; color:var(--text); background:#fff;}
+.picker-field select{width:100%; padding:11px 16px; border:1px solid var(--border); border-radius:40px; font-size:.86rem; font-weight:500; font-family:inherit; color:var(--text); background:var(--bg-soft); cursor:pointer; transition:all .2s ease;}
+.picker-field select:hover{border-color:#8ab4b0; background:#fff;}
+.picker-field input[type="date"]{width:100%; padding:10px 16px; border:1px solid var(--border); border-radius:40px; font-size:.86rem; font-weight:500; font-family:inherit; color:var(--text); background:var(--bg-soft); transition:all .2s ease;}
+.picker-field input[type="date"]:hover{border-color:#8ab4b0; background:#fff;}
 .new-insp-row{background:var(--bg-mint); border-color:#cfe4e0;}
 .new-insp-row .picker-row{margin:0;}
 .picker-field select:disabled{opacity:.55; cursor:not-allowed;}
@@ -189,10 +191,8 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .btn-load:hover{transform:translateY(-1px);}
 .btn-load:disabled{opacity:.5; cursor:not-allowed; transform:none;}
 
-.loaded-summary{display:flex; align-items:center; gap:12px; background:var(--ok-bg); border:1px solid var(--ok-border); border-radius:16px; padding:14px 18px; margin-top:18px; font-size:.85rem; color:var(--green-dark);}
-.loaded-summary i{color:var(--ok); font-size:1.1rem;}
-.loaded-summary b{font-weight:700;}
-.loaded-summary .prev-note{display:block; font-size:.78rem; color:var(--text-mute2); margin-top:2px;}
+.loaded-chip{display:inline-flex; align-items:center; gap:8px; margin-top:14px; font-size:.82rem; font-weight:700; color:var(--ok);}
+.loaded-chip i{font-size:1rem;}
 .no-history-note{display:flex; align-items:center; gap:10px; background:var(--amber-bg); border:1px solid var(--amber-border); border-radius:16px; padding:12px 16px; margin-top:14px; font-size:.82rem; color:#8a5c15;}
 .no-history-note i{color:var(--amber);}
 
@@ -226,8 +226,6 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .bci-dot.crit{fill:var(--red);}
 
 /* Structure description - carried into both the report preview and the setup summary */
-.struct-desc{margin-top:14px; padding:14px 16px; background:var(--bg-soft); border:1px solid var(--border2); border-radius:14px; font-size:.82rem; color:var(--text-mute2); line-height:1.6;}
-.struct-desc b{color:var(--text); font-weight:700; display:block; margin-bottom:4px; font-size:.7rem; text-transform:uppercase; letter-spacing:.05em;}
 
 /* Real defect photo thumbnails */
 .el-photos{display:flex; gap:8px; flex-wrap:wrap; margin:8px 0;}
@@ -652,10 +650,12 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .card-sub{color:#8aa4ac;}
 
 .night-mode .picker-field label{color:#7d939b;}
-.night-mode .picker-field select{background:#1a2428; border-color:#3a4b53; color:#d4dfe3;}
-.night-mode .picker-field input[type="date"]{background:#1a2428; border-color:#3a4b53; color:#d4dfe3; color-scheme:dark;}
+.night-mode .picker-field select{background:#1e2a2f; border-color:#3a4b53; color:#c5d3d9;}
+.night-mode .picker-field select:hover{background:#2a3a40; border-color:#8ab4b0;}
+.night-mode .picker-field input[type="date"]{background:#1e2a2f; border-color:#3a4b53; color:#c5d3d9; color-scheme:dark;}
+.night-mode .picker-field input[type="date"]:hover{background:#2a3a40; border-color:#8ab4b0;}
 .night-mode .new-insp-row{background:#1e3a38; border-color:#3a6b62;}
-.night-mode .loaded-summary{background:#1e3a38; border-color:#3a6b62; color:#a0c8c4;}
+.night-mode .loaded-chip{color:#7ec9ba;}
 .night-mode .no-history-note{background:#3a3020; border-color:#5a4a2a; color:#e0b060;}
 
 .night-mode .bci-trend-label{color:#7d939b;}
@@ -671,8 +671,6 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .bci-dot.avg{fill:#8ab4b0;}
 .night-mode .bci-dot.crit{fill:#e57373;}
 .night-mode .bci-dot{stroke:#212f33;}
-.night-mode .struct-desc{background:#1a2428; border-color:#2f3e45; color:#9ab0b8;}
-.night-mode .struct-desc b{color:#d4dfe3;}
 .night-mode .el-photo-thumb, .night-mode .doc-photo-thumb{border-color:#2f3e45;}
 
 .night-mode .source-tabs{background:#1a2428; border-color:#2f3e45;}
@@ -880,21 +878,6 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
             </div>
         </div>
 
-        <div class="card" id="sourceRecords">
-            <div class="picker-row">
-                <div class="picker-field">
-                    <label>Structure</label>
-                    <select id="structureSelect"><option value="">Loading structures…</option></select>
-                </div>
-                <div class="picker-field">
-                    <label>Compare against (base inspection)</label>
-                    <select id="inspectionSelect" disabled><option value="">Select a structure first</option></select>
-                </div>
-                <button class="btn-load" id="loadBtn" disabled><i class="fas fa-arrow-right"></i> Load</button>
-            </div>
-            <div id="loadedSummary"></div>
-        </div>
-
         <div class="card new-insp-row" id="newInspRow" style="display:none;">
             <div class="picker-row">
                 <div class="picker-field">
@@ -911,7 +894,21 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
                     </select>
                 </div>
             </div>
-            <div class="u-sub" style="margin-top:10px;">The base inspection above stays untouched — everything you draft here builds a new inspection dated and typed as set here.</div>
+        </div>
+
+        <div class="card" id="sourceRecords">
+            <div class="picker-row">
+                <div class="picker-field">
+                    <label>Structure</label>
+                    <select id="structureSelect"><option value="">Loading structures…</option></select>
+                </div>
+                <div class="picker-field">
+                    <label>Compare against (base inspection)</label>
+                    <select id="inspectionSelect" disabled><option value="">Select a structure first</option></select>
+                </div>
+                <button class="btn-load" id="loadBtn" disabled><i class="fas fa-arrow-right"></i> Load</button>
+            </div>
+            <div id="loadedSummary"></div>
         </div>
 
         <div class="card" id="sourceUpload" style="display:none;">
@@ -983,10 +980,10 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
                 <span>This branding is saved for <b id="savedBannerOrg">this client</b> and applied automatically to every future report for them.</span>
             </div>
             <div class="saving-note" id="savingNote"></div>
+        </div>
 
-            <div class="export-actions" style="margin-top:22px;">
-                <button class="btn-primary-lg" id="toDraftBtn"><i class="fas fa-arrow-right"></i> Continue to Draft Report</button>
-            </div>
+        <div class="bottom-nav" id="setupBottomNav" style="justify-content:flex-end; display:none;">
+            <button class="btn-primary-lg" id="toDraftBtn"><i class="fas fa-arrow-right"></i> Continue to Draft Report</button>
         </div>
     </div>
 
