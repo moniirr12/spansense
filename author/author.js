@@ -1637,9 +1637,27 @@ async function generateWordReport(){
   }
 }
 
+// Every current defect (primary + extras) across all elements, in Author's
+// own live-edited state - the one place both PDF exporters below pull from,
+// so a severity/extent/narrative edit (or an added/removed defect) actually
+// shows up in what gets downloaded instead of whatever's still saved in
+// the database.
+function liveDefectList(){
+  const out = [];
+  AUTHOR.diffElements.forEach(el => {
+    if (el.current.status === 'defect') out.push({ el, defect: el.current, extraIdx: null, isExtra: false });
+    (el.extraDefects || []).forEach((extra, i) => out.push({ el, defect: extra, extraIdx: i, isExtra: true }));
+  });
+  return out;
+}
+
 // Real BCI Proforma PDF export - same generator/data shape as
 // map.js's generateBCIProformaForDate, so the output is identical to the
-// one downloadable from the Previous Inspections list.
+// one downloadable from the Previous Inspections list. The fetched
+// spansData/worksRequired are the last-saved DB state; span 1's defect
+// list and BCI figures are then rebuilt from Author's live state so edits
+// actually appear (Author doesn't support multi-span yet, so this only
+// ever touches span 1).
 async function generateBciProformaPdf(){
   if (!AUTHOR.structureId) { alert('Load a structure and inspection first.'); return; }
   const { overlay, box } = showOverlay('fa-cog fa-spin', 'Generating BCI Proforma…', 'Building the per-span defect grid');
@@ -1657,6 +1675,38 @@ async function generateBciProformaPdf(){
     const spansData = await defectsRes.json();
     const worksRequired = await worksRes.json();
 
+    const span1 = spansData.find(s => Number(s.span_number) === 1) || spansData[0];
+    if (span1) {
+      const liveDefects = [];
+      const liveWorksRequired = [];
+      AUTHOR.diffElements.forEach(el => {
+        const pushLive = (defect, isPrimary) => {
+          liveDefects.push({
+            element_no: el.elementNumber, element_description: el.name, is_primary: isPrimary,
+            s: defect.severity, ex: defect.extent, def: defect.defectType, defn: defect.defectNumber,
+            w: defect.worksRequired, p: defect.priority, cost: defect.cost,
+            comments_remarks: defect.comments || ''
+          });
+          if (defect.worksRequired === 'Y') {
+            liveWorksRequired.push({
+              spanNumber: 1, elementNumber: el.elementNumber, elementDescription: el.name,
+              worksRequired: 'Y', priority: defect.priority,
+              cost: defect.cost ? `£${Number(defect.cost).toFixed(2)}` : 'Not specified',
+              remedialWorks: defect.remedialWorks || '', comments: defect.comments || ''
+            });
+          }
+        };
+        if (el.current.status === 'defect') pushLive(el.current, true);
+        (el.extraDefects || []).forEach(extra => pushLive(extra, false));
+        if (el.current.status === 'good') liveDefects.push({ element_no: el.elementNumber, element_description: el.name, is_primary: true, def: '0', defn: '0' });
+        else if (el.current.status === 'ninsp') liveDefects.push({ element_no: el.elementNumber, element_description: el.name, is_primary: true, def: '0', defn: '1' });
+      });
+      span1.defects = liveDefects;
+      span1.bci_av = AUTHOR.bciAvg;
+      span1.bci_crit = AUTHOR.bciCrit;
+      worksRequired.worksRequired = liveWorksRequired;
+    }
+
     const bciFormData = {
       structureName: AUTHOR.structureName, structureId: AUTHOR.structureId,
       bridgeData: bridge, totalSpans: bridge.span_number || 1,
@@ -1669,7 +1719,7 @@ async function generateBciProformaPdf(){
     };
     const fileName = AUTHOR.structureName.replace(/[^a-z0-9]/gi, '_') + '_BCI_Proforma.pdf';
     pdfMake.createPdf(docDefinition).download(fileName);
-    finishOverlay(box, overlay, 'fa-check', 'Downloaded', `${fileName} was generated from the same BCI Proforma used elsewhere in spanSense.`);
+    finishOverlay(box, overlay, 'fa-check', 'Downloaded', `${fileName} was generated from Author's live severity/extent/works edits.`);
   } catch (err) {
     console.error('BCI Proforma generation failed:', err);
     finishOverlay(box, overlay, 'fa-triangle-exclamation', 'Generation failed', err.message || 'Something went wrong building the PDF.', true);
@@ -1678,11 +1728,12 @@ async function generateBciProformaPdf(){
 
 // Full inspection report PDF - reuses the app's real report generator
 // (test.js's generateSimplePDFReport / buildInspectionReportDocDefinition),
-// so cover, TOC, structure details, BCI summary, photo appendix and BCI
-// Proforma appendix are byte-for-byte the same format spanSense already
-// produces elsewhere. Only the per-element narrative differs: Author's
-// drafted (previous-inspection-aware) text stands in for the raw stored
-// comment, via generateSimplePDFReport's narrativeByElement override.
+// so cover, TOC, structure details, photo appendix and BCI Proforma
+// appendix are byte-for-byte the same format spanSense already produces
+// elsewhere. defectOverrides/bciOverride replace its per-defect content
+// and BCI summary with Author's live state (see generateSimplePDFReport
+// in test.js) - narrative, severity/extent/works/priority/cost edits and
+// any added or removed defects, not just the drafted text.
 async function generateFullReportPdf(){
   if (!AUTHOR.structureId) { alert('Load a structure and inspection first.'); return; }
   const { overlay, box } = showOverlay('fa-cog fa-spin', 'Generating full report…', 'Assembling structure details, defects, and the BCI Proforma appendix');
@@ -1691,17 +1742,21 @@ async function generateFullReportPdf(){
       throw new Error('Report generator not loaded yet - please wait a moment and try again.');
     }
     const dateStr = AUTHOR.inspectionDate;
-    const narrativeByElement = {};
-    AUTHOR.diffElements.forEach(el => {
-      if (el.current.status === 'defect') narrativeByElement[el.elementNumber] = narrativeFor(el);
-    });
+    const defectOverrides = liveDefectList().map(({ el, defect, extraIdx, isExtra }) => ({
+      elementNumber: el.elementNumber, isExtra,
+      defectDbId: defect.defectDbId, defectType: defect.defectType, defectNumber: defect.defectNumber,
+      severity: defect.severity, extent: defect.extent, worksRequired: defect.worksRequired,
+      priority: defect.priority, cost: defect.cost, remedialWorks: defect.remedialWorks,
+      comments: narrativeFor(el, extraIdx)
+    }));
     await window.generateSimplePDFReport({
       structure_id: AUTHOR.structureId,
       structure_name: AUTHOR.structureName,
       date: dateStr,
-      narrativeByElement
+      defectOverrides,
+      bciOverride: { bciAv: AUTHOR.bciAvg, bciCrit: AUTHOR.bciCrit }
     }, 'download');
-    finishOverlay(box, overlay, 'fa-check', 'Downloaded', 'The full inspection report was generated with Author\'s drafted narrative in place of the raw stored comments.');
+    finishOverlay(box, overlay, 'fa-check', 'Downloaded', 'The full inspection report was generated from Author\'s live drafted state - narrative, severity/extent/works edits, and any added or removed defects.');
   } catch (err) {
     console.error('Full report generation failed:', err);
     finishOverlay(box, overlay, 'fa-triangle-exclamation', 'Generation failed', err.message || 'Something went wrong building the report.', true);
