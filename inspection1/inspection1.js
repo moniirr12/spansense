@@ -388,7 +388,9 @@ async function fetchLatestInspectionDate(bridgeId) {
             if (lastInspEl) {
                 const isCurrentDate = latestDate === currentInspectionDate;
                 const dateDisplay = formatDate(latestDate);
-                lastInspEl.innerHTML = isCurrentDate ? `${dateDisplay} (current)` : dateDisplay;
+                lastInspEl.innerHTML = isCurrentDate
+                    ? `${dateDisplay} <i class="fas fa-circle-check current-insp-icon" title="This is the inspection you're currently editing"></i>`
+                    : dateDisplay;
             }
 
             if (isEditMode) {
