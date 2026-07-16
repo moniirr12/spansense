@@ -639,6 +639,108 @@ document.getElementById('newInspectionDate').addEventListener('change', function
 document.getElementById('newInspectionType').addEventListener('change', function(){ AUTHOR.newInspectionType = this.value || null; });
 loadStructures();
 
+// ---- Upload a previous inspection (structure whose last inspection
+// wasn't done in spanSense) - extracts per-element narrative out of an
+// uploaded PDF/Word via /api/author/extract-previous-inspection, then
+// converges on the exact same "loaded" state onLoad() reaches, just with
+// no historical comparison (previousDate/bciTrend stay empty - the
+// extracted content IS the starting draft, not a second data source
+// diffed against something else). See extractPreviousInspection.js for
+// why severity/extent default to 1/A rather than being parsed too.
+let prevInspectionFile = null;
+document.getElementById('prevInspectionZone').addEventListener('click', () => document.getElementById('prevInspectionInput').click());
+document.getElementById('prevInspectionInput').addEventListener('change', function(){
+  prevInspectionFile = this.files[0] || null;
+  const titleEl = document.getElementById('prevInspectionZoneTitle');
+  titleEl.textContent = prevInspectionFile ? prevInspectionFile.name : 'Upload a previous inspection report';
+  document.getElementById('loadUploadBtn').disabled = !(prevInspectionFile && document.getElementById('structureSelect').value);
+});
+document.getElementById('structureSelect').addEventListener('change', function(){
+  document.getElementById('loadUploadBtn').disabled = !(prevInspectionFile && this.value);
+});
+
+async function onLoadFromUpload(){
+  const structureId = document.getElementById('structureSelect').value;
+  if (!structureId || !prevInspectionFile) return;
+
+  const loadBtn = document.getElementById('loadUploadBtn');
+  loadBtn.disabled = true;
+  loadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Extracting…';
+  try {
+    const formData = new FormData();
+    formData.append('file', prevInspectionFile);
+    formData.append('structureId', structureId);
+    const [extractRes, bridgeRes] = await Promise.all([
+      fetch(`${API_BASE}/api/author/extract-previous-inspection`, { method: 'POST', body: formData }),
+      fetch(`${API_BASE}/api/bridges/${structureId}`)
+    ]);
+    if (!extractRes.ok) throw new Error((await extractRes.json()).error || 'Failed to extract the document');
+    const extract = await extractRes.json();
+    const bridge = await bridgeRes.json();
+
+    sessionStorage.setItem('structureId', structureId);
+    sessionStorage.setItem('structureName', bridge.name);
+
+    AUTHOR.structureId = structureId;
+    AUTHOR.structureName = bridge.name;
+    AUTHOR.structureType = extract.structureType;
+    AUTHOR.organizationId = extract.organizationId;
+    AUTHOR.inspectionDate = null;
+    AUTHOR.previousDate = null;
+    AUTHOR.structureDescription = bridge.description || null;
+    AUTHOR.inspectorName = null;
+    AUTHOR.bciTrend = [];
+    AUTHOR.bciAvg = null;
+    AUTHOR.bciCrit = null;
+    AUTHOR.diffElements = extract.elements.map(e => {
+      // The extracted text is already a real, complete narrative from the
+      // document, not a raw one-line "comment" - show it as-is (editedNarrative,
+      // which for the primary defect lives on the element itself, not
+      // el.current - see narrativeFor()) rather than letting buildNarrative()
+      // wrap it in a generated template sentence with the real text crammed
+      // into a parenthetical after it.
+      e.current.reviewed = false; e.current.collapsed = false; e.current.heroIndex = 0;
+      return {
+        ...e,
+        category: categoryFor(extract.structureType, e.elementNumber),
+        extraDefects: [], hadBaseDefect: false,
+        editedNarrative: e.current.status === 'defect' ? e.current.comments : null
+      };
+    });
+    draftFilter = 'all';
+    AUTHOR.photosByElement = {};
+    AUTHOR.diffElements.forEach(el => { el.photos = []; });
+
+    const summary = document.getElementById('uploadSummary');
+    summary.innerHTML = extract.warning
+      ? `<div class="no-history-note"><i class="fas fa-triangle-exclamation"></i> ${extract.warning}</div>`
+      : `<div class="loaded-chip"><i class="fas fa-circle-check"></i> Extracted — review every card, this is a best-effort read of the document, not verified data.</div>`;
+
+    document.getElementById('leftBciCards').style.display = 'flex';
+    recomputeLiveBCI();
+
+    const newInspRow = document.getElementById('newInspRow');
+    newInspRow.style.display = 'block';
+    const dateInput = document.getElementById('newInspectionDate');
+    if (!dateInput.value) dateInput.value = new Date().toISOString().slice(0,10);
+    AUTHOR.newInspectionDate = dateInput.value;
+    AUTHOR.newInspectionType = document.getElementById('newInspectionType').value || null;
+
+    document.getElementById('brandingCard').style.display = 'block';
+    document.getElementById('setupBottomNav').style.display = 'flex';
+    await loadBranding(extract.organizationId);
+    document.getElementById('brandingCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } catch (err) {
+    document.getElementById('uploadSummary').innerHTML =
+      `<div class="no-history-note"><i class="fas fa-triangle-exclamation"></i> ${err.message}</div>`;
+    console.error('Error extracting previous inspection:', err);
+  } finally {
+    loadBtn.disabled = false;
+    loadBtn.innerHTML = '<i class="fas fa-arrow-right"></i> Load from this document';
+  }
+}
+document.getElementById('loadUploadBtn').addEventListener('click', onLoadFromUpload);
+
 // ---- Branding & Template picker (real, persisted per organization) ----
 async function loadBranding(organizationId){
   try {

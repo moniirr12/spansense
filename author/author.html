@@ -896,12 +896,17 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
             </div>
         </div>
 
-        <div class="card" id="sourceRecords">
+        <div class="card">
             <div class="picker-row">
-                <div class="picker-field">
+                <div class="picker-field" style="flex:1;">
                     <label>Structure</label>
                     <select id="structureSelect"><option value="">Loading structures…</option></select>
                 </div>
+            </div>
+        </div>
+
+        <div class="card" id="sourceRecords">
+            <div class="picker-row">
                 <div class="picker-field">
                     <label>Compare against (base inspection)</label>
                     <select id="inspectionSelect" disabled><option value="">Select a structure first</option></select>
@@ -912,12 +917,14 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
         </div>
 
         <div class="card" id="sourceUpload" style="display:none;">
-            <div class="upload-zone">
+            <div class="upload-zone" id="prevInspectionZone">
                 <i class="fas fa-file-arrow-up"></i>
-                <div class="u-title">Upload a previous inspection report</div>
+                <div class="u-title" id="prevInspectionZoneTitle">Upload a previous inspection report</div>
                 <div class="u-sub">PDF or Word — for a structure whose last inspection wasn't done in spanSense</div>
             </div>
-            <div class="coming-soon-note"><i class="fas fa-flask"></i> Not wired up yet — this will let Author read a previous report's defects straight out of the PDF/Word file instead of requiring prior spanSense data.</div>
+            <input type="file" id="prevInspectionInput" accept=".pdf,.doc,.docx" hidden>
+            <button class="btn-load" id="loadUploadBtn" disabled style="margin-top:14px;"><i class="fas fa-arrow-right"></i> Load from this document</button>
+            <div id="uploadSummary"></div>
         </div>
 
         <div class="card" id="brandingCard" style="display:none;">

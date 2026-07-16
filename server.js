@@ -17,6 +17,9 @@ const fs = require('fs');
 const proj4 = require('proj4');
 const bcrypt = require('bcryptjs');
 const storage = require('./supabaseStorage');
+const { PDFParse } = require('pdf-parse');
+const mammoth = require('mammoth');
+const { extractElements } = require('./extractPreviousInspection');
 
 const router = express.Router();
 const session = require('express-session');
@@ -2008,6 +2011,60 @@ app.get('/api/author/diff', requireAuth, async (req, res) => {
         });
     } catch (err) {
         console.error('Error building author diff:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Author's "Upload a previous inspection" flow - for a structure whose
+// last inspection wasn't done in spanSense. Extracts per-element narrative
+// out of an uploaded PDF/Word report (see extractPreviousInspection.js for
+// the approach/limitations) and returns the same shape /api/author/diff
+// does, with previous always null and comparison always 'first' - the
+// extracted content becomes the starting draft itself, not a second data
+// source diffed against some other spanSense inspection.
+app.post('/api/author/extract-previous-inspection', requireAuth, upload.single('file'), async (req, res) => {
+    try {
+        const { structureId } = req.body;
+        if (!structureId) return res.status(400).json({ error: 'structureId is required' });
+        if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+        const bridge = await dbGet('SELECT type, organization_id FROM bridges WHERE id = $1', [structureId]);
+        if (!bridge) return res.status(404).json({ error: 'Structure not found' });
+        const structureType = resolveElementsType(bridge.type);
+
+        const elementRows = await dbAll(
+            'SELECT element_number, description FROM elements WHERE structure_type = $1 ORDER BY display_order ASC',
+            [structureType]
+        );
+
+        let text;
+        if (req.file.mimetype === 'application/pdf') {
+            const parser = new PDFParse({ data: req.file.buffer });
+            const result = await parser.getText();
+            text = result.text;
+        } else if (
+            req.file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+            req.file.mimetype === 'application/msword'
+        ) {
+            const result = await mammoth.extractRawText({ buffer: req.file.buffer });
+            text = result.value;
+        } else {
+            return res.status(400).json({ error: 'Please upload a PDF or Word (.doc/.docx) file.' });
+        }
+
+        const { elements, warning } = extractElements(text, elementRows.map(r => ({
+            element_number: r.element_number,
+            description: r.description
+        })));
+
+        res.json({
+            structureType,
+            organizationId: bridge.organization_id,
+            elements,
+            warning
+        });
+    } catch (err) {
+        console.error('Error extracting previous inspection:', err);
         res.status(500).json({ error: err.message });
     }
 });
