@@ -198,7 +198,7 @@ fetch('bridges.json')
 
         // Setup Fuse.js for search
         fuse = new Fuse(bridgeData, {
-            keys: ['name', 'location'],
+            keys: ['name', 'location', 'id'],
             threshold: 0.3
         });
 
@@ -423,7 +423,7 @@ if (searchInput && searchResults) {
 
         searchResults.innerHTML = results.map(result => `
             <div data-lat="${result.item.latitude}" data-lng="${result.item.longitude}">
-                ${result.item.name} - ${result.item.location}
+                ${result.item.id} - ${result.item.name}
             </div>
         `).join('');
 
