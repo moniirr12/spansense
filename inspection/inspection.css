@@ -1426,23 +1426,24 @@ body {
 #modal .modal-content {
     position: fixed;
     left: 50%;
-    top: 50%;
+    /* Centered between the navbar's bottom edge and the viewport bottom,
+       not the full viewport - true `top: 50%` ignores the navbar (fixed,
+       top:20px, height:64px, so its bottom edge sits at 84px) entirely,
+       which centers this box in [0, 100vh] instead of [84px, 100vh]. That
+       skews it 42px (half the navbar's reserved zone) too close to the
+       navbar - barely visible when the modal is short, but a hard clash
+       once the modal grows tall enough to need its internal scrollbar.
+       Shifting the centerline down by that same 42px re-centers it in the
+       actual visible band below the navbar, at any modal height. */
+    top: calc(50% + 42px);
     transform: translate(-50%, -50%);
     margin: 0;
     transition: left 0.3s ease;
     max-width: 467px;
     /* Taller than the shared .modal-content cap (80vh-60px) - this modal's
        Works Detail panel (Priority/Cost/Remedial Works) needs the extra
-       room to avoid a scrollbar on common laptop viewport heights. Capped
-       at 100vh-128px rather than a plain vh fraction: with align-items:
-       center and the existing 60px padding-top, the navbar (fixed, top:20px,
-       height:64px, so its bottom edge is at 84px) sits in a higher stacking
-       context than this overlay - a taller modal-content still centers
-       within the viewport and can ride up far enough to go visually behind
-       the navbar. 128px keeps at least ~36px of centering slack above the
-       60px padding-top reservation, which clears the navbar's 84px bottom
-       edge with room to spare, at any viewport height. */
-    max-height: calc(100vh - 128px);
+       room to avoid a scrollbar on common laptop viewport heights. */
+    max-height: calc(100vh - 100px);
 }
 #modal .modal-header {
     padding: 14px 24px;
@@ -1461,7 +1462,9 @@ body {
 .modal-side-rail {
     position: fixed;
     left: calc(50% + 247.5px);
-    top: 50%;
+    /* Same navbar-clearance offset as #modal .modal-content, so this panel
+       stays vertically aligned with the modal it floats beside. */
+    top: calc(50% + 42px);
     transform: translateY(-50%);
     display: flex;
     flex-direction: column;
@@ -4240,7 +4243,9 @@ body.night-mode.contracted-rows #inspectionElementsTable tr.expandable-row .grid
 .prev-defects-panel {
     position: fixed;
     right: calc(50% + 247.5px);
-    top: 50%;
+    /* Same navbar-clearance offset as #modal .modal-content, so this panel
+       stays vertically aligned with the modal it floats beside. */
+    top: calc(50% + 42px);
     transform: translateY(-50%);
     width: 240px;
     max-height: calc(72vh - 54px);
