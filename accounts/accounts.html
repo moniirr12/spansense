@@ -898,7 +898,7 @@
                         <div class="sec-icon password"><i class="fas fa-key"></i></div>
                         <div class="sec-details">
                             <div class="sec-title">Password</div>
-                            <div class="sec-desc">Last changed 3 months ago</div>
+                            <div class="sec-desc" id="passwordChangedDesc">—</div>
                         </div>
                     </div>
                     <div class="password-form" style="width: 100%; padding-left: 52px;">
@@ -911,7 +911,7 @@
                         <div class="form-group" style="margin-bottom: 12px;">
                             <input type="password" id="confirmPassword" placeholder="Confirm new password" style="width: 100%;">
                         </div>
-                        <button class="btn-save" onclick="showToast('Password Updated', 'Your password has been changed successfully', 'success')" style="padding: 10px 20px; font-size: 0.8rem;">
+                        <button class="btn-save" id="updatePasswordBtn" style="padding: 10px 20px; font-size: 0.8rem;">
                             <i class="fas fa-check"></i> Update Password
                         </button>
                     </div>
@@ -1095,6 +1095,25 @@
                     ' at ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
             }
 
+            function formatRelative(iso) {
+                if (!iso) return 'Never changed';
+                var d = new Date(iso);
+                if (isNaN(d.getTime())) return 'Never changed';
+                var seconds = Math.max(0, (Date.now() - d.getTime()) / 1000);
+                var units = [
+                    { secs: 31536000, label: 'year' },
+                    { secs: 2592000, label: 'month' },
+                    { secs: 86400, label: 'day' },
+                    { secs: 3600, label: 'hour' },
+                    { secs: 60, label: 'minute' }
+                ];
+                for (var i = 0; i < units.length; i++) {
+                    var count = Math.floor(seconds / units[i].secs);
+                    if (count >= 1) return 'Last changed ' + count + ' ' + units[i].label + (count > 1 ? 's' : '') + ' ago';
+                }
+                return 'Last changed just now';
+            }
+
             fetch('/api/me').then(function (r) { return r.ok ? r.json() : null; }).then(function (user) {
                 if (!user) return;
                 var roleLabel = ROLE_LABEL[user.role] || user.role;
@@ -1119,6 +1138,9 @@
 
                 var lastLoginEl = document.getElementById('lastLoginDesc');
                 if (lastLoginEl) lastLoginEl.textContent = formatLastLogin(user.last_login);
+
+                var passwordChangedEl = document.getElementById('passwordChangedDesc');
+                if (passwordChangedEl) passwordChangedEl.textContent = formatRelative(user.password_changed_at);
             }).catch(function (e) {
                 console.error('Failed to load profile:', e);
             });
@@ -1275,6 +1297,57 @@
                     })
                     .catch(function (e) {
                         showToast('Error', e.message || 'Incorrect password', 'error');
+                    });
+            };
+        })();
+
+        // ============================================
+        // PASSWORD CHANGE
+        // ============================================
+        (function () {
+            function formatRelativeNow() {
+                return 'Last changed just now';
+            }
+
+            document.getElementById('updatePasswordBtn').onclick = function () {
+                var currentPasswordEl = document.getElementById('currentPassword');
+                var newPasswordEl = document.getElementById('newPassword');
+                var confirmPasswordEl = document.getElementById('confirmPassword');
+
+                var currentPassword = currentPasswordEl.value || '';
+                var newPassword = newPasswordEl.value || '';
+                var confirmPassword = confirmPasswordEl.value || '';
+
+                if (!currentPassword || !newPassword || !confirmPassword) {
+                    showToast('Error', 'Fill in all three password fields', 'error');
+                    return;
+                }
+                if (newPassword.length < 8) {
+                    showToast('Error', 'New password must be at least 8 characters', 'error');
+                    return;
+                }
+                if (newPassword !== confirmPassword) {
+                    showToast('Error', 'New password and confirmation do not match', 'error');
+                    return;
+                }
+
+                fetch('/api/me/password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ currentPassword: currentPassword, newPassword: newPassword })
+                })
+                    .then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
+                    .then(function (result) {
+                        if (!result.ok) throw new Error(result.data.error || 'Failed to update password');
+                        currentPasswordEl.value = '';
+                        newPasswordEl.value = '';
+                        confirmPasswordEl.value = '';
+                        var passwordChangedEl = document.getElementById('passwordChangedDesc');
+                        if (passwordChangedEl) passwordChangedEl.textContent = formatRelativeNow();
+                        showToast('Password Updated', 'Your password has been changed successfully', 'success');
+                    })
+                    .catch(function (e) {
+                        showToast('Error', e.message || 'Failed to update password', 'error');
                     });
             };
         })();

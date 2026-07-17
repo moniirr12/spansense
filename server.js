@@ -169,6 +169,7 @@ async function initDatabase() {
         // just leaves an unused secret sitting here rather than half-enabling 2FA.
         await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret TEXT`);
         await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN DEFAULT false`);
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_changed_at TIMESTAMP`);
 
         // Insert default admin user if table is empty
         const userCount = await dbGet("SELECT COUNT(*) as count FROM users");
@@ -2665,7 +2666,7 @@ app.get('/api/check-session', (req, res) => {
 app.get('/api/me', requireAuth, async (req, res) => {
     try {
         const user = await dbGet(
-            'SELECT username, full_name, role, created_at, email, phone, last_login, totp_enabled FROM users WHERE id = $1',
+            'SELECT username, full_name, role, created_at, email, phone, last_login, totp_enabled, password_changed_at FROM users WHERE id = $1',
             [req.session.userId]
         );
         if (!user) return res.status(404).json({ error: 'User not found' });
@@ -2701,7 +2702,7 @@ app.put('/api/me', requireAuth, async (req, res) => {
         );
 
         const user = await dbGet(
-            'SELECT username, full_name, role, created_at, email, phone, last_login, totp_enabled FROM users WHERE id = $1',
+            'SELECT username, full_name, role, created_at, email, phone, last_login, totp_enabled, password_changed_at FROM users WHERE id = $1',
             [req.session.userId]
         );
         res.json(user);
@@ -2779,6 +2780,44 @@ app.post('/api/me/2fa/disable', requireAuth, async (req, res) => {
         res.json({ success: true });
     } catch (err) {
         console.error('2FA disable error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Lets a user change their own password. Requires the current password
+// (not just an active session) so a hijacked but unattended session can't
+// be used to lock the real owner out by silently swapping the password.
+app.post('/api/me/password', requireAuth, async (req, res) => {
+    try {
+        const currentPassword = req.body.currentPassword || '';
+        const newPassword = req.body.newPassword || '';
+
+        if (newPassword.length < 8) {
+            return res.status(400).json({ error: 'New password must be at least 8 characters' });
+        }
+
+        const user = await dbGet('SELECT password FROM users WHERE id = $1', [req.session.userId]);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        const passwordMatches = await bcrypt.compare(currentPassword, user.password);
+        if (!passwordMatches) {
+            return res.status(401).json({ error: 'Current password is incorrect' });
+        }
+
+        const sameAsOld = await bcrypt.compare(newPassword, user.password);
+        if (sameAsOld) {
+            return res.status(400).json({ error: 'New password must be different from your current password' });
+        }
+
+        const newHash = await bcrypt.hash(newPassword, 10);
+        await dbRun(
+            'UPDATE users SET password = $1, password_changed_at = CURRENT_TIMESTAMP WHERE id = $2',
+            [newHash, req.session.userId]
+        );
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Password change error:', err);
         res.status(500).json({ error: err.message });
     }
 });
