@@ -16,6 +16,7 @@ const path = require('path');
 const fs = require('fs');
 const proj4 = require('proj4');
 const bcrypt = require('bcryptjs');
+const { authenticator } = require('otplib');
 const storage = require('./supabaseStorage');
 const { PDFParse } = require('pdf-parse');
 const mammoth = require('mammoth');
@@ -162,6 +163,12 @@ async function initDatabase() {
             )
         `);
         await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`);
+        // TOTP secret is written as soon as setup starts, before the user has
+        // confirmed a code from their authenticator app - totp_enabled is the
+        // actual gate on whether it's used at login, so an abandoned setup
+        // just leaves an unused secret sitting here rather than half-enabling 2FA.
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret TEXT`);
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN DEFAULT false`);
 
         // Insert default admin user if table is empty
         const userCount = await dbGet("SELECT COUNT(*) as count FROM users");
@@ -2529,6 +2536,16 @@ app.post('/api/login', async (req, res) => {
         const passwordMatches = await bcrypt.compare(password, user.password);
 
         if (passwordMatches) {
+            if (user.totp_enabled) {
+                // Correct password, but a second factor is still required -
+                // req.session.userId is deliberately NOT set yet, so
+                // requireAuth keeps rejecting every other route until
+                // /api/login/2fa succeeds.
+                req.session.pendingUserId = user.id;
+                req.session.pendingAttempts = 0;
+                return res.json({ success: true, requires2FA: true });
+            }
+
             req.session.userId = user.id;
             req.session.username = user.username;
             req.session.organizationId = user.organization_id;
@@ -2540,7 +2557,7 @@ app.post('/api/login', async (req, res) => {
                 [user.id]
             );
 
-            res.json({ 
+            res.json({
                 success: true,
                 user: {
                     username: user.username,
@@ -2549,17 +2566,70 @@ app.post('/api/login', async (req, res) => {
                 }
             });
         } else {
-            res.status(401).json({ 
-                success: false, 
-                message: 'Invalid username or password' 
+            res.status(401).json({
+                success: false,
+                message: 'Invalid username or password'
             });
         }
     } catch (err) {
         console.error('Database error:', err);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Server error' 
+        res.status(500).json({
+            success: false,
+            message: 'Server error'
         });
+    }
+});
+
+// Second step of login when the account has 2FA enabled - requires
+// req.session.pendingUserId from /api/login above, so this can't be hit
+// standalone without a correct password first.
+app.post('/api/login/2fa', async (req, res) => {
+    try {
+        if (!req.session.pendingUserId) {
+            return res.status(400).json({ success: false, message: 'No login in progress' });
+        }
+
+        const code = (req.body.code || '').trim();
+        if (!/^\d{6}$/.test(code)) {
+            return res.status(400).json({ success: false, message: 'Enter the 6-digit code from your authenticator app' });
+        }
+
+        // Basic brute-force guard - 5 wrong codes and the pending login is
+        // discarded, forcing a fresh username/password attempt.
+        req.session.pendingAttempts = (req.session.pendingAttempts || 0) + 1;
+        if (req.session.pendingAttempts > 5) {
+            delete req.session.pendingUserId;
+            delete req.session.pendingAttempts;
+            return res.status(429).json({ success: false, message: 'Too many attempts - please sign in again' });
+        }
+
+        const user = await dbGet('SELECT * FROM users WHERE id = $1', [req.session.pendingUserId]);
+        if (!user || !user.totp_enabled || !user.totp_secret) {
+            delete req.session.pendingUserId;
+            delete req.session.pendingAttempts;
+            return res.status(400).json({ success: false, message: 'No login in progress' });
+        }
+
+        if (!authenticator.check(code, user.totp_secret)) {
+            return res.status(401).json({ success: false, message: 'Incorrect code' });
+        }
+
+        req.session.userId = user.id;
+        req.session.username = user.username;
+        req.session.organizationId = user.organization_id;
+        req.session.role = user.role;
+        delete req.session.pendingUserId;
+        delete req.session.pendingAttempts;
+
+        await pool.query('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1', [user.id]);
+
+        res.json({
+            success: true,
+            user: { username: user.username, role: user.role, fullName: user.full_name }
+        });
+    } catch (err) {
+        console.error('2FA login error:', err);
+        res.status(500).json({ success: false, message: 'Server error' });
     }
 });
 
@@ -2595,7 +2665,7 @@ app.get('/api/check-session', (req, res) => {
 app.get('/api/me', requireAuth, async (req, res) => {
     try {
         const user = await dbGet(
-            'SELECT username, full_name, role, created_at, email, phone FROM users WHERE id = $1',
+            'SELECT username, full_name, role, created_at, email, phone, last_login, totp_enabled FROM users WHERE id = $1',
             [req.session.userId]
         );
         if (!user) return res.status(404).json({ error: 'User not found' });
@@ -2631,12 +2701,84 @@ app.put('/api/me', requireAuth, async (req, res) => {
         );
 
         const user = await dbGet(
-            'SELECT username, full_name, role, created_at, email, phone FROM users WHERE id = $1',
+            'SELECT username, full_name, role, created_at, email, phone, last_login, totp_enabled FROM users WHERE id = $1',
             [req.session.userId]
         );
         res.json(user);
     } catch (err) {
         console.error('Update /api/me error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ============================================
+// TWO-FACTOR AUTHENTICATION (TOTP - Google/Microsoft Authenticator compatible)
+// ============================================
+
+// Starts (or restarts) 2FA setup: generates a new secret and stores it
+// unconfirmed (totp_enabled stays false) - nothing is actually enabled
+// until /api/me/2fa/verify succeeds, so an abandoned setup or a re-scan
+// just replaces the pending secret rather than half-enabling 2FA.
+app.post('/api/me/2fa/setup', requireAuth, async (req, res) => {
+    try {
+        const user = await dbGet('SELECT username FROM users WHERE id = $1', [req.session.userId]);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        const secret = authenticator.generateSecret();
+        await dbRun('UPDATE users SET totp_secret = $1, totp_enabled = false WHERE id = $2', [secret, req.session.userId]);
+
+        const otpauthUrl = authenticator.keyuri(user.username, 'spanSense', secret);
+        res.json({ secret, otpauthUrl });
+    } catch (err) {
+        console.error('2FA setup error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Confirms setup - the user has to prove they can generate a valid code
+// from the secret (i.e. it's really in their authenticator app) before it
+// starts being required at login.
+app.post('/api/me/2fa/verify', requireAuth, async (req, res) => {
+    try {
+        const code = (req.body.code || '').trim();
+        if (!/^\d{6}$/.test(code)) {
+            return res.status(400).json({ error: 'Enter the 6-digit code from your authenticator app' });
+        }
+
+        const user = await dbGet('SELECT totp_secret FROM users WHERE id = $1', [req.session.userId]);
+        if (!user || !user.totp_secret) {
+            return res.status(400).json({ error: 'No 2FA setup in progress - start setup again' });
+        }
+
+        if (!authenticator.check(code, user.totp_secret)) {
+            return res.status(401).json({ error: 'Incorrect code' });
+        }
+
+        await dbRun('UPDATE users SET totp_enabled = true WHERE id = $1', [req.session.userId]);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('2FA verify error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Disabling removes a security control, so it requires re-entering the
+// current password rather than a bare click - the same bar as changing it.
+app.post('/api/me/2fa/disable', requireAuth, async (req, res) => {
+    try {
+        const password = req.body.password || '';
+        const user = await dbGet('SELECT password FROM users WHERE id = $1', [req.session.userId]);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        const passwordMatches = await bcrypt.compare(password, user.password);
+        if (!passwordMatches) {
+            return res.status(401).json({ error: 'Incorrect password' });
+        }
+
+        await dbRun('UPDATE users SET totp_enabled = false, totp_secret = NULL WHERE id = $1', [req.session.userId]);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('2FA disable error:', err);
         res.status(500).json({ error: err.message });
     }
 });

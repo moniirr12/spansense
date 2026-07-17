@@ -444,6 +444,9 @@
             gap: 6px;
         }
         .security-item .sec-status i { font-size: 0.65rem; }
+        .mfa-hint { font-size: 0.8rem; color: #5b6b7a; margin: 0 0 10px; }
+        .mfa-hint-small { font-size: 0.72rem; color: #8a9ba8; margin: 0 0 10px; }
+        #mfaSecretText { background: rgba(91,140,138,0.1); padding: 2px 6px; border-radius: 6px; }
 
         /* Activity / history card (full width) */
         .activity-card {
@@ -723,6 +726,9 @@
         .night-mode .security-item .sec-action { background: #1e2a2f; border-color: #3a4b53; color: #9ab0b8; }
         .night-mode .security-item .sec-action:hover { border-color: #6e9c98; color: #8ab4b0; }
         .night-mode .security-item .sec-status { color: #8ab4b0; }
+        .night-mode .mfa-hint { color: #9ab0b8; }
+        .night-mode .mfa-hint-small { color: #7a8a92; }
+        .night-mode #mfaSecretText { background: rgba(138,180,176,0.15); color: #8ab4b0; }
         .night-mode .activity-row { background: #1e2a2f; }
         .night-mode .activity-row:hover { background: #2a3a40; }
         .night-mode .activity-row .act-details .act-title { color: #c5d3d9; }
@@ -911,26 +917,70 @@
                     </div>
                 </div>
 
-                <div class="security-item">
-                    <div class="sec-left">
-                        <div class="sec-icon mfa"><i class="fas fa-mobile-alt"></i></div>
-                        <div class="sec-details">
-                            <div class="sec-title">Two-Factor Authentication</div>
-                            <div class="sec-desc">Authenticator app</div>
+                <div class="security-item" style="align-items: flex-start; flex-direction: column; gap: 14px;">
+                    <div style="display:flex; align-items:center; justify-content: space-between; width:100%;">
+                        <div class="sec-left">
+                            <div class="sec-icon mfa"><i class="fas fa-mobile-alt"></i></div>
+                            <div class="sec-details">
+                                <div class="sec-title">Two-Factor Authentication</div>
+                                <div class="sec-desc">Google Authenticator, Microsoft Authenticator, or any TOTP app</div>
+                            </div>
+                        </div>
+                        <div class="sec-status" id="mfaStatus"><i class="fas fa-circle"></i> —</div>
+                    </div>
+
+                    <div id="mfaDisabledActions" style="display:none; padding-left:52px;">
+                        <button class="btn-save" id="mfaEnableBtn" style="padding: 10px 20px; font-size: 0.8rem;">
+                            <i class="fas fa-qrcode"></i> Enable 2FA
+                        </button>
+                    </div>
+
+                    <div id="mfaEnabledActions" style="display:none; padding-left:52px;">
+                        <button class="btn-save" id="mfaDisableBtn" style="padding: 10px 20px; font-size: 0.8rem; background:#c0392b;">
+                            <i class="fas fa-times"></i> Disable 2FA
+                        </button>
+                    </div>
+
+                    <div id="mfaSetupPanel" style="display:none; width:100%; padding-left:52px;">
+                        <p class="mfa-hint">Scan this QR code with your authenticator app:</p>
+                        <div id="mfaQrCode" style="width:180px; height:180px; background:white; border-radius:12px; padding:10px; display:flex; align-items:center; justify-content:center; margin-bottom:10px;"></div>
+                        <p class="mfa-hint-small">Can't scan? Enter this key manually: <code id="mfaSecretText" style="user-select:all;"></code></p>
+                        <div class="form-group" style="margin-bottom: 10px; max-width:180px;">
+                            <input type="text" id="mfaSetupCode" placeholder="6-digit code" inputmode="numeric" maxlength="6">
+                        </div>
+                        <div style="display:flex; gap:8px;">
+                            <button class="btn-save" id="mfaConfirmBtn" style="padding: 10px 20px; font-size: 0.8rem;">
+                                <i class="fas fa-check"></i> Confirm &amp; Enable
+                            </button>
+                            <button class="btn-save" id="mfaCancelSetupBtn" style="padding: 10px 20px; font-size: 0.8rem; background:#8a9ba8;">
+                                Cancel
+                            </button>
                         </div>
                     </div>
-                    <div class="sec-status"><i class="fas fa-circle"></i> Enabled</div>
+
+                    <div id="mfaDisablePanel" style="display:none; width:100%; padding-left:52px;">
+                        <div class="form-group" style="margin-bottom: 10px; max-width:260px;">
+                            <input type="password" id="mfaDisablePassword" placeholder="Current password" style="width:100%;">
+                        </div>
+                        <div style="display:flex; gap:8px;">
+                            <button class="btn-save" id="mfaConfirmDisableBtn" style="padding: 10px 20px; font-size: 0.8rem; background:#c0392b;">
+                                <i class="fas fa-times"></i> Confirm Disable
+                            </button>
+                            <button class="btn-save" id="mfaCancelDisableBtn" style="padding: 10px 20px; font-size: 0.8rem; background:#8a9ba8;">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="security-item">
                     <div class="sec-left">
                         <div class="sec-icon sessions"><i class="fas fa-desktop"></i></div>
                         <div class="sec-details">
-                            <div class="sec-title">Active Sessions</div>
-                            <div class="sec-desc">3 devices currently signed in</div>
+                            <div class="sec-title">Last Signed In</div>
+                            <div class="sec-desc" id="lastLoginDesc">—</div>
                         </div>
                     </div>
-                    <div class="sec-status"><i class="fas fa-circle"></i> 3 active</div>
                 </div>
             </div>
         </div>
@@ -1038,6 +1088,13 @@
                 return isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
             }
 
+            function formatLastLogin(iso) {
+                var d = new Date(iso);
+                if (isNaN(d.getTime())) return 'Never';
+                return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) +
+                    ' at ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+            }
+
             fetch('/api/me').then(function (r) { return r.ok ? r.json() : null; }).then(function (user) {
                 if (!user) return;
                 var roleLabel = ROLE_LABEL[user.role] || user.role;
@@ -1059,6 +1116,9 @@
                 if (jobTitleEl) jobTitleEl.value = roleLabel;
                 if (emailEl) emailEl.value = user.email || '';
                 if (phoneEl) phoneEl.value = user.phone || '';
+
+                var lastLoginEl = document.getElementById('lastLoginDesc');
+                if (lastLoginEl) lastLoginEl.textContent = formatLastLogin(user.last_login);
             }).catch(function (e) {
                 console.error('Failed to load profile:', e);
             });
@@ -1086,6 +1146,135 @@
                     })
                     .catch(function (e) {
                         showToast('Error', e.message || 'Failed to save profile', 'error');
+                    });
+            };
+        })();
+
+        // ============================================
+        // TWO-FACTOR AUTHENTICATION (TOTP)
+        // ============================================
+        (function () {
+            var statusEl = document.getElementById('mfaStatus');
+            var disabledActions = document.getElementById('mfaDisabledActions');
+            var enabledActions = document.getElementById('mfaEnabledActions');
+            var setupPanel = document.getElementById('mfaSetupPanel');
+            var disablePanel = document.getElementById('mfaDisablePanel');
+            var qrCodeEl = document.getElementById('mfaQrCode');
+            var secretTextEl = document.getElementById('mfaSecretText');
+            var setupCodeInput = document.getElementById('mfaSetupCode');
+            var disablePasswordInput = document.getElementById('mfaDisablePassword');
+
+            var qrCodeLibPromise = null;
+            function loadQrCodeLib() {
+                if (typeof QRCode !== 'undefined') return Promise.resolve();
+                if (qrCodeLibPromise) return qrCodeLibPromise;
+                qrCodeLibPromise = new Promise(function (resolve, reject) {
+                    var s = document.createElement('script');
+                    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+                    s.onload = resolve;
+                    s.onerror = reject;
+                    document.head.appendChild(s);
+                });
+                return qrCodeLibPromise;
+            }
+
+            function showStatus(enabled) {
+                if (enabled) {
+                    statusEl.innerHTML = '<i class="fas fa-circle"></i> Enabled';
+                    disabledActions.style.display = 'none';
+                    enabledActions.style.display = 'block';
+                } else {
+                    statusEl.innerHTML = '<i class="fas fa-circle"></i> Not enabled';
+                    disabledActions.style.display = 'block';
+                    enabledActions.style.display = 'none';
+                }
+                setupPanel.style.display = 'none';
+                disablePanel.style.display = 'none';
+            }
+
+            fetch('/api/me').then(function (r) { return r.ok ? r.json() : null; }).then(function (user) {
+                if (!user) return;
+                showStatus(!!user.totp_enabled);
+            }).catch(function (e) {
+                console.error('Failed to load 2FA status:', e);
+            });
+
+            document.getElementById('mfaEnableBtn').onclick = function () {
+                disabledActions.style.display = 'none';
+                setupCodeInput.value = '';
+                qrCodeEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                setupPanel.style.display = 'block';
+
+                Promise.all([
+                    fetch('/api/me/2fa/setup', { method: 'POST' }).then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); }),
+                    loadQrCodeLib()
+                ]).then(function (results) {
+                    var result = results[0];
+                    if (!result.ok) throw new Error(result.data.error || 'Failed to start 2FA setup');
+                    qrCodeEl.innerHTML = '';
+                    new QRCode(qrCodeEl, { text: result.data.otpauthUrl, width: 160, height: 160 });
+                    secretTextEl.textContent = result.data.secret;
+                }).catch(function (e) {
+                    showToast('Error', e.message || 'Failed to start 2FA setup', 'error');
+                    showStatus(false);
+                });
+            };
+
+            document.getElementById('mfaCancelSetupBtn').onclick = function () {
+                showStatus(false);
+            };
+
+            document.getElementById('mfaConfirmBtn').onclick = function () {
+                var code = (setupCodeInput.value || '').trim();
+                if (!/^\d{6}$/.test(code)) {
+                    showToast('Error', 'Enter the 6-digit code from your authenticator app', 'error');
+                    return;
+                }
+                fetch('/api/me/2fa/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code: code })
+                })
+                    .then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
+                    .then(function (result) {
+                        if (!result.ok) throw new Error(result.data.error || 'Incorrect code');
+                        showStatus(true);
+                        showToast('Enabled', 'Two-factor authentication is now on', 'success');
+                    })
+                    .catch(function (e) {
+                        showToast('Error', e.message || 'Incorrect code', 'error');
+                    });
+            };
+
+            document.getElementById('mfaDisableBtn').onclick = function () {
+                enabledActions.style.display = 'none';
+                disablePasswordInput.value = '';
+                disablePanel.style.display = 'block';
+            };
+
+            document.getElementById('mfaCancelDisableBtn').onclick = function () {
+                showStatus(true);
+            };
+
+            document.getElementById('mfaConfirmDisableBtn').onclick = function () {
+                var password = disablePasswordInput.value || '';
+                if (!password) {
+                    showToast('Error', 'Enter your current password', 'error');
+                    return;
+                }
+                fetch('/api/me/2fa/disable', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: password })
+                })
+                    .then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
+                    .then(function (result) {
+                        if (!result.ok) throw new Error(result.data.error || 'Incorrect password');
+                        showStatus(false);
+                        showToast('Disabled', 'Two-factor authentication has been turned off', 'success');
+                    })
+                    .catch(function (e) {
+                        showToast('Error', e.message || 'Incorrect password', 'error');
                     });
             };
         })();
