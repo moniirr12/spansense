@@ -116,9 +116,20 @@ async function loadDefectPhotos(defectId) {
             String(photo.defect_id) === String(defectId) || String(photo.front_defectid) === String(defectId)
         );
         
-        // Merge: Keep local photos that aren't yet uploaded
-        const uploadedUrls = new Set(serverPhotosForDefect.map(p => p.photo_url));
-        const pendingLocalPhotos = existingPhotos.filter(p => !p.photo_url || !uploadedUrls.has(p.photo_url));
+        // Merge: keep local photos that aren't yet uploaded. Dedup by the
+        // stable server-assigned id, not photo_url - the bucket is private,
+        // so photo_url is a freshly-signed, time-limited URL that's a
+        // different string on every single fetch (see supabaseStorage.js's
+        // getSignedUrl). Comparing by URL meant a photo cached in photoData
+        // from an earlier loadDefectPhotos() call (itself server-sourced,
+        // see the merge below) never matched the newest fetch's URLs, so it
+        // kept re-appearing as a second, phantom "not yet uploaded" copy of
+        // a photo that was already saved.
+        const uploadedIds = new Set(serverPhotosForDefect.map(p => p.photo_id || p.id));
+        const pendingLocalPhotos = existingPhotos.filter(p => {
+            const localId = p.photoId || p.id;
+            return !localId || !uploadedIds.has(localId);
+        });
         
         // Combine: server photos first, then pending local photos
         const mergedPhotos = [

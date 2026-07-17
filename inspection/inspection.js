@@ -201,6 +201,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (val === 'Y') {
             if (detail) detail.style.display = 'block';
             if (divider) divider.style.display = 'block';
+            var priorityEl = document.getElementById('priority');
+            if (priorityEl && !priorityEl.value) priorityEl.value = 'L';
         } else {
             if (detail) detail.style.display = 'none';
             if (divider) divider.style.display = 'none';
