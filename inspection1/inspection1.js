@@ -759,7 +759,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const isEditMode = sessionStorage.getItem('inspectionMode') === 'edit';
 
     const saveDraftBtn = document.getElementById('saveDraftBtn');
-    if (saveDraftBtn) {
+    if (saveDraftBtn && window.location.pathname.includes('inspection1.html')) {
         saveDraftBtn.addEventListener('click', function() {
             const commentsTextarea = document.getElementById(`comments-${currentIndex}`);
             if (commentsTextarea) {
