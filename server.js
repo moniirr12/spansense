@@ -2606,6 +2606,41 @@ app.get('/api/me', requireAuth, async (req, res) => {
     }
 });
 
+// Lets a user edit their own name/email/phone. Deliberately does not accept
+// `role` here (even if a client sends one) - the account page's "Job Title"
+// field displays this same column, and it doubles as the permission level
+// checked by requireAdmin/requireEngineer elsewhere, so it must only ever
+// be changed by an admin through a dedicated admin flow, never by the user
+// editing their own profile.
+app.put('/api/me', requireAuth, async (req, res) => {
+    try {
+        const fullName = (req.body.full_name || '').trim();
+        const email = (req.body.email || '').trim();
+        const phone = (req.body.phone || '').trim();
+
+        if (!fullName) {
+            return res.status(400).json({ error: 'Full name is required' });
+        }
+        if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return res.status(400).json({ error: 'Invalid email address' });
+        }
+
+        await dbRun(
+            'UPDATE users SET full_name = $1, email = $2, phone = $3 WHERE id = $4',
+            [fullName, email, phone, req.session.userId]
+        );
+
+        const user = await dbGet(
+            'SELECT username, full_name, role, created_at, email, phone FROM users WHERE id = $1',
+            [req.session.userId]
+        );
+        res.json(user);
+    } catch (err) {
+        console.error('Update /api/me error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // 2. BCI Distribution - Simplified
 app.get('/api/bci-distribution', requireAuth, async (req, res) => {
     try {
