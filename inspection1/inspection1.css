@@ -490,6 +490,7 @@ body {
     gap: 10px;
     width: 46px;
     flex-shrink: 0;
+    overflow: hidden;
     border-radius: 16px;
     background: #eef4f2;
     border: 1px solid #d6e6e3;
@@ -497,8 +498,6 @@ body {
     cursor: pointer;
     font-size: 0.72rem;
     font-weight: 700;
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
     margin-bottom: 24px;
     transition: background 0.2s, width 0.2s;
 }
@@ -513,8 +512,15 @@ body {
 }
 
 .bridge-info-tab svg {
-    writing-mode: horizontal-tb;
     flex-shrink: 0;
+}
+
+/* writing-mode lives on the label only, not the flex container itself -
+   putting it on the container reinterprets the flex axes against the
+   vertical writing mode, which pushed the icon/chevron outside the box. */
+.info-tab-label {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
 }
 
 .info-tab-chevron {
@@ -720,8 +726,13 @@ body {
     .bridge-info-tab {
         flex-direction: row;
         width: 100%;
-        writing-mode: horizontal-tb;
         padding: 10px 0;
+    }
+    .info-tab-label {
+        writing-mode: horizontal-tb;
+    }
+    .bridge-info-tab[aria-expanded="true"] .info-tab-chevron {
+        transform: rotate(90deg);
     }
     .bridge-info-panel.open {
         width: 100%;
