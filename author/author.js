@@ -620,7 +620,6 @@ async function onLoad(){
     AUTHOR.newInspectionDate = dateInput.value;
     AUTHOR.newInspectionType = document.getElementById('newInspectionType').value || null;
 
-    document.getElementById('brandingCard').style.display = 'block';
     document.getElementById('setupBottomNav').style.display = 'flex';
     await loadBranding(diff.organizationId);
     document.getElementById('brandingCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -726,7 +725,6 @@ async function onLoadFromUpload(){
     AUTHOR.newInspectionDate = dateInput.value;
     AUTHOR.newInspectionType = document.getElementById('newInspectionType').value || null;
 
-    document.getElementById('brandingCard').style.display = 'block';
     document.getElementById('setupBottomNav').style.display = 'flex';
     await loadBranding(extract.organizationId);
     document.getElementById('brandingCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
