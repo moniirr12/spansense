@@ -456,10 +456,12 @@ async function fetchAndUpdateBridgeData(bridgeId) {
         
         if (bridgeNameEl && bridgeData.name) bridgeNameEl.innerText = bridgeData.name;
         if (bridgeIdEl && bridgeData.id) bridgeIdEl.innerText = `Bridge ID: ${bridgeData.id}`;
-        
+
+        populateBridgeInfoPanel(bridgeData);
+
         await fetchLatestInspectionDate(bridgeId);
         updateBridgeStatus(bridgeData);
-        
+
         return bridgeData;
     } catch (error) {
         console.error('Error fetching bridge data:', error);
@@ -468,6 +470,152 @@ async function fetchAndUpdateBridgeData(bridgeId) {
         if (document.getElementById('sidebarLastInsp')) document.getElementById('sidebarLastInsp').innerHTML = 'Error';
         if (document.getElementById('sidebarBuiltYear')) document.getElementById('sidebarBuiltYear').innerHTML = '--';
     }
+}
+
+// ============================================================
+// SPAN INFO PANEL - view + edit of the handful of structure facts that
+// don't fit the compact sidebar (description, spans, length, built year,
+// material). Editing is possible but deliberately low-key: a small text
+// link rather than a button (see .info-edit-link in inspection1.css), and
+// saving requires confirming in a modal that spells out the consequence
+// (this is the structure's real record, not just this inspection) - two
+// small bits of friction so a casual click doesn't change shared data by
+// accident, without blocking a genuine correction.
+// ============================================================
+let currentBridgeInfo = null;
+
+function escapeHtml(str) {
+    return String(str == null ? '' : str).replace(/[&<>"']/g, function(c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+}
+
+function bridgeInfoFacts(data) {
+    return {
+        spans: data.span_number || data.total_spans || '',
+        length: data.length_metres || data.length || '',
+        built: data.year_built || data.construction_year || data.built_year || '',
+        material: [data.primary_material, data.secondary_material].filter(Boolean).join(' / ')
+    };
+}
+
+function renderSpanInfoView(data) {
+    const inner = document.getElementById('bridgeInfoPanelInner');
+    if (!inner) return;
+    const f = bridgeInfoFacts(data);
+    const hasDesc = !!data.description;
+
+    inner.innerHTML = `
+        <div class="info-panel-title">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+            Description
+            <button type="button" class="info-edit-link" id="infoEditBtn">Edit</button>
+        </div>
+        <div class="info-panel-desc ${hasDesc ? '' : 'empty'}">${hasDesc ? escapeHtml(data.description) : 'No description recorded for this structure yet.'}</div>
+        <div class="info-panel-facts">
+            <div class="info-fact"><span class="fl">Spans</span><span class="fv">${escapeHtml(f.spans) || '--'}</span></div>
+            <div class="info-fact"><span class="fl">Length</span><span class="fv">${f.length ? escapeHtml(f.length) + ' m' : '--'}</span></div>
+            <div class="info-fact"><span class="fl">Built</span><span class="fv">${escapeHtml(f.built) || '--'}</span></div>
+            <div class="info-fact"><span class="fl">Material</span><span class="fv">${escapeHtml(f.material) || '--'}</span></div>
+        </div>
+    `;
+    const editBtn = document.getElementById('infoEditBtn');
+    if (editBtn) editBtn.addEventListener('click', function() { renderSpanInfoEdit(data); });
+}
+
+function renderSpanInfoEdit(data) {
+    const inner = document.getElementById('bridgeInfoPanelInner');
+    if (!inner) return;
+    const f = bridgeInfoFacts(data);
+
+    inner.innerHTML = `
+        <div class="info-panel-title">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+            Description
+        </div>
+        <textarea class="info-edit-textarea" id="infoEditDesc" placeholder="Add a description for this structure…">${escapeHtml(data.description || '')}</textarea>
+        <div class="info-panel-facts info-panel-facts-edit">
+            <div class="info-fact"><span class="fl">Spans</span><input type="number" id="infoEditSpans" min="1" value="${escapeHtml(f.spans)}"></div>
+            <div class="info-fact"><span class="fl">Length (m)</span><input type="number" id="infoEditLength" min="0" value="${escapeHtml(f.length)}"></div>
+            <div class="info-fact"><span class="fl">Built</span><input type="number" id="infoEditBuilt" min="1000" max="2100" value="${escapeHtml(f.built)}"></div>
+            <div class="info-fact"><span class="fl">Material</span><input type="text" id="infoEditMaterial" value="${escapeHtml(f.material)}"></div>
+        </div>
+        <div class="info-edit-actions">
+            <button type="button" class="info-edit-cancel" id="infoEditCancel">Cancel</button>
+            <button type="button" class="info-edit-save" id="infoEditSave">Save</button>
+        </div>
+    `;
+    document.getElementById('infoEditCancel').addEventListener('click', function() { renderSpanInfoView(currentBridgeInfo); });
+    document.getElementById('infoEditSave').addEventListener('click', onSaveSpanInfo);
+}
+
+async function onSaveSpanInfo() {
+    const payload = {
+        description: document.getElementById('infoEditDesc').value.trim() || null,
+        span_number: parseInt(document.getElementById('infoEditSpans').value, 10) || null,
+        length: parseInt(document.getElementById('infoEditLength').value, 10) || null,
+        built_year: parseInt(document.getElementById('infoEditBuilt').value, 10) || null,
+        material: document.getElementById('infoEditMaterial').value.trim() || null
+    };
+
+    const proceed = await showModal({
+        title: 'Save changes to this structure?',
+        message: `This updates the stored record for ${currentBridgeInfo.name || 'this structure'} and applies to every future inspection and report for it, not just this one.`,
+        type: 'warning',
+        confirmText: 'Save changes',
+        cancelText: 'Keep editing',
+        showCancel: true
+    });
+    if (!proceed) return;
+
+    const saveBtn = document.getElementById('infoEditSave');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving…';
+    try {
+        const res = await fetch(`${API_BASE}/api/bridges/${currentBridgeInfo.id}/info`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error('Save failed');
+
+        currentBridgeInfo = Object.assign({}, currentBridgeInfo, {
+            description: payload.description,
+            span_number: payload.span_number,
+            length: payload.length,
+            built_year: payload.built_year,
+            primary_material: payload.material,
+            secondary_material: null
+        });
+        renderSpanInfoView(currentBridgeInfo);
+    } catch (err) {
+        console.error('Error saving structure info:', err);
+        await showModal({ title: 'Could not save', message: 'Something went wrong saving these changes. Please try again.', type: 'error' });
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save';
+    }
+}
+
+function populateBridgeInfoPanel(bridgeData) {
+    currentBridgeInfo = bridgeData;
+    renderSpanInfoView(bridgeData);
+}
+
+const bridgeInfoTab = document.getElementById('bridgeInfoTab');
+const bridgeInfoPanel = document.getElementById('bridgeInfoPanel');
+if (bridgeInfoTab && bridgeInfoPanel) {
+    renderSpanInfoView({});
+    const toggleBridgeInfo = function() {
+        const open = bridgeInfoPanel.classList.toggle('open');
+        bridgeInfoTab.setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
+    bridgeInfoTab.addEventListener('click', toggleBridgeInfo);
+    bridgeInfoTab.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleBridgeInfo();
+        }
+    });
 }
 
 // Function to load and replace the mock image with actual photo

@@ -8,12 +8,19 @@ async function updateBridgeModalData(structureId) {
         .then(bridge => {
             if (!bridge) return;
             const locationElement = document.getElementById('modalLocation');
-            const spanElement = document.getElementById('modalSpan');
+            const cycleElement = document.getElementById('modalCycle');
             const lengthElement = document.getElementById('modalLength');
             const builtElement = document.getElementById('modalBuilt');
             const typeElement = document.getElementById('modalType');
             if (locationElement) locationElement.textContent = bridge.location || '--';
-            if (spanElement) spanElement.textContent = bridge.span ? `${bridge.span}m` : '--';
+            if (cycleElement) {
+                // Same 2yr/6yr fallback as computeNextDue/planning.html's
+                // getGiCycleYears - a bridge without its own override still
+                // has a real cycle, just the portfolio default one.
+                const gi = (bridge.gi_cycle_years && bridge.gi_cycle_years > 0) ? bridge.gi_cycle_years : 2;
+                const pi = (bridge.pi_cycle_years && bridge.pi_cycle_years > 0) ? bridge.pi_cycle_years : 6;
+                cycleElement.textContent = `GI ${gi}y · PI ${pi}y`;
+            }
             if (lengthElement) lengthElement.textContent = bridge.length ? `${bridge.length}m` : '--';
             if (builtElement) builtElement.textContent = bridge.built_year || '--';
             if (typeElement) typeElement.textContent = bridge.type || '--';

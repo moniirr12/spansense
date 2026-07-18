@@ -404,6 +404,12 @@ async function onStructureChange(){
   const inspSel = document.getElementById('inspectionSelect');
   const loadBtn = document.getElementById('loadBtn');
   inspSel.disabled = true; loadBtn.disabled = true;
+  // newInspRow reflects the structure that was last actually Loaded - once
+  // the picker moves off that structure (back to the placeholder, or on to
+  // a different one), its date/type no longer apply until Load runs again.
+  if (structureId !== AUTHOR.structureId) {
+    document.getElementById('newInspRow').style.display = 'none';
+  }
   if (!structureId) { inspSel.innerHTML = '<option value="">Select a structure first</option>'; return; }
   inspSel.innerHTML = '<option value="">Loading inspections…</option>';
   try {
@@ -620,7 +626,6 @@ async function onLoad(){
     AUTHOR.newInspectionDate = dateInput.value;
     AUTHOR.newInspectionType = document.getElementById('newInspectionType').value || null;
 
-    document.getElementById('brandingCard').style.display = 'block';
     document.getElementById('setupBottomNav').style.display = 'flex';
     await loadBranding(diff.organizationId);
     document.getElementById('brandingCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -726,7 +731,6 @@ async function onLoadFromUpload(){
     AUTHOR.newInspectionDate = dateInput.value;
     AUTHOR.newInspectionType = document.getElementById('newInspectionType').value || null;
 
-    document.getElementById('brandingCard').style.display = 'block';
     document.getElementById('setupBottomNav').style.display = 'flex';
     await loadBranding(extract.organizationId);
     document.getElementById('brandingCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });

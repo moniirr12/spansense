@@ -618,13 +618,13 @@ function renderCriticalBridges(data) {
 
     if (!data.length) {
         tbody.innerHTML = `
-            <tr><td colspan="4" style="color: var(--text-muted); font-size: 0.8rem;">No bridges below BCI 55.</td></tr>`;
+            <tr><td colspan="4" style="color: var(--text-muted); font-size: 0.8rem;">No bridges below BCI crit 55.</td></tr>`;
         return;
     }
 
     tbody.innerHTML = data.map(bridge => {
-        const bci = bridge.overall_bciave !== null ? Math.round(bridge.overall_bciave) : '—';
-        const isCritical = bridge.overall_bciave < 40;
+        const bci = bridge.overall_bcicrit !== null ? Math.round(bridge.overall_bcicrit) : '—';
+        const isCritical = bridge.overall_bcicrit < 40;
         const badgeClass = isCritical ? 'risk-critical' : 'risk-high';
         const badgeLabel = isCritical ? 'Very Poor' : 'High';
 

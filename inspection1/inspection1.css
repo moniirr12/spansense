@@ -465,12 +465,290 @@ body {
 }
 
 /* ========== FORM CONTENT ========== */
+.span-content-row {
+    display: flex;
+    gap: 16px;
+    align-items: stretch;
+}
+
 #form-content {
     background: white;
     border-radius: 28px;
     padding: 28px;
     border: 1px solid #e9edf2;
     margin-bottom: 24px;
+    flex: 1;
+    min-width: 0;
+}
+
+/* ========== BRIDGE INFO EXPANDABLE PANEL ========== */
+.bridge-info-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 46px;
+    flex-shrink: 0;
+    overflow: hidden;
+    border-radius: 16px;
+    background: #eef4f2;
+    border: 1px solid #d6e6e3;
+    color: #2c5a57;
+    cursor: pointer;
+    font-size: 0.72rem;
+    font-weight: 700;
+    margin-bottom: 24px;
+    transition: background 0.2s, width 0.2s;
+}
+
+.bridge-info-tab:hover {
+    background: #dcece9;
+}
+
+.bridge-info-tab:focus-visible {
+    outline: 2px solid #5b8c8a;
+    outline-offset: 2px;
+}
+
+.bridge-info-tab svg {
+    flex-shrink: 0;
+}
+
+/* writing-mode lives on the label only, not the flex container itself -
+   putting it on the container reinterprets the flex axes against the
+   vertical writing mode, which pushed the icon/chevron outside the box. */
+.info-tab-label {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+}
+
+.info-tab-chevron {
+    transition: transform 0.25s ease;
+}
+
+.bridge-info-tab[aria-expanded="true"] .info-tab-chevron {
+    transform: rotate(180deg);
+}
+
+.bridge-info-panel {
+    width: 0;
+    opacity: 0;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: white;
+    border: 1px solid #e9edf2;
+    border-radius: 22px;
+    margin-bottom: 24px;
+    transition: width 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+
+.bridge-info-panel.open {
+    width: 320px;
+    opacity: 1;
+    padding: 20px;
+}
+
+.bridge-info-panel-inner {
+    width: 280px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.info-panel-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #8a9ba8;
+    margin-bottom: 8px;
+    flex-shrink: 0;
+}
+
+/* Deliberately understated - a small text link, not a button, and tucked
+   into the section label rather than given its own prominent spot. Editing
+   these structure facts should be possible but not the obvious/inviting
+   thing to do on this screen; the confirmation step before saving (see
+   onSaveSpanInfo in inspection1.js) is the other half of that. */
+.info-edit-link {
+    margin-left: auto;
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: inherit;
+    font-size: 0.66rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #b7c3ca;
+    cursor: pointer;
+    transition: color 0.15s;
+}
+
+.info-edit-link:hover,
+.info-edit-link:focus-visible {
+    color: #5b8c8a;
+}
+
+.info-panel-title svg {
+    color: #5b8c8a;
+    flex-shrink: 0;
+}
+
+.info-panel-desc {
+    font-size: 0.82rem;
+    line-height: 1.6;
+    color: #2c3e44;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.info-panel-desc.empty {
+    color: #8a9ba8;
+    font-style: italic;
+}
+
+.info-panel-facts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px 14px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid #f0f4f8;
+    flex-shrink: 0;
+}
+
+.info-fact .fl {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #8a9ba8;
+    margin-bottom: 2px;
+}
+
+.info-fact .fv {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #2c3e44;
+}
+
+/* ===== Edit mode ===== */
+.info-edit-textarea {
+    width: 100%;
+    margin-top: 0;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    font-family: inherit;
+    font-size: 0.8rem;
+    resize: none;
+    flex: 1;
+    min-height: 70px;
+    background: #fafbfc;
+    color: #2c3e44;
+}
+
+.info-edit-textarea:focus {
+    outline: none;
+    border-color: #8ab4b0;
+    background: white;
+}
+
+.info-panel-facts-edit .fl {
+    margin-bottom: 4px;
+}
+
+.info-fact input {
+    width: 100%;
+    padding: 6px 9px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: #fafbfc;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #2c3e44;
+}
+
+.info-fact input:focus {
+    outline: none;
+    border-color: #8ab4b0;
+    background: white;
+}
+
+.info-edit-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+    flex-shrink: 0;
+}
+
+.info-edit-cancel,
+.info-edit-save {
+    padding: 7px 16px;
+    border-radius: 22px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.info-edit-cancel {
+    background: none;
+    border: 1px solid #e2e8f0;
+    color: #6a7c8e;
+}
+
+.info-edit-cancel:hover {
+    background: #f1f5f4;
+    border-color: #c5dbd8;
+}
+
+.info-edit-save {
+    background: #8ab4b0;
+    border: none;
+    color: white;
+}
+
+.info-edit-save:hover {
+    background: #5b8c8a;
+}
+
+.info-edit-save:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+@media (max-width: 860px) {
+    .span-content-row {
+        flex-direction: column;
+    }
+    .bridge-info-tab {
+        flex-direction: row;
+        width: 100%;
+        padding: 10px 0;
+    }
+    .info-tab-label {
+        writing-mode: horizontal-tb;
+    }
+    .bridge-info-tab[aria-expanded="true"] .info-tab-chevron {
+        transform: rotate(90deg);
+    }
+    .bridge-info-panel.open {
+        width: 100%;
+    }
+    .bridge-info-panel-inner {
+        width: 100%;
+    }
 }
 
 .step {
@@ -567,6 +845,35 @@ textarea:focus {
     outline: none;
     border-color: #8ab4b0;
     background: white;
+}
+
+/* Thin, teal-on-hover scrollbar matching the app's other custom scrollbars
+   (e.g. map.css's .ss-card-list) instead of the chunky OS default. */
+textarea::-webkit-scrollbar,
+.info-panel-desc::-webkit-scrollbar {
+    width: 6px;
+}
+
+textarea::-webkit-scrollbar-track,
+.info-panel-desc::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+textarea::-webkit-scrollbar-thumb,
+.info-panel-desc::-webkit-scrollbar-thumb {
+    background: #d0d8e0;
+    border-radius: 10px;
+}
+
+textarea::-webkit-scrollbar-thumb:hover,
+.info-panel-desc::-webkit-scrollbar-thumb:hover {
+    background: #8ab4b0;
+}
+
+textarea,
+.info-panel-desc {
+    scrollbar-width: thin;
+    scrollbar-color: #d0d8e0 transparent;
 }
 
 /* ========== MARK COMPLETE BUTTON ========== */
@@ -761,6 +1068,92 @@ textarea:focus {
     border-color: #2f3e45;
 }
 
+/* Bridge Info Panel */
+.night-mode .bridge-info-tab {
+    background: #1e3a38;
+    border-color: #3a6b62;
+    color: #8ab4b0;
+}
+
+.night-mode .bridge-info-tab:hover {
+    background: #26443f;
+}
+
+.night-mode .bridge-info-panel {
+    background: #232e34;
+    border-color: #2f3e45;
+}
+
+.night-mode .info-panel-title {
+    color: #8aa4ac;
+}
+
+.night-mode .info-panel-title svg {
+    color: #8ab4b0;
+}
+
+.night-mode .info-panel-desc {
+    color: #c5d3d9;
+}
+
+.night-mode .info-panel-desc.empty {
+    color: #7d939b;
+}
+
+.night-mode .info-panel-facts {
+    border-top-color: #2f3e45;
+}
+
+.night-mode .info-fact .fl {
+    color: #7d939b;
+}
+
+.night-mode .info-fact .fv {
+    color: #d4dfe3;
+}
+
+.night-mode .info-edit-link {
+    color: #4a5b60;
+}
+
+.night-mode .info-edit-link:hover,
+.night-mode .info-edit-link:focus-visible {
+    color: #8ab4b0;
+}
+
+.night-mode .info-edit-textarea,
+.night-mode .info-fact input {
+    background: #1e2a2f;
+    border-color: #3a4b53;
+    color: #c5d3d9;
+}
+
+.night-mode .info-edit-textarea:focus,
+.night-mode .info-fact input:focus {
+    background: #2a3a40;
+    border-color: #8ab4b0;
+}
+
+.night-mode .info-edit-cancel {
+    background: none;
+    border-color: #3a4b53;
+    color: #9ab0b8;
+}
+
+.night-mode .info-edit-cancel:hover {
+    background: #2a3a42;
+    border-color: #4a5d66;
+}
+
+.night-mode .info-edit-save {
+    background: #3a6b62;
+    color: white;
+}
+
+.night-mode .info-edit-save:hover {
+    background: #2f5a52;
+}
+
 .night-mode .step h2 {
     color: #8ab4b0;
     border-bottom-color: #2f3e45;
@@ -790,6 +1183,21 @@ textarea:focus {
     background: #1e2a2f;
     border-color: #3a4b53;
     color: #c5d3d9;
+}
+
+.night-mode textarea::-webkit-scrollbar-thumb,
+.night-mode .info-panel-desc::-webkit-scrollbar-thumb {
+    background: #3a4b53;
+}
+
+.night-mode textarea::-webkit-scrollbar-thumb:hover,
+.night-mode .info-panel-desc::-webkit-scrollbar-thumb:hover {
+    background: #6e9c98;
+}
+
+.night-mode textarea,
+.night-mode .info-panel-desc {
+    scrollbar-color: #3a4b53 transparent;
 }
 
 /* Navigation Buttons */

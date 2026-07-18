@@ -229,6 +229,10 @@ async function initDatabase() {
         await pool.query(`ALTER TABLE bridges ADD COLUMN IF NOT EXISTS pi_cycle_years INTEGER`);
         await pool.query(`ALTER TABLE bridges ADD COLUMN IF NOT EXISTS next_inspection_override DATE`);
 
+        // Free-text structure description - editable from inspection1.html's
+        // "Span Info" panel (see PATCH /api/bridges/:id/info below).
+        await pool.query(`ALTER TABLE bridges ADD COLUMN IF NOT EXISTS description TEXT`);
+
         // Inspections table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS inspections (
@@ -842,6 +846,30 @@ app.get('/api/bridges/:id', requireAuth, async (req, res) => {
         }
         res.json(row);
     } catch (err) {
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+// Updates the handful of structure facts inspection1.html's "Span Info"
+// panel lets an inspector correct inline (description, span count, length,
+// built year, material) - deliberately not the bridge's identity/location
+// fields, which stay Database-page-only. Material is edited as one combined
+// string rather than the two separate primary/secondary columns the rest of
+// the app reads it from (see the getStructureIcon-style join elsewhere) -
+// simplest to edit, and secondary_material is cleared here since whatever
+// the inspector typed is now the full picture, not an addition to it.
+app.patch('/api/bridges/:id/info', requireAuth, async (req, res) => {
+    try {
+        const { description, span_number, length, built_year, material } = req.body;
+        await pool.query(
+            `UPDATE bridges SET description = $1, span_number = $2, length = $3, built_year = $4,
+                                 primary_material = $5, secondary_material = NULL
+             WHERE id = $6`,
+            [description || null, span_number || null, length || null, built_year || null, material || null, req.params.id]
+        );
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Update bridge info error:', err);
         res.status(500).json({ error: 'Database error' });
     }
 });
@@ -2958,9 +2986,9 @@ app.get('/api/dashboard/critical-bridges', requireAuth, async (req, res) => {
                 GROUP BY structure_id
             ) latest ON i.structure_id = latest.structure_id 
                    AND i.inspection_date = latest.latest_date
-            WHERE i.overall_bciave IS NOT NULL 
-              AND i.overall_bciave < 55
-            ORDER BY i.overall_bciave ASC
+            WHERE i.overall_bcicrit IS NOT NULL
+              AND i.overall_bcicrit < 55
+            ORDER BY i.overall_bcicrit ASC
             LIMIT 10
         `);
 
