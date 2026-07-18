@@ -2958,9 +2958,9 @@ app.get('/api/dashboard/critical-bridges', requireAuth, async (req, res) => {
                 GROUP BY structure_id
             ) latest ON i.structure_id = latest.structure_id 
                    AND i.inspection_date = latest.latest_date
-            WHERE i.overall_bciave IS NOT NULL 
-              AND i.overall_bciave < 55
-            ORDER BY i.overall_bciave ASC
+            WHERE i.overall_bcicrit IS NOT NULL
+              AND i.overall_bcicrit < 55
+            ORDER BY i.overall_bcicrit ASC
             LIMIT 10
         `);
 

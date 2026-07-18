@@ -378,6 +378,12 @@ body {
     font-weight: 600;
 }
 
+.chart-header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
 .chart-toggle {
     display: flex;
     gap: 2px;

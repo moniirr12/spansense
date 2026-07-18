@@ -122,7 +122,7 @@
                 <div class="chart-card" id="avgBciByTypeChartCard">
                     <div class="chart-header">
                         <h3>Average BCI by Type</h3>
-                        <span class="chart-badge">Condition</span>
+                        <span class="chart-badge">BCI avg</span>
                     </div>
                     <div class="chart-body">
                         <canvas id="avgBciByTypeChart" width="400" height="280"></canvas>
@@ -133,9 +133,12 @@
                 <div class="chart-card wide-chart" id="bciDistributionChartCard">
                     <div class="chart-header">
                         <h3>BCI Score Distribution</h3>
-                        <div class="chart-toggle">
-                            <button class="chart-toggle-btn active" data-view="current">Current</button>
-                            <button class="chart-toggle-btn" data-view="trend">By Year</button>
+                        <div class="chart-header-right">
+                            <span class="chart-badge">BCI avg</span>
+                            <div class="chart-toggle">
+                                <button class="chart-toggle-btn active" data-view="current">Current</button>
+                                <button class="chart-toggle-btn" data-view="trend">By Year</button>
+                            </div>
                         </div>
                     </div>
                     <div class="chart-body">
@@ -159,7 +162,7 @@
             <div class="critical-bridges-section" id="criticalStructuresSection">
                 <div class="section-header">
                     <h2><i class="fas fa-exclamation-triangle"></i> Critical Structures</h2>
-                    <span class="section-badge">BCI &lt; 55</span>
+                    <span class="section-badge">BCI crit &lt; 55</span>
                 </div>
                 <div class="critical-bridges">
                     <table class="data-table card-rows">
