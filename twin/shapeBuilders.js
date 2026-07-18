@@ -17,10 +17,35 @@
    the bridge before dispatching.
    ============================================================ */
 
+// Rescales a BoxGeometry's default per-face 0-1 UVs so a repeating texture
+// (tarmac/concrete/steel/stone - see twin.js's "realistic" skin) tiles at a
+// fixed real-world size instead of stretching one tile across each face.
+// Without this, every differently-sized box sharing one material instance
+// (matDeck/matPier/matSteel/matStone/matConcrete are each a single shared
+// instance across the whole structure) would show that one tile squashed
+// or stretched to fit, so a short beam and a long deck would look like
+// completely different scales of the same material.
+var UV_TILE = 2; // world units (metres) per texture repeat
+function tileBoxUV(geo, w, h, d) {
+    var uv = geo.attributes.uv;
+    // BoxGeometry face group order is +x,-x,+y,-y,+z,-z, 4 verts each; the
+    // two in-plane dimensions per face (which u/v already run 0-1 across).
+    var faceDims = [[d, h], [d, h], [w, d], [w, d], [w, h], [w, h]];
+    for (var f = 0; f < 6; f++) {
+        var su = faceDims[f][0] / UV_TILE, sv = faceDims[f][1] / UV_TILE;
+        for (var v = 0; v < 4; v++) {
+            var idx = f * 4 + v;
+            uv.setXY(idx, uv.getX(idx) * su, uv.getY(idx) * sv);
+        }
+    }
+    uv.needsUpdate = true;
+}
+
 function addBeam(ctx, x1, y1, z1, x2, y2, z2, thickness, material) {
     var dx = x2 - x1, dy = y2 - y1, dz = z2 - z1;
     var len = Math.sqrt(dx * dx + dy * dy + dz * dz);
     var geo = new THREE.BoxGeometry(len, thickness, thickness);
+    tileBoxUV(geo, len, thickness, thickness);
     var mesh = new THREE.Mesh(geo, material);
     mesh.position.set((x1 + x2) / 2, (y1 + y2) / 2, (z1 + z2) / 2);
     mesh.lookAt(x2, y2, z2);
@@ -29,7 +54,9 @@ function addBeam(ctx, x1, y1, z1, x2, y2, z2, thickness, material) {
 }
 
 function addDeck(ctx, X0, TOTAL_LEN, DECK_W, deckY, thickness) {
-    var deckGeo = new THREE.BoxGeometry(TOTAL_LEN, thickness || 0.6, DECK_W);
+    var deckThickness = thickness || 0.6;
+    var deckGeo = new THREE.BoxGeometry(TOTAL_LEN, deckThickness, DECK_W);
+    tileBoxUV(deckGeo, TOTAL_LEN, deckThickness, DECK_W);
     var deck = new THREE.Mesh(deckGeo, ctx.matDeck);
     deck.position.set(0, deckY, 0);
     ctx.structureGroup.add(deck);
@@ -54,7 +81,9 @@ function addPiers(ctx, X0, SPAN_LEN, NUM_SPANS, DECK_W, deckY, opts) {
     pierPositions.forEach(function(x, i) {
         var isAbutment = opts.abutmentsOnly || i === 0 || i === pierPositions.length - 1;
         var w = isAbutment ? abutmentWidth : pierWidth;
-        var geo = new THREE.BoxGeometry(w, pierHeight, isAbutment ? DECK_W + 1 : pierDepth);
+        var pierD = isAbutment ? DECK_W + 1 : pierDepth;
+        var geo = new THREE.BoxGeometry(w, pierHeight, pierD);
+        tileBoxUV(geo, w, pierHeight, pierD);
         var pier = new THREE.Mesh(geo, ctx.matPier);
         pier.position.set(x, deckY - 0.3 - pierHeight / 2, 0);
         ctx.structureGroup.add(pier);
@@ -134,6 +163,7 @@ function buildWallStructure(bridge, ctx) {
 
     function addSlab(width, height, depth, y) {
         var geo = new THREE.BoxGeometry(width, height, depth);
+        tileBoxUV(geo, width, height, depth);
         var mesh = new THREE.Mesh(geo, material);
         mesh.position.set(0, y, 0);
         ctx.structureGroup.add(mesh);
@@ -170,6 +200,7 @@ function buildCulvertStructure(bridge, ctx) {
     var boxY = deckY + culvertHeight * 0.2; // sits mostly at grade, slightly proud
 
     var geo = new THREE.BoxGeometry(TOTAL_LEN, culvertHeight, DECK_W);
+    tileBoxUV(geo, TOTAL_LEN, culvertHeight, DECK_W);
     var box = new THREE.Mesh(geo, ctx.matConcrete);
     box.position.set(0, boxY, 0);
     ctx.structureGroup.add(box);
@@ -216,11 +247,16 @@ function buildTrilithonStructure(bridge, ctx) {
             x += jitter * spacing * 0.3;
         }
         [-1, 1].forEach(function(side) {
-            var post = new THREE.Mesh(new THREE.BoxGeometry(postWidth, postHeight, postWidth), ctx.matStone);
+            var postGeo = new THREE.BoxGeometry(postWidth, postHeight, postWidth);
+            tileBoxUV(postGeo, postWidth, postHeight, postWidth);
+            var post = new THREE.Mesh(postGeo, ctx.matStone);
             post.position.set(x, deckY + postHeight / 2, side * postGap / 2);
             ctx.structureGroup.add(post);
         });
-        var lintel = new THREE.Mesh(new THREE.BoxGeometry(postWidth * 1.4, lintelThickness, postGap + postWidth), ctx.matStone);
+        var lintelW = postWidth * 1.4, lintelD = postGap + postWidth;
+        var lintelGeo = new THREE.BoxGeometry(lintelW, lintelThickness, lintelD);
+        tileBoxUV(lintelGeo, lintelW, lintelThickness, lintelD);
+        var lintel = new THREE.Mesh(lintelGeo, ctx.matStone);
         lintel.position.set(x, deckY + postHeight + lintelThickness / 2, 0);
         ctx.structureGroup.add(lintel);
     }
@@ -305,7 +341,9 @@ function buildSuspensionStructure(bridge, ctx) {
     var towerH = towerTopY - towerBaseY;
     towerXs.forEach(function(x) {
         cableZ.forEach(function(z) {
-            var tower = new THREE.Mesh(new THREE.BoxGeometry(1.6, towerH, 1.6), ctx.matPier);
+            var towerGeo = new THREE.BoxGeometry(1.6, towerH, 1.6);
+            tileBoxUV(towerGeo, 1.6, towerH, 1.6);
+            var tower = new THREE.Mesh(towerGeo, ctx.matPier);
             tower.position.set(x, towerBaseY + towerH / 2, z);
             ctx.structureGroup.add(tower);
         });
@@ -384,7 +422,9 @@ function buildCableStayLowStructure(bridge, ctx) {
     for (var i = 1; i < totalPanels; i += 2) {
         var x = X0 + i * pw;
         mastZ.forEach(function(z) {
-            var mast = new THREE.Mesh(new THREE.BoxGeometry(0.3, mastHeight, 0.3), ctx.matSteel);
+            var mastGeo = new THREE.BoxGeometry(0.3, mastHeight, 0.3);
+            tileBoxUV(mastGeo, 0.3, mastHeight, 0.3);
+            var mast = new THREE.Mesh(mastGeo, ctx.matSteel);
             mast.position.set(x, deckY + deckThickness / 2 + mastHeight / 2, z);
             ctx.structureGroup.add(mast);
             var mastTopY = deckY + deckThickness / 2 + mastHeight;
@@ -478,6 +518,7 @@ function buildBasculeStructure(bridge, ctx) {
 
     function deckSegment(xCenter, len) {
         var geo = new THREE.BoxGeometry(len, 0.6, DECK_W);
+        tileBoxUV(geo, len, 0.6, DECK_W);
         var mesh = new THREE.Mesh(geo, ctx.matDeck);
         mesh.position.set(xCenter, deckY, 0);
         ctx.structureGroup.add(mesh);
@@ -489,7 +530,10 @@ function buildBasculeStructure(bridge, ctx) {
     [-1, 1].forEach(function(dir) {
         var tx = dir * towerX;
         sideZ.forEach(function(z) {
-            var tower = new THREE.Mesh(new THREE.BoxGeometry(towerWidth * 0.5, towerH, towerWidth * 0.5), ctx.matPier);
+            var towerW = towerWidth * 0.5;
+            var towerGeo = new THREE.BoxGeometry(towerW, towerH, towerW);
+            tileBoxUV(towerGeo, towerW, towerH, towerW);
+            var tower = new THREE.Mesh(towerGeo, ctx.matPier);
             tower.position.set(tx, towerBaseY + towerH / 2, z);
             ctx.structureGroup.add(tower);
         });
@@ -507,7 +551,9 @@ function buildBasculeStructure(bridge, ctx) {
         });
 
         // Abutment at the far end.
-        var pier = new THREE.Mesh(new THREE.BoxGeometry(4, 8, DECK_W + 1), ctx.matPier);
+        var abutGeo = new THREE.BoxGeometry(4, 8, DECK_W + 1);
+        tileBoxUV(abutGeo, 4, 8, DECK_W + 1);
+        var pier = new THREE.Mesh(abutGeo, ctx.matPier);
         pier.position.set(outerX, deckY - 0.3 - 4, 0);
         ctx.structureGroup.add(pier);
     });
@@ -539,7 +585,9 @@ function buildSignGantryStructure(bridge, ctx) {
     var beamY = deckY + columnHeight;
 
     [X0, X0 + TOTAL_LEN].forEach(function(x) {
-        var col = new THREE.Mesh(new THREE.BoxGeometry(columnWidth, columnHeight, columnWidth), ctx.matPier);
+        var colGeo = new THREE.BoxGeometry(columnWidth, columnHeight, columnWidth);
+        tileBoxUV(colGeo, columnWidth, columnHeight, columnWidth);
+        var col = new THREE.Mesh(colGeo, ctx.matPier);
         col.position.set(x, deckY + columnHeight / 2, 0);
         ctx.structureGroup.add(col);
     });
@@ -560,7 +608,9 @@ function buildSignGantryStructure(bridge, ctx) {
     var rowWidth = numPanels * panelW + (numPanels - 1) * gap;
     var startX = -rowWidth / 2 + panelW / 2;
     for (var i = 0; i < numPanels; i++) {
-        var panel = new THREE.Mesh(new THREE.BoxGeometry(panelW, panelH, 0.12), ctx.matDeck);
+        var panelGeo = new THREE.BoxGeometry(panelW, panelH, 0.12);
+        tileBoxUV(panelGeo, panelW, panelH, 0.12);
+        var panel = new THREE.Mesh(panelGeo, ctx.matDeck);
         panel.position.set(startX + i * (panelW + gap), beamY, beamWidth / 2 + 0.1);
         ctx.structureGroup.add(panel);
     }
@@ -603,7 +653,9 @@ function buildCavershamStructure(bridge, ctx) {
     var pierXs = [-TOTAL_LEN / 2, 0, TOTAL_LEN / 2]; // abutment, central river pier, abutment
 
     function addBox(x, y, z, w, h, d, material) {
-        var mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
+        var geo = new THREE.BoxGeometry(w, h, d);
+        tileBoxUV(geo, w, h, d);
+        var mesh = new THREE.Mesh(geo, material);
         mesh.position.set(x, y, z);
         ctx.structureGroup.add(mesh);
         return mesh;

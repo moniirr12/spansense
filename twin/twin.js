@@ -570,6 +570,100 @@ const matDefect = new THREE.MeshStandardMaterial({color: 0xe06a5a, emissive: 0xc
 const matStone    = new THREE.MeshStandardMaterial({color: 0x8a8378, metalness: 0.0, roughness: 0.95});
 const matConcrete = new THREE.MeshStandardMaterial({color: 0x9aa39c, metalness: 0.05, roughness: 0.85});
 
+/* ============================================================
+   PROCEDURAL MATERIAL TEXTURES - canvas-drawn, tiled via the per-geometry
+   UV scaling shapeBuilders.js's tileBoxUV() bakes in (see there for why).
+   Kept as flat mid-tone grayscale/tint patterns so the "Realistic" skin's
+   material.color below still tints them per skin - only the "Realistic"
+   skin actually assigns these (see applySkin); twinView stays flat-color
+   to keep its deliberately more abstract, stylised look.
+   ============================================================ */
+function makeCanvasTexture(draw, size) {
+    size = size || 256;
+    var canvas = document.createElement('canvas');
+    canvas.width = canvas.height = size;
+    draw(canvas.getContext('2d'), size);
+    var tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    return tex;
+}
+
+var texTarmac = makeCanvasTexture(function(c, size) {
+    c.fillStyle = '#8c8c8c';
+    c.fillRect(0, 0, size, size);
+    for (var i = 0; i < size * size * 0.35; i++) {
+        var x = Math.random() * size, y = Math.random() * size;
+        var shade = 100 + Math.random() * 110;
+        c.fillStyle = 'rgb(' + shade + ',' + shade + ',' + shade + ')';
+        var r = 0.3 + Math.random() * 1.1;
+        c.fillRect(x, y, r, r);
+    }
+    for (var p = 0; p < 6; p++) {
+        var px = Math.random() * size, py = Math.random() * size, pr = 10 + Math.random() * 24;
+        var grad = c.createRadialGradient(px, py, 0, px, py, pr);
+        grad.addColorStop(0, 'rgba(40,40,40,0.35)');
+        grad.addColorStop(1, 'rgba(40,40,40,0)');
+        c.fillStyle = grad;
+        c.beginPath(); c.arc(px, py, pr, 0, Math.PI * 2); c.fill();
+    }
+});
+
+var texConcrete = makeCanvasTexture(function(c, size) {
+    c.fillStyle = '#b4b0a6';
+    c.fillRect(0, 0, size, size);
+    for (var i = 0; i < 900; i++) {
+        var x = Math.random() * size, y = Math.random() * size;
+        var shade = 150 + Math.random() * 70;
+        c.fillStyle = 'rgba(' + shade + ',' + shade + ',' + (shade - 10) + ',0.5)';
+        var r = 1 + Math.random() * 3;
+        c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.fill();
+    }
+    for (var s = 0; s < 10; s++) {
+        var sx = Math.random() * size;
+        var grad = c.createLinearGradient(sx, 0, sx, size);
+        grad.addColorStop(0, 'rgba(90,88,80,0)');
+        grad.addColorStop(0.5, 'rgba(90,88,80,0.12)');
+        grad.addColorStop(1, 'rgba(90,88,80,0.22)');
+        c.fillStyle = grad;
+        c.fillRect(sx - 4 - Math.random() * 6, 0, 8 + Math.random() * 10, size);
+    }
+});
+
+var texSteel = makeCanvasTexture(function(c, size) {
+    c.fillStyle = '#9a9a9a';
+    c.fillRect(0, 0, size, size);
+    for (var y = 0; y < size; y++) {
+        var shade = 130 + Math.random() * 60;
+        c.strokeStyle = 'rgba(' + shade + ',' + shade + ',' + shade + ',0.5)';
+        c.beginPath(); c.moveTo(0, y + 0.5); c.lineTo(size, y + 0.5); c.stroke();
+    }
+    for (var p = 0; p < 5; p++) {
+        var px = Math.random() * size, py = Math.random() * size, pr = 6 + Math.random() * 16;
+        var grad = c.createRadialGradient(px, py, 0, px, py, pr);
+        grad.addColorStop(0, 'rgba(120,70,40,0.4)');
+        grad.addColorStop(1, 'rgba(120,70,40,0)');
+        c.fillStyle = grad;
+        c.beginPath(); c.arc(px, py, pr, 0, Math.PI * 2); c.fill();
+    }
+});
+
+var texStone = makeCanvasTexture(function(c, size) {
+    c.fillStyle = '#8a8478';
+    c.fillRect(0, 0, size, size);
+    var rows = 6, mortar = 3;
+    var rowH = size / rows;
+    for (var row = 0; row < rows; row++) {
+        var cols = 4 + (row % 2);
+        var colW = size / cols;
+        var offset = (row % 2) * (colW / 2);
+        for (var col = -1; col < cols + 1; col++) {
+            var shade = 120 + Math.random() * 60;
+            c.fillStyle = 'rgb(' + shade + ',' + (shade - 6) + ',' + (shade - 18) + ')';
+            c.fillRect(col * colW + offset + mortar / 2, row * rowH + mortar / 2, colW - mortar, rowH - mortar);
+        }
+    }
+});
+
 const rig = new THREE.Group();
 scene.add(rig);
 const structureGroup = new THREE.Group();
@@ -621,7 +715,8 @@ const SKINS = {
             pier: { color: 0xb0a790, roughness: 0.88, metalness: 0.02 },
             stone: { color: 0xcbb99e, roughness: 0.85, metalness: 0.02 },
             concrete: { color: 0xc2bcae, roughness: 0.88, metalness: 0.02 }
-        }
+        },
+        textures: { steel: texSteel, deck: texTarmac, pier: texConcrete, stone: texStone, concrete: texConcrete }
     }
 };
 const MAT_BY_KEY = { steel: matSteel, deck: matDeck, pier: matPier, stone: matStone, concrete: matConcrete };
@@ -638,6 +733,8 @@ function applySkin(name) {
         mat.color.setHex(def.color);
         mat.roughness = def.roughness;
         mat.metalness = def.metalness;
+        mat.map = skin.textures ? (skin.textures[matKey] || null) : null;
+        mat.needsUpdate = true;
     });
 
     ambientLight.color.setHex(skin.lights.ambient.color);
