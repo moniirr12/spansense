@@ -456,10 +456,12 @@ async function fetchAndUpdateBridgeData(bridgeId) {
         
         if (bridgeNameEl && bridgeData.name) bridgeNameEl.innerText = bridgeData.name;
         if (bridgeIdEl && bridgeData.id) bridgeIdEl.innerText = `Bridge ID: ${bridgeData.id}`;
-        
+
+        populateBridgeInfoPanel(bridgeData);
+
         await fetchLatestInspectionDate(bridgeId);
         updateBridgeStatus(bridgeData);
-        
+
         return bridgeData;
     } catch (error) {
         console.error('Error fetching bridge data:', error);
@@ -468,6 +470,57 @@ async function fetchAndUpdateBridgeData(bridgeId) {
         if (document.getElementById('sidebarLastInsp')) document.getElementById('sidebarLastInsp').innerHTML = 'Error';
         if (document.getElementById('sidebarBuiltYear')) document.getElementById('sidebarBuiltYear').innerHTML = '--';
     }
+}
+
+// Fills the expandable "Bridge Info" panel beside the span card. There's no
+// free-text description field on bridges yet (checked - the table has no
+// description column, and no edit form anywhere sets one), so that section
+// shows an honest "not recorded" placeholder rather than fabricating text -
+// same fallback chains as the sidebar stats above for the rest.
+function populateBridgeInfoPanel(bridgeData) {
+    const descEl = document.getElementById('bridgeInfoDesc');
+    const spansEl = document.getElementById('bridgeInfoSpans');
+    const lengthEl = document.getElementById('bridgeInfoLength');
+    const builtEl = document.getElementById('bridgeInfoBuilt');
+    const materialEl = document.getElementById('bridgeInfoMaterial');
+    if (!descEl) return;
+
+    if (bridgeData.description) {
+        descEl.textContent = bridgeData.description;
+        descEl.classList.remove('empty');
+    } else {
+        descEl.textContent = 'No description recorded for this structure yet.';
+        descEl.classList.add('empty');
+    }
+
+    if (spansEl) spansEl.textContent = bridgeData.span_number || bridgeData.total_spans || '--';
+    if (lengthEl) {
+        const length = bridgeData.length_metres || bridgeData.length || null;
+        lengthEl.textContent = length ? `${length} m` : '--';
+    }
+    if (builtEl) {
+        builtEl.textContent = bridgeData.year_built || bridgeData.construction_year || bridgeData.built_year || '--';
+    }
+    if (materialEl) {
+        const material = [bridgeData.primary_material, bridgeData.secondary_material].filter(Boolean).join(' / ');
+        materialEl.textContent = material || '--';
+    }
+}
+
+const bridgeInfoTab = document.getElementById('bridgeInfoTab');
+const bridgeInfoPanel = document.getElementById('bridgeInfoPanel');
+if (bridgeInfoTab && bridgeInfoPanel) {
+    const toggleBridgeInfo = function() {
+        const open = bridgeInfoPanel.classList.toggle('open');
+        bridgeInfoTab.setAttribute('aria-expanded', open ? 'true' : 'false');
+    };
+    bridgeInfoTab.addEventListener('click', toggleBridgeInfo);
+    bridgeInfoTab.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleBridgeInfo();
+        }
+    });
 }
 
 // Function to load and replace the mock image with actual photo
