@@ -542,6 +542,15 @@ body {
     color: #2c4a48;
     font-weight: 600;
 }
+.export-action-bar .selection-info .selection-action {
+    color: #5b8c8a;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+.export-action-bar .selection-info .selection-action:hover {
+    text-decoration: underline;
+}
 .btn-export {
     padding: 12px 32px;
     border: none;
@@ -881,6 +890,7 @@ body {
 .night-mode .export-action-bar { border-color: #2f3e45; }
 .night-mode .export-action-bar .selection-info { color: #8aa4ac; }
 .night-mode .export-action-bar .selection-info strong { color: #d4dfe3; }
+.night-mode .export-action-bar .selection-info .selection-action { color: #8ab4b0; }
 .night-mode .panel-header { border-color: #2f3e45; }
 
 

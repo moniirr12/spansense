@@ -210,40 +210,51 @@
         document.getElementById('dataTable').classList.add('card-rows');
         var rowsHtml = '';
 
-        if (bridgesData.length === 0) {
+        filteredBridgesData = bridgesData;
+        if (currentFilter !== 'all') {
+            var filterType = currentFilter.replace(/_/g, ' ');
+            filteredBridgesData = filteredBridgesData.filter(function(bridge) {
+                return bridge.type && bridge.type.toLowerCase() === filterType.toLowerCase();
+            });
+        }
+        if (yearRange.from != null || yearRange.to != null) {
+            filteredBridgesData = filteredBridgesData.filter(function(bridge) {
+                var y = parseInt(bridge.built_year);
+                if (isNaN(y)) return false;
+                if (yearRange.from != null && y < yearRange.from) return false;
+                if (yearRange.to != null && y > yearRange.to) return false;
+                return true;
+            });
+        }
+
+        if (sortState.column && sortState.column !== '') {
+            sortData(filteredBridgesData, sortState.column);
+        } else {
+            filteredBridgesData.sort(function(a, b) {
+                var nameA = (a.name || '').toLowerCase();
+                var nameB = (b.name || '').toLowerCase();
+                if (nameA !== nameB) return nameA.localeCompare(nameB);
+                return (parseInt(a.id) || 0) - (parseInt(b.id) || 0);
+            });
+        }
+
+        var totalRecords = filteredBridgesData.length;
+        var totalPages = Math.ceil(totalRecords / rowsPerPage);
+
+        // Ensure current page is valid
+        if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        var startIndex = (currentPage - 1) * rowsPerPage;
+        var endIndex = Math.min(startIndex + rowsPerPage, totalRecords);
+        var displayData = filteredBridgesData.slice(startIndex, endIndex);
+
+        if (totalRecords === 0) {
             rowsHtml = '<tr><td colspan="7" style="text-align:center;padding:40px;color:#8a9ba8;">' +
                 '<i class="fas fa-database" style="font-size:2rem;margin-bottom:12px;display:block;"></i>' +
                 'No bridges found</td></tr>';
         } else {
-            var filteredData = bridgesData;
-            if (currentFilter !== 'all') {
-                var filterType = currentFilter.replace(/_/g, ' ');
-                filteredData = filteredData.filter(function(bridge) {
-                    return bridge.type && bridge.type.toLowerCase() === filterType.toLowerCase();
-                });
-            }
-            if (yearRange.from != null || yearRange.to != null) {
-                filteredData = filteredData.filter(function(bridge) {
-                    var y = parseInt(bridge.built_year);
-                    if (isNaN(y)) return false;
-                    if (yearRange.from != null && y < yearRange.from) return false;
-                    if (yearRange.to != null && y > yearRange.to) return false;
-                    return true;
-                });
-            }
-
-            if (sortState.column && sortState.column !== '') {
-                sortData(filteredData, sortState.column);
-            } else {
-                filteredData.sort(function(a, b) {
-                    var nameA = (a.name || '').toLowerCase();
-                    var nameB = (b.name || '').toLowerCase();
-                    if (nameA !== nameB) return nameA.localeCompare(nameB);
-                    return (parseInt(a.id) || 0) - (parseInt(b.id) || 0);
-                });
-            }
-
-            filteredData.forEach(function(row) {
+            displayData.forEach(function(row) {
                 var lat = row.latitude ? parseFloat(row.latitude).toFixed(6) : '--';
                 var lon = row.longitude ? parseFloat(row.longitude).toFixed(6) : '--';
                 var typeMap = {
@@ -256,9 +267,10 @@
                 var typeKey = (row.type || '').toLowerCase().replace(/\s+/g, '_');
                 var typeMeta = typeCircleMeta[typeKey] || typeCircleMeta.bridge;
                 var typeIconHtml = svgIcons[typeKey] ? svgIcons[typeKey](13) : '<i class="fas ' + typeMeta.icon + '"></i>';
+                var isChecked = selectedIds.bridges.has(String(row.id)) ? ' checked' : '';
 
                 rowsHtml += '<tr>' +
-                    '<td class="col-check"><input type="checkbox" class="row-check" data-id="' + row.id + '"></td>' +
+                    '<td class="col-check"><input type="checkbox" class="row-check" data-id="' + row.id + '"' + isChecked + '></td>' +
                     '<td><strong>' + (row.id || '--') + '</strong></td>' +
                     '<td class="bridge-name">' + (row.name || '--') +
                         '<span class="meta">' + lat + '°, ' + lon + '°</span></td>' +
@@ -271,14 +283,9 @@
         }
 
         tbody.innerHTML = rowsHtml;
-        var hasActiveFilter = currentFilter !== 'all' || yearRange.from != null || yearRange.to != null;
-        var total = (bridgesData.length > 0 && hasActiveFilter) ? filteredData.length : bridgesData.length;
-        document.querySelector('.selection-info').innerHTML =
-            '<strong>0</strong> of <strong>' + total + '</strong> records selected';
+        addPaginationControls(totalPages, totalRecords, 'bridges');
         bindCheckboxEvents();
-        // Bridges never paginate, but clear any leftover pagination strip
-        // from a previous Inspections/Reports visit.
-        addPaginationControls(1, total, 'bridges');
+        updateSelectionCount();
     }
 
     // ============================================
@@ -438,8 +445,17 @@
     // ============================================
     var currentPage = 1;
     var rowsPerPage = 20;
+    var filteredBridgesData = [];
     var filteredInspectionsData = [];
     var filteredReportsData = [];
+
+    // ============================================
+    // SELECTION STATE - one Set of checked record IDs per category, kept
+    // across pages (and across category switches) rather than only reading
+    // whatever .row-check boxes happen to be in the DOM, which only ever
+    // covers the current page - see bindCheckboxEvents()/startExport().
+    // ============================================
+    var selectedIds = { bridges: new Set(), inspections: new Set(), reports: new Set() };
 
     // ============================================
     // INSPECTIONS TABLE (with pagination)
@@ -497,9 +513,10 @@
                 var typeMeta = inspectionTypeCircleMeta[row.inspection_type] || inspectionTypeCircleMeta.GI;
                 var bciAv   = row.overall_bciave   != null ? Math.round(parseFloat(row.overall_bciave))   : '--';
                 var bciCrit = row.overall_bcicrit  != null ? Math.round(parseFloat(row.overall_bcicrit))  : '--';
+                var isChecked = selectedIds.inspections.has(String(row.id)) ? ' checked' : '';
 
                 rowsHtml += '<tr>' +
-                    '<td class="col-check"><input type="checkbox" class="row-check" data-id="' + row.id + '"></td>' +
+                    '<td class="col-check"><input type="checkbox" class="row-check" data-id="' + row.id + '"' + isChecked + '></td>' +
                     '<td><strong>' + (row.id || '--') + '</strong></td>' +
                     '<td>' + (row.structure_id || '--') + '</td>' +
                     '<td>' + (row.structure_name || '--') + '</td>' +
@@ -514,13 +531,12 @@
         }
 
         tbody.innerHTML = rowsHtml;
-        
+
         // Add pagination controls
         addPaginationControls(totalPages, totalRecords, 'inspections');
-        
-        document.querySelector('.selection-info').innerHTML =
-            '<strong>0</strong> of <strong>' + totalRecords + '</strong> records selected';
+
         bindCheckboxEvents();
+        updateSelectionCount();
     }
 
     // ============================================
@@ -621,8 +637,9 @@
         } else {
             displayData.forEach(function(row) {
                 var typeMeta = inspectionTypeCircleMeta[row.type] || inspectionTypeCircleMeta.GI;
+                var isChecked = selectedIds.reports.has(String(row.id)) ? ' checked' : '';
                 rowsHtml += '<tr>' +
-                    '<td class="col-check"><input type="checkbox" class="row-check" data-id="' + row.id + '"></td>' +
+                    '<td class="col-check"><input type="checkbox" class="row-check" data-id="' + row.id + '"' + isChecked + '></td>' +
                     '<td><strong>' + (row.id || '--') + '</strong></td>' +
                     '<td>' + (row.structure_id || '--') + '</td>' +
                     '<td>' + (row.bridge || '--') + '</td>' +
@@ -640,13 +657,12 @@
 
 
         tbody.innerHTML = rowsHtml;
-        
+
         // Add pagination controls
         addPaginationControls(totalPages, totalRecords, 'reports');
-        
-        document.querySelector('.selection-info').innerHTML =
-            '<strong>0</strong> of <strong>' + totalRecords + '</strong> records selected';
+
         bindCheckboxEvents();
+        updateSelectionCount();
     }
 
     // ============================================
@@ -726,7 +742,9 @@
     // ============================================
     window.goToPage = function(page) {
         currentPage = page;
-        if (currentCategory === 'inspections') {
+        if (currentCategory === 'bridges') {
+            rebuildBridgesTable();
+        } else if (currentCategory === 'inspections') {
             rebuildInspectionsTable();
         } else if (currentCategory === 'reports') {
             rebuildReportsTable();
@@ -736,7 +754,9 @@
     window.changeRowsPerPage = function(rows) {
         rowsPerPage = parseInt(rows);
         currentPage = 1;
-        if (currentCategory === 'inspections') {
+        if (currentCategory === 'bridges') {
+            rebuildBridgesTable();
+        } else if (currentCategory === 'inspections') {
             rebuildInspectionsTable();
         } else if (currentCategory === 'reports') {
             rebuildReportsTable();
@@ -1192,23 +1212,87 @@
             selectAll.parentNode.replaceChild(newSA, selectAll);
             newSA.addEventListener('change', function() {
                 var checked = this.checked;
-                document.querySelectorAll('.row-check').forEach(function(cb) { cb.checked = checked; });
+                var ids = selectedIds[currentCategory];
+                document.querySelectorAll('.row-check').forEach(function(cb) {
+                    cb.checked = checked;
+                    var id = cb.getAttribute('data-id');
+                    if (checked) ids.add(id); else ids.delete(id);
+                });
                 updateSelectionCount();
             });
         }
         document.querySelectorAll('.row-check').forEach(function(cb) {
-            cb.removeEventListener('change', updateSelectionCount);
-            cb.addEventListener('change', updateSelectionCount);
+            cb.removeEventListener('change', onRowCheckChange);
+            cb.addEventListener('change', onRowCheckChange);
         });
+        syncSelectAllState();
+    }
+
+    // A checked/unchecked row - updates the persistent per-category Set
+    // (not just this box) so the selection survives paging away and back.
+    function onRowCheckChange() {
+        var id = this.getAttribute('data-id');
+        if (this.checked) selectedIds[currentCategory].add(id);
+        else selectedIds[currentCategory].delete(id);
+        updateSelectionCount();
+    }
+
+    // The header checkbox can only ever toggle the current page's rows, so
+    // reflect that honestly: checked when every visible row is selected,
+    // indeterminate when only some are, rather than claiming an all-or-
+    // nothing state that isn't true once other pages have selections too.
+    function syncSelectAllState() {
+        var selectAll = document.getElementById('selectAll');
+        if (!selectAll) return;
+        var boxes = document.querySelectorAll('.row-check');
+        var checkedCount = document.querySelectorAll('.row-check:checked').length;
+        selectAll.checked = boxes.length > 0 && checkedCount === boxes.length;
+        selectAll.indeterminate = checkedCount > 0 && checkedCount < boxes.length;
+    }
+
+    function currentFilteredData() {
+        return currentCategory === 'bridges' ? filteredBridgesData :
+               currentCategory === 'inspections' ? filteredInspectionsData : filteredReportsData;
     }
 
     function updateSelectionCount() {
-        var count = document.querySelectorAll('.row-check:checked').length;
+        var count = selectedIds[currentCategory].size;
         var total = currentCategory === 'bridges' ? bridgesData.length :
                     currentCategory === 'inspections' ? inspectionsData.length : reportsData.length;
-        document.querySelector('.selection-info').innerHTML =
-            '<strong>' + count + '</strong> of <strong>' + total + '</strong> records selected';
+        var filteredTotal = currentFilteredData().length;
+        var html = '<strong>' + count + '</strong> of <strong>' + total + '</strong> records selected';
+
+        // .row-check only ever exists in the DOM for the current page, so
+        // checking "select all" there can only reach rowsPerPage records -
+        // once that happens and more pages match the filter, offer to
+        // extend the selection to everything matching it.
+        var pageBoxes = document.querySelectorAll('.row-check');
+        var pageChecked = document.querySelectorAll('.row-check:checked').length;
+        if (filteredTotal > rowsPerPage && pageBoxes.length > 0 && pageChecked === pageBoxes.length && count < filteredTotal) {
+            html += ' &nbsp;<a href="#" class="selection-action" onclick="selectAllFiltered(); return false;">' +
+                'Select all ' + filteredTotal + ' matching records</a>';
+        }
+        if (count > 0) {
+            html += ' &nbsp;<a href="#" class="selection-action" onclick="clearSelection(); return false;">Clear</a>';
+        }
+        document.querySelector('.selection-info').innerHTML = html;
+        syncSelectAllState();
     }
+
+    // Extends the selection beyond the current page to every record
+    // matching the active filter/search, not just the rowsPerPage visible.
+    window.selectAllFiltered = function() {
+        var ids = selectedIds[currentCategory];
+        currentFilteredData().forEach(function(item) { ids.add(String(item.id)); });
+        document.querySelectorAll('.row-check').forEach(function(cb) { cb.checked = true; });
+        updateSelectionCount();
+    };
+
+    window.clearSelection = function() {
+        selectedIds[currentCategory].clear();
+        document.querySelectorAll('.row-check').forEach(function(cb) { cb.checked = false; });
+        updateSelectionCount();
+    };
 
     // ============================================
     // EXPORT — shared helpers
@@ -1236,17 +1320,13 @@
     // START EXPORT
     // ============================================
     window.startExport = async function() {
-        var selectedCheckboxes = document.querySelectorAll('.row-check:checked');
-        if (selectedCheckboxes.length === 0) {
+        // The persistent per-category Set (not just whatever .row-check
+        // boxes are on the current page) - see selectAllFiltered() above.
+        var exportIds = Array.from(selectedIds[currentCategory]);
+        if (exportIds.length === 0) {
             showToast('Please select at least one record to export', 'error');
             return;
         }
-
-        var selectedIds = [];
-        selectedCheckboxes.forEach(function(cb) {
-            var id = cb.getAttribute('data-id');
-            if (id) selectedIds.push(id);
-        });
 
         var checkedCols = getCheckedCols();
         if (checkedCols.length === 0) {
@@ -1262,17 +1342,17 @@
         var percent = document.getElementById('progressPercent');
         var text    = document.getElementById('progressText');
 
-        text.textContent = 'Exporting ' + selectedIds.length + ' records to ' + formatLabel + '...';
+        text.textContent = 'Exporting ' + exportIds.length + ' records to ' + formatLabel + '...';
         overlay.classList.add('active');
 
         try {
             var exportData = [];
             if (currentCategory === 'bridges') {
-                exportData = bridgesData.filter(function(b) { return selectedIds.includes(String(b.id)); });
+                exportData = bridgesData.filter(function(b) { return exportIds.includes(String(b.id)); });
             } else if (currentCategory === 'inspections') {
-                exportData = inspectionsData.filter(function(i) { return selectedIds.includes(String(i.id)); });
+                exportData = inspectionsData.filter(function(i) { return exportIds.includes(String(i.id)); });
             } else if (currentCategory === 'reports') {
-                exportData = reportsData.filter(function(r) { return selectedIds.includes(String(r.id)); });
+                exportData = reportsData.filter(function(r) { return exportIds.includes(String(r.id)); });
             }
 
             for (var p = 0; p <= 100; p += 20) {
@@ -1322,10 +1402,10 @@
 
             setTimeout(function() {
                 overlay.classList.remove('active');
-                showToast(selectedIds.length + ' records exported to ' + formatLabel, 'success');
+                showToast(exportIds.length + ' records exported to ' + formatLabel, 'success');
                 fill.style.width = '0%';
                 percent.textContent = '';
-                addActivity(selectedIds.length, formatLabel);
+                addActivity(exportIds.length, formatLabel);
             }, 500);
 
         } catch (error) {
