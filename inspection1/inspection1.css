@@ -517,6 +517,14 @@ body {
     flex-shrink: 0;
 }
 
+.info-tab-chevron {
+    transition: transform 0.25s ease;
+}
+
+.bridge-info-tab[aria-expanded="true"] .info-tab-chevron {
+    transform: rotate(180deg);
+}
+
 .bridge-info-panel {
     width: 0;
     opacity: 0;
