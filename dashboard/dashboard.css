@@ -335,6 +335,7 @@ body {
     padding: 4px 12px;
     background: #eef4f2;
     color: #5b8c8a;
+    border: 1px solid #d6e6e3;
     border-radius: 20px;
     font-size: 0.7rem;
     font-weight: 600;
@@ -663,7 +664,7 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin: 10px 14px 0;
+    margin: 0 14px 8px;
     padding: 12px 18px;
     background: #fafbfc;
     border: 1px solid #cbd5df;
@@ -701,7 +702,7 @@ body {
    each item's content (avatar/title/meta/badge/status) doesn't map to
    fixed columns the way Critical Structures' bridge/BCI/date/report does. */
 .activity-list.card-rows {
-    padding: 10px 14px;
+    padding: 0 14px 10px;
     display: flex;
     flex-direction: column;
     gap: 8px;
