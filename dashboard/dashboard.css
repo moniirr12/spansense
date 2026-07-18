@@ -665,7 +665,7 @@ body {
     align-items: center;
     gap: 12px;
     margin: 0 14px 8px;
-    padding: 12px 18px;
+    padding: 14px 18px;
     background: #fafbfc;
     border: 1px solid #cbd5df;
     border-radius: 20px;
@@ -684,7 +684,7 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 14px 22px;
+    padding: 12px 22px;
     border-bottom: 1px solid #cbd5df;
     transition: background 0.15s;
 }
@@ -711,7 +711,7 @@ body {
     background: white;
     border: 1px solid #cbd5df;
     border-radius: 20px;
-    padding: 10px 18px;
+    padding: 12px 18px;
 }
 .activity-list.card-rows .activity-item:last-child {
     border: 1px solid #cbd5df;
