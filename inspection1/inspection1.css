@@ -530,13 +530,13 @@ body {
 }
 
 .bridge-info-panel.open {
-    width: 260px;
+    width: 320px;
     opacity: 1;
     padding: 20px;
 }
 
 .bridge-info-panel-inner {
-    width: 220px;
+    width: 280px;
 }
 
 .info-panel-title {
@@ -549,6 +549,31 @@ body {
     letter-spacing: 0.06em;
     color: #8a9ba8;
     margin-bottom: 8px;
+}
+
+/* Deliberately understated - a small text link, not a button, and tucked
+   into the section label rather than given its own prominent spot. Editing
+   these structure facts should be possible but not the obvious/inviting
+   thing to do on this screen; the confirmation step before saving (see
+   onSaveSpanInfo in inspection1.js) is the other half of that. */
+.info-edit-link {
+    margin-left: auto;
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: inherit;
+    font-size: 0.66rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #b7c3ca;
+    cursor: pointer;
+    transition: color 0.15s;
+}
+
+.info-edit-link:hover,
+.info-edit-link:focus-visible {
+    color: #5b8c8a;
 }
 
 .info-panel-title svg {
@@ -591,6 +616,93 @@ body {
     font-size: 0.82rem;
     font-weight: 600;
     color: #2c3e44;
+}
+
+/* ===== Edit mode ===== */
+.info-edit-textarea {
+    width: 100%;
+    margin-top: 0;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    font-family: inherit;
+    font-size: 0.8rem;
+    resize: vertical;
+    min-height: 70px;
+    background: #fafbfc;
+    color: #2c3e44;
+}
+
+.info-edit-textarea:focus {
+    outline: none;
+    border-color: #8ab4b0;
+    background: white;
+}
+
+.info-panel-facts-edit .fl {
+    margin-bottom: 4px;
+}
+
+.info-fact input {
+    width: 100%;
+    padding: 6px 9px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: #fafbfc;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #2c3e44;
+}
+
+.info-fact input:focus {
+    outline: none;
+    border-color: #8ab4b0;
+    background: white;
+}
+
+.info-edit-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.info-edit-cancel,
+.info-edit-save {
+    padding: 7px 16px;
+    border-radius: 22px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.info-edit-cancel {
+    background: none;
+    border: 1px solid #e2e8f0;
+    color: #6a7c8e;
+}
+
+.info-edit-cancel:hover {
+    background: #f1f5f4;
+    border-color: #c5dbd8;
+}
+
+.info-edit-save {
+    background: #8ab4b0;
+    border: none;
+    color: white;
+}
+
+.info-edit-save:hover {
+    background: #5b8c8a;
+}
+
+.info-edit-save:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 @media (max-width: 860px) {
@@ -941,6 +1053,48 @@ textarea:focus {
 
 .night-mode .info-fact .fv {
     color: #d4dfe3;
+}
+
+.night-mode .info-edit-link {
+    color: #4a5b60;
+}
+
+.night-mode .info-edit-link:hover,
+.night-mode .info-edit-link:focus-visible {
+    color: #8ab4b0;
+}
+
+.night-mode .info-edit-textarea,
+.night-mode .info-fact input {
+    background: #1e2a2f;
+    border-color: #3a4b53;
+    color: #c5d3d9;
+}
+
+.night-mode .info-edit-textarea:focus,
+.night-mode .info-fact input:focus {
+    background: #2a3a40;
+    border-color: #8ab4b0;
+}
+
+.night-mode .info-edit-cancel {
+    background: none;
+    border-color: #3a4b53;
+    color: #9ab0b8;
+}
+
+.night-mode .info-edit-cancel:hover {
+    background: #2a3a42;
+    border-color: #4a5d66;
+}
+
+.night-mode .info-edit-save {
+    background: #3a6b62;
+    color: white;
+}
+
+.night-mode .info-edit-save:hover {
+    background: #2f5a52;
 }
 
 .night-mode .step h2 {
