@@ -650,6 +650,25 @@ body {
     flex: 1;
 }
 
+/* Mirrors .data-table th's typography - the list itself is flex/card-rows,
+   not a literal table, so this is a plain row shaped to roughly line up
+   with .activity-item's own avatar/content/bci/status flex children. */
+.activity-list-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 32px 8px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #5a6e7a;
+}
+.activity-list-header .alh-avatar-spacer { width: 34px; flex-shrink: 0; }
+.activity-list-header .alh-structure { flex: 1; min-width: 0; }
+.activity-list-header .alh-bci { min-width: 45px; text-align: center; flex-shrink: 0; }
+.activity-list-header .alh-status { flex-shrink: 0; min-width: 74px; text-align: right; }
+
 .activity-item {
     display: flex;
     align-items: center;
@@ -946,6 +965,9 @@ body {
 .night-mode .data-table.card-rows thead th {
     background: #1e2a2f;
     border-color: #2f3e45;
+    color: #6a8090;
+}
+.night-mode .activity-list-header {
     color: #6a8090;
 }
 .night-mode .data-table.card-rows tbody tr td {
