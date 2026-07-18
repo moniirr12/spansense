@@ -233,6 +233,14 @@ async function initDatabase() {
         // "Span Info" panel (see PATCH /api/bridges/:id/info below).
         await pool.query(`ALTER TABLE bridges ADD COLUMN IF NOT EXISTS description TEXT`);
 
+        // Carriageway/deck width (metres) and load rating (tonnes) - shown in
+        // the map page's bridge modal. Not meaningful for a sign_gantry (it
+        // spans over the carriageway rather than carrying vehicle load), so
+        // that quick-info field reads "N/A" for that type instead of "--"
+        // even once populated - see bcirep.js.
+        await pool.query(`ALTER TABLE bridges ADD COLUMN IF NOT EXISTS width DECIMAL`);
+        await pool.query(`ALTER TABLE bridges ADD COLUMN IF NOT EXISTS load_capacity DECIMAL`);
+
         // Inspections table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS inspections (

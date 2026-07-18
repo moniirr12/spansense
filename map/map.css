@@ -943,19 +943,19 @@ body.modal-open {
 /* Quick Info Grid */
 #bridgeModal .info-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
     padding: 0 28px;
     margin-bottom: 20px;
 }
 #bridgeModal .info-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
+    gap: 6px;
+    padding: 10px 10px;
     background: rgba(248, 250, 252, 0.5);
     border-radius: 12px;
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     color: #6a7c8e;
 }
 #bridgeModal .info-item i {

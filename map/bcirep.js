@@ -10,6 +10,8 @@ async function updateBridgeModalData(structureId) {
             const locationElement = document.getElementById('modalLocation');
             const cycleElement = document.getElementById('modalCycle');
             const lengthElement = document.getElementById('modalLength');
+            const widthElement = document.getElementById('modalWidth');
+            const loadCapacityElement = document.getElementById('modalLoadCapacity');
             const builtElement = document.getElementById('modalBuilt');
             const typeElement = document.getElementById('modalType');
             if (locationElement) locationElement.textContent = bridge.location || '--';
@@ -22,6 +24,17 @@ async function updateBridgeModalData(structureId) {
                 cycleElement.textContent = `GI ${gi}y · PI ${pi}y`;
             }
             if (lengthElement) lengthElement.textContent = bridge.length ? `${bridge.length}m` : '--';
+            if (widthElement) widthElement.textContent = bridge.width ? `${bridge.width}m` : '--';
+            if (loadCapacityElement) {
+                // A sign gantry spans over the carriageway rather than
+                // carrying pedestrian/vehicle load itself, so a load rating
+                // isn't a meaningful field for it (same normalized-type check
+                // map.js's getStructureIcon uses for icon/fill lookups).
+                const normalizedType = (bridge.type || '').toLowerCase().replace(/\s+/g, '_');
+                loadCapacityElement.textContent = normalizedType === 'sign_gantry'
+                    ? 'N/A'
+                    : (bridge.load_capacity ? `${bridge.load_capacity}t` : '--');
+            }
             if (builtElement) builtElement.textContent = bridge.built_year || '--';
             if (typeElement) typeElement.textContent = bridge.type || '--';
         })
