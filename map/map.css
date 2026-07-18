@@ -246,7 +246,7 @@ body {
 
 /* Menu Item Links - preserve existing IDs */
 .sidebar > ul > li > a {
-    color: #4a5b6e;
+    color: #2c3e44;
     text-decoration: none;
     display: flex;
     align-items: center;
@@ -372,7 +372,7 @@ body {
 .submenu li a {
     padding: 10px 16px 10px 54px;
     font-size: 0.85rem;
-    color: #6a7c8e;
+    color: #2c3e44;
     text-decoration: none;
     display: flex;
     align-items: center;
@@ -401,7 +401,7 @@ body {
     cursor: pointer;
     padding: 10px 16px 10px 54px;
     font-size: 0.85rem;
-    color: #6a7c8e;
+    color: #2c3e44;
     transition: all 0.2s ease;
     border-radius: 10px;
     margin: 2px 8px;
