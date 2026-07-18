@@ -468,7 +468,7 @@ body {
 .span-content-row {
     display: flex;
     gap: 16px;
-    align-items: flex-start;
+    align-items: stretch;
 }
 
 #form-content {
@@ -488,7 +488,7 @@ body {
     align-items: center;
     justify-content: center;
     gap: 10px;
-    width: 34px;
+    width: 46px;
     flex-shrink: 0;
     border-radius: 16px;
     background: #eef4f2;
@@ -499,7 +499,6 @@ body {
     font-weight: 700;
     writing-mode: vertical-rl;
     text-orientation: mixed;
-    padding: 16px 0;
     margin-bottom: 24px;
     transition: background 0.2s, width 0.2s;
 }
