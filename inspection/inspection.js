@@ -23,11 +23,13 @@ function openModal(isEditMode = false, preferredState = null) {
             mainRow = currentRow.classList.contains('main-row') ? currentRow : findMainRow(currentRow);
         }
         const elementDesc = mainRow ? mainRow.querySelector('.description')?.textContent?.trim() : '';
-        if (isEditMode) {
-            modalTitle.textContent = elementDesc ? `Edit Defect - ${elementDesc}` : 'Edit Defect';
-        } else {
-            modalTitle.textContent = elementDesc ? `Add Defect - ${elementDesc}` : 'Add Defect';
-        }
+        modalTitle.innerHTML = '';
+        const titleIcon = document.createElement('i');
+        titleIcon.className = isEditMode ? 'fas fa-pen' : 'fas fa-plus';
+        titleIcon.title = isEditMode ? 'Editing' : 'Adding';
+        titleIcon.style.cssText = 'font-size:0.8rem;margin-right:10px;color:#5b8c8a;';
+        modalTitle.appendChild(titleIcon);
+        modalTitle.appendChild(document.createTextNode(elementDesc || 'Defect'));
     }
 
     let targetState = preferredState;
@@ -199,6 +201,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (val === 'Y') {
             if (detail) detail.style.display = 'block';
             if (divider) divider.style.display = 'block';
+            var priorityEl = document.getElementById('priority');
+            if (priorityEl && !priorityEl.value) priorityEl.value = 'L';
         } else {
             if (detail) detail.style.display = 'none';
             if (divider) divider.style.display = 'none';

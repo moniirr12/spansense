@@ -818,7 +818,7 @@
         var formats = {
             bridges:      [{ id:'csv',icon:'fa-file-csv',label:'CSV' },{ id:'json',icon:'fa-file-code',label:'JSON' },{ id:'xml',icon:'fa-file-code',label:'XML' }],
             inspections:  [{ id:'csv',icon:'fa-file-csv',label:'CSV' },{ id:'xlsx',icon:'fa-file-excel',label:'Excel' },{ id:'pdf',icon:'fa-file-pdf',label:'PDF' }],
-            reports:      [{ id:'pdf',icon:'fa-file-pdf',label:'PDF' },{ id:'docx',icon:'fa-file-word',label:'DOCX' }]
+            reports:      [{ id:'bci_pdf',icon:'fa-file-invoice',label:'BCI PDF' },{ id:'docx',icon:'fa-file-word',label:'Word Report' },{ id:'pdf',icon:'fa-file-pdf',label:'PDF Report' }]
         };
         (formats[cat] || formats.bridges).forEach(function(fmt, i) {
             var btn = document.createElement('button');
@@ -848,14 +848,15 @@
     // Add CSS for pagination controls
     var paginationStyles = document.createElement('style');
     paginationStyles.textContent = `
-        /* Pagination Styles */
+        /* Pagination Styles - sits directly on the page background like the
+           rest of this page (see .export-panel above), not in its own boxed
+           panel; just a hairline divider from the table above it. */
         .pagination-container {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 16px 24px;
-            background: white;
-            border-top: 1px solid #eef2f6;
+            padding: 16px 0;
+            border-top: 1px solid #e2e8f0;
             flex-wrap: wrap;
             gap: 16px;
         }
@@ -944,7 +945,6 @@
         
         /* Night mode pagination */
         .night-mode .pagination-container {
-            background: #232e34;
             border-top-color: #2f3e45;
         }
         
@@ -1155,7 +1155,7 @@
         var formats = {
             bridges:      [{ id:'csv',icon:'fa-file-csv',label:'CSV' },{ id:'json',icon:'fa-file-code',label:'JSON' },{ id:'xml',icon:'fa-file-code',label:'XML' }],
             inspections:  [{ id:'csv',icon:'fa-file-csv',label:'CSV' },{ id:'xlsx',icon:'fa-file-excel',label:'Excel' },{ id:'pdf',icon:'fa-file-pdf',label:'PDF' }],
-            reports:      [{ id:'pdf',icon:'fa-file-pdf',label:'PDF' },{ id:'docx',icon:'fa-file-word',label:'DOCX' }]
+            reports:      [{ id:'bci_pdf',icon:'fa-file-invoice',label:'BCI PDF' },{ id:'docx',icon:'fa-file-word',label:'Word Report' },{ id:'pdf',icon:'fa-file-pdf',label:'PDF Report' }]
         };
         (formats[cat] || formats.bridges).forEach(function(fmt, i) {
             var btn = document.createElement('button');
@@ -1255,12 +1255,14 @@
         }
 
         var format = document.querySelector('.format-btn.active').getAttribute('data-format').toLowerCase();
+        var formatLabels = { bci_pdf: 'BCI PDF', pdf: 'PDF', docx: 'DOCX', csv: 'CSV', json: 'JSON', xml: 'XML', xlsx: 'Excel' };
+        var formatLabel = formatLabels[format] || format.toUpperCase();
         var overlay = document.getElementById('progressOverlay');
         var fill    = document.getElementById('progressFill');
         var percent = document.getElementById('progressPercent');
         var text    = document.getElementById('progressText');
 
-        text.textContent = 'Exporting ' + selectedIds.length + ' records to ' + format.toUpperCase() + '...';
+        text.textContent = 'Exporting ' + selectedIds.length + ' records to ' + formatLabel + '...';
         overlay.classList.add('active');
 
         try {
@@ -1286,12 +1288,22 @@
             else if (format === 'pdf') {
                 if (currentCategory === 'reports') {
                     for (var i = 0; i < exportData.length; i++) {
-                        text.textContent = 'Generating PDF ' + (i + 1) + ' of ' + exportData.length + '...';
-                        await generateReport(exportData[i].inspection_id);
+                        text.textContent = 'Generating PDF report ' + (i + 1) + ' of ' + exportData.length + '...';
+                        await downloadReport(exportData[i].inspection_id);
                         await new Promise(function(r) { setTimeout(r, 300); });
                     }
                 } else {
                     await exportToPDF(exportData, checkedCols);
+                }
+            } else if (format === 'bci_pdf') {
+                if (currentCategory === 'reports') {
+                    for (var k = 0; k < exportData.length; k++) {
+                        text.textContent = 'Generating BCI Proforma ' + (k + 1) + ' of ' + exportData.length + '...';
+                        await generateReport(exportData[k].inspection_id);
+                        await new Promise(function(r) { setTimeout(r, 300); });
+                    }
+                } else {
+                    showToast('BCI PDF export is only available for Reports', 'info');
                 }
             } else if (format === 'docx') {
                 if (currentCategory === 'reports') {
@@ -1310,10 +1322,10 @@
 
             setTimeout(function() {
                 overlay.classList.remove('active');
-                showToast(selectedIds.length + ' records exported to ' + format.toUpperCase(), 'success');
+                showToast(selectedIds.length + ' records exported to ' + formatLabel, 'success');
                 fill.style.width = '0%';
                 percent.textContent = '';
-                addActivity(selectedIds.length, format.toUpperCase());
+                addActivity(selectedIds.length, formatLabel);
             }, 500);
 
         } catch (error) {

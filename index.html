@@ -1393,25 +1393,45 @@ body.night-mode .glass-scrollbar .thumb {
             <p>Sign in to your inspection workspace</p>
         </div>
         <form id="loginForm" onsubmit="return false;">
-            <div class="input-group">
-                <label>Engineer ID</label>
-                <input type="text" id="engineerId" placeholder="e.g. john.doe@agency.gov" autocomplete="username">
-                <div class="input-hint">
-                    <span class="input-hint-icon">i</span>
-                    <span>Use your registered email or ID</span>
+            <div id="loginStep1">
+                <div class="input-group">
+                    <label>Engineer ID</label>
+                    <input type="text" id="engineerId" placeholder="e.g. john.doe@agency.gov" autocomplete="username">
+                    <div class="input-hint">
+                        <span class="input-hint-icon">i</span>
+                        <span>Use your registered email or ID</span>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Secure Key</label>
+                    <input type="password" id="secureKey" placeholder="Enter your password" autocomplete="current-password">
+                </div>
+                <div class="auth-actions">
+                    <button type="button" class="btn-enter" id="loginBtn">
+                        ENTER SYSTEM
+                    </button>
+                    <button type="button" class="btn-register" onclick="handleRegister()">
+                        Request Access
+                    </button>
                 </div>
             </div>
-            <div class="input-group">
-                <label>Secure Key</label>
-                <input type="password" id="secureKey" placeholder="Enter your password" autocomplete="current-password">
-            </div>
-            <div class="auth-actions">
-                <button type="button" class="btn-enter" id="loginBtn">
-                    ENTER SYSTEM
-                </button>
-                <button type="button" class="btn-register" onclick="handleRegister()">
-                    Request Access
-                </button>
+            <div id="loginStep2" style="display:none;">
+                <div class="input-group">
+                    <label>Authenticator Code</label>
+                    <input type="text" id="twoFACode" placeholder="6-digit code" inputmode="numeric" autocomplete="one-time-code" maxlength="6">
+                    <div class="input-hint">
+                        <span class="input-hint-icon">i</span>
+                        <span>Enter the code from your authenticator app</span>
+                    </div>
+                </div>
+                <div class="auth-actions">
+                    <button type="button" class="btn-enter" id="twoFABtn">
+                        VERIFY
+                    </button>
+                    <button type="button" class="btn-register" id="twoFABackBtn">
+                        Back
+                    </button>
+                </div>
             </div>
         </form>
         <div class="auth-footer">
@@ -1741,7 +1761,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 return response.json();
             })
             .then(function(data) {
-                if (data.success) {
+                if (data.success && data.requires2FA) {
+                    document.getElementById('loginStep1').style.display = 'none';
+                    document.getElementById('loginStep2').style.display = 'block';
+                    var codeInput = document.getElementById('twoFACode');
+                    if (codeInput) codeInput.focus();
+                } else if (data.success) {
                     localStorage.setItem('user', JSON.stringify(data.user));
                     sessionStorage.setItem('user', JSON.stringify(data.user));
                     window.location.href = '../map/map.html';
@@ -1770,7 +1795,82 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         };
     }
-    
+
+    const twoFABtn = document.getElementById('twoFABtn');
+    const twoFABackBtn = document.getElementById('twoFABackBtn');
+    const twoFACodeInput = document.getElementById('twoFACode');
+
+    function submitTwoFACode() {
+        const code = (twoFACodeInput.value || '').trim();
+        if (!/^\d{6}$/.test(code)) {
+            showAlertModal('Enter the 6-digit code from your authenticator app', 'warning', 'Missing Code');
+            return;
+        }
+
+        twoFABtn.disabled = true;
+        twoFABtn.textContent = 'VERIFYING...';
+        twoFABtn.classList.add('btn-loading');
+
+        fetch('/api/login/2fa', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ code: code })
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            if (data.success) {
+                localStorage.setItem('user', JSON.stringify(data.user));
+                sessionStorage.setItem('user', JSON.stringify(data.user));
+                window.location.href = '../map/map.html';
+            } else {
+                showAlertModal(data.message || 'Incorrect code', 'error', 'Verification Failed');
+                twoFABtn.disabled = false;
+                twoFABtn.textContent = 'VERIFY';
+                twoFABtn.classList.remove('btn-loading');
+                twoFACodeInput.value = '';
+                twoFACodeInput.focus();
+            }
+        })
+        .catch(function(err) {
+            console.error('Error:', err);
+            showAlertModal('Connection error! Please check if the server is running.', 'error', 'Connection Error');
+            twoFABtn.disabled = false;
+            twoFABtn.textContent = 'VERIFY';
+            twoFABtn.classList.remove('btn-loading');
+        });
+    }
+
+    if (twoFABtn) {
+        twoFABtn.onclick = function(event) {
+            event.preventDefault();
+            submitTwoFACode();
+        };
+    }
+
+    if (twoFACodeInput) {
+        twoFACodeInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                submitTwoFACode();
+            }
+        });
+    }
+
+    if (twoFABackBtn) {
+        twoFABackBtn.onclick = function(event) {
+            event.preventDefault();
+            document.getElementById('loginStep2').style.display = 'none';
+            document.getElementById('loginStep1').style.display = 'block';
+            twoFACodeInput.value = '';
+            if (loginBtn) {
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'ENTER SYSTEM';
+                loginBtn.classList.remove('btn-loading');
+            }
+        };
+    }
+
     // Enter key handlers
     const secureKeyInput = document.getElementById('secureKey');
     if (secureKeyInput) {

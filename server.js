@@ -16,7 +16,11 @@ const path = require('path');
 const fs = require('fs');
 const proj4 = require('proj4');
 const bcrypt = require('bcryptjs');
+const { authenticator } = require('otplib');
 const storage = require('./supabaseStorage');
+const { PDFParse } = require('pdf-parse');
+const mammoth = require('mammoth');
+const { extractElements } = require('./extractPreviousInspection');
 
 const router = express.Router();
 const session = require('express-session');
@@ -159,6 +163,13 @@ async function initDatabase() {
             )
         `);
         await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`);
+        // TOTP secret is written as soon as setup starts, before the user has
+        // confirmed a code from their authenticator app - totp_enabled is the
+        // actual gate on whether it's used at login, so an abandoned setup
+        // just leaves an unused secret sitting here rather than half-enabling 2FA.
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret TEXT`);
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN DEFAULT false`);
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_changed_at TIMESTAMP`);
 
         // Insert default admin user if table is empty
         const userCount = await dbGet("SELECT COUNT(*) as count FROM users");
@@ -2012,6 +2023,60 @@ app.get('/api/author/diff', requireAuth, async (req, res) => {
     }
 });
 
+// Author's "Upload a previous inspection" flow - for a structure whose
+// last inspection wasn't done in spanSense. Extracts per-element narrative
+// out of an uploaded PDF/Word report (see extractPreviousInspection.js for
+// the approach/limitations) and returns the same shape /api/author/diff
+// does, with previous always null and comparison always 'first' - the
+// extracted content becomes the starting draft itself, not a second data
+// source diffed against some other spanSense inspection.
+app.post('/api/author/extract-previous-inspection', requireAuth, upload.single('file'), async (req, res) => {
+    try {
+        const { structureId } = req.body;
+        if (!structureId) return res.status(400).json({ error: 'structureId is required' });
+        if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+        const bridge = await dbGet('SELECT type, organization_id FROM bridges WHERE id = $1', [structureId]);
+        if (!bridge) return res.status(404).json({ error: 'Structure not found' });
+        const structureType = resolveElementsType(bridge.type);
+
+        const elementRows = await dbAll(
+            'SELECT element_number, description FROM elements WHERE structure_type = $1 ORDER BY display_order ASC',
+            [structureType]
+        );
+
+        let text;
+        if (req.file.mimetype === 'application/pdf') {
+            const parser = new PDFParse({ data: req.file.buffer });
+            const result = await parser.getText();
+            text = result.text;
+        } else if (
+            req.file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+            req.file.mimetype === 'application/msword'
+        ) {
+            const result = await mammoth.extractRawText({ buffer: req.file.buffer });
+            text = result.value;
+        } else {
+            return res.status(400).json({ error: 'Please upload a PDF or Word (.doc/.docx) file.' });
+        }
+
+        const { elements, warning } = extractElements(text, elementRows.map(r => ({
+            element_number: r.element_number,
+            description: r.description
+        })));
+
+        res.json({
+            structureType,
+            organizationId: bridge.organization_id,
+            elements,
+            warning
+        });
+    } catch (err) {
+        console.error('Error extracting previous inspection:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Author branding - set once per organization/client, reused automatically
 // for every future report for them (same intent as the style profile).
 app.get('/api/author/branding/:organizationId', requireAuth, async (req, res) => {
@@ -2322,6 +2387,57 @@ app.get('/api/bridges/:structureId/inspection-photos', requireAuth, async (req, 
     }
 });
 
+// Delete an entire inspection - cascades through defect_photos, defects and
+// inspection_spans (none of these have DB-level ON DELETE CASCADE set up,
+// so it's done manually here, in a transaction so a failure partway through
+// doesn't leave things half-deleted). Storage file cleanup happens after
+// the transaction commits and is best-effort per photo - a missing/already-
+// gone file shouldn't roll back an otherwise-successful deletion of the
+// real records.
+app.delete('/api/inspections/:id', requireAuth, async (req, res) => {
+    const { id } = req.params;
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const inspection = await client.query('SELECT id FROM inspections WHERE id = $1', [id]);
+        if (inspection.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ success: false, error: 'Inspection not found' });
+        }
+
+        const photos = await client.query(
+            `SELECT dp.photo_url FROM defect_photos dp
+             JOIN defects d ON dp.defect_id = d.id
+             WHERE d.inspection_id = $1`,
+            [id]
+        );
+
+        await client.query(
+            `DELETE FROM defect_photos WHERE defect_id IN (SELECT id FROM defects WHERE inspection_id = $1)`,
+            [id]
+        );
+        await client.query('DELETE FROM defects WHERE inspection_id = $1', [id]);
+        await client.query('DELETE FROM inspection_spans WHERE inspection_id = $1', [id]);
+        await client.query('DELETE FROM inspections WHERE id = $1', [id]);
+
+        await client.query('COMMIT');
+
+        for (const photo of photos.rows) {
+            try { await storage.deleteFile(photo.photo_url); }
+            catch (err) { console.error('Failed to delete storage file during inspection delete:', photo.photo_url, err.message); }
+        }
+
+        res.json({ success: true, photosDeleted: photos.rows.length });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Delete inspection error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    } finally {
+        client.release();
+    }
+});
+
 // Delete a single already-uploaded inspection photo (DB row + file on disk)
 app.delete('/api/inspection-photos/:photoId', requireAuth, async (req, res) => {
     try {
@@ -2421,6 +2537,16 @@ app.post('/api/login', async (req, res) => {
         const passwordMatches = await bcrypt.compare(password, user.password);
 
         if (passwordMatches) {
+            if (user.totp_enabled) {
+                // Correct password, but a second factor is still required -
+                // req.session.userId is deliberately NOT set yet, so
+                // requireAuth keeps rejecting every other route until
+                // /api/login/2fa succeeds.
+                req.session.pendingUserId = user.id;
+                req.session.pendingAttempts = 0;
+                return res.json({ success: true, requires2FA: true });
+            }
+
             req.session.userId = user.id;
             req.session.username = user.username;
             req.session.organizationId = user.organization_id;
@@ -2432,7 +2558,7 @@ app.post('/api/login', async (req, res) => {
                 [user.id]
             );
 
-            res.json({ 
+            res.json({
                 success: true,
                 user: {
                     username: user.username,
@@ -2441,17 +2567,70 @@ app.post('/api/login', async (req, res) => {
                 }
             });
         } else {
-            res.status(401).json({ 
-                success: false, 
-                message: 'Invalid username or password' 
+            res.status(401).json({
+                success: false,
+                message: 'Invalid username or password'
             });
         }
     } catch (err) {
         console.error('Database error:', err);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Server error' 
+        res.status(500).json({
+            success: false,
+            message: 'Server error'
         });
+    }
+});
+
+// Second step of login when the account has 2FA enabled - requires
+// req.session.pendingUserId from /api/login above, so this can't be hit
+// standalone without a correct password first.
+app.post('/api/login/2fa', async (req, res) => {
+    try {
+        if (!req.session.pendingUserId) {
+            return res.status(400).json({ success: false, message: 'No login in progress' });
+        }
+
+        const code = (req.body.code || '').trim();
+        if (!/^\d{6}$/.test(code)) {
+            return res.status(400).json({ success: false, message: 'Enter the 6-digit code from your authenticator app' });
+        }
+
+        // Basic brute-force guard - 5 wrong codes and the pending login is
+        // discarded, forcing a fresh username/password attempt.
+        req.session.pendingAttempts = (req.session.pendingAttempts || 0) + 1;
+        if (req.session.pendingAttempts > 5) {
+            delete req.session.pendingUserId;
+            delete req.session.pendingAttempts;
+            return res.status(429).json({ success: false, message: 'Too many attempts - please sign in again' });
+        }
+
+        const user = await dbGet('SELECT * FROM users WHERE id = $1', [req.session.pendingUserId]);
+        if (!user || !user.totp_enabled || !user.totp_secret) {
+            delete req.session.pendingUserId;
+            delete req.session.pendingAttempts;
+            return res.status(400).json({ success: false, message: 'No login in progress' });
+        }
+
+        if (!authenticator.check(code, user.totp_secret)) {
+            return res.status(401).json({ success: false, message: 'Incorrect code' });
+        }
+
+        req.session.userId = user.id;
+        req.session.username = user.username;
+        req.session.organizationId = user.organization_id;
+        req.session.role = user.role;
+        delete req.session.pendingUserId;
+        delete req.session.pendingAttempts;
+
+        await pool.query('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1', [user.id]);
+
+        res.json({
+            success: true,
+            user: { username: user.username, role: user.role, fullName: user.full_name }
+        });
+    } catch (err) {
+        console.error('2FA login error:', err);
+        res.status(500).json({ success: false, message: 'Server error' });
     }
 });
 
@@ -2487,13 +2666,158 @@ app.get('/api/check-session', (req, res) => {
 app.get('/api/me', requireAuth, async (req, res) => {
     try {
         const user = await dbGet(
-            'SELECT username, full_name, role, created_at, email, phone FROM users WHERE id = $1',
+            'SELECT username, full_name, role, created_at, email, phone, last_login, totp_enabled, password_changed_at FROM users WHERE id = $1',
             [req.session.userId]
         );
         if (!user) return res.status(404).json({ error: 'User not found' });
         res.json(user);
     } catch (err) {
         console.error('Fetch /api/me error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Lets a user edit their own name/email/phone. Deliberately does not accept
+// `role` here (even if a client sends one) - the account page's "Job Title"
+// field displays this same column, and it doubles as the permission level
+// checked by requireAdmin/requireEngineer elsewhere, so it must only ever
+// be changed by an admin through a dedicated admin flow, never by the user
+// editing their own profile.
+app.put('/api/me', requireAuth, async (req, res) => {
+    try {
+        const fullName = (req.body.full_name || '').trim();
+        const email = (req.body.email || '').trim();
+        const phone = (req.body.phone || '').trim();
+
+        if (!fullName) {
+            return res.status(400).json({ error: 'Full name is required' });
+        }
+        if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return res.status(400).json({ error: 'Invalid email address' });
+        }
+
+        await dbRun(
+            'UPDATE users SET full_name = $1, email = $2, phone = $3 WHERE id = $4',
+            [fullName, email, phone, req.session.userId]
+        );
+
+        const user = await dbGet(
+            'SELECT username, full_name, role, created_at, email, phone, last_login, totp_enabled, password_changed_at FROM users WHERE id = $1',
+            [req.session.userId]
+        );
+        res.json(user);
+    } catch (err) {
+        console.error('Update /api/me error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ============================================
+// TWO-FACTOR AUTHENTICATION (TOTP - Google/Microsoft Authenticator compatible)
+// ============================================
+
+// Starts (or restarts) 2FA setup: generates a new secret and stores it
+// unconfirmed (totp_enabled stays false) - nothing is actually enabled
+// until /api/me/2fa/verify succeeds, so an abandoned setup or a re-scan
+// just replaces the pending secret rather than half-enabling 2FA.
+app.post('/api/me/2fa/setup', requireAuth, async (req, res) => {
+    try {
+        const user = await dbGet('SELECT username FROM users WHERE id = $1', [req.session.userId]);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        const secret = authenticator.generateSecret();
+        await dbRun('UPDATE users SET totp_secret = $1, totp_enabled = false WHERE id = $2', [secret, req.session.userId]);
+
+        const otpauthUrl = authenticator.keyuri(user.username, 'spanSense', secret);
+        res.json({ secret, otpauthUrl });
+    } catch (err) {
+        console.error('2FA setup error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Confirms setup - the user has to prove they can generate a valid code
+// from the secret (i.e. it's really in their authenticator app) before it
+// starts being required at login.
+app.post('/api/me/2fa/verify', requireAuth, async (req, res) => {
+    try {
+        const code = (req.body.code || '').trim();
+        if (!/^\d{6}$/.test(code)) {
+            return res.status(400).json({ error: 'Enter the 6-digit code from your authenticator app' });
+        }
+
+        const user = await dbGet('SELECT totp_secret FROM users WHERE id = $1', [req.session.userId]);
+        if (!user || !user.totp_secret) {
+            return res.status(400).json({ error: 'No 2FA setup in progress - start setup again' });
+        }
+
+        if (!authenticator.check(code, user.totp_secret)) {
+            return res.status(401).json({ error: 'Incorrect code' });
+        }
+
+        await dbRun('UPDATE users SET totp_enabled = true WHERE id = $1', [req.session.userId]);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('2FA verify error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Disabling removes a security control, so it requires re-entering the
+// current password rather than a bare click - the same bar as changing it.
+app.post('/api/me/2fa/disable', requireAuth, async (req, res) => {
+    try {
+        const password = req.body.password || '';
+        const user = await dbGet('SELECT password FROM users WHERE id = $1', [req.session.userId]);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        const passwordMatches = await bcrypt.compare(password, user.password);
+        if (!passwordMatches) {
+            return res.status(401).json({ error: 'Incorrect password' });
+        }
+
+        await dbRun('UPDATE users SET totp_enabled = false, totp_secret = NULL WHERE id = $1', [req.session.userId]);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('2FA disable error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Lets a user change their own password. Requires the current password
+// (not just an active session) so a hijacked but unattended session can't
+// be used to lock the real owner out by silently swapping the password.
+app.post('/api/me/password', requireAuth, async (req, res) => {
+    try {
+        const currentPassword = req.body.currentPassword || '';
+        const newPassword = req.body.newPassword || '';
+
+        if (newPassword.length < 8) {
+            return res.status(400).json({ error: 'New password must be at least 8 characters' });
+        }
+
+        const user = await dbGet('SELECT password FROM users WHERE id = $1', [req.session.userId]);
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        const passwordMatches = await bcrypt.compare(currentPassword, user.password);
+        if (!passwordMatches) {
+            return res.status(401).json({ error: 'Current password is incorrect' });
+        }
+
+        const sameAsOld = await bcrypt.compare(newPassword, user.password);
+        if (sameAsOld) {
+            return res.status(400).json({ error: 'New password must be different from your current password' });
+        }
+
+        const newHash = await bcrypt.hash(newPassword, 10);
+        await dbRun(
+            'UPDATE users SET password = $1, password_changed_at = CURRENT_TIMESTAMP WHERE id = $2',
+            [newHash, req.session.userId]
+        );
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Password change error:', err);
         res.status(500).json({ error: err.message });
     }
 });

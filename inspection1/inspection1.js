@@ -388,7 +388,9 @@ async function fetchLatestInspectionDate(bridgeId) {
             if (lastInspEl) {
                 const isCurrentDate = latestDate === currentInspectionDate;
                 const dateDisplay = formatDate(latestDate);
-                lastInspEl.innerHTML = isCurrentDate ? `${dateDisplay} (current)` : dateDisplay;
+                lastInspEl.innerHTML = isCurrentDate
+                    ? `${dateDisplay} <i class="fas fa-circle-check current-insp-icon" title="This is the inspection you're currently editing"></i>`
+                    : dateDisplay;
             }
 
             if (isEditMode) {
@@ -757,7 +759,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const isEditMode = sessionStorage.getItem('inspectionMode') === 'edit';
 
     const saveDraftBtn = document.getElementById('saveDraftBtn');
-    if (saveDraftBtn) {
+    if (saveDraftBtn && window.location.pathname.includes('inspection1.html')) {
         saveDraftBtn.addEventListener('click', function() {
             const commentsTextarea = document.getElementById(`comments-${currentIndex}`);
             if (commentsTextarea) {
@@ -857,6 +859,24 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // SCENARIO 3: New inspection
 
+    // Most inspections are General Inspections carried out by whoever is
+    // logged in, so default both instead of making that the first two
+    // clicks/typing on every new inspection.
+    const giButton = document.querySelector('.inspection-type-btn[data-type="GI"]');
+    if (giButton) {
+        inspectionTypeButtons.forEach(btn => btn.classList.remove('selected'));
+        giButton.classList.add('selected');
+        inspectionData.inspectionType = 'GI';
+    }
+    fetch(`${API_BASE}/api/me`)
+        .then(response => response.ok ? response.json() : null)
+        .then(user => {
+            if (!user || !user.full_name || !inspectorNameInput || inspectorNameInput.value) return;
+            inspectorNameInput.value = user.full_name;
+            inspectionData.inspectorName = user.full_name;
+        })
+        .catch(() => {});
+
     // Most inspections are recorded the day they happen, so default the
     // date to today instead of making every inspection start with a click
     // into the calendar just to pick the obvious value.
@@ -896,13 +916,13 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     if (structureId && structureName) {
-        document.getElementById('bridgeHeader').textContent = `${structureName} Inspection`;
-        
+        document.getElementById('bridgeHeader').textContent = buildBridgeHeaderText(structureName, inspectionData.inspectionType);
+
         const sidebarBridgeName = document.getElementById('sidebarBridgeName');
         const sidebarBridgeId = document.getElementById('sidebarBridgeId');
         if (sidebarBridgeName) sidebarBridgeName.textContent = structureName;
         if (sidebarBridgeId) sidebarBridgeId.textContent = `STR #${structureId}`;
-        
+
         fetchSpans(structureId);
     } else {
         document.getElementById('bridgeHeader').textContent = "No structure data found.";

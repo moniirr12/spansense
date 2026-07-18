@@ -210,6 +210,15 @@ body {
     color: #2c4a48;
 }
 
+.current-insp-icon {
+    color: #2d7a6e;
+    margin-left: 2px;
+    font-size: 0.85em;
+}
+.night-mode .current-insp-icon {
+    color: #7ec9ba;
+}
+
 .sidebar-status {
     display: inline-flex;
     align-items: center;
