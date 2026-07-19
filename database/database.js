@@ -542,20 +542,14 @@
     // ============================================
     // REPORTS TABLE
     // ============================================
-    async function fetchReports() {
-        try {
-            showLoading(true);
-            var res = await fetch(API_BASE + '/api/reports');
-            if (!res.ok) { buildReportsFromInspections(); return; }
-            reportsData = await res.json();
-            if (currentCategory === 'reports') rebuildReportsTable();
-        } catch (err) {
-            buildReportsFromInspections();
-        } finally {
-            showLoading(false);
-        }
-    }
-
+    // There's no standalone "reports" record on the server - a report is
+    // just an inspection presented differently, so every call site below
+    // builds this straight from inspectionsData. (A fetchReports() used to
+    // sit here trying GET /api/reports first, which was never implemented
+    // server-side and always fell through to the SPA catch-all - a 200
+    // response with index.html's body, not JSON - so it silently threw and
+    // fell back to this same function anyway. It was also never actually
+    // called from anywhere, so removed rather than fixed.)
     function buildReportsFromInspections() {
         reportsData = inspectionsData.map(function(inspection) {
             var bciAv   = inspection.overall_bciave   != null ? Math.round(parseFloat(inspection.overall_bciave))  : null;
