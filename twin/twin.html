@@ -498,10 +498,28 @@ body {
 .trend-crit-color { color: #c2703f; }
 .night-mode .trend-avg-color { color: #8ab4b0; }
 .night-mode .trend-crit-color { color: #e8a87c; }
-.chart-legend { display: flex; gap: 14px; margin-top: 12px; }
+.chart-legend { display: flex; gap: 14px; margin-top: 12px; flex-wrap: wrap; }
 .chart-legend .item { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: #8a9ba8; }
 .night-mode .chart-legend .item { color: #8aa4ac; }
 .chart-legend .sw { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: currentColor; }
+.trend-projected-color { color: #b3bcc4; }
+.night-mode .trend-projected-color { color: #5f757d; }
+.trend-proj-toggle {
+    background: #fafbfc; border: 1px solid #e2e8f0; border-radius: 20px; color: #6a7c8e;
+    padding: 2px 10px; cursor: pointer; font-family: inherit; font-size: 0.72rem;
+    transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+.night-mode .trend-proj-toggle { background: #1a2428; border-color: #3a4b53; color: #9ab0b8; }
+.trend-proj-toggle:hover { background: #eef4f2; border-color: #8ab4b0; color: #5b8c8a; }
+.night-mode .trend-proj-toggle:hover { background: #1e3a38; border-color: #4a7876; color: #8ab4b0; }
+.trend-proj-toggle.active { color: #5b8c8a; border-color: #8ab4b0; background: #eef4f2; }
+.night-mode .trend-proj-toggle.active { color: #8ab4b0; border-color: #4a7876; background: #1e3a38; }
+.trend-proj-toggle.active .trend-projected-color { color: #5b8c8a; }
+.night-mode .trend-proj-toggle.active .trend-projected-color { color: #8ab4b0; }
+.trend-projected-note { font-size: 0.66rem; color: #b3bcc4; margin-top: 6px; line-height: 1.4; }
+.night-mode .trend-projected-note { color: #5f757d; }
+.trend-projected-divider { stroke: #d5dbe0; stroke-width: 1; stroke-dasharray: 2,2; }
+.night-mode .trend-projected-divider { stroke: #3a4b53; }
 .trend-empty {
     padding: 20px 0; text-align: center; font-size: 0.8rem; color: #8a9ba8;
     display: flex; flex-direction: column; align-items: center; gap: 8px;
@@ -1003,7 +1021,11 @@ body.night-mode .glass-scrollbar .thumb {
                 <div class="chart-legend">
                     <div class="item"><span class="sw trend-avg-color"></span>BCI<sub>avg</sub></div>
                     <div class="item"><span class="sw trend-crit-color"></span>BCI<sub>crit</sub></div>
+                    <button class="item trend-proj-toggle" id="trendProjToggle" type="button" style="display:none;">
+                        <span class="sw trend-projected-color"></span><span id="trendProjToggleLabel">Show projection</span>
+                    </button>
                 </div>
+                <div class="trend-projected-note" id="trendProjectedNote" style="display:none;">Projected from this structure's own trend - not a recorded inspection.</div>
             </div>
 
             <div class="info-card">
@@ -1053,7 +1075,7 @@ body.night-mode .glass-scrollbar .thumb {
                     <div class="vc-layer-toggles">
                         <div class="vc-pill on" data-layer="structure" title="Structure"><i class="fa-solid fa-cube"></i></div>
                         <div class="vc-pill on" data-layer="sensors" title="Sensors"><i class="fa-solid fa-satellite-dish"></i></div>
-                        <div class="vc-pill" data-layer="defects" title="Defects"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                        <div class="vc-pill on" data-layer="defects" title="Defects"><i class="fa-solid fa-triangle-exclamation"></i></div>
                     </div>
                 </div>
 
@@ -1088,7 +1110,7 @@ body.night-mode .glass-scrollbar .thumb {
                 <div class="legend">
                     <div class="item"><span class="sw" style="background:#5b8c8a"></span>General Inspection</div>
                     <div class="item"><span class="sw" style="background:#4a90b8"></span>Principal Inspection</div>
-                    <div class="item"><span class="sw" style="background:#c28b5a"></span>Special Inspection</div>
+                    <div class="item"><span class="sw" style="background:#c28b5a"></span>Safety Inspection</div>
                     <div class="item"><span class="sw" style="background:#c0392b"></span>Overdue</div>
                 </div>
             </div>

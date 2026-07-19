@@ -218,14 +218,39 @@ function renderTileDelta(elId, current, previous, prevType) {
 // the 65/50 band thresholds are shown as reference lines instead, and hovering
 // an inspection shows both scores together as text so colour is never the
 // only signal.
+// Ordinary least-squares fit (v = slope*t + intercept). Only meaningful with
+// a real trend to fit, not just two points defining a line by construction -
+// see the >= 3 gate at each call site.
+function linearFit(pts) {
+    if (pts.length < 3) return null;
+    var n = pts.length, sumT = 0, sumV = 0, sumTT = 0, sumTV = 0;
+    pts.forEach(function(p) { sumT += p.t; sumV += p.v; sumTT += p.t * p.t; sumTV += p.t * p.v; });
+    var denom = n * sumTT - sumT * sumT;
+    if (denom === 0) return null;
+    var slope = (n * sumTV - sumT * sumV) / denom;
+    var intercept = (sumV - slope * sumT) / n;
+    return { slope: slope, intercept: intercept };
+}
+
+// Off by default - the chart shows only recorded inspections until the
+// viewer explicitly asks to see the projection (see the #trendProjToggle
+// click handler below), rather than always guessing at the future.
+var showBciProjection = false;
+var lastBciInspections = [];
+
 function renderBciTrendChart(inspections) {
+    lastBciInspections = inspections || [];
     var wrap = document.getElementById('bciTrendChart');
     var sub = document.getElementById('trendSub');
+    var projToggle = document.getElementById('trendProjToggle');
+    var projNote = document.getElementById('trendProjectedNote');
     var valid = (inspections || []).filter(function(i) { return i.bciAvg != null || i.bciCrit != null; });
 
     if (valid.length < 2) {
         sub.textContent = valid.length ? '1 inspection' : '—';
         wrap.innerHTML = '<div class="trend-empty"><i class="fa-solid fa-chart-line"></i>Not enough inspection history yet</div>';
+        projToggle.style.display = 'none';
+        projNote.style.display = 'none';
         return;
     }
 
@@ -236,7 +261,37 @@ function renderBciTrendChart(inspections) {
     var minV = 30, maxV = 100;
 
     var timestamps = valid.map(function(i) { return i.timestamp; });
-    var minT = Math.min.apply(null, timestamps), maxT = Math.max.apply(null, timestamps);
+    var minT = Math.min.apply(null, timestamps), realMaxT = Math.max.apply(null, timestamps);
+
+    // A straight line through only 2 points is just those 2 points, not a
+    // real trend - only extrapolate a series once it has at least 3 real
+    // readings of its own (bciAvg/bciCrit can differ in how many they have).
+    function rawSeries(key) {
+        var pts = [];
+        valid.forEach(function(i) { if (i[key] != null) pts.push({ t: i.timestamp, v: i[key] }); });
+        return pts;
+    }
+    function lastReading(key) {
+        for (var idx = valid.length - 1; idx >= 0; idx--) {
+            if (valid[idx][key] != null) return { t: valid[idx].timestamp, v: valid[idx][key] };
+        }
+        return null;
+    }
+    var YEAR_MS = 365.25 * 24 * 60 * 60 * 1000;
+    var avgFit = linearFit(rawSeries('bciAvg'));
+    var critFit = linearFit(rawSeries('bciCrit'));
+    var eligible = !!(avgFit || critFit);
+    var showProjection = eligible && showBciProjection;
+    var projT = realMaxT + 10 * YEAR_MS;
+    var mid5T = realMaxT + 5 * YEAR_MS;
+
+    // The toggle itself only appears once there's enough history to project
+    // at all; its on/off look reflects whether it's currently showing one.
+    projToggle.style.display = eligible ? '' : 'none';
+    projToggle.classList.toggle('active', showProjection);
+    document.getElementById('trendProjToggleLabel').textContent = showProjection ? 'Projected' : 'Show projection';
+
+    var maxT = showProjection ? projT : realMaxT;
     var spanT = Math.max(1, maxT - minT);
 
     function xAt(t) { return padL + ((t - minT) / spanT) * innerW; }
@@ -256,9 +311,30 @@ function renderBciTrendChart(inspections) {
     function pathFor(pts) {
         return pts.map(function(p, idx) { return (idx === 0 ? 'M' : 'L') + p.x.toFixed(1) + ',' + p.y.toFixed(1); }).join(' ');
     }
+    // Anchors the dashed continuation at the series' own last real value
+    // (not the fit's estimate for that exact date), so it picks up exactly
+    // where the solid line ends instead of showing a small visible jump.
+    function projectedPathFor(fit, key) {
+        if (!fit) return null;
+        var last = lastReading(key);
+        if (!last) return null;
+        var v5 = fit.slope * mid5T + fit.intercept;
+        var v10 = fit.slope * projT + fit.intercept;
+        return pathFor([
+            { x: xAt(last.t), y: yAt(last.v) },
+            { x: xAt(mid5T), y: yAt(v5) },
+            { x: xAt(projT), y: yAt(v10) }
+        ]);
+    }
 
     var avgPts = seriesPoints('bciAvg');
     var critPts = seriesPoints('bciCrit');
+    var avgProjPath = showProjection ? projectedPathFor(avgFit, 'bciAvg') : null;
+    var critProjPath = showProjection ? projectedPathFor(critFit, 'bciCrit') : null;
+    var avgV5  = (showProjection && avgFit)  ? avgFit.slope  * mid5T + avgFit.intercept  : null;
+    var avgV10 = (showProjection && avgFit)  ? avgFit.slope  * projT + avgFit.intercept  : null;
+    var critV5  = (showProjection && critFit) ? critFit.slope * mid5T + critFit.intercept : null;
+    var critV10 = (showProjection && critFit) ? critFit.slope * projT + critFit.intercept : null;
     var goodY = yAt(65), critY = yAt(50);
 
     var svg = '<svg viewBox="0 0 ' + width + ' ' + height + '" width="100%" height="' + height + '">';
@@ -268,17 +344,36 @@ function renderBciTrendChart(inspections) {
     svg += '<text class="trend-axis-label" x="' + (width - 2) + '" y="' + (goodY - 3).toFixed(1) + '" font-size="8" text-anchor="end">65</text>';
     svg += '<text class="trend-axis-label" x="' + (width - 2) + '" y="' + (critY - 3).toFixed(1) + '" font-size="8" text-anchor="end">50</text>';
 
+    if (showProjection) {
+        var todayX = xAt(realMaxT).toFixed(1);
+        svg += '<line class="trend-projected-divider" x1="' + todayX + '" y1="' + padT + '" x2="' + todayX + '" y2="' + (padT + innerH) + '"/>';
+    }
+
     if (avgPts.length > 1) {
         svg += '<g class="trend-avg-color"><path d="' + pathFor(avgPts) + '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>';
     }
     if (critPts.length > 1) {
         svg += '<g class="trend-crit-color"><path d="' + pathFor(critPts) + '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></g>';
     }
+    if (avgProjPath) {
+        svg += '<g class="trend-avg-color"><path d="' + avgProjPath + '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4,3" opacity="0.55"/></g>';
+    }
+    if (critProjPath) {
+        svg += '<g class="trend-crit-color"><path d="' + critProjPath + '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4,3" opacity="0.55"/></g>';
+    }
 
     svg += '<line class="trend-crosshair" id="trendCrosshair" x1="0" y1="' + padT + '" x2="0" y2="' + (padT + innerH) + '"/>';
 
     svg += '<text class="trend-date-label" x="' + xAt(valid[0].timestamp).toFixed(1) + '" y="' + height + '" font-size="9" text-anchor="start">' + valid[0].date + '</text>';
-    svg += '<text class="trend-date-label" x="' + xAt(valid[valid.length - 1].timestamp).toFixed(1) + '" y="' + height + '" font-size="9" text-anchor="end">' + valid[valid.length - 1].date + '</text>';
+    if (showProjection) {
+        svg += '<text class="trend-date-label" x="' + xAt(realMaxT).toFixed(1) + '" y="' + height + '" font-size="9" text-anchor="middle">Today</text>';
+        svg += '<text class="trend-date-label" x="' + xAt(mid5T).toFixed(1) + '" y="' + height + '" font-size="9" text-anchor="middle">+5y</text>';
+        svg += '<text class="trend-date-label" x="' + xAt(projT).toFixed(1) + '" y="' + height + '" font-size="9" text-anchor="end">+10y</text>';
+    } else {
+        svg += '<text class="trend-date-label" x="' + xAt(valid[valid.length - 1].timestamp).toFixed(1) + '" y="' + height + '" font-size="9" text-anchor="end">' + valid[valid.length - 1].date + '</text>';
+    }
+
+    projNote.style.display = showProjection ? '' : 'none';
 
     // One hit column per inspection, wide enough to hover even when
     // inspections are bunched close together on the time axis.
@@ -288,6 +383,20 @@ function renderBciTrendChart(inspections) {
         svg += '<rect class="thit" data-t="' + i.timestamp + '" x="' + (x - hitWidth / 2).toFixed(1) + '" y="0" width="' + hitWidth.toFixed(1) + '" height="' + height + '" fill="transparent" style="cursor:pointer"/>';
     });
 
+    // Same hover affordance for the +5y/+10y projected marks - otherwise the
+    // dashed line shows a shape with no way to read the actual predicted
+    // numbers off it, unlike every real inspection point.
+    var projHitPoints = [];
+    if (showProjection) {
+        if (avgV5 != null || critV5 != null) projHitPoints.push({ t: mid5T, avg: avgV5, crit: critV5, label: '+5y (' + new Date(mid5T).getFullYear() + ')' });
+        if (avgV10 != null || critV10 != null) projHitPoints.push({ t: projT, avg: avgV10, crit: critV10, label: '+10y (' + new Date(projT).getFullYear() + ')' });
+        var projHitWidth = Math.max(10, innerW / 10);
+        projHitPoints.forEach(function(p) {
+            var x = xAt(p.t);
+            svg += '<rect class="thit thit-proj" data-proj-t="' + p.t + '" x="' + (x - projHitWidth / 2).toFixed(1) + '" y="0" width="' + projHitWidth.toFixed(1) + '" height="' + height + '" fill="transparent" style="cursor:pointer"/>';
+        });
+    }
+
     svg += '</svg>';
     wrap.innerHTML = svg;
 
@@ -296,7 +405,7 @@ function renderBciTrendChart(inspections) {
     wrap.appendChild(tooltip);
     var crosshair = wrap.querySelector('#trendCrosshair');
 
-    wrap.querySelectorAll('.thit').forEach(function(hit) {
+    wrap.querySelectorAll('.thit:not(.thit-proj)').forEach(function(hit) {
         hit.addEventListener('mouseenter', function() {
             var t = +hit.getAttribute('data-t');
             var insp = valid.find(function(i) { return i.timestamp === t; });
@@ -317,7 +426,34 @@ function renderBciTrendChart(inspections) {
             crosshair.style.opacity = '0';
         });
     });
+
+    wrap.querySelectorAll('.thit-proj').forEach(function(hit) {
+        hit.addEventListener('mouseenter', function() {
+            var t = +hit.getAttribute('data-proj-t');
+            var p = projHitPoints.find(function(pp) { return pp.t === t; });
+            if (!p) return;
+            var rows = [];
+            if (p.avg != null) rows.push('Avg ' + Math.round(p.avg));
+            if (p.crit != null) rows.push('Crit ' + Math.round(p.crit));
+            tooltip.innerHTML = '<b>Projected · ' + p.label + '</b>' + rows.join('<br>');
+            var x = xAt(t);
+            tooltip.style.left = ((x / width) * 100) + '%';
+            tooltip.style.opacity = '1';
+            crosshair.setAttribute('x1', x.toFixed(1));
+            crosshair.setAttribute('x2', x.toFixed(1));
+            crosshair.style.opacity = '1';
+        });
+        hit.addEventListener('mouseleave', function() {
+            tooltip.style.opacity = '0';
+            crosshair.style.opacity = '0';
+        });
+    });
 }
+
+document.getElementById('trendProjToggle').addEventListener('click', function() {
+    showBciProjection = !showBciProjection;
+    renderBciTrendChart(lastBciInspections);
+});
 
 function renderDropdownList(filter) {
     filter = filter || '';
@@ -867,9 +1003,9 @@ function rebuildModel(bridge) {
     rotY = 0.4;
     rotX = 0.18;
 
-    // Reset layer toggles - defects off by default
-    defectGroup.visible = false;
-    document.querySelectorAll('.vc-pill[data-layer="defects"]').forEach(function(el) { el.classList.remove('on'); });
+    // Reset layer toggles - all three on by default, defects included
+    defectGroup.visible = true;
+    document.querySelectorAll('.vc-pill[data-layer="defects"]').forEach(function(el) { el.classList.add('on'); });
     document.querySelectorAll('.vc-pill[data-layer="structure"]').forEach(function(el) { el.classList.add('on'); });
     document.querySelectorAll('.vc-pill[data-layer="sensors"]').forEach(function(el) { el.classList.add('on'); });
 }

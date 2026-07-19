@@ -471,7 +471,7 @@ async function loadInspectionDates() {
                         switch(inspectionType) {
                             case 'GI': typeLabel = 'General'; break;
                             case 'PI': typeLabel = 'Principal'; break;
-                            case 'SI': typeLabel = 'Superficial'; break;
+                            case 'SI': typeLabel = 'Safety'; break;
                             default: typeLabel = inspectionType || 'Inspection';
                         }
                         
@@ -495,7 +495,7 @@ async function loadInspectionDates() {
                     switch(type) {
                         case 'GI': typeLabel = 'General'; break;
                         case 'PI': typeLabel = 'Principal'; break;
-                        case 'SI': typeLabel = 'Superficial'; break;
+                        case 'SI': typeLabel = 'Safety'; break;
                         default: typeLabel = type || 'Inspection';
                     }
                     
@@ -796,124 +796,6 @@ if (photoInput) {
         if (fileNameSpan) fileNameSpan.textContent = fileName;
     });
 }
-
-function openPhoModal() {
-    const modal = document.getElementById('photoModal');
-    if (modal) {
-        modal.style.display = 'block';
-        fetchPhotos();
-    }
-}
-
-function closePhoModal() {
-    const modal = document.getElementById('photoModal');
-    if (modal) modal.style.display = 'none';
-}
-
-async function fetchPhotos() {
-    try {
-        const response = await fetch('/photos');
-        const photos = await response.json();
-        const photosContainer = document.getElementById('photos-container');
-        if (!photosContainer) return;
-        photosContainer.innerHTML = '';
-
-        photos.forEach(photo => {
-            const imgContainer = document.createElement('div');
-            imgContainer.style.position = 'relative';
-            imgContainer.style.display = 'inline-block';
-            imgContainer.style.margin = '10px';
-
-            const img = document.createElement('img');
-            img.src = photo.filepath;
-            img.style.width = '200px';
-
-            const description = document.createElement('p');
-            description.textContent = photo.description || 'No description';
-            description.style.textAlign = 'center';
-
-            const deleteButton = document.createElement('button');
-            deleteButton.textContent = '×';
-            deleteButton.style.position = 'absolute';
-            deleteButton.style.top = '0';
-            deleteButton.style.right = '0';
-            deleteButton.style.background = 'red';
-            deleteButton.style.color = 'white';
-            deleteButton.style.border = 'none';
-            deleteButton.style.borderRadius = '50%';
-            deleteButton.style.cursor = 'pointer';
-            deleteButton.style.padding = '5px 10px';
-            deleteButton.style.fontSize = '16px';
-
-            deleteButton.addEventListener('click', async () => {
-                try {
-                    const deleteResponse = await fetch(`/delete-photo/${photo.id}`, {
-                        method: 'DELETE',
-                    });
-                    if (deleteResponse.ok) {
-                        imgContainer.remove();
-                        showAlertModal('Photo deleted successfully!', 'success');
-                    } else {
-                        showAlertModal('Failed to delete photo.');
-                    }
-                } catch (error) {
-                    console.error('Error deleting photo:', error);
-                    showAlertModal('An error occurred while deleting the photo.');
-                }
-            });
-
-            imgContainer.appendChild(img);
-            imgContainer.appendChild(description);
-            imgContainer.appendChild(deleteButton);
-            photosContainer.appendChild(imgContainer);
-        });
-    } catch (error) {
-        console.error('Error fetching photos:', error);
-    }
-}
-
-const photoUploadForm = document.getElementById('photoUploadForm');
-if (photoUploadForm) {
-    photoUploadForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const formData = new FormData();
-        const fileInput = document.getElementById('photoInput');
-        const descriptionInput = document.getElementById('photoDescription');
-        if (!fileInput?.files[0]) return;
-        
-        formData.append('photo', fileInput.files[0]);
-        formData.append('description', descriptionInput?.value || '');
-        
-        try {
-            const response = await fetch('/upload', {
-                method: 'POST',
-                body: formData,
-            });
-            if (response.ok) {
-                showAlertModal('Photo uploaded successfully!', 'success');
-                fetchPhotos();
-                photoUploadForm.reset();
-            } else {
-                showAlertModal('Failed to upload photo.');
-            }
-        } catch (error) {
-            console.error('Error uploading photo:', error);
-            showAlertModal('An error occurred while uploading the photo.');
-        }
-    });
-}
-
-const closeButton = document.querySelector('.close');
-if (closeButton) {
-    closeButton.addEventListener('click', closePhoModal);
-}
-
-window.onclick = function (event) {
-    const modal = document.getElementById('photoModal');
-    if (event.target === modal) {
-        closePhoModal();
-    }
-};
 
 // Function to toggle between showing only non-empty rows or all rows
 function view() {

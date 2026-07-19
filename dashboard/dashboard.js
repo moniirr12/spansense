@@ -624,9 +624,13 @@ function renderCriticalBridges(data) {
 
     tbody.innerHTML = data.map(bridge => {
         const bci = bridge.overall_bcicrit !== null ? Math.round(bridge.overall_bcicrit) : '—';
+        // Every row here is already BCI crit < 55, so only the Poor (40-64)
+        // and Critical (<40) bands are ever possible - match bciTier()'s own
+        // wording for those bands rather than this table's old ad hoc
+        // "High"/"Very Poor" labels, which didn't agree with it.
         const isCritical = bridge.overall_bcicrit < 40;
         const badgeClass = isCritical ? 'risk-critical' : 'risk-high';
-        const badgeLabel = isCritical ? 'Very Poor' : 'High';
+        const badgeLabel = isCritical ? 'Critical' : 'Poor';
 
         // Use template literals properly with ${} interpolation
         // Escape quotes in the onclick by using backticks or different quote styles
@@ -908,7 +912,7 @@ function renderPendingReview(data) {
             ? 'Nothing awaiting review.'
             : 'No inspections match your filters.';
         list.innerHTML = `
-            <tr><td colspan="3" style="color: var(--text-muted); font-size: 0.8rem;">${message}</td></tr>`;
+            <tr><td colspan="6" style="color: var(--text-muted); font-size: 0.8rem;">${message}</td></tr>`;
         return;
     }
 
@@ -925,10 +929,12 @@ function renderPendingReview(data) {
                         <div class="activity-avatar activity-avatar-${tier.avatarColor}">${initials}</div>
                         <div class="activity-content">
                             <div class="activity-title">${item.structure_name || 'Structure ' + item.structure_id}</div>
-                            <div class="activity-meta">STR #${item.structure_id} &nbsp;·&nbsp; ${inspector} &nbsp;·&nbsp; ${formatDate(item.inspection_date)}</div>
                         </div>
                     </div>
                 </td>
+                <td>#${item.structure_id}</td>
+                <td>${inspector}</td>
+                <td>${formatDate(item.inspection_date)}</td>
                 <td><span class="activity-bci bci-${tier.band}">${bci}</span></td>
                 <td><button class="action-btn review-btn" onclick="openReviewModal(${item.id})"><i class="fas fa-user-check"></i> Review</button></td>
             </tr>`;

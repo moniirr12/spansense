@@ -423,8 +423,11 @@ function buildBCIProformaContent(bciFormData, singleSpanIdx) {
         var spanL      = bridgeData.span_length || bridgeData.length || '';
         var inspected  = spanData.elements_inspected !== false ? 'Yes' : 'No';
         var photos     = spanData.photographs_taken !== false ? 'Yes' : 'No';
-        var bciCrit    = spanData.bci_crit != null ? String(spanData.bci_crit) : '—';
-        var bciAv      = spanData.bci_av != null ? String(spanData.bci_av) : '—';
+        // Number(...).toFixed(2), not String(...) - bci_crit/bci_av often
+        // arrive as float division results (e.g. 28.080000000000013), and
+        // printing that straight to the PDF looked like a calculation bug.
+        var bciCrit    = spanData.bci_crit != null && !isNaN(Number(spanData.bci_crit)) ? Number(spanData.bci_crit).toFixed(2) : '—';
+        var bciAv      = spanData.bci_av != null && !isNaN(Number(spanData.bci_av)) ? Number(spanData.bci_av).toFixed(2) : '—';
         var bridgeCode = bridgeData.bridge_code || '';
         var inspType   = spanData.inspection_type || '';
 
@@ -457,9 +460,9 @@ function buildBCIProformaContent(bciFormData, singleSpanIdx) {
             };
         }
 
-        // ROW 1: Superficial(3) | General(3) | Principal(3) | Forms(11) = 20
+        // ROW 1: Safety(3) | General(3) | Principal(3) | Forms(11) = 20
         tableBody.push([
-            inspTypeHeader('Superficial', 'SI'),
+            inspTypeHeader('Safety', 'SI'),
             { text: '' }, { text: '' },
             inspTypeHeader('General', 'GI'),
             { text: '' }, { text: '' },

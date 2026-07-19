@@ -57,9 +57,20 @@ function newInspection(e) {
 
 function viewReport(e) {
     e.preventDefault();
-    const inspectionId = sessionStorage.getItem('lastSavedInspectionId');
-    if (inspectionId) {
-        window.location.href = `inspection-details.html?id=${inspectionId}`;
+    // inspection-details.html never existed - that link fell through to the
+    // server's SPA catch-all (app.get('*', ...) in server.js), which quietly
+    // serves index.html for any unmatched path, so this looked exactly like
+    // an unwanted redirect to the login page. generateSimplePDFReport is the
+    // same real report generator dashboard.js/database.js's own
+    // downloadReport() already use - structureId/structureName/inspectionDate
+    // are set in sessionStorage from the moment this inspection was opened
+    // (see map.js's marker click / inspection1.js's date picker).
+    const structureId = sessionStorage.getItem('structureId');
+    const structureName = sessionStorage.getItem('structureName');
+    const inspectionDate = sessionStorage.getItem('inspectionDate');
+    if (structureId && typeof window.generateSimplePDFReport === 'function') {
+        const doc = { structure_id: structureId, structure_name: structureName || '', date: inspectionDate || '' };
+        generateSimplePDFReport(doc, 'open');
     } else {
         // Fallback: show inline preview
         const inspectionData = JSON.parse(sessionStorage.getItem('inspectionData') || '{}');

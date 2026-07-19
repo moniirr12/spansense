@@ -943,20 +943,25 @@ body.modal-open {
 /* Quick Info Grid */
 #bridgeModal .info-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
     padding: 0 28px;
     margin-bottom: 20px;
 }
 #bridgeModal .info-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
+    gap: 6px;
+    padding: 10px 10px;
     background: rgba(248, 250, 252, 0.5);
     border-radius: 12px;
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     color: #6a7c8e;
+    /* Grid tracks otherwise grow to fit each item's min-content (a long
+       "184m" widens its own column at the other columns' expense, even
+       though they share nothing) - min-width:0 lets a track shrink to its
+       1fr share and wrap long text inside its own cell instead. */
+    min-width: 0;
 }
 #bridgeModal .info-item i {
     color: #8ab4b0;
@@ -1095,7 +1100,7 @@ body.modal-open {
     border-radius: 28px;
     padding: 0;
     overflow: hidden;
-    max-width: 420px;
+    max-width: 448px;
     width: 90%;
     animation: modalSlideIn 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1);
 }

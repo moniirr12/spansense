@@ -335,6 +335,7 @@ body {
     padding: 4px 12px;
     background: #eef4f2;
     color: #5b8c8a;
+    border: 1px solid #d6e6e3;
     border-radius: 20px;
     font-size: 0.7rem;
     font-weight: 600;
@@ -373,6 +374,7 @@ body {
     padding: 4px 10px;
     background: #eef4f2;
     color: #5b8c8a;
+    border: 1px solid #d6e6e3;
     border-radius: 20px;
     font-size: 0.65rem;
     font-weight: 600;
@@ -388,6 +390,7 @@ body {
     display: flex;
     gap: 2px;
     background: #eef4f2;
+    border: 1px solid #d6e6e3;
     border-radius: 20px;
     padding: 2px;
 }
@@ -522,6 +525,10 @@ body {
     color: #2c3e44;
     font-size: 0.82rem;
 }
+.data-table th:last-child,
+.data-table td:last-child {
+    text-align: right;
+}
 .data-table.card-rows { border-collapse: separate; border-spacing: 0 8px; }
 .data-table.card-rows thead tr { background: transparent; }
 .data-table.card-rows thead th {
@@ -650,11 +657,34 @@ body {
     flex: 1;
 }
 
+/* Mirrors .data-table th's typography - the list itself is flex/card-rows,
+   not a literal table, so this is a plain row shaped to roughly line up
+   with .activity-item's own avatar/content/bci/status flex children. */
+.activity-list-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 14px 8px;
+    padding: 14px 18px;
+    background: #fafbfc;
+    border: 1px solid #cbd5df;
+    border-radius: 20px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #5a6e7a;
+}
+.activity-list-header .alh-avatar-spacer { width: 34px; flex-shrink: 0; }
+.activity-list-header .alh-structure { flex: 1; min-width: 0; }
+.activity-list-header .alh-bci { min-width: 45px; text-align: center; flex-shrink: 0; }
+.activity-list-header .alh-status { flex-shrink: 0; min-width: 74px; text-align: right; }
+
 .activity-item {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 14px 22px;
+    padding: 12px 22px;
     border-bottom: 1px solid #cbd5df;
     transition: background 0.15s;
 }
@@ -672,7 +702,7 @@ body {
    each item's content (avatar/title/meta/badge/status) doesn't map to
    fixed columns the way Critical Structures' bridge/BCI/date/report does. */
 .activity-list.card-rows {
-    padding: 10px 14px;
+    padding: 0 14px 10px;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -681,7 +711,7 @@ body {
     background: white;
     border: 1px solid #cbd5df;
     border-radius: 20px;
-    padding: 10px 18px;
+    padding: 12px 18px;
 }
 .activity-list.card-rows .activity-item:last-child {
     border: 1px solid #cbd5df;
@@ -920,10 +950,12 @@ body {
 .night-mode .chart-badge {
     background: #2f4a48;
     color: #8ab4b0;
+    border-color: transparent;
 }
 
 .night-mode .chart-toggle {
     background: #2f4a48;
+    border-color: transparent;
 }
 
 .night-mode .chart-toggle-btn {
@@ -944,6 +976,11 @@ body {
 }
 
 .night-mode .data-table.card-rows thead th {
+    background: #1e2a2f;
+    border-color: #2f3e45;
+    color: #6a8090;
+}
+.night-mode .activity-list-header {
     background: #1e2a2f;
     border-color: #2f3e45;
     color: #6a8090;

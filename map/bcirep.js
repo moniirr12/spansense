@@ -10,6 +10,8 @@ async function updateBridgeModalData(structureId) {
             const locationElement = document.getElementById('modalLocation');
             const cycleElement = document.getElementById('modalCycle');
             const lengthElement = document.getElementById('modalLength');
+            const widthElement = document.getElementById('modalWidth');
+            const loadCapacityElement = document.getElementById('modalLoadCapacity');
             const builtElement = document.getElementById('modalBuilt');
             const typeElement = document.getElementById('modalType');
             if (locationElement) locationElement.textContent = bridge.location || '--';
@@ -22,6 +24,25 @@ async function updateBridgeModalData(structureId) {
                 cycleElement.textContent = `GI ${gi}y · PI ${pi}y`;
             }
             if (lengthElement) lengthElement.textContent = bridge.length ? `${bridge.length}m` : '--';
+            if (widthElement) widthElement.textContent = bridge.width ? `${bridge.width}m` : '--';
+            if (loadCapacityElement) {
+                // A sign gantry spans over the carriageway rather than
+                // carrying pedestrian/vehicle load itself, and a footbridge
+                // only ever takes foot traffic, so a vehicle load rating
+                // isn't a meaningful field for either (same normalized-type
+                // check map.js's getStructureIcon uses for icon/fill lookups).
+                // Forth Bridge and Iron Bridge are one-off exceptions to
+                // their own "Bridge" type - the Forth Bridge carries rail
+                // traffic only, and Iron Bridge is pedestrian-only today -
+                // same bespoke-by-name treatment shapeBuilders.js already
+                // gives Caversham Bridge for its one-off geometry.
+                const normalizedType = (bridge.type || '').toLowerCase().replace(/\s+/g, '_');
+                const noVehicleLoad = normalizedType === 'sign_gantry' || normalizedType === 'footbridge' ||
+                    bridge.name === 'Forth Bridge' || bridge.name === 'Iron Bridge';
+                loadCapacityElement.textContent = noVehicleLoad
+                    ? 'N/A'
+                    : (bridge.load_capacity ? `${bridge.load_capacity}t` : '--');
+            }
             if (builtElement) builtElement.textContent = bridge.built_year || '--';
             if (typeElement) typeElement.textContent = bridge.type || '--';
         })
