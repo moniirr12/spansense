@@ -505,16 +505,17 @@ body {
 .trend-projected-color { color: #b3bcc4; }
 .night-mode .trend-projected-color { color: #5f757d; }
 .trend-proj-toggle {
-    background: none; border: 1px solid transparent; border-radius: 20px;
-    padding: 2px 8px; margin: -2px -8px; cursor: pointer; font-family: inherit;
+    background: #fafbfc; border: 1px solid #e2e8f0; border-radius: 20px; color: #6a7c8e;
+    padding: 2px 10px; cursor: pointer; font-family: inherit; font-size: 0.72rem;
     transition: background-color 0.15s, border-color 0.15s, color 0.15s;
 }
-.trend-proj-toggle:hover { background: #f2f5f7; }
-.night-mode .trend-proj-toggle:hover { background: #1e2a2f; }
-.trend-proj-toggle.active { color: #6a7c8e; border-color: #d5dbe0; background: #f2f5f7; }
-.night-mode .trend-proj-toggle.active { color: #9ab0b8; border-color: #3a4b53; background: #1e2a2f; }
-.trend-proj-toggle.active .trend-projected-color { color: #8a9ba8; }
-.night-mode .trend-proj-toggle.active .trend-projected-color { color: #9ab0b8; }
+.night-mode .trend-proj-toggle { background: #1a2428; border-color: #3a4b53; color: #9ab0b8; }
+.trend-proj-toggle:hover { background: #eef4f2; border-color: #8ab4b0; color: #5b8c8a; }
+.night-mode .trend-proj-toggle:hover { background: #1e3a38; border-color: #4a7876; color: #8ab4b0; }
+.trend-proj-toggle.active { color: #5b8c8a; border-color: #8ab4b0; background: #eef4f2; }
+.night-mode .trend-proj-toggle.active { color: #8ab4b0; border-color: #4a7876; background: #1e3a38; }
+.trend-proj-toggle.active .trend-projected-color { color: #5b8c8a; }
+.night-mode .trend-proj-toggle.active .trend-projected-color { color: #8ab4b0; }
 .trend-projected-note { font-size: 0.66rem; color: #b3bcc4; margin-top: 6px; line-height: 1.4; }
 .night-mode .trend-projected-note { color: #5f757d; }
 .trend-projected-divider { stroke: #d5dbe0; stroke-width: 1; stroke-dasharray: 2,2; }
