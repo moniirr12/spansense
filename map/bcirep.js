@@ -27,11 +27,19 @@ async function updateBridgeModalData(structureId) {
             if (widthElement) widthElement.textContent = bridge.width ? `${bridge.width}m` : '--';
             if (loadCapacityElement) {
                 // A sign gantry spans over the carriageway rather than
-                // carrying pedestrian/vehicle load itself, so a load rating
-                // isn't a meaningful field for it (same normalized-type check
-                // map.js's getStructureIcon uses for icon/fill lookups).
+                // carrying pedestrian/vehicle load itself, and a footbridge
+                // only ever takes foot traffic, so a vehicle load rating
+                // isn't a meaningful field for either (same normalized-type
+                // check map.js's getStructureIcon uses for icon/fill lookups).
+                // Forth Bridge and Iron Bridge are one-off exceptions to
+                // their own "Bridge" type - the Forth Bridge carries rail
+                // traffic only, and Iron Bridge is pedestrian-only today -
+                // same bespoke-by-name treatment shapeBuilders.js already
+                // gives Caversham Bridge for its one-off geometry.
                 const normalizedType = (bridge.type || '').toLowerCase().replace(/\s+/g, '_');
-                loadCapacityElement.textContent = normalizedType === 'sign_gantry'
+                const noVehicleLoad = normalizedType === 'sign_gantry' || normalizedType === 'footbridge' ||
+                    bridge.name === 'Forth Bridge' || bridge.name === 'Iron Bridge';
+                loadCapacityElement.textContent = noVehicleLoad
                     ? 'N/A'
                     : (bridge.load_capacity ? `${bridge.load_capacity}t` : '--');
             }
