@@ -504,6 +504,17 @@ body {
 .chart-legend .sw { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: currentColor; }
 .trend-projected-color { color: #b3bcc4; }
 .night-mode .trend-projected-color { color: #5f757d; }
+.trend-proj-toggle {
+    background: none; border: 1px solid transparent; border-radius: 20px;
+    padding: 2px 8px; margin: -2px -8px; cursor: pointer; font-family: inherit;
+    transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+.trend-proj-toggle:hover { background: #f2f5f7; }
+.night-mode .trend-proj-toggle:hover { background: #1e2a2f; }
+.trend-proj-toggle.active { color: #6a7c8e; border-color: #d5dbe0; background: #f2f5f7; }
+.night-mode .trend-proj-toggle.active { color: #9ab0b8; border-color: #3a4b53; background: #1e2a2f; }
+.trend-proj-toggle.active .trend-projected-color { color: #8a9ba8; }
+.night-mode .trend-proj-toggle.active .trend-projected-color { color: #9ab0b8; }
 .trend-projected-note { font-size: 0.66rem; color: #b3bcc4; margin-top: 6px; line-height: 1.4; }
 .night-mode .trend-projected-note { color: #5f757d; }
 .trend-projected-divider { stroke: #d5dbe0; stroke-width: 1; stroke-dasharray: 2,2; }
@@ -1009,7 +1020,9 @@ body.night-mode .glass-scrollbar .thumb {
                 <div class="chart-legend">
                     <div class="item"><span class="sw trend-avg-color"></span>BCI<sub>avg</sub></div>
                     <div class="item"><span class="sw trend-crit-color"></span>BCI<sub>crit</sub></div>
-                    <div class="item" id="trendProjectedLegend" style="display:none;"><span class="sw trend-projected-color"></span>Projected</div>
+                    <button class="item trend-proj-toggle" id="trendProjToggle" type="button" style="display:none;">
+                        <span class="sw trend-projected-color"></span><span id="trendProjToggleLabel">Show projection</span>
+                    </button>
                 </div>
                 <div class="trend-projected-note" id="trendProjectedNote" style="display:none;">Projected from this structure's own trend - not a recorded inspection.</div>
             </div>

@@ -232,17 +232,24 @@ function linearFit(pts) {
     return { slope: slope, intercept: intercept };
 }
 
+// Off by default - the chart shows only recorded inspections until the
+// viewer explicitly asks to see the projection (see the #trendProjToggle
+// click handler below), rather than always guessing at the future.
+var showBciProjection = false;
+var lastBciInspections = [];
+
 function renderBciTrendChart(inspections) {
+    lastBciInspections = inspections || [];
     var wrap = document.getElementById('bciTrendChart');
     var sub = document.getElementById('trendSub');
-    var projLegend = document.getElementById('trendProjectedLegend');
+    var projToggle = document.getElementById('trendProjToggle');
     var projNote = document.getElementById('trendProjectedNote');
     var valid = (inspections || []).filter(function(i) { return i.bciAvg != null || i.bciCrit != null; });
 
     if (valid.length < 2) {
         sub.textContent = valid.length ? '1 inspection' : '—';
         wrap.innerHTML = '<div class="trend-empty"><i class="fa-solid fa-chart-line"></i>Not enough inspection history yet</div>';
-        projLegend.style.display = 'none';
+        projToggle.style.display = 'none';
         projNote.style.display = 'none';
         return;
     }
@@ -273,9 +280,16 @@ function renderBciTrendChart(inspections) {
     var YEAR_MS = 365.25 * 24 * 60 * 60 * 1000;
     var avgFit = linearFit(rawSeries('bciAvg'));
     var critFit = linearFit(rawSeries('bciCrit'));
-    var showProjection = !!(avgFit || critFit);
+    var eligible = !!(avgFit || critFit);
+    var showProjection = eligible && showBciProjection;
     var projT = realMaxT + 10 * YEAR_MS;
     var mid5T = realMaxT + 5 * YEAR_MS;
+
+    // The toggle itself only appears once there's enough history to project
+    // at all; its on/off look reflects whether it's currently showing one.
+    projToggle.style.display = eligible ? '' : 'none';
+    projToggle.classList.toggle('active', showProjection);
+    document.getElementById('trendProjToggleLabel').textContent = showProjection ? 'Projected' : 'Show projection';
 
     var maxT = showProjection ? projT : realMaxT;
     var spanT = Math.max(1, maxT - minT);
@@ -315,8 +329,8 @@ function renderBciTrendChart(inspections) {
 
     var avgPts = seriesPoints('bciAvg');
     var critPts = seriesPoints('bciCrit');
-    var avgProjPath = projectedPathFor(avgFit, 'bciAvg');
-    var critProjPath = projectedPathFor(critFit, 'bciCrit');
+    var avgProjPath = showProjection ? projectedPathFor(avgFit, 'bciAvg') : null;
+    var critProjPath = showProjection ? projectedPathFor(critFit, 'bciCrit') : null;
     var goodY = yAt(65), critY = yAt(50);
 
     var svg = '<svg viewBox="0 0 ' + width + ' ' + height + '" width="100%" height="' + height + '">';
@@ -355,7 +369,6 @@ function renderBciTrendChart(inspections) {
         svg += '<text class="trend-date-label" x="' + xAt(valid[valid.length - 1].timestamp).toFixed(1) + '" y="' + height + '" font-size="9" text-anchor="end">' + valid[valid.length - 1].date + '</text>';
     }
 
-    projLegend.style.display = showProjection ? '' : 'none';
     projNote.style.display = showProjection ? '' : 'none';
 
     // One hit column per inspection, wide enough to hover even when
@@ -396,6 +409,11 @@ function renderBciTrendChart(inspections) {
         });
     });
 }
+
+document.getElementById('trendProjToggle').addEventListener('click', function() {
+    showBciProjection = !showBciProjection;
+    renderBciTrendChart(lastBciInspections);
+});
 
 function renderDropdownList(filter) {
     filter = filter || '';
