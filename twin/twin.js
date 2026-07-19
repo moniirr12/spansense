@@ -1003,9 +1003,9 @@ function rebuildModel(bridge) {
     rotY = 0.4;
     rotX = 0.18;
 
-    // Reset layer toggles - defects off by default
-    defectGroup.visible = false;
-    document.querySelectorAll('.vc-pill[data-layer="defects"]').forEach(function(el) { el.classList.remove('on'); });
+    // Reset layer toggles - all three on by default, defects included
+    defectGroup.visible = true;
+    document.querySelectorAll('.vc-pill[data-layer="defects"]').forEach(function(el) { el.classList.add('on'); });
     document.querySelectorAll('.vc-pill[data-layer="structure"]').forEach(function(el) { el.classList.add('on'); });
     document.querySelectorAll('.vc-pill[data-layer="sensors"]').forEach(function(el) { el.classList.add('on'); });
 }
