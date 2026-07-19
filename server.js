@@ -21,6 +21,7 @@ const storage = require('./supabaseStorage');
 const { PDFParse } = require('pdf-parse');
 const mammoth = require('mammoth');
 const { extractElements } = require('./extractPreviousInspection');
+const { extractElementsWithGemini } = require('./geminiExtract');
 
 const router = express.Router();
 const session = require('express-session');
@@ -2104,10 +2105,22 @@ app.post('/api/author/extract-previous-inspection', requireAuth, upload.single('
             return res.status(400).json({ error: 'Please upload a PDF or Word (.doc/.docx) file.' });
         }
 
-        const { elements, warning } = extractElements(text, elementRows.map(r => ({
+        const mappedRows = elementRows.map(r => ({
             element_number: r.element_number,
             description: r.description
-        })));
+        }));
+
+        // Gemini matches elements by meaning, not by exact "X.Y.Z" heading
+        // format/order the regex fallback depends on - falls back to it
+        // (missing/invalid key, free-tier quota, network, malformed
+        // response) so the upload flow still works either way.
+        let elements, warning;
+        try {
+            ({ elements, warning } = await extractElementsWithGemini(text, mappedRows));
+        } catch (err) {
+            console.warn('Gemini extraction failed, falling back to regex extraction:', err.message);
+            ({ elements, warning } = extractElements(text, mappedRows));
+        }
 
         res.json({
             structureType,
