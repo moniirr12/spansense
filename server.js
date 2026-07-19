@@ -24,8 +24,23 @@ const { extractElements } = require('./extractPreviousInspection');
 
 const router = express.Router();
 const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session);
 
 const app = express();
+
+// PostgreSQL connection - created before the session middleware below since
+// that needs a pool to persist sessions against. rejectUnauthorized was
+// previously false in production, which encrypts the connection but never
+// checks it's actually Supabase's pooler on the other end (accepts any
+// cert, so a MITM on that hop would go unnoticed). Pinning Supabase's own
+// Root 2021 CA (certs/supabase-ca.crt - their public root, captured
+// directly from a live handshake with our own DB, not a third-party copy)
+// lets us verify the chain properly instead.
+const supabaseCA = fs.readFileSync(path.join(__dirname, 'certs', 'supabase-ca.crt'), 'utf8');
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true, ca: supabaseCA } : false
+});
 
 // Core middleware - MUST be registered before any route (app.get/post/etc.)
 // below. Express only applies middleware to routes registered *after* it in
@@ -57,6 +72,12 @@ if (!process.env.SESSION_SECRET) {
 const sessionSecret = process.env.SESSION_SECRET || require('crypto').randomBytes(48).toString('base64');
 
 app.use(session({
+    // MemoryStore (express-session's default) leaks memory and only works
+    // within a single process - fine for local dev, not for anything with
+    // real concurrent users or more than one server instance. Sessions live
+    // in Postgres instead now, in a "session" table connect-pg-simple
+    // creates for itself on first run.
+    store: new pgSession({ pool: pool, tableName: 'session', createTableIfMissing: true }),
     secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
@@ -98,19 +119,6 @@ app.get('/api/routes', requireAuth, requireAdmin, (req, res) => {
         }
     });
     res.json({ routes });
-});
-
-// PostgreSQL connection
-// rejectUnauthorized was previously false in production, which encrypts the
-// connection but never checks it's actually Supabase's pooler on the other
-// end (accepts any cert, so a MITM on that hop would go unnoticed). Pinning
-// Supabase's own Root 2021 CA (certs/supabase-ca.crt - their public root,
-// captured directly from a live handshake with our own DB, not a
-// third-party copy) lets us verify the chain properly instead.
-const supabaseCA = fs.readFileSync(path.join(__dirname, 'certs', 'supabase-ca.crt'), 'utf8');
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: true, ca: supabaseCA } : false
 });
 
 // Test connection on startup
