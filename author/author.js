@@ -578,6 +578,10 @@ async function onLoad(){
     AUTHOR.inspectionDate = diff.currentDate;
     AUTHOR.previousDate = diff.previousDate;
     AUTHOR.structureDescription = bridge.description || null;
+    AUTHOR.structureSpans = bridge.span_number || null;
+    AUTHOR.structureLength = bridge.length || null;
+    AUTHOR.structureBuiltYear = bridge.built_year || null;
+    AUTHOR.structureMaterial = [bridge.primary_material, bridge.secondary_material].filter(Boolean).join(' / ') || null;
     AUTHOR.inspectorName = full.inspectorName || null;
     AUTHOR.bciTrend = twin.inspections || [];
     AUTHOR.bciAvg = full.overallBciave != null ? parseFloat(full.overallBciave) : null;
@@ -693,6 +697,10 @@ async function onLoadFromUpload(){
     AUTHOR.inspectionDate = null;
     AUTHOR.previousDate = null;
     AUTHOR.structureDescription = bridge.description || null;
+    AUTHOR.structureSpans = bridge.span_number || null;
+    AUTHOR.structureLength = bridge.length || null;
+    AUTHOR.structureBuiltYear = bridge.built_year || null;
+    AUTHOR.structureMaterial = [bridge.primary_material, bridge.secondary_material].filter(Boolean).join(' / ') || null;
     AUTHOR.inspectorName = null;
     AUTHOR.bciTrend = [];
     AUTHOR.bciAvg = null;
@@ -1447,10 +1455,11 @@ function renderStructInfoPanel(){
       </label>
     </div>
     <div class="sip-divider"></div>
-    ${AUTHOR.structureDescription ? `<div class="sip-label">Description</div><div class="sip-desc">${AUTHOR.structureDescription}</div>` : ''}
+    <div id="sipInfoBlock"></div>
     <div class="sip-label">BCI trend</div>
     <div class="sip-bci-track">${sipBciTrendHTML()}</div>
   `;
+  renderSipInfoView();
   document.getElementById('sipClose').addEventListener('click', closeStructInfoModal);
   document.getElementById('sipInspectionDate').addEventListener('change', function(){
     AUTHOR.newInspectionDate = this.value;
@@ -1467,6 +1476,94 @@ function renderStructInfoPanel(){
 function closeStructInfoModal(){
   document.getElementById('sipOverlay').classList.remove('show');
   document.body.classList.remove('modal-open');
+}
+
+function sipEscapeHtml(str){
+  return String(str == null ? '' : str).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+
+// Structure Info's description/spans/length/built/material - same fields,
+// same PATCH /api/bridges/:id/info endpoint, and same view/edit toggle
+// inspection1.html's "Span Info" panel already uses, so editing a
+// structure's core facts means the same thing (and hits the same data)
+// wherever you do it in spanSense. Available from both the "From spanSense
+// records" and "Upload a previous inspection" paths, since both set
+// AUTHOR.structureId/structureDescription/etc before this panel can open.
+function renderSipInfoView(){
+  const block = document.getElementById('sipInfoBlock');
+  if (!block) return;
+  const hasDesc = !!AUTHOR.structureDescription;
+  block.innerHTML = `
+    <div class="sip-label-row">
+      <span class="sip-label">Structure Info</span>
+      <button class="sip-info-edit-link" id="sipInfoEditBtn">Edit</button>
+    </div>
+    <div class="sip-desc${hasDesc ? '' : ' empty'}">${hasDesc ? sipEscapeHtml(AUTHOR.structureDescription) : 'No description recorded for this structure yet.'}</div>
+    <div class="sip-info-facts">
+      <div class="sip-edit-field"><span>Spans</span><div>${AUTHOR.structureSpans || '--'}</div></div>
+      <div class="sip-edit-field"><span>Length</span><div>${AUTHOR.structureLength ? AUTHOR.structureLength + 'm' : '--'}</div></div>
+      <div class="sip-edit-field"><span>Built</span><div>${AUTHOR.structureBuiltYear || '--'}</div></div>
+      <div class="sip-edit-field"><span>Material</span><div>${AUTHOR.structureMaterial ? sipEscapeHtml(AUTHOR.structureMaterial) : '--'}</div></div>
+    </div>
+    <div class="sip-divider"></div>
+  `;
+  document.getElementById('sipInfoEditBtn').addEventListener('click', renderSipInfoEdit);
+}
+
+function renderSipInfoEdit(){
+  const block = document.getElementById('sipInfoBlock');
+  if (!block) return;
+  block.innerHTML = `
+    <div class="sip-label-row"><span class="sip-label">Structure Info</span></div>
+    <textarea class="sip-info-textarea" id="sipInfoDesc" placeholder="Add a description for this structure…">${sipEscapeHtml(AUTHOR.structureDescription || '')}</textarea>
+    <div class="sip-info-facts">
+      <label class="sip-edit-field"><span>Spans</span><input type="number" id="sipInfoSpans" min="1" value="${sipEscapeHtml(AUTHOR.structureSpans || '')}"></label>
+      <label class="sip-edit-field"><span>Length (m)</span><input type="number" id="sipInfoLength" min="0" value="${sipEscapeHtml(AUTHOR.structureLength || '')}"></label>
+      <label class="sip-edit-field"><span>Built</span><input type="number" id="sipInfoBuilt" min="1000" max="2100" value="${sipEscapeHtml(AUTHOR.structureBuiltYear || '')}"></label>
+      <label class="sip-edit-field"><span>Material</span><input type="text" id="sipInfoMaterial" value="${sipEscapeHtml(AUTHOR.structureMaterial || '')}"></label>
+    </div>
+    <div class="sip-info-actions">
+      <button class="sip-info-cancel" id="sipInfoCancel">Cancel</button>
+      <button class="sip-info-save" id="sipInfoSave">Save</button>
+    </div>
+    <div class="sip-divider"></div>
+  `;
+  document.getElementById('sipInfoCancel').addEventListener('click', renderSipInfoView);
+  document.getElementById('sipInfoSave').addEventListener('click', saveSipInfo);
+}
+
+async function saveSipInfo(){
+  const payload = {
+    description: document.getElementById('sipInfoDesc').value.trim() || null,
+    span_number: parseInt(document.getElementById('sipInfoSpans').value, 10) || null,
+    length: parseInt(document.getElementById('sipInfoLength').value, 10) || null,
+    built_year: parseInt(document.getElementById('sipInfoBuilt').value, 10) || null,
+    material: document.getElementById('sipInfoMaterial').value.trim() || null
+  };
+  const ok = confirm('Save changes to ' + (AUTHOR.structureName || 'this structure') + '\'s info? This updates the stored record and applies to every future report for it, not just this one.');
+  if (!ok) return;
+
+  const saveBtn = document.getElementById('sipInfoSave');
+  saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
+  try {
+    const res = await fetch(`${API_BASE}/api/bridges/${AUTHOR.structureId}/info`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('Save failed');
+    AUTHOR.structureDescription = payload.description;
+    AUTHOR.structureSpans = payload.span_number;
+    AUTHOR.structureLength = payload.length;
+    AUTHOR.structureBuiltYear = payload.built_year;
+    AUTHOR.structureMaterial = payload.material;
+    renderSipInfoView();
+  } catch (err) {
+    console.error('Error saving structure info:', err);
+    alert('Could not save these changes. Please try again.');
+    saveBtn.disabled = false; saveBtn.textContent = 'Save';
+  }
 }
 document.getElementById('structInfoToggle').addEventListener('click', () => {
   renderStructInfoPanel();
