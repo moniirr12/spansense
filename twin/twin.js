@@ -331,6 +331,10 @@ function renderBciTrendChart(inspections) {
     var critPts = seriesPoints('bciCrit');
     var avgProjPath = showProjection ? projectedPathFor(avgFit, 'bciAvg') : null;
     var critProjPath = showProjection ? projectedPathFor(critFit, 'bciCrit') : null;
+    var avgV5  = (showProjection && avgFit)  ? avgFit.slope  * mid5T + avgFit.intercept  : null;
+    var avgV10 = (showProjection && avgFit)  ? avgFit.slope  * projT + avgFit.intercept  : null;
+    var critV5  = (showProjection && critFit) ? critFit.slope * mid5T + critFit.intercept : null;
+    var critV10 = (showProjection && critFit) ? critFit.slope * projT + critFit.intercept : null;
     var goodY = yAt(65), critY = yAt(50);
 
     var svg = '<svg viewBox="0 0 ' + width + ' ' + height + '" width="100%" height="' + height + '">';
@@ -379,6 +383,20 @@ function renderBciTrendChart(inspections) {
         svg += '<rect class="thit" data-t="' + i.timestamp + '" x="' + (x - hitWidth / 2).toFixed(1) + '" y="0" width="' + hitWidth.toFixed(1) + '" height="' + height + '" fill="transparent" style="cursor:pointer"/>';
     });
 
+    // Same hover affordance for the +5y/+10y projected marks - otherwise the
+    // dashed line shows a shape with no way to read the actual predicted
+    // numbers off it, unlike every real inspection point.
+    var projHitPoints = [];
+    if (showProjection) {
+        if (avgV5 != null || critV5 != null) projHitPoints.push({ t: mid5T, avg: avgV5, crit: critV5, label: '+5y (' + new Date(mid5T).getFullYear() + ')' });
+        if (avgV10 != null || critV10 != null) projHitPoints.push({ t: projT, avg: avgV10, crit: critV10, label: '+10y (' + new Date(projT).getFullYear() + ')' });
+        var projHitWidth = Math.max(10, innerW / 10);
+        projHitPoints.forEach(function(p) {
+            var x = xAt(p.t);
+            svg += '<rect class="thit thit-proj" data-proj-t="' + p.t + '" x="' + (x - projHitWidth / 2).toFixed(1) + '" y="0" width="' + projHitWidth.toFixed(1) + '" height="' + height + '" fill="transparent" style="cursor:pointer"/>';
+        });
+    }
+
     svg += '</svg>';
     wrap.innerHTML = svg;
 
@@ -387,7 +405,7 @@ function renderBciTrendChart(inspections) {
     wrap.appendChild(tooltip);
     var crosshair = wrap.querySelector('#trendCrosshair');
 
-    wrap.querySelectorAll('.thit').forEach(function(hit) {
+    wrap.querySelectorAll('.thit:not(.thit-proj)').forEach(function(hit) {
         hit.addEventListener('mouseenter', function() {
             var t = +hit.getAttribute('data-t');
             var insp = valid.find(function(i) { return i.timestamp === t; });
@@ -396,6 +414,28 @@ function renderBciTrendChart(inspections) {
             if (insp.bciAvg != null) rows.push('Avg ' + Math.round(insp.bciAvg));
             if (insp.bciCrit != null) rows.push('Crit ' + Math.round(insp.bciCrit));
             tooltip.innerHTML = '<b>' + insp.type + ' · ' + insp.date + '</b>' + rows.join('<br>');
+            var x = xAt(t);
+            tooltip.style.left = ((x / width) * 100) + '%';
+            tooltip.style.opacity = '1';
+            crosshair.setAttribute('x1', x.toFixed(1));
+            crosshair.setAttribute('x2', x.toFixed(1));
+            crosshair.style.opacity = '1';
+        });
+        hit.addEventListener('mouseleave', function() {
+            tooltip.style.opacity = '0';
+            crosshair.style.opacity = '0';
+        });
+    });
+
+    wrap.querySelectorAll('.thit-proj').forEach(function(hit) {
+        hit.addEventListener('mouseenter', function() {
+            var t = +hit.getAttribute('data-proj-t');
+            var p = projHitPoints.find(function(pp) { return pp.t === t; });
+            if (!p) return;
+            var rows = [];
+            if (p.avg != null) rows.push('Avg ' + Math.round(p.avg));
+            if (p.crit != null) rows.push('Crit ' + Math.round(p.crit));
+            tooltip.innerHTML = '<b>Projected · ' + p.label + '</b>' + rows.join('<br>');
             var x = xAt(t);
             tooltip.style.left = ((x / width) * 100) + '%';
             tooltip.style.opacity = '1';
