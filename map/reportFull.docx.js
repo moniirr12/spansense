@@ -422,12 +422,12 @@ async function buildFullInspectionReportDocx(doc) {
                 rows: [new d.TableRow({ children: [
                     new d.TableCell({ width: { size: 34, type: d.WidthType.PERCENTAGE }, children: [
                         reportBciLabelPara(d, 'avg', { alignment: d.AlignmentType.CENTER, bold: true, size: 16, color: REPORT_COLORS.muted, after: 40 }),
-                        reportPara(d, String(spanBciAv), { alignment: d.AlignmentType.CENTER, bold: true, size: 32 }),
+                        reportPara(d, Number(spanBciAv).toFixed(2), { alignment: d.AlignmentType.CENTER, bold: true, size: 32 }),
                         reportPara(d, docxBCICategory(spanBciAv), { alignment: d.AlignmentType.CENTER, bold: true, size: 16, color: REPORT_COLORS.subheading, after: 0 })
                     ] }),
                     new d.TableCell({ width: { size: 33, type: d.WidthType.PERCENTAGE }, children: [
                         reportBciLabelPara(d, 'crit', { alignment: d.AlignmentType.CENTER, bold: true, size: 16, color: REPORT_COLORS.muted, after: 40 }),
-                        reportPara(d, String(spanBciCrit), { alignment: d.AlignmentType.CENTER, bold: true, size: 32, color: 'DC2626' }),
+                        reportPara(d, Number(spanBciCrit).toFixed(2), { alignment: d.AlignmentType.CENTER, bold: true, size: 32, color: 'DC2626' }),
                         reportPara(d, docxBCICategory(spanBciCrit), { alignment: d.AlignmentType.CENTER, bold: true, size: 16, color: REPORT_COLORS.subheading, after: 0 })
                     ] }),
                     new d.TableCell({ width: { size: 33, type: d.WidthType.PERCENTAGE }, children: [
