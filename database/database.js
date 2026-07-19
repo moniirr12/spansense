@@ -202,7 +202,7 @@
     var inspectionTypeCircleMeta = {
         GI: { color: '#8ab4b0', icon: 'fa-chart-line', label: 'General' },
         PI: { color: '#5b8c8a', icon: 'fa-building',   label: 'Principal' },
-        SI: { color: '#eab308', icon: 'fa-eye',        label: 'Superficial' }
+        SI: { color: '#eab308', icon: 'fa-eye',        label: 'Safety' }
     };
 
     function rebuildBridgesTable() {
@@ -559,7 +559,7 @@
             else if (bciAv !== null && bciAv < 65) status = 'Urgent';
 
             var rawType     = inspection.inspection_type || 'GI';
-            var displayType = rawType === 'PI' ? 'Principal' : rawType === 'SI' ? 'Superficial' : 'General';
+            var displayType = rawType === 'PI' ? 'Principal' : rawType === 'SI' ? 'Safety' : 'General';
 
             return {
                 id: 'RPT-' + inspection.id,
@@ -808,13 +808,13 @@
                 { id: 'all', icon: 'fa-check', label: 'All Inspections' },
                 { id: 'GI', icon: 'fa-chart-line', label: 'General (GI)', color: '#8ab4b0' },
                 { id: 'PI', icon: 'fa-building', label: 'Principal (PI)', color: '#5b8c8a' },
-                { id: 'SI', icon: 'fa-eye', label: 'Superficial (SI)', color: '#eab308' }
+                { id: 'SI', icon: 'fa-eye', label: 'Safety (SI)', color: '#eab308' }
             ],
             reports: [
                 { id: 'all', icon: 'fa-check', label: 'All Reports' },
                 { id: 'GI', icon: 'fa-chart-line', label: 'General (GI)', color: '#8ab4b0' },
                 { id: 'PI', icon: 'fa-building', label: 'Principal (PI)', color: '#5b8c8a' },
-                { id: 'SI', icon: 'fa-eye', label: 'Superficial (SI)', color: '#eab308' }
+                { id: 'SI', icon: 'fa-eye', label: 'Safety (SI)', color: '#eab308' }
             ]
         };
         (filters[cat] || filters.bridges).forEach(function(f, i) {
@@ -1145,13 +1145,13 @@
                 { id: 'all', icon: 'fa-check', label: 'All Inspections' },
                 { id: 'GI', icon: 'fa-chart-line', label: 'General (GI)', color: '#8ab4b0' },
                 { id: 'PI', icon: 'fa-building', label: 'Principal (PI)', color: '#5b8c8a' },
-                { id: 'SI', icon: 'fa-eye', label: 'Superficial (SI)', color: '#eab308' }
+                { id: 'SI', icon: 'fa-eye', label: 'Safety (SI)', color: '#eab308' }
             ],
             reports: [
                 { id: 'all', icon: 'fa-check', label: 'All Reports' },
                 { id: 'GI', icon: 'fa-chart-line', label: 'General (GI)', color: '#8ab4b0' },
                 { id: 'PI', icon: 'fa-building', label: 'Principal (PI)', color: '#5b8c8a' },
-                { id: 'SI', icon: 'fa-eye', label: 'Superficial (SI)', color: '#eab308' }
+                { id: 'SI', icon: 'fa-eye', label: 'Safety (SI)', color: '#eab308' }
             ]
         };
         (filters[cat] || filters.bridges).forEach(function(f, i) {

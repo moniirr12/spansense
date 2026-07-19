@@ -73,7 +73,7 @@ function inspectionTypeFullName(code) {
     switch (code) {
         case 'PI': return 'Principal';
         case 'GI': return 'General';
-        case 'SI': return 'Superficial';
+        case 'SI': return 'Safety';
         default: return '';
     }
 }

@@ -460,9 +460,9 @@ function buildBCIProformaContent(bciFormData, singleSpanIdx) {
             };
         }
 
-        // ROW 1: Superficial(3) | General(3) | Principal(3) | Forms(11) = 20
+        // ROW 1: Safety(3) | General(3) | Principal(3) | Forms(11) = 20
         tableBody.push([
-            inspTypeHeader('Superficial', 'SI'),
+            inspTypeHeader('Safety', 'SI'),
             { text: '' }, { text: '' },
             inspTypeHeader('General', 'GI'),
             { text: '' }, { text: '' },

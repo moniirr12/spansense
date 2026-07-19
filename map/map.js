@@ -568,7 +568,7 @@ const CHAT_FAQ = [
     },
     {
         keywords: ['previous', 'history', 'past inspection'],
-        answer: "Open \"Previous Inspections\" from a structure card to see every past inspection for it, filterable by Principal/General/Superficial, with CRIT and AV scores for each."
+        answer: "Open \"Previous Inspections\" from a structure card to see every past inspection for it, filterable by Principal/General/Safety, with CRIT and AV scores for each."
     },
     {
         keywords: ['twinview', 'twin', '3d', 'digital twin'],
@@ -829,7 +829,7 @@ function populateDocumentsQuickStats(documents) {
   function ssBadgeLabel(t) {
     if (t === 'GI') return 'General';
     if (t === 'PI') return 'Principal';
-    if (t === 'SI') return 'Superficial';
+    if (t === 'SI') return 'Safety';
     return t || 'Unknown';
   }
   function ssFormatDate(dateStr) {

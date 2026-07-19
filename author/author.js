@@ -225,7 +225,7 @@ function newDefectObject(){
   };
 }
 
-const INSPECTION_TYPE_LABELS = { GI: 'General Inspection (GI)', PI: 'Principal Inspection (PI)', SI: 'Special Inspection (SI)' };
+const INSPECTION_TYPE_LABELS = { GI: 'General Inspection (GI)', PI: 'Principal Inspection (PI)', SI: 'Safety Inspection (SI)' };
 
 // Defect type category names - same table as inspection/spans.js's
 // DEFECT_TYPE_MAP, duplicated here per this codebase's established
@@ -1439,7 +1439,7 @@ function renderStructInfoPanel(){
           <option value="">Select type…</option>
           <option value="GI" ${AUTHOR.newInspectionType==='GI'?'selected':''}>GI — General Inspection</option>
           <option value="PI" ${AUTHOR.newInspectionType==='PI'?'selected':''}>PI — Principal Inspection</option>
-          <option value="SI" ${AUTHOR.newInspectionType==='SI'?'selected':''}>SI — Special Inspection</option>
+          <option value="SI" ${AUTHOR.newInspectionType==='SI'?'selected':''}>SI — Safety Inspection</option>
         </select>
       </label>
       <label class="sip-edit-field"><span>Inspector name</span>

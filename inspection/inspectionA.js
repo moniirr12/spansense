@@ -471,7 +471,7 @@ async function loadInspectionDates() {
                         switch(inspectionType) {
                             case 'GI': typeLabel = 'General'; break;
                             case 'PI': typeLabel = 'Principal'; break;
-                            case 'SI': typeLabel = 'Superficial'; break;
+                            case 'SI': typeLabel = 'Safety'; break;
                             default: typeLabel = inspectionType || 'Inspection';
                         }
                         
@@ -495,7 +495,7 @@ async function loadInspectionDates() {
                     switch(type) {
                         case 'GI': typeLabel = 'General'; break;
                         case 'PI': typeLabel = 'Principal'; break;
-                        case 'SI': typeLabel = 'Superficial'; break;
+                        case 'SI': typeLabel = 'Safety'; break;
                         default: typeLabel = type || 'Inspection';
                     }
                     
