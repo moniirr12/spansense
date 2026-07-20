@@ -21,6 +21,7 @@ const storage = require('./supabaseStorage');
 const { PDFParse } = require('pdf-parse');
 const mammoth = require('mammoth');
 const { extractElements } = require('./extractPreviousInspection');
+const { extractElementsWithGemini } = require('./geminiExtract');
 
 const router = express.Router();
 const session = require('express-session');
@@ -337,6 +338,25 @@ async function initDatabase() {
             )
         `);
 
+        // Maintenance history - user-editable log of work carried out on a
+        // structure (repairs, routine upkeep, etc.), shown/edited from
+        // twinView. Deliberately separate from inspections/defects - this
+        // is a record of WORK DONE, not a condition assessment, and isn't
+        // tied to any particular inspection.
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS maintenance_history (
+                id SERIAL PRIMARY KEY,
+                structure_id INTEGER NOT NULL,
+                date DATE NOT NULL,
+                category TEXT DEFAULT 'other',
+                title TEXT NOT NULL,
+                description TEXT,
+                created_by TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
         // Elements table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS elements (
@@ -387,11 +407,43 @@ async function initDatabase() {
 
         console.log('All tables initialized');
 
+        // Row-Level Security must be enabled per table - Supabase's
+        // auto-generated PostgREST API exposes any public table with RLS
+        // off to anyone holding the project's anon key, completely
+        // bypassing this app's own requireAuth/requireAdmin middleware
+        // (a real incident: Supabase flagged this exact thing across every
+        // table here, including users - password hashes, TOTP secrets).
+        // This app's own pg.Pool connection is unaffected either way - it
+        // runs as the postgres role, which bypasses RLS by design - so
+        // enabling this can't break anything server.js does. Idempotent,
+        // safe to run on every startup: this used to be a one-off fix made
+        // directly in the Supabase dashboard, which a fresh deployment (new
+        // project, disaster recovery) would silently miss entirely.
+        await enableRowLevelSecurity();
+
         // Auto-resync all SERIAL sequences to prevent duplicate key errors
         await resyncSequences();
 
     } catch (err) {
         console.error('Database initialization error:', err);
+    }
+}
+
+async function enableRowLevelSecurity() {
+    const tables = [
+        'users', 'bridges', 'inspections', 'inspection_spans', 'defects',
+        'defect_photos', 'maintenance_history', 'elements', 'folders',
+        'files', 'author_branding', 'session'
+    ];
+    for (const table of tables) {
+        try {
+            await pool.query(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`);
+        } catch (err) {
+            // Non-fatal by design - e.g. connect-pg-simple's session table is
+            // created lazily and may not exist yet on a brand-new database;
+            // this just re-applies cleanly on the next startup once it does.
+            console.error(`Failed to enable RLS on ${table}:`, err.message);
+        }
     }
 }
 
@@ -1101,6 +1153,67 @@ app.get('/api/twin/:structureId', requireAuth, async (req, res) => {
         });
     } catch (err) {
         console.error('Twin data error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Maintenance history - user-editable log of work carried out on a
+// structure, shown/edited from twinView (see maintenance_history table
+// definition above for why this is separate from inspections/defects).
+app.get('/api/bridges/:structureId/maintenance', requireAuth, async (req, res) => {
+    try {
+        const rows = await dbAll(
+            'SELECT * FROM maintenance_history WHERE structure_id = $1 ORDER BY date DESC, id DESC',
+            [req.params.structureId]
+        );
+        res.json(rows);
+    } catch (err) {
+        console.error('Error fetching maintenance history:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/bridges/:structureId/maintenance', requireAuth, async (req, res) => {
+    try {
+        const { date, category, title, description } = req.body;
+        if (!date || !title) return res.status(400).json({ error: 'date and title are required' });
+        const row = await dbGet(
+            `INSERT INTO maintenance_history (structure_id, date, category, title, description, created_by)
+             VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+            [req.params.structureId, date, category || 'other', title, description || null, req.session.username || null]
+        );
+        res.json(row);
+    } catch (err) {
+        console.error('Error adding maintenance record:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/maintenance/:id', requireAuth, async (req, res) => {
+    try {
+        const { date, category, title, description } = req.body;
+        if (!date || !title) return res.status(400).json({ error: 'date and title are required' });
+        const row = await dbGet(
+            `UPDATE maintenance_history
+             SET date = $1, category = $2, title = $3, description = $4, updated_at = CURRENT_TIMESTAMP
+             WHERE id = $5 RETURNING *`,
+            [date, category || 'other', title, description || null, req.params.id]
+        );
+        if (!row) return res.status(404).json({ error: 'Record not found' });
+        res.json(row);
+    } catch (err) {
+        console.error('Error updating maintenance record:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/maintenance/:id', requireAuth, async (req, res) => {
+    try {
+        const result = await pool.query('DELETE FROM maintenance_history WHERE id = $1', [req.params.id]);
+        if (result.rowCount === 0) return res.status(404).json({ error: 'Record not found' });
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Error deleting maintenance record:', err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -2104,10 +2217,22 @@ app.post('/api/author/extract-previous-inspection', requireAuth, upload.single('
             return res.status(400).json({ error: 'Please upload a PDF or Word (.doc/.docx) file.' });
         }
 
-        const { elements, warning } = extractElements(text, elementRows.map(r => ({
+        const mappedRows = elementRows.map(r => ({
             element_number: r.element_number,
             description: r.description
-        })));
+        }));
+
+        // Gemini matches elements by meaning, not by exact "X.Y.Z" heading
+        // format/order the regex fallback depends on - falls back to it
+        // (missing/invalid key, free-tier quota, network, malformed
+        // response) so the upload flow still works either way.
+        let elements, warning;
+        try {
+            ({ elements, warning } = await extractElementsWithGemini(text, mappedRows));
+        } catch (err) {
+            console.warn('Gemini extraction failed, falling back to regex extraction:', err.message);
+            ({ elements, warning } = extractElements(text, mappedRows));
+        }
 
         res.json({
             structureType,

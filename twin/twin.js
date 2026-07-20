@@ -589,6 +589,7 @@ async function selectBridge(bridgeId, inspectionId) {
 
         document.getElementById('timelineRange').textContent = bridge.timelineRange || '—';
         renderTimeline(bridge.inspections || [], bridge.selectedInspectionId, bridge.id);
+        loadMaintenanceHistory(bridge.id);
 
         infoCol.style.opacity = '1';
     }, 150);
@@ -622,6 +623,154 @@ function renderTimeline(inspections, selectedId, bridgeId) {
             selectBridge(bridgeId, node.dataset.id);
         });
     });
+}
+
+/* ============================================================
+   MAINTENANCE HISTORY - a user-editable log of work carried out on the
+   structure (repairs, routine upkeep, etc.), separate from the inspection
+   timeline above since it's a record of work done, not a condition
+   assessment. One shared form handles both add and edit (maintEditingId
+   tracks which, null meaning "adding new").
+   ============================================================ */
+var maintData = [];
+var maintEditingId = null;
+
+var maintCategoryLabels = { repair: 'Repair', routine: 'Routine maintenance', emergency: 'Emergency works', other: 'Other' };
+
+function maintEscapeHtml(str) {
+    return String(str == null ? '' : str).replace(/[&<>"']/g, function(c) {
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+}
+
+async function loadMaintenanceHistory(structureId) {
+    var list = document.getElementById('maintList');
+    var empty = document.getElementById('maintEmpty');
+    try {
+        var res = await fetch(API_BASE + '/api/bridges/' + structureId + '/maintenance');
+        if (!res.ok) throw new Error('Failed to load maintenance history');
+        maintData = await res.json();
+        renderMaintenanceList();
+    } catch (err) {
+        console.error('Error loading maintenance history:', err);
+        list.innerHTML = '';
+        empty.style.display = '';
+        empty.textContent = 'Could not load maintenance history.';
+    }
+}
+
+function renderMaintenanceList() {
+    var list = document.getElementById('maintList');
+    var empty = document.getElementById('maintEmpty');
+    if (!maintData.length) {
+        list.innerHTML = '';
+        empty.style.display = '';
+        empty.textContent = 'No maintenance recorded yet.';
+        return;
+    }
+    empty.style.display = 'none';
+    list.innerHTML = maintData.map(function(m) {
+        var cat = maintCategoryLabels[m.category] ? m.category : 'other';
+        return '<div class="maint-item" data-id="' + m.id + '">' +
+            '<div class="maint-item-date">' + m.date + '</div>' +
+            '<div class="maint-item-body">' +
+                '<span class="maint-cat-badge ' + cat + '">' + maintCategoryLabels[cat] + '</span>' +
+                '<div class="maint-item-title">' + maintEscapeHtml(m.title) + '</div>' +
+                (m.description ? '<div class="maint-item-desc">' + maintEscapeHtml(m.description) + '</div>' : '') +
+            '</div>' +
+            '<div class="maint-item-actions">' +
+                '<button class="maint-icon-btn" data-action="edit" title="Edit"><i class="fa-solid fa-pen"></i></button>' +
+                '<button class="maint-icon-btn danger" data-action="delete" title="Delete"><i class="fa-solid fa-trash"></i></button>' +
+            '</div>' +
+        '</div>';
+    }).join('');
+
+    list.querySelectorAll('.maint-item').forEach(function(item) {
+        var id = item.getAttribute('data-id');
+        item.querySelector('[data-action="edit"]').addEventListener('click', function() { openMaintForm(id); });
+        item.querySelector('[data-action="delete"]').addEventListener('click', function() { deleteMaintenanceRecord(id); });
+    });
+}
+
+function openMaintForm(editId) {
+    var form = document.getElementById('maintForm');
+    maintEditingId = editId || null;
+    if (editId) {
+        var m = maintData.find(function(x) { return String(x.id) === String(editId); });
+        if (!m) return;
+        document.getElementById('maintDate').value = m.date;
+        document.getElementById('maintCategory').value = maintCategoryLabels[m.category] ? m.category : 'other';
+        document.getElementById('maintTitle').value = m.title;
+        document.getElementById('maintDescription').value = m.description || '';
+        document.getElementById('maintSaveBtn').textContent = 'Save changes';
+    } else {
+        document.getElementById('maintDate').value = new Date().toISOString().slice(0, 10);
+        document.getElementById('maintCategory').value = 'other';
+        document.getElementById('maintTitle').value = '';
+        document.getElementById('maintDescription').value = '';
+        document.getElementById('maintSaveBtn').textContent = 'Save';
+    }
+    form.style.display = '';
+    document.getElementById('maintTitle').focus();
+}
+
+function closeMaintForm() {
+    document.getElementById('maintForm').style.display = 'none';
+    maintEditingId = null;
+}
+
+document.getElementById('maintAddBtn').addEventListener('click', function() { openMaintForm(null); });
+document.getElementById('maintCancelBtn').addEventListener('click', closeMaintForm);
+
+document.getElementById('maintSaveBtn').addEventListener('click', async function() {
+    if (!selectedBridge) return;
+    var title = document.getElementById('maintTitle').value.trim();
+    var date = document.getElementById('maintDate').value;
+    if (!title || !date) {
+        showToast('Missing info', 'Date and title are required.', 'error');
+        return;
+    }
+    var payload = {
+        date: date,
+        category: document.getElementById('maintCategory').value,
+        title: title,
+        description: document.getElementById('maintDescription').value.trim() || null
+    };
+    var saveBtn = document.getElementById('maintSaveBtn');
+    saveBtn.disabled = true;
+    try {
+        var url = maintEditingId
+            ? API_BASE + '/api/maintenance/' + maintEditingId
+            : API_BASE + '/api/bridges/' + selectedBridge.id + '/maintenance';
+        var res = await fetch(url, {
+            method: maintEditingId ? 'PUT' : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error('Save failed');
+        closeMaintForm();
+        await loadMaintenanceHistory(selectedBridge.id);
+        showToast('Saved', 'Maintenance record saved.', 'success');
+    } catch (err) {
+        console.error('Error saving maintenance record:', err);
+        showToast('Save failed', 'Could not save this record.', 'error');
+    } finally {
+        saveBtn.disabled = false;
+    }
+});
+
+async function deleteMaintenanceRecord(id) {
+    if (!confirm('Delete this maintenance record? This cannot be undone.')) return;
+    try {
+        var res = await fetch(API_BASE + '/api/maintenance/' + id, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Delete failed');
+        if (String(maintEditingId) === String(id)) closeMaintForm();
+        await loadMaintenanceHistory(selectedBridge.id);
+        showToast('Deleted', 'Maintenance record removed.', 'success');
+    } catch (err) {
+        console.error('Error deleting maintenance record:', err);
+        showToast('Delete failed', 'Could not delete this record.', 'error');
+    }
 }
 
 /* ============================================================

@@ -161,7 +161,7 @@ body {
 .info-col {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 20px;
 }
 
 /* RIGHT COLUMN */
@@ -779,6 +779,74 @@ body {
 .legend .item { display:flex; align-items:center; gap:7px; font-size:0.74rem; color:#6a7c8e; }
 .legend .item .sw { width:8px; height:8px; border-radius:50%; }
 
+/* ---------- MAINTENANCE HISTORY PANEL ---------- */
+.maint-panel { background: white; border-radius: 24px; border: 1px solid #e9edf2; padding: 26px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03); flex-shrink: 0; }
+.maint-panel .panel-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; padding-bottom:14px; border-bottom:1px solid #eef2f6; }
+.maint-panel .panel-header h2 { font-size:1.02rem; font-weight:600; color:#2c4a48; display:flex; align-items:center; gap:10px; }
+.maint-panel .panel-header h2 i { color:#8ab4b0; }
+
+.maint-add-btn { display:flex; align-items:center; gap:7px; background:#eef4f2; border:1px solid #d6e6e3; color:#2c5a57; font-size:0.76rem; font-weight:700; padding:7px 14px; border-radius:20px; cursor:pointer; font-family:inherit; transition:.15s; }
+.maint-add-btn:hover { background:#5b8c8a; border-color:#5b8c8a; color:white; }
+
+.maint-form { background:#fafbfc; border:1px solid #e9edf2; border-radius:16px; padding:16px; margin-bottom:18px; }
+.maint-form-row { display:flex; gap:12px; margin-bottom:10px; }
+.maint-field { display:flex; flex-direction:column; gap:4px; flex:1; margin-bottom:10px; }
+.maint-field span { font-size:0.64rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:#8a9ba8; }
+.maint-field input, .maint-field select, .maint-field textarea { border:1px solid #e2e8f0; border-radius:9px; padding:8px 10px; font-family:inherit; font-size:0.82rem; color:#2c3e44; background:white; }
+.maint-field input:focus, .maint-field select:focus, .maint-field textarea:focus { outline:none; border-color:#8ab4b0; }
+.maint-field textarea { min-height:56px; resize:vertical; }
+.maint-form-actions { display:flex; justify-content:flex-end; gap:8px; }
+.maint-form-cancel, .maint-form-save { padding:7px 16px; border-radius:20px; font-size:0.76rem; font-weight:700; cursor:pointer; font-family:inherit; }
+.maint-form-cancel { background:none; border:1px solid #e2e8f0; color:#6a7c8e; }
+.maint-form-cancel:hover { background:#f2f5f7; }
+.maint-form-save { background:#5b8c8a; border:none; color:white; }
+.maint-form-save:hover { background:#4a7876; }
+
+.maint-list { display:flex; flex-direction:column; gap:10px; }
+.maint-item { display:flex; align-items:flex-start; gap:14px; padding:12px 0; border-bottom:1px solid #eef2f6; }
+.maint-item:last-child { border-bottom:none; padding-bottom:0; }
+.maint-item-date { flex-shrink:0; width:76px; font-size:0.72rem; font-weight:600; color:#8a9ba8; font-family:'SFMono-Regular',Consolas,monospace; padding-top:2px; }
+.maint-item-body { flex:1; min-width:0; }
+.maint-cat-badge { display:inline-block; font-size:0.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; padding:2px 9px; border-radius:20px; margin-bottom:5px; }
+.maint-cat-badge.repair { background:#fdf2f2; color:#c47070; }
+.maint-cat-badge.routine { background:#eef4f2; color:#5b8c8a; }
+.maint-cat-badge.emergency { background:#fff2ea; color:#c0392b; }
+.maint-cat-badge.other { background:#f2f5f7; color:#6a7c8e; }
+.maint-item-title { font-size:0.86rem; font-weight:600; color:#2c3e44; }
+.maint-item-desc { font-size:0.78rem; color:#6a7c8e; margin-top:3px; line-height:1.5; }
+.maint-item-actions { display:flex; gap:6px; flex-shrink:0; opacity:0; transition:opacity .15s; }
+.maint-item:hover .maint-item-actions { opacity:1; }
+.maint-icon-btn { width:26px; height:26px; border-radius:50%; border:1px solid #e2e8f0; background:white; color:#8a9ba8; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.7rem; transition:.15s; }
+.maint-icon-btn:hover { border-color:#8ab4b0; color:#5b8c8a; }
+.maint-icon-btn.danger:hover { border-color:#c47070; color:#c0392b; background:#fdf2f2; }
+.maint-empty { text-align:center; padding:24px 0; font-size:0.82rem; color:#8a9ba8; }
+
+.night-mode .maint-panel { background:#212f33; border-color:#2f3e45; }
+.night-mode .maint-panel .panel-header { border-color:#2a3a40; }
+.night-mode .maint-panel .panel-header h2 { color:#d4dfe3; }
+.night-mode .maint-add-btn { background:#1e3a38; border-color:#3a6b62; color:#8ab4b0; }
+.night-mode .maint-add-btn:hover { background:#3a6b62; color:white; }
+.night-mode .maint-form { background:#1a2428; border-color:#2f3e45; }
+.night-mode .maint-field span { color:#7d939b; }
+.night-mode .maint-field input, .night-mode .maint-field select, .night-mode .maint-field textarea { background:#212f33; border-color:#3a4b53; color:#d4dfe3; }
+.night-mode .maint-field input:focus, .night-mode .maint-field select:focus, .night-mode .maint-field textarea:focus { border-color:#6e9c98; }
+.night-mode .maint-form-cancel { border-color:#3a4b53; color:#9ab0b8; }
+.night-mode .maint-form-cancel:hover { background:#1a2428; }
+.night-mode .maint-form-save { background:#3a6b62; }
+.night-mode .maint-form-save:hover { background:#4a8a80; }
+.night-mode .maint-item { border-color:#2a3a40; }
+.night-mode .maint-item-date { color:#7d939b; }
+.night-mode .maint-cat-badge.repair { background:#3a2323; color:#e57373; }
+.night-mode .maint-cat-badge.routine { background:#1e3a38; color:#8ab4b0; }
+.night-mode .maint-cat-badge.emergency { background:#3a2a1a; color:#e0965a; }
+.night-mode .maint-cat-badge.other { background:#232e34; color:#9ab0b8; }
+.night-mode .maint-item-title { color:#d4dfe3; }
+.night-mode .maint-item-desc { color:#9ab0b8; }
+.night-mode .maint-icon-btn { background:#1a2428; border-color:#3a4b53; color:#7d939b; }
+.night-mode .maint-icon-btn:hover { border-color:#6e9c98; color:#8ab4b0; }
+.night-mode .maint-icon-btn.danger:hover { border-color:#c47070; color:#e57373; background:#3a2323; }
+.night-mode .maint-empty { color:#7d939b; }
+
 /* ---------- TOAST ---------- */
 .toast-container { position: fixed; bottom: 30px; right: 30px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; }
 .toast { background: white; border-radius: 16px; padding: 16px 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12); border: 1px solid #e9edf2; display: flex; align-items: center; gap: 12px; min-width: 300px; transform: translateX(120%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
@@ -1113,6 +1181,35 @@ body.night-mode .glass-scrollbar .thumb {
                     <div class="item"><span class="sw" style="background:#c28b5a"></span>Safety Inspection</div>
                     <div class="item"><span class="sw" style="background:#c0392b"></span>Overdue</div>
                 </div>
+            </div>
+
+            <!-- Maintenance History Panel -->
+            <div class="maint-panel">
+                <div class="panel-header">
+                    <h2><i class="fa-solid fa-screwdriver-wrench"></i>Maintenance history</h2>
+                    <button class="maint-add-btn" id="maintAddBtn" type="button"><i class="fa-solid fa-plus"></i> Add record</button>
+                </div>
+                <div class="maint-form" id="maintForm" style="display:none;">
+                    <div class="maint-form-row">
+                        <label class="maint-field"><span>Date</span><input type="date" id="maintDate"></label>
+                        <label class="maint-field"><span>Category</span>
+                            <select id="maintCategory">
+                                <option value="repair">Repair</option>
+                                <option value="routine">Routine maintenance</option>
+                                <option value="emergency">Emergency works</option>
+                                <option value="other" selected>Other</option>
+                            </select>
+                        </label>
+                    </div>
+                    <label class="maint-field"><span>Title</span><input type="text" id="maintTitle" placeholder="e.g. Repainted parapet railings"></label>
+                    <label class="maint-field"><span>Notes</span><textarea id="maintDescription" placeholder="Optional details…"></textarea></label>
+                    <div class="maint-form-actions">
+                        <button class="maint-form-cancel" id="maintCancelBtn" type="button">Cancel</button>
+                        <button class="maint-form-save" id="maintSaveBtn" type="button">Save</button>
+                    </div>
+                </div>
+                <div class="maint-list" id="maintList"></div>
+                <div class="maint-empty" id="maintEmpty" style="display:none;">No maintenance recorded yet.</div>
             </div>
         </div>
 
