@@ -60,8 +60,8 @@
       else { el.style.transform = 'translateX(0)'; el.style.zIndex = 10 + idx; }
     });
   }
-  function goto(name) { if (stack[stack.length - 1] !== name) stack.push(name); renderStack(true); }
-  function back() { if (stack.length > 1) { stack.pop(); renderStack(true); } }
+  function goto(name) { if (stack[stack.length - 1] !== name) stack.push(name); renderStack(true); updateTwinActiveState(); }
+  function back() { if (stack.length > 1) { stack.pop(); renderStack(true); } updateTwinActiveState(); }
   document.querySelectorAll('[data-back]').forEach((btn) => btn.addEventListener('click', back));
 
   /* ============================================================
@@ -392,6 +392,14 @@
         remedial_works: d.remedialWorks || '',
         timestamp: d.timestamp || new Date().toISOString(),
         isPrimary: !!d.isPrimary,
+        // Real 3D placement from the loaded inspection (twin/twin.js's
+        // pos_x/y/z), kept only for TwinView display - never re-sent on
+        // save, since this mobile draft has no way to place a NEW
+        // defect's coordinates itself (out of scope for the "lighter"
+        // TwinView), so posX/posY/posZ in the save payload stay null.
+        origX: d.x != null ? d.x : null,
+        origY: d.y != null ? d.y : null,
+        origZ: d.z != null ? d.z : null,
         referencePhotos: d.photos || [], // old inspection's photos - view only, never re-uploaded
         photos: []
       }))
@@ -438,8 +446,9 @@
     document.getElementById('viewerSubtitle').textContent =
       `Span ${S.currentSpan} · ${inspTypeMeta(S.draft.inspectionType).label}`;
     updateBciTiles();
-    renderTwinPins();
+    renderTwin3D();
     renderDefectList();
+    updateTwinActiveState();
   }
 
   document.getElementById('tabTwinBtn').addEventListener('click', () => setHomeTab('twin'));
@@ -452,6 +461,12 @@
     document.getElementById('listTab').style.display = tab === 'list' ? 'block' : 'none';
     document.getElementById('twinPopup').classList.remove('show');
     refreshViewerContent();
+  }
+  // Pauses the 3D render loop (battery) whenever the viewer+TwinView tab
+  // isn't the thing actually on screen - called after every navigation and
+  // every tab switch, not just once, since either can change the answer.
+  function updateTwinActiveState() {
+    Twin3D.setActive(stack[stack.length - 1] === 'viewer' && S.homeTab === 'twin');
   }
 
   function spanDefects() {
@@ -496,33 +511,35 @@
     critBand.style.background = bc2.bg; critBand.style.color = bc2.c;
   }
 
-  /* --- TwinView pins (simplified 2D placement, not true 3D) --- */
-  function renderTwinPins() {
-    const layer = document.getElementById('pinLayer');
-    layer.innerHTML = '';
-    const real = spanDefects().filter((d) => !isPlaceholder(d));
-    real.forEach((d, i) => {
-      const pin = document.createElement('div');
-      const band = defectRowBand(d);
-      const colorMap = { good: '#2d7a6e', fair: '#BA7517', poor: '#c47070', critical: '#c0392b' };
-      pin.className = 'pin' + (band === 'critical' ? ' critical' : '');
-      pin.style.background = colorMap[band];
-      // Deterministic pseudo-placement by category band, spread across x by index
-      const catBandY = { 'Deck Elements': 42, 'Load-bearing Substructure': 55, 'Durability Elements': 65,
-        'Safety Elements': 40, 'Other Bridge Elements': 78, 'Ancillary Elements': 35,
-        'Main Elements': 50, 'Other Elements': 70 };
-      const y = catBandY[categoryFor(d.elementNumber)] || 50;
-      const x = 12 + ((i * 37) % 76);
-      pin.style.left = x + '%'; pin.style.top = y + '%';
-      pin.onclick = (e) => { e.stopPropagation(); showPinPopup(d, pin); };
-      layer.appendChild(pin);
-    });
+  /* --- TwinView: real 3D, reusing desktop's procedural model builders
+     (twin/shapeBuilders.js + twin/bridgeModels.js, loaded as plain globals).
+     Whole structure at once (not per-span - the model is one continuous
+     structure, span tabs only filter the Defect List tab), auto-rotate
+     only, tap a marker to preview. --- */
+  let defectsLayerOn = true;
+  Twin3D.ensureInit(document.getElementById('twin3dCanvas'), (defect, evt) => {
+    if (!defect) { document.getElementById('twinPopup').classList.remove('show'); return; }
+    showTwinPopup(defect, evt);
+  });
+  document.getElementById('defectLayerPill').addEventListener('click', () => {
+    defectsLayerOn = !defectsLayerOn;
+    document.getElementById('defectLayerPill').classList.toggle('on', defectsLayerOn);
+    Twin3D.setDefectsVisible(defectsLayerOn);
+    document.getElementById('twinPopup').classList.remove('show');
+  });
+
+  function renderTwin3D() {
+    const markerDefects = S.draft.defects
+      .filter((d) => !isPlaceholder(d) && d.origX != null && d.origY != null && d.origZ != null)
+      .map((d) => Object.assign({}, d, { x: d.origX, y: d.origY, z: d.origZ }));
+    const totalSpans = S.draft.totalSpans || S.draft.spans.length || 1;
+    const structureLength = S.currentStructure ? parseFloat(S.currentStructure.length) : null;
+    const spanLength = structureLength && totalSpans ? structureLength / totalSpans : undefined;
+    Twin3D.render({ id: S.draft.structureId, type: S.draft.structureType, spans: totalSpans, spanLength, defects: markerDefects });
+    Twin3D.setDefectsVisible(defectsLayerOn);
   }
-  function categoryFor(elementNo) {
-    const el = S.elements.find((e) => e.no === elementNo);
-    return el ? el.category : null;
-  }
-  function showPinPopup(d, pinEl) {
+
+  function showTwinPopup(d, evt) {
     const stage = document.getElementById('twinStage');
     const popup = document.getElementById('twinPopup');
     const bc = FieldBCI.BAND_COLORS[defectRowBand(d)];
@@ -532,24 +549,20 @@
       <div class="p-badges">
         <span style="background:${bc.bg}; color:${bc.c};">Sev ${d.severity}</span>
         <span style="background:rgba(255,255,255,.14); color:#eef4f2;">Ext ${d.extent}</span>
+        <span style="background:rgba(255,255,255,.14); color:#eef4f2;">Span ${d.spanNumber}</span>
       </div>
       <button class="p-link">View / edit
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
       </button>`;
     popup.querySelector('.p-link').onclick = () => { popup.classList.remove('show'); openDefectEdit(d.key); };
     const stageRect = stage.getBoundingClientRect();
-    const pinRect = pinEl.getBoundingClientRect();
-    let left = pinRect.left - stageRect.left + pinRect.width / 2 - 100;
+    let left = (evt ? evt.clientX : stageRect.left + stageRect.width / 2) - stageRect.left - 100;
     left = Math.max(8, Math.min(left, stageRect.width - 208));
-    let top = pinRect.top - stageRect.top - 150;
-    if (top < 4) top = pinRect.bottom - stageRect.top + 10;
+    let top = (evt ? evt.clientY : stageRect.top + 40) - stageRect.top - 160;
+    if (top < 4) top = (evt ? evt.clientY : stageRect.top) - stageRect.top + 20;
     popup.style.left = left + 'px'; popup.style.top = top + 'px';
     popup.classList.add('show');
   }
-  document.getElementById('twinStage').addEventListener('click', (e) => {
-    if (e.target.closest('.pin') || e.target.closest('.popup')) return;
-    document.getElementById('twinPopup').classList.remove('show');
-  });
   function elementDescFor(no) {
     const el = S.elements.find((e) => e.no === no);
     return el ? el.description : `Element ${no}`;
@@ -627,11 +640,17 @@
   }
   function renderQuickActionsRow(el) {
     const wrap = document.createElement('div');
-    wrap.style.cssText = 'display:flex; gap:8px; margin:0 16px 10px;';
+    wrap.style.cssText = 'margin:0 16px 10px;';
     wrap.innerHTML = `
-      <button class="chip" style="flex:1;">No Defects</button>
-      <button class="chip" style="flex:1;">Not Inspected</button>
-      <button class="chip" style="flex:1; background:var(--good-bg); border-color:var(--teal-300); color:var(--teal-700);">+ Add Defect</button>`;
+      <div style="display:flex; align-items:center; gap:11px; margin-bottom:8px;">
+        <div class="item-badge">${el.no}</div>
+        <div class="row-main"><div class="desc">${escapeHtml(el.description)}</div></div>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="chip" style="flex:1;">No Defects</button>
+        <button class="chip" style="flex:1;">Not Inspected</button>
+        <button class="chip" style="flex:1; background:var(--good-bg); border-color:var(--teal-300); color:var(--teal-700);">+ Add Defect</button>
+      </div>`;
     const [noDef, notInsp, addDef] = wrap.querySelectorAll('button');
     noDef.onclick = () => quickRecord(el, '0', '0');
     notInsp.onclick = () => quickRecord(el, '0', '1');

@@ -127,17 +127,7 @@
             <span class="layer-pill on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg>Structure</span>
             <span class="layer-pill on" id="defectLayerPill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z"/></svg>Defects</span>
           </div>
-          <svg class="elevation" viewBox="0 0 320 200" preserveAspectRatio="none">
-            <rect x="0" y="140" width="320" height="60" fill="#cfe3e1"/>
-            <path d="M0 140 Q 40 134 80 140 T 160 140 T 240 140 T 320 140 V200 H0 Z" fill="#bcdad7"/>
-            <path d="M10 96 L50 96 L45 150 L15 150 Z" fill="#8ab4b0"/>
-            <path d="M270 96 L310 96 L305 150 L275 150 Z" fill="#8ab4b0"/>
-            <rect x="102" y="96" width="20" height="60" fill="#7ba8a5"/>
-            <rect x="198" y="96" width="20" height="60" fill="#7ba8a5"/>
-            <rect x="6" y="86" width="308" height="14" rx="2" fill="#5b8c8a"/>
-            <rect x="6" y="83" width="308" height="3" fill="#2c5a57"/>
-          </svg>
-          <div id="pinLayer"></div>
+          <canvas id="twin3dCanvas" style="position:absolute; inset:0; width:100%; height:100%; display:block;"></canvas>
           <div class="popup" id="twinPopup"></div>
         </div>
         <div class="bci-tiles">
@@ -152,7 +142,7 @@
             <span class="band-tag" id="bciCritBand"></span>
           </div>
         </div>
-        <p class="hint-text">Tap a marker to preview · positions are approximate on this simplified diagram</p>
+        <p class="hint-text" id="twinHintText">Tap a marker to preview · auto-rotating, no drag/zoom on this view</p>
       </div>
 
       <!-- LIST TAB -->
@@ -268,6 +258,10 @@
 <script src="/field/js/api.js"></script>
 <script src="/field/js/bci.js"></script>
 <script src="/field/js/db.js"></script>
+<script src="/field/js/vendor/three.min.js"></script>
+<script src="/twin/bridgeModels.js"></script>
+<script src="/twin/shapeBuilders.js"></script>
+<script src="/field/js/twin3d.js"></script>
 <script src="/field/js/app.js"></script>
 <script>
 if ('serviceWorker' in navigator) {

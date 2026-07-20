@@ -183,18 +183,14 @@ body.night-mode .no-defect-row span{ color:#8ab4b0; }
 .fab svg{ width:24px; height:24px; }
 .fab:active{ transform:scale(.94); }
 
-/* ---------- twinview (simplified 2D diagram) ---------- */
+/* ---------- twinview (real 3D, see js/twin3d.js) ---------- */
 .twin-stage{ margin:0 16px 12px; border-radius:22px; background:var(--surface); border:1px solid var(--border); position:relative; overflow:hidden; height:230px; flex-shrink:0; }
-.twin-stage svg.elevation{ position:absolute; inset:0; width:100%; height:100%; }
 .layerbar{ position:absolute; top:10px; left:10px; right:10px; display:flex; gap:6px; z-index:5; }
 .layer-pill{ font-size:10px; font-weight:700; padding:5px 10px; border-radius:20px; background:rgba(255,255,255,.88); color:var(--ink-dim); border:1px solid var(--border); display:flex; align-items:center; gap:4px; }
 body.night-mode .layer-pill{ background:rgba(35,46,52,.85); }
 .layer-pill.on{ color:var(--teal-700); border-color:var(--teal-300); }
 body.night-mode .layer-pill.on{ color:#8ab4b0; }
 .layer-pill svg{ width:11px; height:11px; }
-.pin{ position:absolute; width:22px; height:22px; border-radius:50%; transform:translate(-50%,-50%); border:2.5px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,.25); cursor:pointer; z-index:6; }
-.pin.critical{ animation:pulse 1.8s infinite; }
-@keyframes pulse{ 0%,100%{box-shadow:0 2px 8px rgba(0,0,0,.25),0 0 0 0 rgba(192,57,43,.5);} 50%{box-shadow:0 2px 8px rgba(0,0,0,.25),0 0 0 8px rgba(192,57,43,0);} }
 .popup{ position:absolute; width:200px; background:var(--pop); color:#eef4f2; border-radius:16px; padding:12px 13px; z-index:20; box-shadow:0 14px 30px rgba(0,0,0,.3); display:none; }
 .popup.show{ display:block; }
 .popup .p-code{ font-family:'SFMono-Regular',Consolas,monospace; font-size:10.5px; color:#9ecac4; margin:0 0 3px; }
