@@ -160,7 +160,13 @@
   }
 
   function setDefectsVisible(v) { if (defectGroup) defectGroup.visible = v; }
+  function setStructureVisible(v) {
+    if (structureGroup) structureGroup.visible = v;
+    if (gridHelper) gridHelper.visible = v;
+    if (glowMesh) glowMesh.visible = v;
+  }
+  function hasDefectMarkers() { return !!(defectGroup && defectGroup.children.length); }
   function setActive(v) { active = v; }
 
-  window.Twin3D = { ensureInit, render, setDefectsVisible, setActive };
+  window.Twin3D = { ensureInit, render, setDefectsVisible, setStructureVisible, hasDefectMarkers, setActive };
 })();
