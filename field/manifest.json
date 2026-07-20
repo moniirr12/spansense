@@ -1,0 +1,16 @@
+{
+  "name": "spanSense Field",
+  "short_name": "spanSense",
+  "description": "View structures, inspections and defects on site, then log new observations with photos.",
+  "start_url": "/field/",
+  "scope": "/field/",
+  "display": "standalone",
+  "background_color": "#0e1614",
+  "theme_color": "#5b8c8a",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>spanSense Field</title>
+<meta name="description" content="View structures, inspections and defects on site, and log new observations with photos.">
+<link rel="manifest" href="/field/manifest.json">
+<link rel="icon" href="/field/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/field/icons/apple-touch-icon.png">
+<meta name="theme-color" content="#5b8c8a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="spanSense">
+<script>
+  // Same preload pattern the rest of spanSense uses, and the same
+  // localStorage key ('nightMode') - a user who set dark mode on desktop
+  // sees it here too, with no flash of the light theme on load.
+  (function(){
+    var nm = localStorage.getItem('nightMode');
+    var dark = nm === 'on' || (nm === null && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    if (dark) document.documentElement.classList.add('nm-preload');
+  })();
+</script>
+<style>html.nm-preload,html.nm-preload body{background-color:#1a2428!important;}</style>
+<link rel="stylesheet" href="/field/css/app.css">
+</head>
+<body>
+<script>if(document.documentElement.classList.contains('nm-preload'))document.body.classList.add('night-mode');</script>
+
+<div id="offlineBanner" class="offline-banner" hidden>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 8.5a16 16 0 0 1 20 0M5.5 12a11 11 0 0 1 13 0M9 15.5a6 6 0 0 1 6 0"/><path d="M2 2l20 20"/></svg>
+  <span id="offlineBannerText">You're offline — changes will be saved and synced automatically.</span>
+</div>
+
+<!-- ============ LOGIN ============ -->
+<section class="screen" id="screen-login">
+  <div class="login-wrap">
+    <div class="login-logo">spanSense<span>Field</span></div>
+    <p class="login-sub">Sign in with your spanSense account</p>
+    <form id="loginForm" class="login-form" autocomplete="on">
+      <label class="field-label">Username</label>
+      <input type="text" id="loginUsername" name="username" autocomplete="username" required>
+      <label class="field-label">Password</label>
+      <input type="password" id="loginPassword" name="password" autocomplete="current-password" required>
+      <div id="loginError" class="form-error" hidden></div>
+      <button type="submit" class="btn btn-primary btn-block" id="loginSubmitBtn">Sign In</button>
+    </form>
+    <form id="twofaForm" class="login-form" hidden>
+      <label class="field-label">6-digit authenticator code</label>
+      <input type="text" id="twofaCode" inputmode="numeric" pattern="[0-9]*" maxlength="6" required>
+      <div id="twofaError" class="form-error" hidden></div>
+      <button type="submit" class="btn btn-primary btn-block">Verify</button>
+    </form>
+  </div>
+</section>
+
+<!-- ============ APP SHELL (post-login) ============ -->
+<div id="appShell" class="app-shell" hidden>
+  <div class="stack" id="stack">
+
+    <!-- STRUCTURES -->
+    <section class="screen is-base" data-screen="structures">
+      <div class="appbar safe-top">
+        <div class="appbar-titles">
+          <h2>My Structures</h2>
+          <p id="structuresSubtitle">—</p>
+        </div>
+        <button class="icon-btn" id="nightToggleBtn" title="Toggle dark mode"></button>
+        <button class="icon-btn" id="accountBtn" title="Account"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c1.5-4 4-6 7-6s5.5 2 7 6"/></svg></button>
+      </div>
+      <div class="search-bar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" id="structureSearch" placeholder="Search structures or IDs">
+      </div>
+      <div class="scrollarea" id="structureListArea"><div class="empty-state">Loading…</div></div>
+    </section>
+
+    <!-- INSPECTIONS -->
+    <section class="screen" data-screen="inspections">
+      <div class="appbar safe-top">
+        <button class="icon-btn" data-back><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <div class="appbar-titles">
+          <h2 id="inspTitle">—</h2>
+          <p id="inspSubtitle">—</p>
+        </div>
+      </div>
+      <div class="info-strip">
+        <div class="cell"><div class="lbl">Spans</div><div class="val" id="inspInfoSpans">—</div></div>
+        <div class="cell"><div class="lbl">Material</div><div class="val" id="inspInfoMaterial">—</div></div>
+        <div class="cell"><div class="lbl">Built</div><div class="val" id="inspInfoBuilt">—</div></div>
+      </div>
+      <p class="cat-label" style="margin-top:2px;">Inspection history</p>
+      <div class="scrollarea" id="inspectionRows"><div class="empty-state">Loading…</div></div>
+      <button class="fab" id="newInspectionFab" title="Start new inspection from scratch">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+    </section>
+
+    <!-- VIEWER / EDITOR -->
+    <section class="screen" data-screen="viewer">
+      <div class="appbar safe-top">
+        <button class="icon-btn" data-back><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <div class="appbar-titles">
+          <h2 id="viewerTitle">—</h2>
+          <p id="viewerSubtitle">—</p>
+        </div>
+        <button class="icon-btn" id="viewerMenuBtn"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>
+      </div>
+
+      <div id="editBanner" class="edit-banner" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        <span>Editing a copy — saving creates a <strong>new</strong> inspection dated today, the original is untouched.</span>
+      </div>
+
+      <div class="segmented">
+        <button class="active" id="tabTwinBtn" data-tab="twin">TwinView</button>
+        <button id="tabListBtn" data-tab="list">Defect List</button>
+      </div>
+
+      <div id="spanTabsRow" class="span-tabs"></div>
+
+      <!-- TWIN TAB -->
+      <div id="twinTab">
+        <div class="twin-stage" id="twinStage">
+          <div class="layerbar">
+            <span class="layer-pill on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg>Structure</span>
+            <span class="layer-pill on" id="defectLayerPill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z"/></svg>Defects</span>
+          </div>
+          <svg class="elevation" viewBox="0 0 320 200" preserveAspectRatio="none">
+            <rect x="0" y="140" width="320" height="60" fill="#cfe3e1"/>
+            <path d="M0 140 Q 40 134 80 140 T 160 140 T 240 140 T 320 140 V200 H0 Z" fill="#bcdad7"/>
+            <path d="M10 96 L50 96 L45 150 L15 150 Z" fill="#8ab4b0"/>
+            <path d="M270 96 L310 96 L305 150 L275 150 Z" fill="#8ab4b0"/>
+            <rect x="102" y="96" width="20" height="60" fill="#7ba8a5"/>
+            <rect x="198" y="96" width="20" height="60" fill="#7ba8a5"/>
+            <rect x="6" y="86" width="308" height="14" rx="2" fill="#5b8c8a"/>
+            <rect x="6" y="83" width="308" height="3" fill="#2c5a57"/>
+          </svg>
+          <div id="pinLayer"></div>
+          <div class="popup" id="twinPopup"></div>
+        </div>
+        <div class="bci-tiles">
+          <div class="bci-tile">
+            <div class="lbl">BCI average (span)</div>
+            <div class="val" id="bciAvVal">—</div>
+            <span class="band-tag" id="bciAvBand"></span>
+          </div>
+          <div class="bci-tile">
+            <div class="lbl">BCI critical (span)</div>
+            <div class="val" id="bciCritVal">—</div>
+            <span class="band-tag" id="bciCritBand"></span>
+          </div>
+        </div>
+        <p class="hint-text">Tap a marker to preview · positions are approximate on this simplified diagram</p>
+      </div>
+
+      <!-- LIST TAB -->
+      <div id="listTab" style="display:none;">
+        <div class="chiprow" id="chipRow"></div>
+        <div class="scrollarea" id="defectListArea"></div>
+      </div>
+
+      <button class="fab" id="addDefectFab" title="Add new defect">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      </button>
+
+      <div class="bottombar" id="viewerSaveBar" hidden>
+        <button class="btn btn-primary btn-block" id="saveInspectionBtn">Save as New Inspection</button>
+      </div>
+    </section>
+
+    <!-- DEFECT EDIT -->
+    <section class="screen" data-screen="defectEdit">
+      <div class="appbar safe-top">
+        <button class="icon-btn" data-back><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <div class="appbar-titles">
+          <h2 id="defTitle">—</h2>
+          <p id="defSubtitle">—</p>
+        </div>
+        <button class="text-btn" id="defectDeleteBtn">Remove</button>
+      </div>
+
+      <div class="scrollarea">
+        <div class="field-group">
+          <span class="field-label">Element</span>
+          <div class="field-static" id="defElementDisplay">—</div>
+        </div>
+
+        <div class="field-group" id="defectTypeGroup">
+          <span class="field-label">Defect type</span>
+          <div class="field-row">
+            <input type="text" id="defTypeCode" class="field-input field-input-sm" placeholder="Type #" inputmode="numeric">
+            <span class="field-dot">.</span>
+            <input type="text" id="defNumberCode" class="field-input field-input-sm" placeholder="Sub #" inputmode="numeric">
+            <input type="text" id="defTypeLabel" class="field-input" placeholder="Description (e.g. Corrosion)">
+          </div>
+          <div id="prevDefectHint" class="prev-hint" hidden></div>
+        </div>
+
+        <div class="field-group">
+          <span class="field-label">Severity</span>
+          <div class="stepper" id="sevStepper">
+            <button data-v="1">1</button><button data-v="2">2</button><button data-v="3">3</button>
+            <button data-v="4">4</button><button data-v="5">5</button>
+          </div>
+        </div>
+        <div class="field-group">
+          <span class="field-label">Extent</span>
+          <div class="stepper" id="extStepper">
+            <button data-v="A">A</button><button data-v="B">B</button><button data-v="C">C</button>
+            <button data-v="D">D</button><button data-v="E">E</button>
+          </div>
+          <div id="sevExtWarning" class="form-error" hidden>Only 1A, or 2–5 with B–E, are valid combinations.</div>
+        </div>
+
+        <div class="field-group">
+          <span class="field-label">Works required</span>
+          <div class="stepper works" id="worksStepper">
+            <button data-v="N">No</button><button data-v="Y">Yes</button><button data-v="M">Monitor</button>
+          </div>
+        </div>
+
+        <div class="field-group" id="worksDetailGroup" hidden>
+          <span class="field-label">Priority</span>
+          <div class="stepper works" id="priorityStepper">
+            <button data-v="L">Low</button><button data-v="M">Medium</button><button data-v="H">High</button>
+          </div>
+          <span class="field-label" style="margin-top:12px;">Estimated cost (£)</span>
+          <input type="number" id="defCost" class="field-input" placeholder="0" min="0" step="1">
+        </div>
+
+        <div class="field-group">
+          <span class="field-label">Comments</span>
+          <textarea id="defComments" class="notes-input" placeholder="Describe the condition observed…"></textarea>
+        </div>
+        <div class="field-group">
+          <span class="field-label">Remedial works</span>
+          <textarea id="defRemedial" class="notes-input" placeholder="What work would resolve this?"></textarea>
+        </div>
+
+        <div class="field-group" style="margin-bottom:110px;">
+          <span class="field-label">Photos</span>
+          <div class="photo-strip" id="defPhotoStrip"></div>
+          <input type="file" id="cameraInput" accept="image/*" capture="environment" multiple hidden>
+        </div>
+      </div>
+
+      <div class="bottombar">
+        <button class="btn btn-secondary" id="addPhotoBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2h6l2 2h3v11H4z"/><circle cx="12" cy="13.5" r="3.4"/></svg>
+          Add Photo
+        </button>
+        <button class="btn btn-primary" id="defectDoneBtn">Done</button>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="syncbar" id="syncBar" hidden>
+    <span id="syncBarText">1 inspection pending sync</span>
+    <button id="syncNowBtn" class="text-btn">Sync now</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="/field/js/api.js"></script>
+<script src="/field/js/bci.js"></script>
+<script src="/field/js/db.js"></script>
+<script src="/field/js/app.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/field/sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>
