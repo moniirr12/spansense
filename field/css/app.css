@@ -130,6 +130,12 @@ body.night-mode .span-tab.active{ background:#1e3a3e; border-color:#3a5a56; colo
 body.night-mode .chip.active{ background:#1e3a3e; border-color:#3a5a56; color:#8ab4b0; }
 
 .scrollarea{ flex:1; overflow-y:auto; padding-bottom:110px; -webkit-overflow-scrolling:touch; }
+/* #twinTab/#listTab are toggled to display:flex in JS - flex-direction and
+   min-height:0 have to live here since a JS style.display flip alone
+   doesn't set them, and without min-height:0 a flex child can't shrink
+   below its content size, which is what let .scrollarea grow to fit all
+   38 rows instead of clipping to the viewport and actually scrolling. */
+#twinTab, #listTab{ flex-direction:column; flex:1; min-height:0; }
 .empty-state{ text-align:center; color:var(--ink-faint); font-size:13.5px; padding:60px 20px; }
 
 .cat-label{ font-size:11px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--teal-700); opacity:.75; margin:16px 20px 8px; }

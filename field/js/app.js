@@ -14,6 +14,7 @@
     currentSpan: 1,
     homeTab: 'twin',
     listFilterBand: 'all',
+    hideUntouched: false,
     currentDefectKey: null
   };
 
@@ -421,6 +422,11 @@
   function openViewer() {
     document.getElementById('viewerTitle').textContent = S.draft.structureName;
     document.getElementById('editBanner').hidden = !S.draft.baseDate;
+    // Reviewing a cloned inspection: most elements are usually already
+    // recorded, so declutter down to just what's there by default. A blank
+    // first-time inspection needs every element reviewed anyway, so show
+    // everything from the start instead of hiding the very thing to do.
+    S.hideUntouched = !!S.draft.baseDate;
     if (S.draft.baseDate) {
       document.getElementById('editBanner').querySelector('span').innerHTML =
         `Editing a copy of <strong>${inspTypeMeta(S.draft.baseType).label}, ${formatDate(S.draft.baseDate)}</strong> — saving creates a <strong>new</strong> inspection dated today.`;
@@ -457,8 +463,8 @@
     S.homeTab = tab;
     document.getElementById('tabTwinBtn').classList.toggle('active', tab === 'twin');
     document.getElementById('tabListBtn').classList.toggle('active', tab === 'list');
-    document.getElementById('twinTab').style.display = tab === 'twin' ? 'block' : 'none';
-    document.getElementById('listTab').style.display = tab === 'list' ? 'block' : 'none';
+    document.getElementById('twinTab').style.display = tab === 'twin' ? 'flex' : 'none';
+    document.getElementById('listTab').style.display = tab === 'list' ? 'flex' : 'none';
     document.getElementById('twinPopup').classList.remove('show');
     refreshViewerContent();
   }
@@ -517,6 +523,7 @@
      structure, span tabs only filter the Defect List tab), auto-rotate
      only, tap a marker to preview. --- */
   let defectsLayerOn = true;
+  let structureLayerOn = true;
   Twin3D.ensureInit(document.getElementById('twin3dCanvas'), (defect, evt) => {
     if (!defect) { document.getElementById('twinPopup').classList.remove('show'); return; }
     showTwinPopup(defect, evt);
@@ -526,6 +533,11 @@
     document.getElementById('defectLayerPill').classList.toggle('on', defectsLayerOn);
     Twin3D.setDefectsVisible(defectsLayerOn);
     document.getElementById('twinPopup').classList.remove('show');
+  });
+  document.getElementById('structureLayerPill').addEventListener('click', () => {
+    structureLayerOn = !structureLayerOn;
+    document.getElementById('structureLayerPill').classList.toggle('on', structureLayerOn);
+    Twin3D.setStructureVisible(structureLayerOn);
   });
 
   function renderTwin3D() {
@@ -537,6 +549,11 @@
     const spanLength = structureLength && totalSpans ? structureLength / totalSpans : undefined;
     Twin3D.render({ id: S.draft.structureId, type: S.draft.structureType, spans: totalSpans, spanLength, defects: markerDefects });
     Twin3D.setDefectsVisible(defectsLayerOn);
+    Twin3D.setStructureVisible(structureLayerOn);
+    const hint = document.getElementById('twinHintText');
+    hint.textContent = Twin3D.hasDefectMarkers()
+      ? 'Drag to orbit, pinch to zoom, tap a marker to preview'
+      : 'No defects have a placed 3D position yet on this structure · drag to orbit, pinch to zoom';
   }
 
   function showTwinPopup(d, evt) {
@@ -575,24 +592,34 @@
     const entries = spanDefects();
     const counts = { critical: 0, poor: 0, fair: 0, good: 0 };
     entries.forEach((d) => { if (!isPlaceholder(d)) counts[defectRowBand(d)]++; });
-    chipRow.innerHTML = ['all', 'critical', 'poor', 'fair', 'good'].map((b) => {
+    const bandChips = ['all', 'critical', 'poor', 'fair', 'good'].map((b) => {
       const label = b === 'all' ? `All · ${entries.filter((d) => !isPlaceholder(d)).length}` : `${b[0].toUpperCase()}${b.slice(1)} · ${counts[b]}`;
       return `<button class="chip${S.listFilterBand === b ? ' active' : ''}" data-band="${b}">${label}</button>`;
     }).join('');
-    chipRow.querySelectorAll('.chip').forEach((c) => c.onclick = () => { S.listFilterBand = c.dataset.band; renderDefectList(); });
+    const untouchedCount = S.elements.filter((el) => !entries.some((d) => d.elementNumber === el.no)).length;
+    const toggleChip = `<button class="chip" id="toggleUntouchedChip" style="background:var(--good-bg); border-color:var(--teal-300); color:var(--teal-700);">${S.hideUntouched ? `Show all · +${untouchedCount}` : 'Hide unrecorded'}</button>`;
+    chipRow.innerHTML = bandChips + toggleChip;
+    chipRow.querySelectorAll('.chip[data-band]').forEach((c) => c.onclick = () => { S.listFilterBand = c.dataset.band; renderDefectList(); });
+    document.getElementById('toggleUntouchedChip').onclick = () => { S.hideUntouched = !S.hideUntouched; renderDefectList(); };
 
     area.innerHTML = '';
     let lastCategory = null;
     S.elements.forEach((el) => {
+      const forElement = entries.filter((d) => d.elementNumber === el.no);
+
+      // Untouched elements (no record at all yet) only ever make sense
+      // under "All" - they have no severity band to match a chip filter -
+      // and are skipped outright when the declutter toggle is on.
+      if (forElement.length === 0 && (S.hideUntouched || S.listFilterBand !== 'all')) return;
+
+      const visible = forElement.filter((d) => S.listFilterBand === 'all' || defectRowBand(d) === S.listFilterBand);
+      if (S.listFilterBand !== 'all' && forElement.length && visible.length === 0) return;
+
       if (el.category !== lastCategory) {
         lastCategory = el.category;
         const h = document.createElement('p'); h.className = 'cat-label'; h.textContent = el.category || '';
         area.appendChild(h);
       }
-      const forElement = entries.filter((d) => d.elementNumber === el.no);
-      const visible = forElement.filter((d) => S.listFilterBand === 'all' || defectRowBand(d) === S.listFilterBand || (isPlaceholder(d) && S.listFilterBand === 'all'));
-
-      if (S.listFilterBand !== 'all' && forElement.length && visible.length === 0) return;
 
       visible.forEach((d) => area.appendChild(renderDefectRow(el, d)));
 
@@ -609,7 +636,11 @@
         }
       }
     });
-    if (area.children.length === 0) area.innerHTML = '<div class="empty-state">No defects in this band for this span.</div>';
+    if (area.children.length === 0) {
+      area.innerHTML = S.hideUntouched
+        ? '<div class="empty-state">Nothing recorded yet for this span. Tap "Show all" to review every element.</div>'
+        : '<div class="empty-state">No defects in this band for this span.</div>';
+    }
   }
   function renderDefectRow(el, d) {
     const combined = defectCombined(d);
