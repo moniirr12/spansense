@@ -463,8 +463,8 @@
     S.homeTab = tab;
     document.getElementById('tabTwinBtn').classList.toggle('active', tab === 'twin');
     document.getElementById('tabListBtn').classList.toggle('active', tab === 'list');
-    document.getElementById('twinTab').style.display = tab === 'twin' ? 'block' : 'none';
-    document.getElementById('listTab').style.display = tab === 'list' ? 'block' : 'none';
+    document.getElementById('twinTab').style.display = tab === 'twin' ? 'flex' : 'none';
+    document.getElementById('listTab').style.display = tab === 'list' ? 'flex' : 'none';
     document.getElementById('twinPopup').classList.remove('show');
     refreshViewerContent();
   }
