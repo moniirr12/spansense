@@ -471,21 +471,9 @@
   // Pauses the 3D render loop (battery) whenever the viewer+TwinView tab
   // isn't the thing actually on screen - called after every navigation and
   // every tab switch, not just once, since either can change the answer.
-  let twinRotationPaused = false;
   function updateTwinActiveState() {
-    Twin3D.setActive(stack[stack.length - 1] === 'viewer' && S.homeTab === 'twin' && !twinRotationPaused);
+    Twin3D.setActive(stack[stack.length - 1] === 'viewer' && S.homeTab === 'twin');
   }
-  const PAUSE_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
-  const PLAY_ICON = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
-  const twinPauseBtn = document.getElementById('twinPauseBtn');
-  twinPauseBtn.innerHTML = PAUSE_ICON;
-  twinPauseBtn.addEventListener('click', () => {
-    twinRotationPaused = !twinRotationPaused;
-    twinPauseBtn.innerHTML = twinRotationPaused ? PLAY_ICON : PAUSE_ICON;
-    twinPauseBtn.classList.toggle('on', !twinRotationPaused);
-    twinPauseBtn.title = twinRotationPaused ? 'Resume rotation' : 'Pause rotation';
-    updateTwinActiveState();
-  });
 
   function spanDefects() {
     return S.draft.defects.filter((d) => d.spanNumber === S.currentSpan);
@@ -564,8 +552,8 @@
     Twin3D.setStructureVisible(structureLayerOn);
     const hint = document.getElementById('twinHintText');
     hint.textContent = Twin3D.hasDefectMarkers()
-      ? 'Tap a marker to preview · auto-rotating, no drag/zoom on this view'
-      : 'No defects have a placed 3D position yet on this structure · auto-rotating, no drag/zoom';
+      ? 'Drag to orbit, pinch to zoom, tap a marker to preview'
+      : 'No defects have a placed 3D position yet on this structure · drag to orbit, pinch to zoom';
   }
 
   function showTwinPopup(d, evt) {
