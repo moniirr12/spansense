@@ -36,7 +36,7 @@ button, input, textarea{ font-family:inherit; }
    declared after these in the file, it was silently winning and leaving
    every appbar (not just Structures') flush against the very top edge. */
 .appbar.safe-top{ padding-top:calc(14px + env(safe-area-inset-top)); }
-.appbar.extra-top{ padding-top:calc(30px + env(safe-area-inset-top)); }
+.appbar.extra-top{ padding-top:calc(20px + env(safe-area-inset-top)); }
 
 /* ---------- offline banner ---------- */
 .offline-banner{
