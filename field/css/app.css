@@ -217,6 +217,12 @@ body.night-mode .no-defect-row span{ color:#8ab4b0; }
 }
 .fab svg{ width:24px; height:24px; }
 .fab:active{ transform:scale(.94); }
+/* On the viewer screen the "Save as New Inspection" bar always sits at the
+   very bottom too (see openViewer() - it's never actually re-hidden), so
+   the Add Defect FAB needs to clear its height instead of sharing the same
+   24px offset .fab uses everywhere else. ID selector so it wins regardless
+   of source order against the shared .fab rule. */
+#addDefectFab{ bottom:calc(88px + env(safe-area-inset-bottom)); }
 
 /* ---------- twinview (real 3D, see js/twin3d.js) ---------- */
 .twin-stage{ margin:0 16px 12px; border-radius:22px; background:var(--surface); border:1px solid var(--border); position:relative; overflow:hidden; height:230px; flex-shrink:0; }
