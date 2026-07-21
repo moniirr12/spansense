@@ -63,7 +63,55 @@
   }
   function goto(name) { if (stack[stack.length - 1] !== name) stack.push(name); renderStack(true); updateTwinActiveState(); }
   function back() { if (stack.length > 1) { stack.pop(); renderStack(true); } updateTwinActiveState(); }
-  document.querySelectorAll('[data-back]').forEach((btn) => btn.addEventListener('click', back));
+  // Route the on-screen back arrows through the browser's own History API
+  // instead of calling back() directly, so they and the phone's hardware/
+  // gesture back button end up on the exact same code path below (a tap
+  // and a hardware back should behave identically, not one bypass the
+  // other's exit-confirmation).
+  document.querySelectorAll('[data-back]').forEach((btn) => btn.addEventListener('click', () => history.back()));
+
+  // Keeps a single extra history entry ahead of wherever the app actually
+  // is - popstate fires (below) the moment that entry gets consumed by a
+  // back gesture, which is the hook that lets an in-app screen stack (not
+  // a real multi-page history) intercept the phone's back button instead
+  // of it just closing the PWA outright.
+  function ensureHistoryGuard() { history.pushState({ fieldGuard: true }, '', location.href); }
+  window.addEventListener('popstate', () => {
+    if (stack.length > 1) {
+      back();
+      ensureHistoryGuard();
+    } else if (confirm('Exit spanSense Field?')) {
+      // Nothing to do - let the real back navigation proceed and close/exit.
+    } else {
+      ensureHistoryGuard();
+    }
+  });
+
+  // Swipe-to-go-back: only from a thin sliver at the true left edge (12px,
+  // safely inside the 16px margin every screen's cards sit within), same
+  // convention iOS uses. Deliberately NOT a whole-screen swipe - TwinView's
+  // own drag-to-orbit (see twin3d.js) already owns horizontal drags that
+  // start in the middle of the canvas, and a screen-wide listener here
+  // would fight it for the same gesture. Routes through history.back() so
+  // it lands on the exact same popstate path as the hardware button and
+  // the on-screen arrows, rather than a fourth slightly-different way to
+  // go back.
+  (function setupEdgeSwipeBack() {
+    const EDGE_ZONE = 12, THRESHOLD = 70;
+    let tracking = false, startX = 0, startY = 0;
+    const stackEl = document.getElementById('stack');
+    stackEl.addEventListener('pointerdown', (e) => {
+      tracking = e.clientX <= EDGE_ZONE && stack.length > 1;
+      startX = e.clientX; startY = e.clientY;
+    });
+    stackEl.addEventListener('pointerup', (e) => {
+      if (!tracking) return;
+      tracking = false;
+      const dx = e.clientX - startX, dy = e.clientY - startY;
+      if (dx > THRESHOLD && Math.abs(dy) < dx * 0.6) history.back();
+    });
+    stackEl.addEventListener('pointercancel', () => { tracking = false; });
+  })();
 
   /* ============================================================
      NIGHT MODE
@@ -212,6 +260,7 @@
     S.session = { username: me?.username, fullName: me?.full_name || me?.username, role: me?.role };
     document.getElementById('screen-login').style.display = 'none';
     document.getElementById('appShell').hidden = false;
+    ensureHistoryGuard();
     updateSyncBar();
     await loadStructures();
   }
@@ -293,7 +342,7 @@
       document.getElementById('inspTitle').textContent = structure.name;
       document.getElementById('inspSubtitle').textContent = `${structure.id} · ${structure.type || 'Bridge'}`;
       document.getElementById('inspInfoSpans').textContent = structure.span_number || structure.span || '—';
-      document.getElementById('inspInfoMaterial').textContent = structure.primary_material || '—';
+      document.getElementById('inspInfoLength').textContent = structure.length ? `${parseFloat(structure.length).toFixed(1)} m` : '—';
       document.getElementById('inspInfoBuilt').textContent = structure.built_year || '—';
       document.getElementById('structureDescriptionText').textContent = structure.description || 'No description recorded.';
       renderStructureMap(structure);

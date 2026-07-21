@@ -70,6 +70,10 @@
   function calculateBCIAv(bcsValues, eifValues) {
     const bcsSum = bcsValues.reduce((s, v) => s + v, 0);
     const eifSum = eifValues.reduce((s, v) => s + v, 0);
+    // No element with a real defect yet (every EIF is 0, same "nothing
+    // recorded" case calculateBCICrit already guards) - 0/0 is NaN, not a
+    // score. Perfect condition until something is actually flagged.
+    if (eifSum === 0) return 100;
     const bcsAvg = bcsSum / eifSum;
     return 100 - 2 * ((bcsAvg ** 2) + (6.5 * bcsAvg) - 7.5);
   }
