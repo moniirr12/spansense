@@ -30,8 +30,13 @@ body{
 }
 button, input, textarea{ font-family:inherit; }
 
-.safe-top{ padding-top:calc(14px + env(safe-area-inset-top)); }
-.extra-top{ padding-top:calc(28px + env(safe-area-inset-top)); }
+/* Scoped to .appbar (not just .safe-top/.extra-top alone) so this beats
+   .appbar's own padding:0 14px 10px shorthand on specificity rather than
+   source order - that shorthand resets padding-top to 0, and since it's
+   declared after these in the file, it was silently winning and leaving
+   every appbar (not just Structures') flush against the very top edge. */
+.appbar.safe-top{ padding-top:calc(14px + env(safe-area-inset-top)); }
+.appbar.extra-top{ padding-top:calc(30px + env(safe-area-inset-top)); }
 
 /* ---------- offline banner ---------- */
 .offline-banner{
