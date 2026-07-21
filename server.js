@@ -276,6 +276,12 @@ async function initDatabase() {
         await pool.query(`ALTER TABLE inspections ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMP`);
         await pool.query(`ALTER TABLE inspections ADD COLUMN IF NOT EXISTS engineer_comments TEXT`);
 
+        // Tags which client saved this inspection - 'desktop' (the existing
+        // full inspection1.html flow) or 'field' (spanSense Field's phone
+        // capture flow). Lets reviewers tell a quick on-site draft apart
+        // from a fully-authored desktop entry at a glance.
+        await pool.query(`ALTER TABLE inspections ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'desktop'`);
+
         // Inspection spans table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS inspection_spans (
@@ -510,11 +516,12 @@ app.get('/api/inspection-dates/:structureId', requireAuth, async (req, res) => {
     try {
         const { structureId } = req.params;
         const rows = await dbAll(`
-            SELECT DISTINCT 
-                inspection_date as date, 
-                COALESCE(inspection_type, 'Inspection') as type 
-            FROM inspections 
-            WHERE structure_id = $1 
+            SELECT DISTINCT
+                inspection_date as date,
+                COALESCE(inspection_type, 'Inspection') as type,
+                source
+            FROM inspections
+            WHERE structure_id = $1
             ORDER BY inspection_date DESC
         `, [structureId]);
         res.json(rows);
@@ -1566,12 +1573,13 @@ app.post('/save-inspection', requireAuth, async (req, res) => {
         const overallBciAve  = parseFloat((bciAvs.reduce((a, b) => a + b, 0) / bciAvs.length).toFixed(2));
 
         // 1. Insert inspection with overall BCI
+        const source = inspection.source === 'field' ? 'field' : 'desktop';
         const inspectionResult = await client.query(
             `INSERT INTO inspections (
-                structure_id, structure_name, inspection_date, 
+                structure_id, structure_name, inspection_date,
                 inspection_type, inspector_name, total_spans, conclusions,
-                overall_bcicrit, overall_bciave
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
+                overall_bcicrit, overall_bciave, source
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
             [
                 inspection.structure_id,
                 inspection.structure_name,
@@ -1581,7 +1589,8 @@ app.post('/save-inspection', requireAuth, async (req, res) => {
                 inspection.total_spans,
                 inspection.conclusions || '',
                 overallBciCrit,
-                overallBciAve
+                overallBciAve,
+                source
             ]
         );
 
@@ -1943,9 +1952,9 @@ app.get('/api/inspection/full', requireAuth, async (req, res) => {
 
         // 1. Get inspection metadata
         const inspection = await dbGet(`
-            SELECT id, structure_id, structure_name, inspection_date, 
+            SELECT id, structure_id, structure_name, inspection_date,
                    inspection_type, inspector_name, total_spans, conclusions,
-                   overall_bcicrit, overall_bciave
+                   overall_bcicrit, overall_bciave, source
             FROM inspections
             WHERE structure_id = $1 AND inspection_date = $2
         `, [structure_id, date]);
@@ -2035,6 +2044,7 @@ app.get('/api/inspection/full', requireAuth, async (req, res) => {
             conclusions: inspection.conclusions,
             overallBcicrit: inspection.overall_bcicrit,
             overallBciave: inspection.overall_bciave,
+            source: inspection.source,
 
             spans: spans.map(span => ({
                 spanNumber: span.span_number,
@@ -3099,7 +3109,7 @@ app.get('/api/inspections', requireAuth, async (req, res) => {
         const rows = await dbAll(`
             SELECT id, structure_id, structure_name, inspection_date,
                     inspection_type, inspector_name, total_spans,
-                    created_at, conclusions, overall_bcicrit, overall_bciave,
+                    created_at, conclusions, overall_bcicrit, overall_bciave, source,
                     (SELECT COUNT(*) FROM defects WHERE defects.inspection_id = inspections.id) AS defect_count
             FROM inspections
             ORDER BY inspection_date DESC

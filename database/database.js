@@ -54,6 +54,7 @@
             { id: 'bcicrit',  label: 'BCI<sub>crit</sub>', key: 'overall_bcicrit',checked: true },
             { id: 'type',     label: 'Type',            key: 'inspection_type',checked: true },
             { id: 'tspans',   label: 'Total spans',     key: 'total_spans',    checked: false },
+            { id: 'source',   label: 'Source',          key: 'source',        checked: false },
         ],
         reports: [
             { id: 'id',       label: 'Report ID',       key: 'id',             checked: true },
@@ -360,7 +361,8 @@
                 { label: 'BCI<sub>avg</sub>', sortable: true, key: 'overall_bciave' },
                 { label: 'BCI<sub>crit</sub>', sortable: true, key: 'overall_bcicrit' },
                 { label: 'Type', sortable: false },
-                { label: 'Total Spans', sortable: false }
+                { label: 'Total Spans', sortable: false },
+                { label: 'Source', sortable: false }
             ],
             reports: [
                 { label: 'Report ID', sortable: true, key: 'id' },
@@ -479,6 +481,8 @@
         // Filter data
         filteredInspectionsData = inspectionsData.filter(function(row) {
             if (currentFilter === 'all') return true;
+            if (currentFilter === 'src-field') return row.source === 'field';
+            if (currentFilter === 'src-desktop') return (row.source || 'desktop') === 'desktop';
             return row.inspection_type === currentFilter;
         });
 
@@ -505,7 +509,7 @@
         var rowsHtml = '';
 
         if (totalRecords === 0) {
-            rowsHtml = '<tr><td colspan="10" style="text-align:center;padding:40px;color:#8a9ba8;">' +
+            rowsHtml = '<tr><td colspan="11" style="text-align:center;padding:40px;color:#8a9ba8;">' +
                 '<i class="fas fa-database" style="font-size:2rem;margin-bottom:12px;display:block;"></i>' +
                 'No inspections found</td></tr>';
         } else {
@@ -514,6 +518,11 @@
                 var bciAv   = row.overall_bciave   != null ? Math.round(parseFloat(row.overall_bciave))   : '--';
                 var bciCrit = row.overall_bcicrit  != null ? Math.round(parseFloat(row.overall_bcicrit))  : '--';
                 var isChecked = selectedIds.inspections.has(String(row.id)) ? ' checked' : '';
+                var isField = row.source === 'field';
+                var sourceBadge = '<span style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:20px;' +
+                    (isField ? 'background:#eef4f2;color:#5b8c8a;' : 'background:#f1f3f5;color:#6a7c8e;') + '">' +
+                    '<i class="fas ' + (isField ? 'fa-mobile-screen-button' : 'fa-desktop') + '"></i>' +
+                    (isField ? 'Field' : 'Desktop') + '</span>';
 
                 rowsHtml += '<tr>' +
                     '<td class="col-check"><input type="checkbox" class="row-check" data-id="' + row.id + '"' + isChecked + '></td>' +
@@ -526,6 +535,7 @@
                     '<td><span style="color:#e8a87c;font-weight:600;">' + bciCrit + '</span></td>' +
                     '<td><span class="type-circle" style="background:' + typeMeta.color + '"><i class="fas ' + typeMeta.icon + '"></i></span>' + typeMeta.label + '</td>' +
                     '<td>' + (row.total_spans || '0') + '</td>' +
+                    '<td>' + sourceBadge + '</td>' +
                 '</tr>';
             });
         }
@@ -808,7 +818,9 @@
                 { id: 'all', icon: 'fa-check', label: 'All Inspections' },
                 { id: 'GI', icon: 'fa-chart-line', label: 'General (GI)', color: '#8ab4b0' },
                 { id: 'PI', icon: 'fa-building', label: 'Principal (PI)', color: '#5b8c8a' },
-                { id: 'SI', icon: 'fa-eye', label: 'Safety (SI)', color: '#eab308' }
+                { id: 'SI', icon: 'fa-eye', label: 'Safety (SI)', color: '#eab308' },
+                { id: 'src-field', icon: 'fa-mobile-screen-button', label: 'From Field', color: '#5b8c8a' },
+                { id: 'src-desktop', icon: 'fa-desktop', label: 'From Desktop', color: '#6a7c8e' }
             ],
             reports: [
                 { id: 'all', icon: 'fa-check', label: 'All Reports' },
@@ -1145,7 +1157,9 @@
                 { id: 'all', icon: 'fa-check', label: 'All Inspections' },
                 { id: 'GI', icon: 'fa-chart-line', label: 'General (GI)', color: '#8ab4b0' },
                 { id: 'PI', icon: 'fa-building', label: 'Principal (PI)', color: '#5b8c8a' },
-                { id: 'SI', icon: 'fa-eye', label: 'Safety (SI)', color: '#eab308' }
+                { id: 'SI', icon: 'fa-eye', label: 'Safety (SI)', color: '#eab308' },
+                { id: 'src-field', icon: 'fa-mobile-screen-button', label: 'From Field', color: '#5b8c8a' },
+                { id: 'src-desktop', icon: 'fa-desktop', label: 'From Desktop', color: '#6a7c8e' }
             ],
             reports: [
                 { id: 'all', icon: 'fa-check', label: 'All Reports' },

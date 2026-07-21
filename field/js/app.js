@@ -315,9 +315,10 @@
       const row = document.createElement('div');
       row.className = 'insp-row';
       row.onclick = () => openInspectionForEdit(insp.date);
+      const fieldBadge = insp.source === 'field' ? '<span class="field-source-badge">Field</span>' : '';
       row.innerHTML = `
         <div class="type-dot" style="background:${meta.color};">${meta.label.split(' ')[0].slice(0, 2).toUpperCase()}</div>
-        <div class="insp-main"><div class="i-title">${meta.label}</div><div class="i-sub">${formatDate(insp.date)}</div></div>
+        <div class="insp-main"><div class="i-title">${meta.label} ${fieldBadge}</div><div class="i-sub">${formatDate(insp.date)}</div></div>
         <div class="insp-status">View / Edit</div>`;
       area.appendChild(row);
     });
@@ -1023,6 +1024,7 @@
         inspector_name: S.session?.fullName || S.session?.username || 'Field inspector',
         total_spans: S.draft.totalSpans,
         conclusions: S.draft.conclusions || '',
+        source: 'field',
         spans: spansPayload
       };
       const defects = S.draft.defects.map((d) => ({
@@ -1073,7 +1075,7 @@
         const inspection = {
           structure_id: structureId, structure_name: S.draft.structureName, inspection_date: dateStr,
           inspection_type: S.draft.inspectionType, inspector_name: S.session?.fullName || S.session?.username || 'Field inspector',
-          total_spans: S.draft.totalSpans, conclusions: S.draft.conclusions || '', spans: spansPayload
+          total_spans: S.draft.totalSpans, conclusions: S.draft.conclusions || '', source: 'field', spans: spansPayload
         };
         const defects = S.draft.defects.map((d) => ({
           spanNumber: d.spanNumber, elementNumber: d.elementNumber, defectType: d.defectType, defectNumber: d.defectNumber,
