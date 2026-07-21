@@ -1243,6 +1243,22 @@ html.night-mode .glass-scrollbar .thumb {
     color: #c47070;
 }
 
+/* ID selectors here so these reliably beat .pr-critical-toggle.active's red
+   regardless of source order (that base rule was written only with the
+   Critical-only button in mind, and equal-specificity class rules resolve
+   by order, not intent - see the appbar padding-top bug in spanSense Field
+   for what happens when that's left to chance). */
+#pendingReviewFieldToggle:hover { border-color: #5b8c8a; color: #5b8c8a; }
+#pendingReviewFieldToggle.active { background: #eef4f2; border-color: #5b8c8a; color: #5b8c8a; }
+.night-mode #pendingReviewFieldToggle:hover { border-color: #8ab4b0; color: #8ab4b0; }
+.night-mode #pendingReviewFieldToggle.active { background: #1e3a3e; border-color: #8ab4b0; color: #8ab4b0; }
+
+.pr-field-badge {
+    display: inline-flex; align-items: center; gap: 4px; font-size: 0.65rem; font-weight: 700;
+    padding: 2px 8px; border-radius: 10px; background: #eef4f2; color: #5b8c8a; vertical-align: middle;
+}
+.night-mode .pr-field-badge { background: #1e3a3e; color: #8ab4b0; }
+
 .night-mode .pending-review-filters { border-bottom-color: #2f3e45; }
 .night-mode .pr-search-wrap input { background: #1e2a2f; border-color: #3a4b53; color: #d4dfe3; }
 .night-mode .pr-search-wrap input:focus { border-color: #8ab4b0; }

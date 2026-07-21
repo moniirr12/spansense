@@ -821,16 +821,18 @@ function getPendingReviewFilters() {
     return {
         search: (document.getElementById('pendingReviewSearch')?.value || '').trim().toLowerCase(),
         type: document.querySelector('#pendingReviewTypeFilter .chart-toggle-btn.active')?.dataset.type || 'all',
-        criticalOnly: document.getElementById('pendingReviewCriticalToggle')?.classList.contains('active') || false
+        criticalOnly: document.getElementById('pendingReviewCriticalToggle')?.classList.contains('active') || false,
+        fieldOnly: document.getElementById('pendingReviewFieldToggle')?.classList.contains('active') || false
     };
 }
 
 function applyPendingReviewFilters() {
-    const { search, type, criticalOnly } = getPendingReviewFilters();
+    const { search, type, criticalOnly, fieldOnly } = getPendingReviewFilters();
 
     const filtered = pendingReviewData.filter(item => {
         if (type !== 'all' && item.inspection_type !== type) return false;
         if (criticalOnly && !(item.overall_bcicrit !== null && item.overall_bcicrit < 50)) return false;
+        if (fieldOnly && item.source !== 'field') return false;
         if (search) {
             const haystack = ((item.structure_name || '') + ' ' + (item.inspector_name || '') + ' ' + item.structure_id).toLowerCase();
             if (!haystack.includes(search)) return false;
@@ -922,13 +924,16 @@ function renderPendingReview(data) {
         const initials = getInitials(item.inspector_name);
         const inspector = item.inspector_name || 'Unknown';
 
+        const fieldBadge = item.source === 'field'
+            ? '<span class="pr-field-badge" title="Saved from spanSense Field"><i class="fas fa-mobile-screen-button"></i> Field</span>'
+            : '';
         return `
             <tr>
                 <td>
                     <div class="pr-structure-cell">
                         <div class="activity-avatar activity-avatar-${tier.avatarColor}">${initials}</div>
                         <div class="activity-content">
-                            <div class="activity-title">${item.structure_name || 'Structure ' + item.structure_id}</div>
+                            <div class="activity-title">${item.structure_name || 'Structure ' + item.structure_id} ${fieldBadge}</div>
                         </div>
                     </div>
                 </td>
@@ -1035,6 +1040,11 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     document.getElementById('pendingReviewCriticalToggle')?.addEventListener('click', function () {
+        this.classList.toggle('active');
+        applyPendingReviewFilters();
+    });
+
+    document.getElementById('pendingReviewFieldToggle')?.addEventListener('click', function () {
         this.classList.toggle('active');
         applyPendingReviewFilters();
     });
