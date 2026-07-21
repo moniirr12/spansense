@@ -819,8 +819,8 @@
                 { id: 'GI', icon: 'fa-chart-line', label: 'General (GI)', color: '#8ab4b0' },
                 { id: 'PI', icon: 'fa-building', label: 'Principal (PI)', color: '#5b8c8a' },
                 { id: 'SI', icon: 'fa-eye', label: 'Safety (SI)', color: '#eab308' },
-                { id: 'src-field', icon: 'fa-mobile-screen-button', label: 'From Field', color: '#5b8c8a' },
-                { id: 'src-desktop', icon: 'fa-desktop', label: 'From Desktop', color: '#6a7c8e' }
+                { id: 'src-field', icon: 'fa-mobile-screen-button', label: 'Field', color: '#5b8c8a' },
+                { id: 'src-desktop', icon: 'fa-desktop', label: 'Desktop', color: '#6a7c8e' }
             ],
             reports: [
                 { id: 'all', icon: 'fa-check', label: 'All Reports' },
@@ -1158,8 +1158,8 @@
                 { id: 'GI', icon: 'fa-chart-line', label: 'General (GI)', color: '#8ab4b0' },
                 { id: 'PI', icon: 'fa-building', label: 'Principal (PI)', color: '#5b8c8a' },
                 { id: 'SI', icon: 'fa-eye', label: 'Safety (SI)', color: '#eab308' },
-                { id: 'src-field', icon: 'fa-mobile-screen-button', label: 'From Field', color: '#5b8c8a' },
-                { id: 'src-desktop', icon: 'fa-desktop', label: 'From Desktop', color: '#6a7c8e' }
+                { id: 'src-field', icon: 'fa-mobile-screen-button', label: 'Field', color: '#5b8c8a' },
+                { id: 'src-desktop', icon: 'fa-desktop', label: 'Desktop', color: '#6a7c8e' }
             ],
             reports: [
                 { id: 'all', icon: 'fa-check', label: 'All Reports' },
