@@ -96,6 +96,13 @@ button, input, textarea{ font-family:inherit; }
 
 .field-label{ font-size:11.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-faint); display:block; margin-bottom:8px; }
 .field-static{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px 14px; font-size:14px; font-weight:600; }
+.field-chip-select{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  background:var(--surface); border:1px solid var(--border); border-radius:14px;
+  padding:12px 14px; font-size:13.5px; font-weight:600; color:var(--ink); cursor:pointer; text-align:left;
+}
+.field-chip-select:active{ border-color:var(--teal-300); }
+.field-chip-select svg{ width:18px; height:18px; flex-shrink:0; }
 .field-row{ display:flex; align-items:center; gap:6px; }
 .field-input{
   flex:1; border:1px solid var(--border); background:var(--surface); color:var(--ink);
@@ -329,3 +336,19 @@ body.night-mode .edit-banner{ background:#3a2f1a; border-color:#5a4a2a; color:#e
 .confirm-message{ font-size:13px; line-height:1.5; color:var(--ink-dim); margin:0 0 20px; }
 .confirm-actions{ display:flex; gap:10px; }
 .confirm-actions .btn{ flex:1; padding:11px; }
+
+/* ---------- desktop-browser testing: box into a phone-sized frame ---------
+   On an actual phone this media query never matches - viewport width IS the
+   phone. It only kicks in when this PWA is opened in a regular desktop
+   browser window, where the app would otherwise stretch edge-to-edge (a
+   230px-tall 3D canvas becomes a bizarrely wide, distorted-aspect-ratio
+   strip at 1900px wide, etc). Boxing it reads as "this is a mobile app",
+   not broken. */
+@media (min-width:560px){
+  body{ display:flex; align-items:center; justify-content:center; background:#0e1614; }
+  .app-shell, .screen#screen-login{
+    position:relative; inset:auto; width:412px; height:min(880px, 96vh);
+    border-radius:32px; overflow:hidden; box-shadow:0 30px 80px rgba(0,0,0,.5);
+  }
+  .offline-banner{ border-radius:0 0 14px 14px; width:412px; left:50%; right:auto; transform:translateX(-50%); }
+}

@@ -611,7 +611,7 @@
       btn.className = 'field-chip-select';
       btn.style.width = '100%';
       btn.innerHTML = `<span style="display:flex; align-items:center; gap:9px;"><span style="width:8px; height:8px; border-radius:50%; background:${o.color}; flex-shrink:0;"></span>${o.label}</span>` +
-        (selected ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="color:var(--teal-500);"><path d="M5 13l4 4L19 7"/></svg>' : '');
+        (selected ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="color:var(--teal-500);"><path d="M5 13l4 4L19 7"/></svg>' : '');
       btn.onclick = () => {
         S.draft.inspectionType = o.label;
         wrap.remove();
@@ -677,10 +677,10 @@
     const bc1 = FieldBCI.BAND_COLORS[FieldBCI.bandFromScore(bciAv)];
     const bc2 = FieldBCI.BAND_COLORS[FieldBCI.bandFromScore(bciCrit)];
     avVal.textContent = bciAv.toFixed(1); avVal.style.color = bc1.c;
-    avBand.textContent = FieldBCI.bandFromScore(bciAv).replace(/^./, (c) => c.toUpperCase());
+    avBand.textContent = FieldBCI.BAND_LABELS[FieldBCI.bandFromScore(bciAv)];
     avBand.style.background = bc1.bg; avBand.style.color = bc1.c;
     critVal.textContent = bciCrit.toFixed(1); critVal.style.color = bc2.c;
-    critBand.textContent = FieldBCI.bandFromScore(bciCrit).replace(/^./, (c) => c.toUpperCase());
+    critBand.textContent = FieldBCI.BAND_LABELS[FieldBCI.bandFromScore(bciCrit)];
     critBand.style.background = bc2.bg; critBand.style.color = bc2.c;
   }
 
