@@ -79,6 +79,7 @@
     document.body.classList.toggle('night-mode');
     localStorage.setItem('nightMode', document.body.classList.contains('night-mode') ? 'on' : 'off');
     renderNightIcon();
+    refreshMapTileForNightMode();
   });
   renderNightIcon();
 
@@ -234,7 +235,7 @@
       S.structures = await Api.getBridges();
       noteRequestSucceeded();
       document.getElementById('structuresSubtitle').textContent =
-        `${S.structures.length} assigned to you`;
+        `${S.structures.length} total`;
       renderStructures();
     } catch (err) {
       area.innerHTML = `<div class="empty-state">${err.offline ? 'Offline — no cached structures yet.' : 'Could not load structures.'}</div>`;
@@ -294,6 +295,8 @@
       document.getElementById('inspInfoSpans').textContent = structure.span_number || structure.span || '—';
       document.getElementById('inspInfoMaterial').textContent = structure.primary_material || '—';
       document.getElementById('inspInfoBuilt').textContent = structure.built_year || '—';
+      document.getElementById('structureDescriptionText').textContent = structure.description || 'No description recorded.';
+      renderStructureMap(structure);
       renderInspectionRows();
     } catch (err) {
       document.getElementById('inspectionRows').innerHTML =
@@ -322,6 +325,43 @@
   function formatDate(d) {
     try { return new Date(d).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' }); }
     catch { return d; }
+  }
+
+  /* --- Structure location map (Leaflet, same tile sources as desktop's Map page) --- */
+  let structureMapInstance = null, structureMapMarker = null, structureMapTileLayer = null;
+  const structureMapPinIcon = L.divIcon({
+    className: 'structure-map-pin',
+    html: '<svg viewBox="0 0 24 24" fill="#5b8c8a" stroke="#ffffff" stroke-width="1.5"><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.6" fill="#fff"/></svg>',
+    iconSize: [30, 30], iconAnchor: [15, 30]
+  });
+  function refreshMapTileForNightMode() {
+    if (!structureMapInstance) return;
+    if (structureMapTileLayer) structureMapInstance.removeLayer(structureMapTileLayer);
+    const isNight = document.body.classList.contains('night-mode');
+    structureMapTileLayer = isNight
+      ? L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { subdomains: 'abcd', maxZoom: 19, attribution: '&copy; OpenStreetMap &copy; CARTO' })
+      : L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' });
+    structureMapTileLayer.addTo(structureMapInstance);
+  }
+  function renderStructureMap(structure) {
+    const card = document.getElementById('structureMapCard');
+    const lat = structure.latitude != null ? parseFloat(structure.latitude) : null;
+    const lng = structure.longitude != null ? parseFloat(structure.longitude) : null;
+    if (lat == null || lng == null || Number.isNaN(lat) || Number.isNaN(lng)) { card.hidden = true; return; }
+    card.hidden = false;
+    document.getElementById('structureLatLong').textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    if (!structureMapInstance) {
+      structureMapInstance = L.map('structureMap', { scrollWheelZoom: false }).setView([lat, lng], 15);
+      refreshMapTileForNightMode();
+      structureMapMarker = L.marker([lat, lng], { icon: structureMapPinIcon }).addTo(structureMapInstance);
+    } else {
+      structureMapMarker.setLatLng([lat, lng]);
+      structureMapInstance.setView([lat, lng], 15);
+    }
+    // Leaflet sizes itself off the container's on-screen dimensions at
+    // creation time - if the screen was still off-canvas (mid slide-in
+    // transform) at that moment, the map renders squashed until nudged.
+    setTimeout(() => structureMapInstance && structureMapInstance.invalidateSize(), 300);
   }
   document.getElementById('newInspectionFab').addEventListener('click', () => startBlankInspection());
 
@@ -429,7 +469,7 @@
     S.hideUntouched = !!S.draft.baseDate;
     if (S.draft.baseDate) {
       document.getElementById('editBanner').querySelector('span').innerHTML =
-        `Editing a copy of <strong>${inspTypeMeta(S.draft.baseType).label}, ${formatDate(S.draft.baseDate)}</strong> — saving creates a <strong>new</strong> inspection dated today.`;
+        `Copy of <strong>${inspTypeMeta(S.draft.baseType).label}, ${formatDate(S.draft.baseDate)}</strong> → saves as new.`;
     }
     renderSpanTabs();
     setHomeTab('twin');
@@ -592,13 +632,15 @@
     const entries = spanDefects();
     const counts = { critical: 0, poor: 0, fair: 0, good: 0 };
     entries.forEach((d) => { if (!isPlaceholder(d)) counts[defectRowBand(d)]++; });
-    const bandChips = ['all', 'critical', 'poor', 'fair', 'good'].map((b) => {
+    const bandChip = (b) => {
       const label = b === 'all' ? `All · ${entries.filter((d) => !isPlaceholder(d)).length}` : `${b[0].toUpperCase()}${b.slice(1)} · ${counts[b]}`;
       return `<button class="chip${S.listFilterBand === b ? ' active' : ''}" data-band="${b}">${label}</button>`;
-    }).join('');
+    };
     const untouchedCount = S.elements.filter((el) => !entries.some((d) => d.elementNumber === el.no)).length;
-    const toggleChip = `<button class="chip" id="toggleUntouchedChip" style="background:var(--good-bg); border-color:var(--teal-300); color:var(--teal-700);">${S.hideUntouched ? `Show all · +${untouchedCount}` : 'Hide unrecorded'}</button>`;
-    chipRow.innerHTML = bandChips + toggleChip;
+    const eyeIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+    const eyeOffIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+    const toggleChip = `<button class="chip chip-icon${S.hideUntouched ? '' : ' active'}" id="toggleUntouchedChip" title="${S.hideUntouched ? `Show all (${untouchedCount} hidden)` : 'Hide unrecorded elements'}">${S.hideUntouched ? eyeOffIcon : eyeIcon}</button>`;
+    chipRow.innerHTML = bandChip('all') + toggleChip + ['critical', 'poor', 'fair', 'good'].map(bandChip).join('');
     chipRow.querySelectorAll('.chip[data-band]').forEach((c) => c.onclick = () => { S.listFilterBand = c.dataset.band; renderDefectList(); });
     document.getElementById('toggleUntouchedChip').onclick = () => { S.hideUntouched = !S.hideUntouched; renderDefectList(); };
 
