@@ -3247,7 +3247,7 @@ app.get('/api/inspections/pending-review', requireAuth, requireEngineer, async (
     try {
         const rows = await dbAll(`
             SELECT id, structure_id, structure_name, inspection_date, inspection_type,
-                   inspector_name, conclusions, overall_bcicrit, overall_bciave, created_at
+                   inspector_name, conclusions, overall_bcicrit, overall_bciave, created_at, source
             FROM inspections
             WHERE status = 'submitted'
             ORDER BY created_at ASC
