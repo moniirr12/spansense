@@ -386,10 +386,9 @@
                 html += '<th>' + col.label + '</th>';
             }
         });
-        // Only Reports has real per-row action buttons (Bridges and
-        // Inspections have no actions column), so only it gets a trailing
-        // header cell.
-        if (cat === 'reports') html += '<th></th>';
+        // Bridges has no per-row actions column; Reports and Inspections
+        // both get a trailing header cell for their action buttons.
+        if (cat === 'reports' || cat === 'inspections') html += '<th></th>';
         html += '</tr>';
         thead.innerHTML = html;
         // This replaces the header - including the #selectAll checkbox - with
@@ -509,7 +508,7 @@
         var rowsHtml = '';
 
         if (totalRecords === 0) {
-            rowsHtml = '<tr><td colspan="11" style="text-align:center;padding:40px;color:#8a9ba8;">' +
+            rowsHtml = '<tr><td colspan="12" style="text-align:center;padding:40px;color:#8a9ba8;">' +
                 '<i class="fas fa-database" style="font-size:2rem;margin-bottom:12px;display:block;"></i>' +
                 'No inspections found</td></tr>';
         } else {
@@ -536,6 +535,9 @@
                     '<td><span class="type-circle" style="background:' + typeMeta.color + '"><i class="fas ' + typeMeta.icon + '"></i></span>' + typeMeta.label + '</td>' +
                     '<td>' + (row.total_spans || '0') + '</td>' +
                     '<td>' + sourceBadge + '</td>' +
+                    '<td><div class="row-actions">' +
+                        '<button title="Edit inspection" onclick="editInspectionRow(' + row.id + ')" class="btn-report"><i class="fas fa-pen"></i></button>' +
+                    '</div></td>' +
                 '</tr>';
             });
         }
@@ -1574,6 +1576,30 @@
             '<div class="activity-time">Just now</div>';
         list.insertBefore(item, list.firstChild);
     }
+
+    // ============================================
+    // INSPECTION ACTIONS
+    // ============================================
+    // Same deep-link the Pending Review modal's "Edit Report" link uses
+    // (see dashboard.js's reviewEditFullLink) to jump straight into the
+    // real inspection editor - most useful for a Field-sourced row, since
+    // that's the one most likely to need a proper defect-by-defect pass,
+    // but works the same for any inspection here.
+    window.editInspectionRow = function(inspectionId) {
+        var row = inspectionsData.find(function(i) { return i.id === inspectionId; });
+        if (!row) { showToast('Inspection not found', 'error'); return; }
+        var dateOnly = (row.inspection_date || '').split('T')[0];
+        sessionStorage.removeItem('inspectionData');
+        sessionStorage.removeItem('defects');
+        sessionStorage.removeItem('photoData');
+        sessionStorage.removeItem('selectedSpan');
+        sessionStorage.setItem('inspectionStructureNumber', row.structure_id);
+        sessionStorage.setItem('inspectionDate', dateOnly);
+        sessionStorage.setItem('inspectionMode', 'edit');
+        sessionStorage.setItem('structureId', row.structure_id);
+        sessionStorage.setItem('structureName', row.structure_name);
+        window.open('../inspection1/inspection1.html', '_blank');
+    };
 
     // ============================================
     // REPORT ACTIONS (unchanged logic)
