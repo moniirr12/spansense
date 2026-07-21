@@ -589,6 +589,41 @@
     updateTwinActiveState();
   }
 
+  // The new draft defaults to whatever type the copied-from inspection was
+  // (or General Inspection for a blank one), but that's often not what
+  // today's visit actually is - this lets it be changed at any point while
+  // editing, not just locked in from the start.
+  document.getElementById('viewerMenuBtn').addEventListener('click', openInspectionTypePicker);
+  function openInspectionTypePicker() {
+    const options = [INSP_TYPE_META.GI, INSP_TYPE_META.PI, INSP_TYPE_META.SI];
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:500; display:flex; align-items:flex-end;';
+    wrap.innerHTML = `
+      <div style="background:var(--surface); width:100%; border-radius:20px 20px 0 0; padding:20px 18px calc(20px + env(safe-area-inset-bottom));">
+        <div class="field-label" style="margin-bottom:12px;">Inspection type for this draft</div>
+        <div id="typePickerOptions" style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px;"></div>
+        <button class="btn btn-secondary btn-block" id="typePickerCancel">Cancel</button>
+      </div>`;
+    const optsContainer = wrap.querySelector('#typePickerOptions');
+    options.forEach((o) => {
+      const selected = inspTypeMeta(S.draft.inspectionType).label === o.label;
+      const btn = document.createElement('button');
+      btn.className = 'field-chip-select';
+      btn.style.width = '100%';
+      btn.innerHTML = `<span style="display:flex; align-items:center; gap:9px;"><span style="width:8px; height:8px; border-radius:50%; background:${o.color}; flex-shrink:0;"></span>${o.label}</span>` +
+        (selected ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="color:var(--teal-500);"><path d="M5 13l4 4L19 7"/></svg>' : '');
+      btn.onclick = () => {
+        S.draft.inspectionType = o.label;
+        wrap.remove();
+        refreshViewerContent();
+      };
+      optsContainer.appendChild(btn);
+    });
+    wrap.querySelector('#typePickerCancel').onclick = () => wrap.remove();
+    wrap.addEventListener('click', (e) => { if (e.target === wrap) wrap.remove(); });
+    document.body.appendChild(wrap);
+  }
+
   document.getElementById('tabTwinBtn').addEventListener('click', () => setHomeTab('twin'));
   document.getElementById('tabListBtn').addEventListener('click', () => setHomeTab('list'));
   function setHomeTab(tab) {
