@@ -45,6 +45,32 @@
     toastTimer = setTimeout(() => el.classList.remove('show'), ms);
   }
 
+  // spanSense-styled stand-in for window.confirm() - same yes/no contract
+  // (resolves true/false), just not a native OS alert. Backdrop tap counts
+  // as Cancel.
+  function showConfirmModal({ title, message, confirmLabel = 'Confirm', cancelLabel = 'Cancel' }) {
+    const overlay = document.getElementById('confirmOverlay');
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmMessage').textContent = message || '';
+    const okBtn = document.getElementById('confirmOkBtn');
+    const cancelBtn = document.getElementById('confirmCancelBtn');
+    okBtn.textContent = confirmLabel;
+    cancelBtn.textContent = cancelLabel;
+    overlay.classList.add('show');
+    overlay.hidden = false;
+    return new Promise((resolve) => {
+      function done(result) {
+        overlay.classList.remove('show');
+        overlay.hidden = true;
+        okBtn.onclick = null; cancelBtn.onclick = null; overlay.onclick = null;
+        resolve(result);
+      }
+      okBtn.onclick = () => done(true);
+      cancelBtn.onclick = () => done(false);
+      overlay.onclick = (e) => { if (e.target === overlay) done(false); };
+    });
+  }
+
   /* ============================================================
      NAVIGATION STACK
      ============================================================ */
@@ -76,15 +102,26 @@
   // a real multi-page history) intercept the phone's back button instead
   // of it just closing the PWA outright.
   function ensureHistoryGuard() { history.pushState({ fieldGuard: true }, '', location.href); }
+  // showConfirmModal() isn't blocking like window.confirm() was, so a
+  // second back-tap landing while it's still open needs its own guard
+  // (awaitingExitConfirm) - and the confirmed exit itself replays through
+  // history.back() to actually consume that guard, so exitConfirmed marks
+  // that replay as "let it through" rather than popping up a second modal.
+  let awaitingExitConfirm = false, exitConfirmed = false;
   window.addEventListener('popstate', () => {
     if (stack.length > 1) {
       back();
       ensureHistoryGuard();
-    } else if (confirm('Exit spanSense Field?')) {
-      // Nothing to do - let the real back navigation proceed and close/exit.
-    } else {
-      ensureHistoryGuard();
+      return;
     }
+    if (exitConfirmed) return;
+    ensureHistoryGuard();
+    if (awaitingExitConfirm) return;
+    awaitingExitConfirm = true;
+    showConfirmModal({ title: 'Exit spanSense Field?', confirmLabel: 'Exit', cancelLabel: 'Stay' }).then((confirmed) => {
+      awaitingExitConfirm = false;
+      if (confirmed) { exitConfirmed = true; history.back(); }
+    });
   });
 
   // Swipe-to-go-back: only from a thin sliver at the true left edge (12px,
@@ -132,7 +169,12 @@
   renderNightIcon();
 
   document.getElementById('accountBtn').addEventListener('click', async () => {
-    if (confirm(`Signed in as ${S.session ? S.session.username : ''}. Sign out?`)) {
+    const confirmed = await showConfirmModal({
+      title: 'Sign out?',
+      message: `Signed in as ${S.session ? S.session.username : ''}.`,
+      confirmLabel: 'Sign out'
+    });
+    if (confirmed) {
       try { await Api.logout(); } catch {}
       location.reload();
     }
@@ -757,8 +799,8 @@
     row.innerHTML = `
       <div class="item-badge">${el.no}</div>
       <div class="row-main"><div class="desc">${escapeHtml(d.elementDescription || el.description)}</div><div class="sub">${escapeHtml(el.description)} · ${combined}</div></div>
-      <span class="extent-pill">${d.extent}</span>
-      <div class="sev-dot" style="background:${colorMap[band]};">${d.severity}</div>`;
+      <div class="sev-dot" style="background:${colorMap[band]};">${d.severity}</div>
+      <span class="extent-pill">${d.extent}</span>`;
     return row;
   }
   function renderQuickActionsRow(el) {
@@ -985,9 +1027,14 @@
     return S.draft.defects.some((d) => d.spanNumber === S.currentSpan && d.elementNumber === elementNo);
   }
 
-  document.getElementById('defectDeleteBtn').addEventListener('click', () => {
+  document.getElementById('defectDeleteBtn').addEventListener('click', async () => {
     if (!S.currentDefectKey) { back(); return; }
-    if (!confirm('Remove this defect from the draft?')) return;
+    const confirmed = await showConfirmModal({
+      title: 'Remove this defect?',
+      message: 'It will be removed from this draft.',
+      confirmLabel: 'Remove'
+    });
+    if (!confirmed) return;
     const idx = S.draft.defects.findIndex((x) => x.key === S.currentDefectKey);
     if (idx >= 0) {
       S.draft.defects[idx].photos.forEach((p) => URL.revokeObjectURL(p.localUrl));
