@@ -30,7 +30,13 @@ body{
 }
 button, input, textarea{ font-family:inherit; }
 
-.safe-top{ padding-top:calc(14px + env(safe-area-inset-top)); }
+/* Scoped to .appbar (not just .safe-top/.extra-top alone) so this beats
+   .appbar's own padding:0 14px 10px shorthand on specificity rather than
+   source order - that shorthand resets padding-top to 0, and since it's
+   declared after these in the file, it was silently winning and leaving
+   every appbar (not just Structures') flush against the very top edge. */
+.appbar.safe-top{ padding-top:calc(14px + env(safe-area-inset-top)); }
+.appbar.extra-top{ padding-top:calc(20px + env(safe-area-inset-top)); }
 
 /* ---------- offline banner ---------- */
 .offline-banner{
@@ -49,6 +55,7 @@ button, input, textarea{ font-family:inherit; }
   padding:24px;
 }
 .login-wrap{ width:100%; max-width:360px; }
+.login-bridge-art{ display:block; width:100%; max-width:220px; margin:0 auto 18px; }
 .login-logo{ font-size:26px; font-weight:800; color:#fff; text-align:center; margin-bottom:6px; }
 .login-logo span{ display:block; font-size:13px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,.75); margin-top:2px; }
 .login-sub{ text-align:center; color:rgba(255,255,255,.85); font-size:13.5px; margin:0 0 28px; }
@@ -128,6 +135,8 @@ body.night-mode .span-tab.active{ background:#1e3a3e; border-color:#3a5a56; colo
 }
 .chip.active{ background:var(--good-bg); border-color:var(--teal-300); color:var(--teal-700); }
 body.night-mode .chip.active{ background:#1e3a3e; border-color:#3a5a56; color:#8ab4b0; }
+.chip-icon{ padding:7px 10px; display:flex; align-items:center; }
+.chip-icon svg{ width:15px; height:15px; display:block; }
 
 .scrollarea{ flex:1; overflow-y:auto; padding-bottom:110px; -webkit-overflow-scrolling:touch; }
 /* #twinTab/#listTab are toggled to display:flex in JS - flex-direction and
@@ -174,7 +183,21 @@ body.night-mode .no-defect-row{ background:#1e3a3e; }
 body.night-mode .no-defect-row span{ color:#8ab4b0; }
 .no-defect-row button{ margin-left:auto; border:none; background:none; color:var(--ink-dim); font-size:11px; font-weight:700; cursor:pointer; }
 
-.info-strip{ display:flex; margin:0 16px 14px; background:var(--surface); border:1px solid var(--border); border-radius:18px; overflow:hidden; flex-shrink:0; }
+.inspections-scroll{ padding-left:16px; padding-right:16px; }
+.inspections-scroll .insp-row{ margin-left:0; margin-right:0; }
+.inspections-scroll .cat-label{ margin-left:0; margin-right:0; }
+.inspections-scroll .empty-state{ padding-left:0; padding-right:0; }
+.map-card{ margin:0 0 14px; background:var(--surface); border:1px solid var(--border); border-radius:18px; overflow:hidden; }
+#structureMap{ height:170px; width:100%; background:var(--surface-2); }
+.map-latlong{
+  padding:8px 14px; font-size:11.5px; font-family:'SFMono-Regular',Consolas,monospace; color:var(--ink-dim);
+  border-top:1px solid var(--border); text-align:center;
+}
+.structure-map-pin{ background:none; border:none; }
+.structure-map-pin svg{ width:30px; height:30px; display:block; filter:drop-shadow(0 2px 4px rgba(0,0,0,.35)); }
+.description-box{ margin:0 0 14px; background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:12px 14px; }
+.description-scroll{ max-height:88px; overflow-y:auto; font-size:13px; line-height:1.55; color:var(--ink-dim); }
+.info-strip{ display:flex; margin:0 0 14px; background:var(--surface); border:1px solid var(--border); border-radius:18px; overflow:hidden; flex-shrink:0; }
 .info-strip .cell{ flex:1; padding:11px 10px; text-align:center; border-right:1px solid var(--border); }
 .info-strip .cell:last-child{ border-right:none; }
 .info-strip .cell .lbl{ font-size:9.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-faint); }
