@@ -640,7 +640,7 @@
      to-have footnote), so every mic button quietly hides itself instead of
      erroring when the API isn't available rather than pretending to work.
      ============================================================ */
-  function attachDictation(btn, textarea) {
+  function attachDictation(btn, textarea, { timestamp = false } = {}) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) { btn.classList.add('unsupported'); return; }
     const recognition = new SpeechRecognition();
@@ -656,8 +656,19 @@
       }
       transcript = transcript.trim();
       if (!transcript) return;
-      const needsSpace = textarea.value && !/[\s\n]$/.test(textarea.value);
-      textarea.value += (needsSpace ? ' ' : '') + transcript + ' ';
+      if (timestamp) {
+        // Notes only, not Comments/Remedial Works - each dictated burst
+        // reads as its own timestamped log line rather than running into
+        // whatever was typed/dictated before it. Manual typing is left
+        // alone (no reliable way to tell "new thought" from "still the
+        // same sentence, just paused"), only a fresh mic recording gets one.
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const prefix = textarea.value.trim() ? '\n\n' : '';
+        textarea.value += `${prefix}[${time}] ${transcript} `;
+      } else {
+        const needsSpace = textarea.value && !/[\s\n]$/.test(textarea.value);
+        textarea.value += (needsSpace ? ' ' : '') + transcript + ' ';
+      }
       textarea.dispatchEvent(new Event('input'));
     };
     recognition.onerror = () => stop();
@@ -667,7 +678,7 @@
 
     btn.addEventListener('click', () => (listening ? stop() : start()));
   }
-  attachDictation(document.getElementById('conclusionsMicBtn'), document.getElementById('conclusionsInput'));
+  attachDictation(document.getElementById('conclusionsMicBtn'), document.getElementById('conclusionsInput'), { timestamp: true });
   attachDictation(document.getElementById('defCommentsMicBtn'), document.getElementById('defComments'));
   attachDictation(document.getElementById('defRemedialMicBtn'), document.getElementById('defRemedial'));
 

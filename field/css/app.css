@@ -338,13 +338,13 @@ body.night-mode .edit-banner{ background:#3a2f1a; border-color:#5a4a2a; color:#e
 .confirm-actions .btn{ flex:1; padding:11px; }
 
 /* ---------- desktop-browser testing: box into a phone-sized frame ---------
-   On an actual phone this media query never matches - viewport width IS the
-   phone. It only kicks in when this PWA is opened in a regular desktop
-   browser window, where the app would otherwise stretch edge-to-edge (a
-   230px-tall 3D canvas becomes a bizarrely wide, distorted-aspect-ratio
-   strip at 1900px wide, etc). Boxing it reads as "this is a mobile app",
-   not broken. */
-@media (min-width:560px){
+   Width alone isn't a safe signal - a real phone in landscape easily beats
+   560px too, and this rule was wrongly squeezing it down to a portrait-
+   phone-sized box instead of using the width it actually has. (pointer:fine)
+   is what actually means "desktop with a mouse", which a touchscreen phone
+   never reports regardless of orientation - that's the real distinction
+   this needs, not viewport size. */
+@media (min-width:560px) and (pointer:fine){
   body{ display:flex; align-items:center; justify-content:center; background:#0e1614; }
   .app-shell, .screen#screen-login{
     position:relative; inset:auto; width:412px; height:min(880px, 96vh);
