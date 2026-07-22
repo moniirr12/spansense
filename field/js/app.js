@@ -440,17 +440,34 @@
       : L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' });
     structureMapTileLayer.addTo(structureMapInstance);
   }
+  let currentMapLatLng = null;
+  function openInGoogleMaps() {
+    if (!currentMapLatLng) return;
+    const { lat, lng } = currentMapLatLng;
+    window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`, '_blank');
+  }
   function renderStructureMap(structure) {
     const card = document.getElementById('structureMapCard');
     const lat = structure.latitude != null ? parseFloat(structure.latitude) : null;
     const lng = structure.longitude != null ? parseFloat(structure.longitude) : null;
     if (lat == null || lng == null || Number.isNaN(lat) || Number.isNaN(lng)) { card.hidden = true; return; }
     card.hidden = false;
+    currentMapLatLng = { lat, lng };
     document.getElementById('structureLatLong').textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
     if (!structureMapInstance) {
       structureMapInstance = L.map('structureMap', { scrollWheelZoom: false }).setView([lat, lng], 15);
       refreshMapTileForNightMode();
       structureMapMarker = L.marker([lat, lng], { icon: structureMapPinIcon }).addTo(structureMapInstance);
+      // Tapping the map (or its marker) offers to hand off to Google Maps -
+      // this embedded one is just a location preview, not for turn-by-turn
+      // navigation or anything Leaflet itself would need to handle.
+      const onMapTap = async () => {
+        if (await showConfirmModal({ title: 'Open in Google Maps?', message: 'View this structure\'s location in the Google Maps app.', confirmLabel: 'Open Maps' })) {
+          openInGoogleMaps();
+        }
+      };
+      structureMapInstance.on('click', onMapTap);
+      structureMapMarker.on('click', onMapTap);
     } else {
       structureMapMarker.setLatLng([lat, lng]);
       structureMapInstance.setView([lat, lng], 15);
