@@ -70,6 +70,10 @@
   function calculateBCIAv(bcsValues, eifValues) {
     const bcsSum = bcsValues.reduce((s, v) => s + v, 0);
     const eifSum = eifValues.reduce((s, v) => s + v, 0);
+    // No element with a real defect yet (every EIF is 0, same "nothing
+    // recorded" case calculateBCICrit already guards) - 0/0 is NaN, not a
+    // score. Perfect condition until something is actually flagged.
+    if (eifSum === 0) return 100;
     const bcsAvg = bcsSum / eifSum;
     return 100 - 2 * ((bcsAvg ** 2) + (6.5 * bcsAvg) - 7.5);
   }
@@ -112,13 +116,19 @@
     };
   }
 
+  // Structure Condition Index bands - Very Good 90-100, Good 80-<90,
+  // Fair 65-<80, Poor 40-<65, Very Poor 0-<40 (the standard SCI key, not a
+  // spanSense-specific scale - matches the reference table exactly).
   function bandFromScore(score) {
-    if (score >= 85) return 'good';
+    if (score >= 90) return 'verygood';
+    if (score >= 80) return 'good';
     if (score >= 65) return 'fair';
     if (score >= 40) return 'poor';
     return 'critical';
   }
+  const BAND_LABELS = { verygood: 'Very Good', good: 'Good', fair: 'Fair', poor: 'Poor', critical: 'Very Poor' };
   const BAND_COLORS = {
+    verygood: { c: '#1f5c4a', bg: '#e6f2ee' },
     good: { c: '#2d7a6e', bg: '#eef4f2' },
     fair: { c: '#BA7517', bg: '#fdf6ec' },
     poor: { c: '#c47070', bg: '#fbeeee' },
@@ -179,7 +189,7 @@
   }
 
   window.FieldBCI = {
-    calculateBCI, bandFromScore, BAND_COLORS,
+    calculateBCI, bandFromScore, BAND_COLORS, BAND_LABELS,
     categoryForElement, resolveElementsType, CATEGORY_MAPS,
     NO_DEFECTS_CODE, NOT_INSPECTED_CODE, isValidSeverityExtent
   };

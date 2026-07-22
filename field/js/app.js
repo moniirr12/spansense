@@ -45,6 +45,32 @@
     toastTimer = setTimeout(() => el.classList.remove('show'), ms);
   }
 
+  // spanSense-styled stand-in for window.confirm() - same yes/no contract
+  // (resolves true/false), just not a native OS alert. Backdrop tap counts
+  // as Cancel.
+  function showConfirmModal({ title, message, confirmLabel = 'Confirm', cancelLabel = 'Cancel' }) {
+    const overlay = document.getElementById('confirmOverlay');
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmMessage').textContent = message || '';
+    const okBtn = document.getElementById('confirmOkBtn');
+    const cancelBtn = document.getElementById('confirmCancelBtn');
+    okBtn.textContent = confirmLabel;
+    cancelBtn.textContent = cancelLabel;
+    overlay.classList.add('show');
+    overlay.hidden = false;
+    return new Promise((resolve) => {
+      function done(result) {
+        overlay.classList.remove('show');
+        overlay.hidden = true;
+        okBtn.onclick = null; cancelBtn.onclick = null; overlay.onclick = null;
+        resolve(result);
+      }
+      okBtn.onclick = () => done(true);
+      cancelBtn.onclick = () => done(false);
+      overlay.onclick = (e) => { if (e.target === overlay) done(false); };
+    });
+  }
+
   /* ============================================================
      NAVIGATION STACK
      ============================================================ */
@@ -63,7 +89,66 @@
   }
   function goto(name) { if (stack[stack.length - 1] !== name) stack.push(name); renderStack(true); updateTwinActiveState(); }
   function back() { if (stack.length > 1) { stack.pop(); renderStack(true); } updateTwinActiveState(); }
-  document.querySelectorAll('[data-back]').forEach((btn) => btn.addEventListener('click', back));
+  // Route the on-screen back arrows through the browser's own History API
+  // instead of calling back() directly, so they and the phone's hardware/
+  // gesture back button end up on the exact same code path below (a tap
+  // and a hardware back should behave identically, not one bypass the
+  // other's exit-confirmation).
+  document.querySelectorAll('[data-back]').forEach((btn) => btn.addEventListener('click', () => history.back()));
+
+  // Keeps a single extra history entry ahead of wherever the app actually
+  // is - popstate fires (below) the moment that entry gets consumed by a
+  // back gesture, which is the hook that lets an in-app screen stack (not
+  // a real multi-page history) intercept the phone's back button instead
+  // of it just closing the PWA outright.
+  function ensureHistoryGuard() { history.pushState({ fieldGuard: true }, '', location.href); }
+  // showConfirmModal() isn't blocking like window.confirm() was, so a
+  // second back-tap landing while it's still open needs its own guard
+  // (awaitingExitConfirm) - and the confirmed exit itself replays through
+  // history.back() to actually consume that guard, so exitConfirmed marks
+  // that replay as "let it through" rather than popping up a second modal.
+  let awaitingExitConfirm = false, exitConfirmed = false;
+  window.addEventListener('popstate', () => {
+    if (stack.length > 1) {
+      back();
+      ensureHistoryGuard();
+      return;
+    }
+    if (exitConfirmed) return;
+    ensureHistoryGuard();
+    if (awaitingExitConfirm) return;
+    awaitingExitConfirm = true;
+    showConfirmModal({ title: 'Exit spanSense Field?', confirmLabel: 'Exit', cancelLabel: 'Stay' }).then((confirmed) => {
+      awaitingExitConfirm = false;
+      if (confirmed) { exitConfirmed = true; history.back(); }
+    });
+  });
+
+  // Swipe-to-go-back: only from a thin sliver at the true left edge (12px,
+  // safely inside the 16px margin every screen's cards sit within), same
+  // convention iOS uses. Deliberately NOT a whole-screen swipe - TwinView's
+  // own drag-to-orbit (see twin3d.js) already owns horizontal drags that
+  // start in the middle of the canvas, and a screen-wide listener here
+  // would fight it for the same gesture. Routes through history.back() so
+  // it lands on the exact same popstate path as the hardware button and
+  // the on-screen arrows, rather than a fourth slightly-different way to
+  // go back.
+  (function setupEdgeSwipeBack() {
+    const EDGE_ZONE = 12, THRESHOLD = 70;
+    let tracking = false, startX = 0, startY = 0;
+    const stackEl = document.getElementById('stack');
+    stackEl.addEventListener('pointerdown', (e) => {
+      tracking = e.clientX <= EDGE_ZONE && stack.length > 1;
+      startX = e.clientX; startY = e.clientY;
+    });
+    stackEl.addEventListener('pointerup', (e) => {
+      if (!tracking) return;
+      tracking = false;
+      const dx = e.clientX - startX, dy = e.clientY - startY;
+      if (dx > THRESHOLD && Math.abs(dy) < dx * 0.6) history.back();
+    });
+    stackEl.addEventListener('pointercancel', () => { tracking = false; });
+  })();
 
   /* ============================================================
      NIGHT MODE
@@ -84,7 +169,12 @@
   renderNightIcon();
 
   document.getElementById('accountBtn').addEventListener('click', async () => {
-    if (confirm(`Signed in as ${S.session ? S.session.username : ''}. Sign out?`)) {
+    const confirmed = await showConfirmModal({
+      title: 'Sign out?',
+      message: `Signed in as ${S.session ? S.session.username : ''}.`,
+      confirmLabel: 'Sign out'
+    });
+    if (confirmed) {
       try { await Api.logout(); } catch {}
       location.reload();
     }
@@ -176,6 +266,10 @@
     errEl.hidden = true;
     const btn = document.getElementById('loginSubmitBtn');
     btn.disabled = true; btn.textContent = 'Signing in…';
+    // A hosted server that's been idle can take up to a minute to wake up
+    // on the first request - without this, that wait just looks identical
+    // to the app being frozen, which is worse than a slow-but-explained one.
+    const slowNotice = setTimeout(() => { btn.textContent = 'Still connecting… waking up the server'; }, 4000);
     try {
       const res = await Api.login(username, password);
       if (res.requires2FA) {
@@ -188,6 +282,7 @@
       errEl.textContent = err.message;
       errEl.hidden = false;
     } finally {
+      clearTimeout(slowNotice);
       btn.disabled = false; btn.textContent = 'Sign In';
     }
   });
@@ -212,6 +307,7 @@
     S.session = { username: me?.username, fullName: me?.full_name || me?.username, role: me?.role };
     document.getElementById('screen-login').style.display = 'none';
     document.getElementById('appShell').hidden = false;
+    ensureHistoryGuard();
     updateSyncBar();
     await loadStructures();
   }
@@ -293,7 +389,7 @@
       document.getElementById('inspTitle').textContent = structure.name;
       document.getElementById('inspSubtitle').textContent = `${structure.id} · ${structure.type || 'Bridge'}`;
       document.getElementById('inspInfoSpans').textContent = structure.span_number || structure.span || '—';
-      document.getElementById('inspInfoMaterial').textContent = structure.primary_material || '—';
+      document.getElementById('inspInfoLength').textContent = structure.length ? `${parseFloat(structure.length).toFixed(1)} m` : '—';
       document.getElementById('inspInfoBuilt').textContent = structure.built_year || '—';
       document.getElementById('structureDescriptionText').textContent = structure.description || 'No description recorded.';
       renderStructureMap(structure);
@@ -344,17 +440,34 @@
       : L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' });
     structureMapTileLayer.addTo(structureMapInstance);
   }
+  let currentMapLatLng = null;
+  function openInGoogleMaps() {
+    if (!currentMapLatLng) return;
+    const { lat, lng } = currentMapLatLng;
+    window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`, '_blank');
+  }
   function renderStructureMap(structure) {
     const card = document.getElementById('structureMapCard');
     const lat = structure.latitude != null ? parseFloat(structure.latitude) : null;
     const lng = structure.longitude != null ? parseFloat(structure.longitude) : null;
     if (lat == null || lng == null || Number.isNaN(lat) || Number.isNaN(lng)) { card.hidden = true; return; }
     card.hidden = false;
+    currentMapLatLng = { lat, lng };
     document.getElementById('structureLatLong').textContent = `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
     if (!structureMapInstance) {
       structureMapInstance = L.map('structureMap', { scrollWheelZoom: false }).setView([lat, lng], 15);
       refreshMapTileForNightMode();
       structureMapMarker = L.marker([lat, lng], { icon: structureMapPinIcon }).addTo(structureMapInstance);
+      // Tapping the map (or its marker) offers to hand off to Google Maps -
+      // this embedded one is just a location preview, not for turn-by-turn
+      // navigation or anything Leaflet itself would need to handle.
+      const onMapTap = async () => {
+        if (await showConfirmModal({ title: 'Open in Google Maps?', message: 'View this structure\'s location in the Google Maps app.', confirmLabel: 'Open Maps' })) {
+          openInGoogleMaps();
+        }
+      };
+      structureMapInstance.on('click', onMapTap);
+      structureMapMarker.on('click', onMapTap);
     } else {
       structureMapMarker.setLatLng([lat, lng]);
       structureMapInstance.setView([lat, lng], 15);
@@ -498,15 +611,111 @@
     updateTwinActiveState();
   }
 
+  // The new draft defaults to whatever type the copied-from inspection was
+  // (or General Inspection for a blank one), but that's often not what
+  // today's visit actually is - this lets it be changed at any point while
+  // editing, not just locked in from the start.
+  document.getElementById('viewerMenuBtn').addEventListener('click', openInspectionTypePicker);
+  function openInspectionTypePicker() {
+    const options = [INSP_TYPE_META.GI, INSP_TYPE_META.PI, INSP_TYPE_META.SI];
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:500; display:flex; align-items:flex-end;';
+    wrap.innerHTML = `
+      <div style="background:var(--surface); width:100%; border-radius:20px 20px 0 0; padding:20px 18px calc(20px + env(safe-area-inset-bottom));">
+        <div class="field-label" style="margin-bottom:12px;">Inspection type for this draft</div>
+        <div id="typePickerOptions" style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px;"></div>
+        <button class="btn btn-secondary btn-block" id="typePickerCancel">Cancel</button>
+      </div>`;
+    const optsContainer = wrap.querySelector('#typePickerOptions');
+    options.forEach((o) => {
+      const selected = inspTypeMeta(S.draft.inspectionType).label === o.label;
+      const btn = document.createElement('button');
+      btn.className = 'field-chip-select';
+      btn.style.width = '100%';
+      btn.innerHTML = `<span style="display:flex; align-items:center; gap:9px;"><span style="width:8px; height:8px; border-radius:50%; background:${o.color}; flex-shrink:0;"></span>${o.label}</span>` +
+        (selected ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="color:var(--teal-500);"><path d="M5 13l4 4L19 7"/></svg>' : '');
+      btn.onclick = () => {
+        S.draft.inspectionType = o.label;
+        wrap.remove();
+        refreshViewerContent();
+      };
+      optsContainer.appendChild(btn);
+    });
+    wrap.querySelector('#typePickerCancel').onclick = () => wrap.remove();
+    wrap.addEventListener('click', (e) => { if (e.target === wrap) wrap.remove(); });
+    document.body.appendChild(wrap);
+  }
+
+  document.getElementById('conclusionsInput').addEventListener('input', (e) => {
+    if (S.draft) S.draft.conclusions = e.target.value;
+  });
+
+  /* ============================================================
+     VOICE DICTATION - Web Speech API. Chrome/Android only (no iOS Safari
+     support, and it needs a network round-trip to actually transcribe -
+     both real constraints for a site with patchy signal, not just a nice-
+     to-have footnote), so every mic button quietly hides itself instead of
+     erroring when the API isn't available rather than pretending to work.
+     ============================================================ */
+  function attachDictation(btn, textarea, { timestamp = false } = {}) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) { btn.classList.add('unsupported'); return; }
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.lang = navigator.language || 'en-GB';
+    let listening = false;
+
+    recognition.onresult = (e) => {
+      let transcript = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) transcript += e.results[i][0].transcript;
+      }
+      transcript = transcript.trim();
+      if (!transcript) return;
+      if (timestamp) {
+        // Notes only, not Comments/Remedial Works - each dictated burst
+        // reads as its own timestamped log line rather than running into
+        // whatever was typed/dictated before it. Manual typing is left
+        // alone (no reliable way to tell "new thought" from "still the
+        // same sentence, just paused"), only a fresh mic recording gets one.
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const prefix = textarea.value.trim() ? '\n\n' : '';
+        textarea.value += `${prefix}[${time}] ${transcript} `;
+      } else {
+        const needsSpace = textarea.value && !/[\s\n]$/.test(textarea.value);
+        textarea.value += (needsSpace ? ' ' : '') + transcript + ' ';
+      }
+      textarea.dispatchEvent(new Event('input'));
+    };
+    recognition.onerror = () => stop();
+    recognition.onend = () => stop();
+    function stop() { listening = false; btn.classList.remove('listening'); try { recognition.stop(); } catch {} }
+    function start() { try { recognition.start(); listening = true; btn.classList.add('listening'); } catch {} }
+
+    btn.addEventListener('click', () => (listening ? stop() : start()));
+  }
+  attachDictation(document.getElementById('conclusionsMicBtn'), document.getElementById('conclusionsInput'), { timestamp: true });
+  attachDictation(document.getElementById('defCommentsMicBtn'), document.getElementById('defComments'));
+  attachDictation(document.getElementById('defRemedialMicBtn'), document.getElementById('defRemedial'));
+
   document.getElementById('tabTwinBtn').addEventListener('click', () => setHomeTab('twin'));
   document.getElementById('tabListBtn').addEventListener('click', () => setHomeTab('list'));
+  document.getElementById('tabNotesBtn').addEventListener('click', () => setHomeTab('notes'));
   function setHomeTab(tab) {
     S.homeTab = tab;
     document.getElementById('tabTwinBtn').classList.toggle('active', tab === 'twin');
     document.getElementById('tabListBtn').classList.toggle('active', tab === 'list');
+    document.getElementById('tabNotesBtn').classList.toggle('active', tab === 'notes');
     document.getElementById('twinTab').style.display = tab === 'twin' ? 'flex' : 'none';
     document.getElementById('listTab').style.display = tab === 'list' ? 'flex' : 'none';
+    document.getElementById('notesTab').style.display = tab === 'notes' ? 'flex' : 'none';
     document.getElementById('twinPopup').classList.remove('show');
+    // Neither the span selector nor "add a defect" make sense against a
+    // whole-inspection free-text field with no element/span of its own.
+    document.getElementById('spanTabsRow').style.display = tab === 'notes' ? 'none' : 'flex';
+    document.getElementById('addDefectFab').style.display = tab === 'notes' ? 'none' : 'flex';
+    if (tab === 'notes') { document.getElementById('conclusionsInput').value = S.draft.conclusions || ''; renderNotesPhotoStrip(); }
     refreshViewerContent();
   }
   // Pauses the 3D render loop (battery) whenever the viewer+TwinView tab
@@ -551,10 +760,10 @@
     const bc1 = FieldBCI.BAND_COLORS[FieldBCI.bandFromScore(bciAv)];
     const bc2 = FieldBCI.BAND_COLORS[FieldBCI.bandFromScore(bciCrit)];
     avVal.textContent = bciAv.toFixed(1); avVal.style.color = bc1.c;
-    avBand.textContent = FieldBCI.bandFromScore(bciAv).replace(/^./, (c) => c.toUpperCase());
+    avBand.textContent = FieldBCI.BAND_LABELS[FieldBCI.bandFromScore(bciAv)];
     avBand.style.background = bc1.bg; avBand.style.color = bc1.c;
     critVal.textContent = bciCrit.toFixed(1); critVal.style.color = bc2.c;
-    critBand.textContent = FieldBCI.bandFromScore(bciCrit).replace(/^./, (c) => c.toUpperCase());
+    critBand.textContent = FieldBCI.BAND_LABELS[FieldBCI.bandFromScore(bciCrit)];
     critBand.style.background = bc2.bg; critBand.style.color = bc2.c;
   }
 
@@ -708,8 +917,8 @@
     row.innerHTML = `
       <div class="item-badge">${el.no}</div>
       <div class="row-main"><div class="desc">${escapeHtml(d.elementDescription || el.description)}</div><div class="sub">${escapeHtml(el.description)} · ${combined}</div></div>
-      <span class="extent-pill">${d.extent}</span>
-      <div class="sev-dot" style="background:${colorMap[band]};">${d.severity}</div>`;
+      <div class="sev-dot" style="background:${colorMap[band]};">${d.severity}</div>
+      <span class="extent-pill">${d.extent}</span>`;
     return row;
   }
   function renderQuickActionsRow(el) {
@@ -877,8 +1086,11 @@
     });
   });
 
-  function renderPhotoStrip(d) {
-    const strip = document.getElementById('defPhotoStrip');
+  // Shared by the per-defect photo strip and the Notes tab's general site
+  // photos - same thumbnails/remove/add-tile behavior, different container
+  // and different "what happens on Add".
+  function renderPhotoStripInto(containerId, d, onAddClick) {
+    const strip = document.getElementById(containerId);
     strip.innerHTML = '';
     (d?.referencePhotos || []).forEach((p) => {
       const thumb = document.createElement('div');
@@ -894,15 +1106,55 @@
       thumb.style.backgroundImage = `url('${p.localUrl}')`;
       thumb.innerHTML = `<span class="photo-pending-badge">New</span>
         <button class="photo-remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>`;
-      thumb.querySelector('.photo-remove').onclick = (e) => { e.stopPropagation(); URL.revokeObjectURL(p.localUrl); d.photos.splice(idx, 1); renderPhotoStrip(d); };
+      thumb.querySelector('.photo-remove').onclick = (e) => { e.stopPropagation(); URL.revokeObjectURL(p.localUrl); d.photos.splice(idx, 1); renderPhotoStripInto(containerId, d, onAddClick); };
       strip.appendChild(thumb);
     });
     const addTile = document.createElement('button');
     addTile.className = 'photo-add-tile';
     addTile.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add`;
-    addTile.onclick = () => document.getElementById('cameraInput').click();
+    addTile.onclick = onAddClick;
     strip.appendChild(addTile);
   }
+  function renderPhotoStrip(d) {
+    renderPhotoStripInto('defPhotoStrip', d, () => document.getElementById('cameraInput').click());
+  }
+
+  // General site photos - not tied to any element/defect, same idea as the
+  // Notes tab's free-text field. Reuses the exact same defects/defect_photos
+  // plumbing as a real defect (a reserved (elementNumber 0, defectType
+  // '0', defectNumber '2') record, same convention as the existing 0.0/0.1
+  // No-Defects/Not-Inspected codes) so save/upload needs no server changes -
+  // it never matches a real element, so it's automatically excluded from
+  // BCI scoring and never appears in the per-element Defect List.
+  const GENERAL_PHOTO_ELEMENT = 0;
+  function findGeneralPhotoEntry() {
+    return S.draft.defects.find((d) => d.elementNumber === GENERAL_PHOTO_ELEMENT && d.defectType === '0' && d.defectNumber === '2');
+  }
+  function ensureGeneralPhotoEntry() {
+    let entry = findGeneralPhotoEntry();
+    if (!entry) {
+      entry = {
+        key: `general-${Date.now()}`, defectDbId: null, spanNumber: 1, elementNumber: GENERAL_PHOTO_ELEMENT,
+        elementDescription: 'General site photos', defectType: '0', defectNumber: '2',
+        severity: '1', extent: 'A', worksRequired: 'N', priority: '', cost: '',
+        comments: '', remedial_works: '', timestamp: new Date().toISOString(), isPrimary: false,
+        referencePhotos: [], photos: []
+      };
+      S.draft.defects.push(entry);
+    }
+    return entry;
+  }
+  function renderNotesPhotoStrip() {
+    renderPhotoStripInto('notesPhotoStrip', findGeneralPhotoEntry(), () => document.getElementById('notesCameraInput').click());
+  }
+  document.getElementById('notesCameraInput').addEventListener('change', (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    const entry = ensureGeneralPhotoEntry();
+    files.forEach((file) => entry.photos.push({ blob: file, filename: file.name, description: '', displayOrder: entry.photos.length, localUrl: URL.createObjectURL(file) }));
+    renderNotesPhotoStrip();
+    e.target.value = '';
+  });
   document.getElementById('addPhotoBtn').addEventListener('click', () => document.getElementById('cameraInput').click());
   document.getElementById('cameraInput').addEventListener('change', (e) => {
     const files = Array.from(e.target.files || []);
@@ -936,9 +1188,14 @@
     return S.draft.defects.some((d) => d.spanNumber === S.currentSpan && d.elementNumber === elementNo);
   }
 
-  document.getElementById('defectDeleteBtn').addEventListener('click', () => {
+  document.getElementById('defectDeleteBtn').addEventListener('click', async () => {
     if (!S.currentDefectKey) { back(); return; }
-    if (!confirm('Remove this defect from the draft?')) return;
+    const confirmed = await showConfirmModal({
+      title: 'Remove this defect?',
+      message: 'It will be removed from this draft.',
+      confirmLabel: 'Remove'
+    });
+    if (!confirmed) return;
     const idx = S.draft.defects.findIndex((x) => x.key === S.currentDefectKey);
     if (idx >= 0) {
       S.draft.defects[idx].photos.forEach((p) => URL.revokeObjectURL(p.localUrl));
