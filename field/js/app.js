@@ -687,7 +687,7 @@
     // whole-inspection free-text field with no element/span of its own.
     document.getElementById('spanTabsRow').style.display = tab === 'notes' ? 'none' : 'flex';
     document.getElementById('addDefectFab').style.display = tab === 'notes' ? 'none' : 'flex';
-    if (tab === 'notes') document.getElementById('conclusionsInput').value = S.draft.conclusions || '';
+    if (tab === 'notes') { document.getElementById('conclusionsInput').value = S.draft.conclusions || ''; renderNotesPhotoStrip(); }
     refreshViewerContent();
   }
   // Pauses the 3D render loop (battery) whenever the viewer+TwinView tab
@@ -1058,8 +1058,11 @@
     });
   });
 
-  function renderPhotoStrip(d) {
-    const strip = document.getElementById('defPhotoStrip');
+  // Shared by the per-defect photo strip and the Notes tab's general site
+  // photos - same thumbnails/remove/add-tile behavior, different container
+  // and different "what happens on Add".
+  function renderPhotoStripInto(containerId, d, onAddClick) {
+    const strip = document.getElementById(containerId);
     strip.innerHTML = '';
     (d?.referencePhotos || []).forEach((p) => {
       const thumb = document.createElement('div');
@@ -1075,15 +1078,55 @@
       thumb.style.backgroundImage = `url('${p.localUrl}')`;
       thumb.innerHTML = `<span class="photo-pending-badge">New</span>
         <button class="photo-remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>`;
-      thumb.querySelector('.photo-remove').onclick = (e) => { e.stopPropagation(); URL.revokeObjectURL(p.localUrl); d.photos.splice(idx, 1); renderPhotoStrip(d); };
+      thumb.querySelector('.photo-remove').onclick = (e) => { e.stopPropagation(); URL.revokeObjectURL(p.localUrl); d.photos.splice(idx, 1); renderPhotoStripInto(containerId, d, onAddClick); };
       strip.appendChild(thumb);
     });
     const addTile = document.createElement('button');
     addTile.className = 'photo-add-tile';
     addTile.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add`;
-    addTile.onclick = () => document.getElementById('cameraInput').click();
+    addTile.onclick = onAddClick;
     strip.appendChild(addTile);
   }
+  function renderPhotoStrip(d) {
+    renderPhotoStripInto('defPhotoStrip', d, () => document.getElementById('cameraInput').click());
+  }
+
+  // General site photos - not tied to any element/defect, same idea as the
+  // Notes tab's free-text field. Reuses the exact same defects/defect_photos
+  // plumbing as a real defect (a reserved (elementNumber 0, defectType
+  // '0', defectNumber '2') record, same convention as the existing 0.0/0.1
+  // No-Defects/Not-Inspected codes) so save/upload needs no server changes -
+  // it never matches a real element, so it's automatically excluded from
+  // BCI scoring and never appears in the per-element Defect List.
+  const GENERAL_PHOTO_ELEMENT = 0;
+  function findGeneralPhotoEntry() {
+    return S.draft.defects.find((d) => d.elementNumber === GENERAL_PHOTO_ELEMENT && d.defectType === '0' && d.defectNumber === '2');
+  }
+  function ensureGeneralPhotoEntry() {
+    let entry = findGeneralPhotoEntry();
+    if (!entry) {
+      entry = {
+        key: `general-${Date.now()}`, defectDbId: null, spanNumber: 1, elementNumber: GENERAL_PHOTO_ELEMENT,
+        elementDescription: 'General site photos', defectType: '0', defectNumber: '2',
+        severity: '1', extent: 'A', worksRequired: 'N', priority: '', cost: '',
+        comments: '', remedial_works: '', timestamp: new Date().toISOString(), isPrimary: false,
+        referencePhotos: [], photos: []
+      };
+      S.draft.defects.push(entry);
+    }
+    return entry;
+  }
+  function renderNotesPhotoStrip() {
+    renderPhotoStripInto('notesPhotoStrip', findGeneralPhotoEntry(), () => document.getElementById('notesCameraInput').click());
+  }
+  document.getElementById('notesCameraInput').addEventListener('change', (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    const entry = ensureGeneralPhotoEntry();
+    files.forEach((file) => entry.photos.push({ blob: file, filename: file.name, description: '', displayOrder: entry.photos.length, localUrl: URL.createObjectURL(file) }));
+    renderNotesPhotoStrip();
+    e.target.value = '';
+  });
   document.getElementById('addPhotoBtn').addEventListener('click', () => document.getElementById('cameraInput').click());
   document.getElementById('cameraInput').addEventListener('change', (e) => {
     const files = Array.from(e.target.files || []);
