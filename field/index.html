@@ -144,6 +144,7 @@
       <div class="segmented">
         <button class="active" id="tabTwinBtn" data-tab="twin">TwinView</button>
         <button id="tabListBtn" data-tab="list">Defect List</button>
+        <button id="tabNotesBtn" data-tab="notes">Notes</button>
       </div>
 
       <div id="spanTabsRow" class="span-tabs"></div>
@@ -177,6 +178,19 @@
       <div id="listTab" style="display:none;">
         <div class="chiprow" id="chipRow"></div>
         <div class="scrollarea" id="defectListArea"></div>
+      </div>
+
+      <!-- NOTES TAB -->
+      <div id="notesTab" style="display:none; flex-direction:column; flex:1; min-height:0;">
+        <div class="scrollarea" style="padding:2px 16px 16px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+            <span class="field-label" style="margin:0;">General notes for this inspection</span>
+            <button class="mic-btn" id="conclusionsMicBtn" title="Dictate">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8"/></svg>
+            </button>
+          </div>
+          <textarea class="notes-input" id="conclusionsInput" style="min-height:60vh;" placeholder="Quick thoughts, site conditions, access issues, anything worth flagging that doesn't fit a specific element — this isn't scored, just carried through to the saved inspection as-is."></textarea>
+        </div>
       </div>
 
       <button class="fab" id="addDefectFab" title="Add new defect">
@@ -249,11 +263,21 @@
         </div>
 
         <div class="field-group">
-          <span class="field-label">Comments</span>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+            <span class="field-label" style="margin:0;">Comments</span>
+            <button class="mic-btn" id="defCommentsMicBtn" title="Dictate">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8"/></svg>
+            </button>
+          </div>
           <textarea id="defComments" class="notes-input" placeholder="Describe the condition observed…"></textarea>
         </div>
         <div class="field-group">
-          <span class="field-label">Remedial works</span>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+            <span class="field-label" style="margin:0;">Remedial works</span>
+            <button class="mic-btn" id="defRemedialMicBtn" title="Dictate">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8"/></svg>
+            </button>
+          </div>
           <textarea id="defRemedial" class="notes-input" placeholder="What work would resolve this?"></textarea>
         </div>
 

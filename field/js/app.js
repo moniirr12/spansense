@@ -624,15 +624,65 @@
     document.body.appendChild(wrap);
   }
 
+  document.getElementById('conclusionsInput').addEventListener('input', (e) => {
+    if (S.draft) S.draft.conclusions = e.target.value;
+  });
+
+  /* ============================================================
+     VOICE DICTATION - Web Speech API. Chrome/Android only (no iOS Safari
+     support, and it needs a network round-trip to actually transcribe -
+     both real constraints for a site with patchy signal, not just a nice-
+     to-have footnote), so every mic button quietly hides itself instead of
+     erroring when the API isn't available rather than pretending to work.
+     ============================================================ */
+  function attachDictation(btn, textarea) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) { btn.classList.add('unsupported'); return; }
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.lang = navigator.language || 'en-GB';
+    let listening = false;
+
+    recognition.onresult = (e) => {
+      let transcript = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) transcript += e.results[i][0].transcript;
+      }
+      transcript = transcript.trim();
+      if (!transcript) return;
+      const needsSpace = textarea.value && !/[\s\n]$/.test(textarea.value);
+      textarea.value += (needsSpace ? ' ' : '') + transcript + ' ';
+      textarea.dispatchEvent(new Event('input'));
+    };
+    recognition.onerror = () => stop();
+    recognition.onend = () => stop();
+    function stop() { listening = false; btn.classList.remove('listening'); try { recognition.stop(); } catch {} }
+    function start() { try { recognition.start(); listening = true; btn.classList.add('listening'); } catch {} }
+
+    btn.addEventListener('click', () => (listening ? stop() : start()));
+  }
+  attachDictation(document.getElementById('conclusionsMicBtn'), document.getElementById('conclusionsInput'));
+  attachDictation(document.getElementById('defCommentsMicBtn'), document.getElementById('defComments'));
+  attachDictation(document.getElementById('defRemedialMicBtn'), document.getElementById('defRemedial'));
+
   document.getElementById('tabTwinBtn').addEventListener('click', () => setHomeTab('twin'));
   document.getElementById('tabListBtn').addEventListener('click', () => setHomeTab('list'));
+  document.getElementById('tabNotesBtn').addEventListener('click', () => setHomeTab('notes'));
   function setHomeTab(tab) {
     S.homeTab = tab;
     document.getElementById('tabTwinBtn').classList.toggle('active', tab === 'twin');
     document.getElementById('tabListBtn').classList.toggle('active', tab === 'list');
+    document.getElementById('tabNotesBtn').classList.toggle('active', tab === 'notes');
     document.getElementById('twinTab').style.display = tab === 'twin' ? 'flex' : 'none';
     document.getElementById('listTab').style.display = tab === 'list' ? 'flex' : 'none';
+    document.getElementById('notesTab').style.display = tab === 'notes' ? 'flex' : 'none';
     document.getElementById('twinPopup').classList.remove('show');
+    // Neither the span selector nor "add a defect" make sense against a
+    // whole-inspection free-text field with no element/span of its own.
+    document.getElementById('spanTabsRow').style.display = tab === 'notes' ? 'none' : 'flex';
+    document.getElementById('addDefectFab').style.display = tab === 'notes' ? 'none' : 'flex';
+    if (tab === 'notes') document.getElementById('conclusionsInput').value = S.draft.conclusions || '';
     refreshViewerContent();
   }
   // Pauses the 3D render loop (battery) whenever the viewer+TwinView tab
