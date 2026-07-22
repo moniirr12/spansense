@@ -433,7 +433,11 @@ async function fetchAndUpdateBridgeData(bridgeId) {
         if (lastInspEl) lastInspEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         if (builtYearEl) builtYearEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         
-        const response = await fetch(`${API_BASE}/api/bridges/${bridgeId}`);
+        // no-store: inspection.html has no editing UI of its own and no way
+        // to be told a save happened on inspection1.html - it only ever
+        // learns about an edit via this fetch on its own page load, so it
+        // can't afford to be handed a cached response from before that edit.
+        const response = await fetch(`${API_BASE}/api/bridges/${bridgeId}`, { cache: 'no-store' });
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         
         const bridgeData = await response.json();
@@ -588,6 +592,17 @@ async function onSaveSpanInfo() {
             secondary_material: null
         });
         renderSpanInfoView(currentBridgeInfo);
+
+        // The sidebar-card (Spans/Length/Built Year) is a separate one-time
+        // render from fetchAndUpdateBridgeData() at page load - it has no
+        // other way to find out this save happened, so without this it
+        // stays stale on this same page until the next full reload.
+        const spanCountEl = document.getElementById('sidebarSpanCount');
+        const lengthEl = document.getElementById('sidebarLength');
+        const builtYearEl = document.getElementById('sidebarBuiltYear');
+        if (spanCountEl) spanCountEl.innerText = currentBridgeInfo.span_number || '--';
+        if (lengthEl) lengthEl.innerText = currentBridgeInfo.length ? `${currentBridgeInfo.length} m` : '--';
+        if (builtYearEl) builtYearEl.innerText = currentBridgeInfo.built_year || '--';
     } catch (err) {
         console.error('Error saving structure info:', err);
         await showModal({ title: 'Could not save', message: 'Something went wrong saving these changes. Please try again.', type: 'error' });

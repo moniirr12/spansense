@@ -680,8 +680,9 @@
         // alone (no reliable way to tell "new thought" from "still the
         // same sentence, just paused"), only a fresh mic recording gets one.
         const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const prefix = textarea.value.trim() ? '\n\n' : '';
-        textarea.value += `${prefix}[${time}] ${transcript} `;
+        const prefix = textarea.value.trim() ? '\n' : '';
+        const sentence = /[.!?]$/.test(transcript) ? transcript : `${transcript}.`;
+        textarea.value += `${prefix}[${time}] ${sentence}`;
       } else {
         const needsSpace = textarea.value && !/[\s\n]$/.test(textarea.value);
         textarea.value += (needsSpace ? ' ' : '') + transcript + ' ';
