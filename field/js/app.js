@@ -266,6 +266,10 @@
     errEl.hidden = true;
     const btn = document.getElementById('loginSubmitBtn');
     btn.disabled = true; btn.textContent = 'Signing in…';
+    // A hosted server that's been idle can take up to a minute to wake up
+    // on the first request - without this, that wait just looks identical
+    // to the app being frozen, which is worse than a slow-but-explained one.
+    const slowNotice = setTimeout(() => { btn.textContent = 'Still connecting… waking up the server'; }, 4000);
     try {
       const res = await Api.login(username, password);
       if (res.requires2FA) {
@@ -278,6 +282,7 @@
       errEl.textContent = err.message;
       errEl.hidden = false;
     } finally {
+      clearTimeout(slowNotice);
       btn.disabled = false; btn.textContent = 'Sign In';
     }
   });
