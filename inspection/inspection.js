@@ -793,7 +793,38 @@ function categoryForElement(structureType, elementNo){
 window.addEventListener('load', async function() {
     await loadInspectionElements();
     await loadBridgeSidebarInfo();
+    await loadBridgePhoto(sessionStorage.getItem('structureId'));
 });
+
+// Same real-photo fetch as inspection1.js's loadBridgePhoto() - this page's
+// .mock-image box never had its own copy, so it stayed the static
+// placeholder icon/watermark for every structure.
+async function loadBridgePhoto(bridgeId) {
+    const mockImageDiv = document.querySelector('.mock-image');
+    if (!mockImageDiv) return;
+
+    try {
+        mockImageDiv.innerHTML = `<i class="fas fa-spinner fa-spin"></i><span style="font-size: 0.7rem;">Loading photo...</span>`;
+
+        if (!bridgeId || bridgeId === 'null' || bridgeId === 'undefined') throw new Error('Invalid bridge ID');
+
+        const response = await fetch(`/getBridgePhoto?bridgeId=${bridgeId}`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        const data = await response.json();
+
+        if (data.photo_url && data.photo_url !== 'null' && data.photo_url !== '') {
+            mockImageDiv.innerHTML = `<img src="${data.photo_url}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;" alt="Bridge Structure Photo">`;
+            mockImageDiv.style.background = 'none';
+            mockImageDiv.style.padding = '0';
+        } else {
+            mockImageDiv.innerHTML = `<i class="fas fa-bridge"></i><span style="font-size: 0.6rem;">No photo available</span>`;
+        }
+    } catch (error) {
+        console.error('Error loading bridge photo:', error);
+        mockImageDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i><span style="font-size: 0.6rem;">Error loading photo</span>`;
+    }
+}
 
 // Populates the right-hand sidebar (name/id/spans/length/built year/last
 // inspection) with the real structure record - mirrors inspection1.js's
