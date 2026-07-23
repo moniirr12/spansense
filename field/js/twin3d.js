@@ -13,7 +13,7 @@
 
   let renderer, scene, camera, rig, structureGroup, defectGroup, gridHelper, glowMesh;
   let matSteel, matDeck, matPier, matStone, matConcrete, matDefect;
-  let canvas, raycaster, onTapCallback;
+  let canvas, onTapCallback;
   let rotY = 0.4, rotX = 0.18, camDistance = 58, camHeight = 13, baseCamDistance = 58;
   let active = false;
   let inited = false;
@@ -63,7 +63,6 @@
     defectGroup = new THREE.Group();
     rig.add(structureGroup, defectGroup);
 
-    raycaster = new THREE.Raycaster();
     canvas.style.touchAction = 'none'; // we handle drag/pinch ourselves - stop the browser panning/zooming the page instead
     canvas.addEventListener('pointerdown', onPointerDown);
     canvas.addEventListener('pointermove', onPointerMove);
@@ -85,16 +84,29 @@
     requestAnimationFrame(animate);
   }
 
+  // A fingertip is much wider than the ~0.5-unit marker geometry it's aiming
+  // for, so this picks by on-screen distance to each marker's projected
+  // center rather than exact ray-vs-mesh intersection - the same marker a
+  // mouse pointer could click precisely stays selectable with a much more
+  // forgiving touch, up to TAP_RADIUS_PX away.
+  const TAP_RADIUS_PX = 30;
   function raycastTap(clientX, clientY, e) {
-    const rect = canvas.getBoundingClientRect();
-    const ndc = new THREE.Vector2(
-      ((clientX - rect.left) / rect.width) * 2 - 1,
-      -((clientY - rect.top) / rect.height) * 2 + 1
-    );
-    raycaster.setFromCamera(ndc, camera);
     if (!defectGroup.visible || !defectGroup.children.length) { onTapCallback && onTapCallback(null, e); return; }
-    const hits = raycaster.intersectObjects(defectGroup.children, false);
-    onTapCallback && onTapCallback(hits.length ? hits[0].object.userData.defect : null, e);
+    const rect = canvas.getBoundingClientRect();
+    const tapX = clientX - rect.left;
+    const tapY = clientY - rect.top;
+    defectGroup.updateMatrixWorld(true);
+    const proj = new THREE.Vector3();
+    let nearest = null, nearestDist = Infinity;
+    defectGroup.children.forEach((m) => {
+      proj.setFromMatrixPosition(m.matrixWorld).project(camera);
+      if (proj.z < -1 || proj.z > 1) return; // behind the camera or past the far plane
+      const sx = (proj.x * 0.5 + 0.5) * rect.width;
+      const sy = (-proj.y * 0.5 + 0.5) * rect.height;
+      const dist = Math.hypot(sx - tapX, sy - tapY);
+      if (dist < nearestDist) { nearestDist = dist; nearest = m; }
+    });
+    onTapCallback && onTapCallback(nearest && nearestDist <= TAP_RADIUS_PX ? nearest.userData.defect : null, e);
   }
 
   function pointsArray() { return Array.from(activePointers.values()); }
