@@ -52,10 +52,11 @@ body {
 
 .navbar .right { display: flex; align-items: center; gap: 10px; }
 .night-mode-toggle {
-    width: 36px; height: 36px;
+    width: 40px; height: 40px;
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer;
+    font-size: 1.2rem;
     color: #8a9ba8;
     background: #f0f2f5;
     transition: all 0.2s;
@@ -2269,6 +2270,11 @@ body {
 .night-mode #inspectionElementsTable td { color: #c5d3d9; border-bottom-color: #2a3a40; }
 .night-mode #inspectionElementsTable tbody tr:hover,
 .night-mode #inspectionElementsTable tr.element-parent-row:hover { background: #2a3a40; }
+/* Category dividers (Deck Elements, Load-bearing Substructure, ...) are
+   plain section labels, not an interactive row - the broad tbody tr:hover
+   above shouldn't highlight them (the light-mode hover is already scoped to
+   tr.main-row only, so this only needed correcting in dark mode). */
+.night-mode #inspectionElementsTable tr.category-header-row:hover { background: transparent; }
 
 
 .night-mode #inspectionElementsTable tr.expandable-row td {
