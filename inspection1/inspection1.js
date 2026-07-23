@@ -17,9 +17,16 @@
     window.updateGlassScrollbar=u;
 })();
 
-const API_BASE = window.location.hostname === 'localhost' 
-    ? 'http://localhost:3000' 
-    : 'https://spansense.onrender.com';
+// var, not const: this file is also loaded on inspection.html alongside
+// test.js, which declares its own `var API_BASE` - a const here would throw
+// "Identifier 'API_BASE' has already been declared" as soon as this script
+// ran, silently aborting this entire file (including the dark-mode toggle's
+// click handler below) with no runtime error tied to the click itself.
+if (typeof API_BASE === 'undefined') {
+    var API_BASE = window.location.hostname === 'localhost'
+        ? 'http://localhost:3000'
+        : 'https://spansense.onrender.com';
+}
 
 // ============================================
 // DARK MODE TOGGLE
