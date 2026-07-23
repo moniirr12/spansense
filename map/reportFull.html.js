@@ -290,7 +290,6 @@ async function buildFullInspectionReportHtml(doc) {
     var photosByDefect = {};
     var photoCounter = 0;
     allPhotos.forEach(function (photo) {
-        photoCounter++;
         var defectCode = null;
         if (photo.defect_id != null) {
             var matched = defectsData.find(function (dd) { return dd.defectDbId === photo.defect_id; });
@@ -300,7 +299,13 @@ async function buildFullInspectionReportHtml(doc) {
             var parts = String(photo.front_defectid).split('_');
             defectCode = parts[parts.length - 1];
         }
+        // No defectCode either means this couldn't be matched to a defect, or
+        // (since /api/bridges/:structureId/inspection-photos also returns
+        // general site photos now) it's a general photo, which doesn't belong
+        // in this per-defect appendix at all - skip before bumping the
+        // counter so the visible photo numbers stay contiguous.
         if (!defectCode) return;
+        photoCounter++;
         if (!photosByDefect[defectCode]) photosByDefect[defectCode] = [];
         photosByDefect[defectCode].push({ photo_url: photo.photo_url, photo_description: photo.photo_description, photoNumber: photoCounter });
     });

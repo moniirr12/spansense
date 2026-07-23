@@ -792,7 +792,64 @@ function categoryForElement(structureType, elementNo){
 
 window.addEventListener('load', async function() {
     await loadInspectionElements();
+    await loadBridgeSidebarInfo();
 });
+
+// Populates the right-hand sidebar (name/id/spans/length/built year/last
+// inspection) with the real structure record - mirrors inspection1.js's
+// fetchAndUpdateBridgeData()/fetchLatestInspectionDate(), which this page's
+// sidebar card was always meant to have its own copy of (see the no-store
+// comment on inspection1.js's fetch) but never actually got wired up, so it
+// was left showing that file's static placeholder markup verbatim.
+async function loadBridgeSidebarInfo() {
+  const structureId = sessionStorage.getItem('structureId');
+  if (!structureId) return;
+
+  const nameEl = document.getElementById('sidebarBridgeName');
+  const idEl = document.getElementById('sidebarBridgeId');
+  const spanCountEl = document.getElementById('sidebarSpanCount');
+  const lengthEl = document.getElementById('sidebarLength');
+  const builtYearEl = document.getElementById('sidebarBuiltYear');
+  const lastInspEl = document.getElementById('sidebarLastInsp');
+
+  try {
+    const response = await fetch(`/api/bridges/${structureId}`, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const bridgeData = await response.json();
+
+    if (nameEl && bridgeData.name) nameEl.innerText = bridgeData.name;
+    if (idEl && bridgeData.id) idEl.innerText = `Bridge ID: ${bridgeData.id}`;
+    if (spanCountEl) spanCountEl.innerText = bridgeData.span_number || bridgeData.total_spans || '--';
+    if (lengthEl) {
+      const length = bridgeData.length_metres || bridgeData.length || '--';
+      lengthEl.innerText = length !== '--' ? `${length} m` : '--';
+    }
+    if (builtYearEl) {
+      const builtYear = bridgeData.year_built || bridgeData.construction_year || bridgeData.built_year || '--';
+      builtYearEl.innerText = builtYear !== '--' ? builtYear : '--';
+    }
+  } catch (error) {
+    console.error('Error fetching bridge data:', error);
+    if (spanCountEl) spanCountEl.innerText = '--';
+    if (lengthEl) lengthEl.innerText = '--';
+    if (builtYearEl) builtYearEl.innerText = '--';
+  }
+
+  try {
+    const response = await fetch(`/api/inspection-dates/${structureId}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const dates = await response.json();
+    if (lastInspEl) lastInspEl.innerText = dates && dates.length > 0 ? formatDate(dates[0].date) : 'No inspections';
+  } catch (error) {
+    console.error('Error fetching inspection dates:', error);
+    if (lastInspEl) lastInspEl.innerText = 'Error';
+  }
+}
+
+function formatDate(d) {
+  try { return new Date(d).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' }); }
+  catch { return d; }
+}
 
 async function loadInspectionElements() {
   try {
