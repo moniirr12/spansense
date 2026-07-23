@@ -791,6 +791,15 @@ function categoryForElement(structureType, elementNo){
 }
 
 window.addEventListener('load', async function() {
+    // Editing an existing inspection: default to only the elements that
+    // already have a recorded defect (showOnlyNonEmptyRows, inspectionA.js),
+    // same idea as reviewing what's there rather than re-scanning every
+    // element from scratch. A brand-new inspection has no defects yet, so
+    // that filter would just hide everything - leave it at its normal
+    // show-all default there.
+    if (sessionStorage.getItem('inspectionMode') === 'edit') {
+        showOnlyNonEmptyRows = true;
+    }
     await loadInspectionElements();
     await loadBridgeSidebarInfo();
     await loadBridgePhoto(sessionStorage.getItem('structureId'));
@@ -925,6 +934,11 @@ async function loadInspectionElements() {
       loadDefectsFromSession(currentSpan);
     }
     updateAllMainRows();
+    // Reapply the current row filter (inspectionA.js) - loadInspectionElements
+    // rebuilds every row from scratch on each call (span switch, post-save
+    // refresh, ...), so without this the "hide empty rows" state would
+    // silently reset to showing everything again each time.
+    if (typeof updateTableVisibility === 'function') updateTableVisibility();
     refreshBCIScores();
   } catch (error) {
     console.error("Error loading inspection elements:", error);
