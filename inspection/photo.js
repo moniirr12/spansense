@@ -94,6 +94,20 @@ function openPhotoModal(event) {
     }
 }
 
+// General site photos aren't tied to a defect row, so there's no table row
+// to read a defect id from - 'general' is the reserved defectId the rest of
+// this file (and the server) already understand as "attach to the
+// inspection itself, not a defect".
+function openGeneralPhotosModal() {
+    sessionStorage.setItem('currentDefectId', 'general');
+
+    const modal = document.getElementById('uploadModal-photo');
+    if (modal) {
+        modal.style.display = "flex";
+        loadDefectPhotos('general');
+    }
+}
+
 // ============================================
 // LOAD DEFECT PHOTOS (Main display function)
 // ============================================
@@ -112,7 +126,9 @@ async function loadDefectPhotos(defectId) {
         const serverPhotosForDefect = allServerPhotos.filter(photo =>
             // defect_id comes back from Postgres as a number; defectId here is
             // always a string (read from the row's .defectId textContent) —
-            // compare as strings so a real defect id still matches.
+            // compare as strings so a real defect id still matches. A general
+            // photo has no real defect_id - getAllPhotosForCurrentInspection
+            // already normalizes those to the reserved 'general' key.
             String(photo.defect_id) === String(defectId) || String(photo.front_defectid) === String(defectId)
         );
         
@@ -469,7 +485,7 @@ async function getAllPhotosForCurrentInspection() {
             ...p,
             source: 'server',
             preview_url: p.photo_url,
-            defect_id: p.defect_id || p.front_defectid || 'unknown'
+            defect_id: p.defect_id || p.front_defectid || (p.inspection_id ? 'general' : 'unknown')
         }));
     } catch (error) {
         console.error('Error loading photos:', error);
@@ -620,6 +636,7 @@ function renderDefectPhotos(container, photos, defectId) {
 // MAKE FUNCTIONS GLOBAL
 // ============================================
 window.openPhotoModal = openPhotoModal;
+window.openGeneralPhotosModal = openGeneralPhotosModal;
 window.closePhotoModal = closePhotoModal;
 window.removeLocalPhoto = removeLocalPhoto;
 window.removeServerPhoto = removeServerPhoto;

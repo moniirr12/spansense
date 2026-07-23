@@ -344,6 +344,12 @@ async function initDatabase() {
             )
         `);
 
+        // General site photos (not tied to any defect) attach directly to the
+        // inspection instead - defect_id stays NULL for these, inspection_id
+        // stays NULL for a normal defect photo.
+        await pool.query(`ALTER TABLE defect_photos ADD COLUMN IF NOT EXISTS inspection_id INTEGER`);
+        await pool.query(`CREATE INDEX IF NOT EXISTS idx_defect_photos_inspection_id ON defect_photos(inspection_id)`);
+
         // Maintenance history - user-editable log of work carried out on a
         // structure (repairs, routine upkeep, etc.), shown/edited from
         // twinView. Deliberately separate from inspections/defects - this
@@ -1699,12 +1705,27 @@ app.post('/save-inspection', requireAuth, async (req, res) => {
                     }
                 }
             }
+
+            // General site photos - not tied to any defect, attached to the
+            // inspection itself instead ('general' is the reserved key both
+            // apps use for these, same convention as a real defect's temp key).
+            if (photoData['general']) {
+                for (let i = 0; i < photoData['general'].length; i++) {
+                    const photo = photoData['general'][i];
+                    await client.query(
+                        `INSERT INTO defect_photos (
+                            inspection_id, photo_url, photo_description, display_order
+                        ) VALUES ($1, $2, $3, $4)`,
+                        [inspectionId, photo.photo_url, photo.photo_description, photo.display_order || i]
+                    );
+                }
+            }
         }
 
         await client.query('COMMIT');
 
-        res.json({ 
-            success: true, 
+        res.json({
+            success: true,
             inspectionId,
             defectCount: insertedDefects.length,
             message: 'Inspection saved successfully'
@@ -2033,6 +2054,21 @@ app.get('/api/inspection/full', requireAuth, async (req, res) => {
             return acc;
         }, {});
 
+        // General site photos - not tied to any defect, attached to the
+        // inspection itself (defect_id NULL, inspection_id set instead).
+        const generalPhotosRaw = await dbAll(`
+            SELECT id, photo_url, photo_description, display_order
+            FROM defect_photos
+            WHERE inspection_id = $1 AND defect_id IS NULL
+            ORDER BY display_order
+        `, [inspection.id]);
+        const generalPhotos = await Promise.all(generalPhotosRaw.map(async photo => ({
+            id: photo.id,
+            url: await storage.getSignedUrl(photo.photo_url),
+            description: photo.photo_description,
+            displayOrder: photo.display_order
+        })));
+
         // 5. Format response
         const response = {
             structureId: inspection.structure_id,
@@ -2074,7 +2110,9 @@ app.get('/api/inspection/full', requireAuth, async (req, res) => {
                 z: defect.pos_z !== null ? parseFloat(defect.pos_z) : null,
                 isPrimary: defect.is_primary === true,
                 photos: photosByDefect[defect.id] || []
-            }))
+            })),
+
+            generalPhotos
         };
 
         res.json(response);
@@ -2442,6 +2480,8 @@ app.post('/api/bridges/:structureId/inspection-photos', requireAuth,
             const descriptions = [].concat(req.body.descriptions || []);
             const displayOrders = [].concat(req.body.displayOrders || []);
             const defectId = req.body.defectId;
+            const { structureId } = req.params;
+            const inspectionDate = req.body.inspectionDate || new Date().toISOString().split('T')[0];
 
             // A brand-new defect (not saved yet) is identified by a temporary
             // composite key, not a real id — its photos can only be linked up
@@ -2449,13 +2489,22 @@ app.post('/api/bridges/:structureId/inspection-photos', requireAuth,
             // existing defect already has a real numeric id, so its photos
             // can be persisted immediately instead of waiting.
             let realDefectId = null;
-            if (defectId && /^\d+$/.test(defectId)) {
+            // 'general' is the reserved defectId for a site photo that isn't
+            // tied to any defect - if the inspection already exists, link it
+            // to the inspection itself right away (same idea as realDefectId
+            // below); otherwise it's finalized later via /save-inspection's
+            // photoData['general'].
+            let generalInspectionId = null;
+            if (defectId === 'general') {
+                const existingInspection = await dbGet(
+                    'SELECT id FROM inspections WHERE structure_id = $1 AND inspection_date = $2',
+                    [structureId, inspectionDate]
+                );
+                if (existingInspection) generalInspectionId = existingInspection.id;
+            } else if (defectId && /^\d+$/.test(defectId)) {
                 const existing = await dbGet('SELECT id FROM defects WHERE id = $1', [defectId]);
                 if (existing) realDefectId = existing.id;
             }
-
-            const { structureId } = req.params;
-            const inspectionDate = req.body.inspectionDate || new Date().toISOString().split('T')[0];
 
             const uploadedFiles = [];
             for (let index = 0; index < req.files.length; index++) {
@@ -2473,6 +2522,15 @@ app.post('/api/bridges/:structureId/inspection-photos', requireAuth,
                             file_name, file_size, file_type
                         ) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
                         [realDefectId, url, photo_description, display_order, file.originalname, file.size, file.mimetype]
+                    );
+                    photoId = inserted.id;
+                } else if (generalInspectionId) {
+                    const inserted = await dbGet(
+                        `INSERT INTO defect_photos (
+                            inspection_id, photo_url, photo_description, display_order,
+                            file_name, file_size, file_type
+                        ) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+                        [generalInspectionId, url, photo_description, display_order, file.originalname, file.size, file.mimetype]
                     );
                     photoId = inserted.id;
                 }
@@ -2493,7 +2551,7 @@ app.post('/api/bridges/:structureId/inspection-photos', requireAuth,
                     display_order,
                     file_name: file.originalname,
                     file_type: file.mimetype,
-                    saved: !!realDefectId
+                    saved: !!(realDefectId || generalInspectionId)
                 });
             }
 
@@ -2535,14 +2593,15 @@ app.get('/api/bridges/:structureId/inspection-photos', requireAuth, async (req, 
 
         const photos = await dbAll(
             `SELECT dp.* FROM defect_photos dp
-             JOIN defects d ON dp.defect_id = d.id
-             WHERE d.inspection_id = $1`,
+             LEFT JOIN defects d ON dp.defect_id = d.id
+             WHERE d.inspection_id = $1 OR dp.inspection_id = $1`,
             [inspection.id]
         );
 
         const signedPhotos = await Promise.all(photos.map(async photo => ({
             photo_id: photo.id,
             defect_id: photo.defect_id,
+            inspection_id: photo.inspection_id,
             front_defectid: photo.front_defectid,
             photo_url: await storage.getSignedUrl(photo.photo_url),
             photo_description: photo.photo_description,
@@ -2588,12 +2647,14 @@ app.delete('/api/inspections/:id', requireAuth, async (req, res) => {
         const photos = await client.query(
             `SELECT dp.photo_url FROM defect_photos dp
              JOIN defects d ON dp.defect_id = d.id
-             WHERE d.inspection_id = $1`,
+             WHERE d.inspection_id = $1
+             UNION
+             SELECT photo_url FROM defect_photos WHERE inspection_id = $1`,
             [id]
         );
 
         await client.query(
-            `DELETE FROM defect_photos WHERE defect_id IN (SELECT id FROM defects WHERE inspection_id = $1)`,
+            `DELETE FROM defect_photos WHERE defect_id IN (SELECT id FROM defects WHERE inspection_id = $1) OR inspection_id = $1`,
             [id]
         );
         await client.query('DELETE FROM defects WHERE inspection_id = $1', [id]);

@@ -512,7 +512,8 @@
       totalSpans,
       conclusions: '',
       spans: Array.from({ length: totalSpans }, (_, i) => ({ spanNumber: i + 1, comments: '' })),
-      defects: []
+      defects: [],
+      generalPhotos: []
     };
     S.currentSpan = 1;
     openViewer();
@@ -557,7 +558,10 @@
         origZ: d.z != null ? d.z : null,
         referencePhotos: d.photos || [], // old inspection's photos - view only, never re-uploaded
         photos: []
-      }))
+      })),
+      // Starting a new draft never inherits the previous visit's general
+      // site photos - those were for that visit, not this one.
+      generalPhotos: []
     };
     S.currentSpan = S.draft.spans[0] ? S.draft.spans[0].spanNumber : 1;
   }
@@ -1121,38 +1125,17 @@
   }
 
   // General site photos - not tied to any element/defect, same idea as the
-  // Notes tab's free-text field. Reuses the exact same defects/defect_photos
-  // plumbing as a real defect (a reserved (elementNumber 0, defectType
-  // '0', defectNumber '2') record, same convention as the existing 0.0/0.1
-  // No-Defects/Not-Inspected codes) so save/upload needs no server changes -
-  // it never matches a real element, so it's automatically excluded from
-  // BCI scoring and never appears in the per-element Defect List.
-  const GENERAL_PHOTO_ELEMENT = 0;
-  function findGeneralPhotoEntry() {
-    return S.draft.defects.find((d) => d.elementNumber === GENERAL_PHOTO_ELEMENT && d.defectType === '0' && d.defectNumber === '2');
-  }
-  function ensureGeneralPhotoEntry() {
-    let entry = findGeneralPhotoEntry();
-    if (!entry) {
-      entry = {
-        key: `general-${Date.now()}`, defectDbId: null, spanNumber: 1, elementNumber: GENERAL_PHOTO_ELEMENT,
-        elementDescription: 'General site photos', defectType: '0', defectNumber: '2',
-        severity: '1', extent: 'A', worksRequired: 'N', priority: '', cost: '',
-        comments: '', remedial_works: '', timestamp: new Date().toISOString(), isPrimary: false,
-        referencePhotos: [], photos: []
-      };
-      S.draft.defects.push(entry);
-    }
-    return entry;
-  }
+  // Notes tab's free-text field. Attached directly to the inspection itself
+  // server-side (defect_photos.inspection_id, defect_id NULL) via the
+  // reserved 'general' key used in place of a real defect id/temp key -
+  // see submitJob() below and server.js's /save-inspection.
   function renderNotesPhotoStrip() {
-    renderPhotoStripInto('notesPhotoStrip', findGeneralPhotoEntry(), () => document.getElementById('notesCameraInput').click());
+    renderPhotoStripInto('notesPhotoStrip', { photos: S.draft.generalPhotos }, () => document.getElementById('notesCameraInput').click());
   }
   document.getElementById('notesCameraInput').addEventListener('change', (e) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
-    const entry = ensureGeneralPhotoEntry();
-    files.forEach((file) => entry.photos.push({ blob: file, filename: file.name, description: '', displayOrder: entry.photos.length, localUrl: URL.createObjectURL(file) }));
+    files.forEach((file) => S.draft.generalPhotos.push({ blob: file, filename: file.name, description: '', displayOrder: S.draft.generalPhotos.length, localUrl: URL.createObjectURL(file) }));
     renderNotesPhotoStrip();
     e.target.value = '';
   });
@@ -1302,6 +1285,10 @@
           description: p.description, displayOrder: p.displayOrder
         }));
       });
+      S.draft.generalPhotos.forEach((p) => photos.push({
+        tempDefectKey: 'general', blob: p.blob, filename: p.filename,
+        description: p.description, displayOrder: p.displayOrder
+      }));
 
       const job = { structureId, structureName: S.draft.structureName, inspection, defects, photos };
 
@@ -1346,6 +1333,7 @@
           const tempKey = `${structureId}_${dateStr}_${d.spanNumber}_${d.elementNumber}_${d.defectType}.${d.defectNumber}`;
           d.photos.forEach((p) => photos.push({ tempDefectKey: tempKey, blob: p.blob, filename: p.filename, description: p.description, displayOrder: p.displayOrder }));
         });
+        S.draft.generalPhotos.forEach((p) => photos.push({ tempDefectKey: 'general', blob: p.blob, filename: p.filename, description: p.description, displayOrder: p.displayOrder }));
         await FieldDB.queueJob({ structureId, structureName: S.draft.structureName, inspection, defects, photos });
         toast('Offline. Inspection queued, will sync automatically.');
         updateSyncBar();
