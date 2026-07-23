@@ -1,6 +1,6 @@
 // Ported 1:1 from inspection/bci.js and inspection/inspection.js so the
 // mobile app computes the exact same BCIav/BCIcrit scores and uses the same
-// element categories as the desktop app — this must never drift from those
+// element categories as the desktop app. This must never drift from those
 // files' formulas/tables, since a mismatch would silently produce a
 // different BCI for the same inspection depending which app saved it.
 (function () {

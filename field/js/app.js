@@ -334,7 +334,7 @@
         `${S.structures.length} total`;
       renderStructures();
     } catch (err) {
-      area.innerHTML = `<div class="empty-state">${err.offline ? 'Offline — no cached structures yet.' : 'Could not load structures.'}</div>`;
+      area.innerHTML = `<div class="empty-state">${err.offline ? 'Offline. No cached structures yet.' : 'Could not load structures.'}</div>`;
     }
   }
   function renderStructures(filter) {
@@ -351,7 +351,7 @@
       const bciVal = s.bci_av != null ? Math.round(s.bci_av) : null;
       const pill = bciVal != null
         ? (() => { const bc = FieldBCI.BAND_COLORS[FieldBCI.bandFromScore(bciVal)]; return `<span class="bci-pill" style="background:${bc.bg};color:${bc.c};">${bciVal}</span>`; })()
-        : `<span class="bci-pill" style="background:var(--surface-2);color:var(--ink-faint);">—</span>`;
+        : `<span class="bci-pill" style="background:var(--surface-2);color:var(--ink-faint);">--</span>`;
       card.innerHTML = `
         <div class="type-icon" style="background:${meta.color}22; color:${meta.color};">${typeIconSvg(s.type)}</div>
         <div class="structure-main"><div class="s-name">${escapeHtml(s.name)}</div><div class="s-sub">${escapeHtml(String(s.id))} · ${escapeHtml(s.type || 'Bridge')}</div></div>
@@ -388,21 +388,21 @@
       S.inspectionDates = dates;
       document.getElementById('inspTitle').textContent = structure.name;
       document.getElementById('inspSubtitle').textContent = `${structure.id} · ${structure.type || 'Bridge'}`;
-      document.getElementById('inspInfoSpans').textContent = structure.span_number || structure.span || '—';
-      document.getElementById('inspInfoLength').textContent = structure.length ? `${parseFloat(structure.length).toFixed(1)} m` : '—';
-      document.getElementById('inspInfoBuilt').textContent = structure.built_year || '—';
+      document.getElementById('inspInfoSpans').textContent = structure.span_number || structure.span || '--';
+      document.getElementById('inspInfoLength').textContent = structure.length ? `${parseFloat(structure.length).toFixed(1)} m` : '--';
+      document.getElementById('inspInfoBuilt').textContent = structure.built_year || '--';
       document.getElementById('structureDescriptionText').textContent = structure.description || 'No description recorded.';
       renderStructureMap(structure);
       renderInspectionRows();
     } catch (err) {
       document.getElementById('inspectionRows').innerHTML =
-        `<div class="empty-state">${err.offline ? 'Offline — open a structure you\'ve viewed before.' : 'Could not load this structure.'}</div>`;
+        `<div class="empty-state">${err.offline ? 'Offline. Open a structure you\'ve viewed before.' : 'Could not load this structure.'}</div>`;
     }
   }
   function renderInspectionRows() {
     const area = document.getElementById('inspectionRows');
     if (S.inspectionDates.length === 0) {
-      area.innerHTML = '<div class="empty-state">No inspections recorded yet — use + to start the first one.</div>';
+      area.innerHTML = '<div class="empty-state">No inspections recorded yet. Use + to start the first one.</div>';
       return;
     }
     area.innerHTML = '';
@@ -491,14 +491,14 @@
       buildDraftFromInspection(full);
       openViewer();
     } catch (err) {
-      toast(err.offline ? 'Offline — this inspection isn\'t cached yet.' : 'Could not load that inspection.');
+      toast(err.offline ? 'Offline. This inspection isn\'t cached yet.' : 'Could not load that inspection.');
     }
   }
   async function startBlankInspection() {
     try {
       await loadElementsFor(S.currentStructure.type);
     } catch (err) {
-      toast(err.offline ? 'Offline — element list not cached yet.' : 'Could not load element list.');
+      toast(err.offline ? 'Offline. Element list not cached yet.' : 'Could not load element list.');
       return;
     }
     const totalSpans = parseInt(S.currentStructure.span_number || S.currentStructure.span || 1, 10) || 1;
@@ -907,7 +907,7 @@
       const icon = combined === '0.0'
         ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>'
         : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>';
-      row.innerHTML = `${icon}<span style="color:${combined === '0.0' ? 'var(--good)' : 'var(--fair)'}">${escapeHtml(el.description)} — ${combined === '0.0' ? 'no defects recorded' : 'not inspected'}</span>`;
+      row.innerHTML = `${icon}<span style="color:${combined === '0.0' ? 'var(--good)' : 'var(--fair)'}">${escapeHtml(el.description)}: ${combined === '0.0' ? 'no defects recorded' : 'not inspected'}</span>`;
       return row;
     }
     const row = document.createElement('div');
@@ -999,7 +999,7 @@
 
     document.getElementById('defTitle').textContent = d ? (isPlaceholder(d) ? 'Element status' : 'Edit defect') : 'New defect';
     document.getElementById('defSubtitle').textContent = `Span ${S.currentSpan}`;
-    document.getElementById('defElementDisplay').textContent = el ? `${el.no}. ${el.description}` : '—';
+    document.getElementById('defElementDisplay').textContent = el ? `${el.no}. ${el.description}` : '--';
     document.getElementById('defectDeleteBtn').style.visibility = d ? 'visible' : 'hidden';
 
     const typeCode = document.getElementById('defTypeCode');
@@ -1347,7 +1347,7 @@
           d.photos.forEach((p) => photos.push({ tempDefectKey: tempKey, blob: p.blob, filename: p.filename, description: p.description, displayOrder: p.displayOrder }));
         });
         await FieldDB.queueJob({ structureId, structureName: S.draft.structureName, inspection, defects, photos });
-        toast('Offline — inspection queued, will sync automatically.');
+        toast('Offline. Inspection queued, will sync automatically.');
         updateSyncBar();
         stack = ['structures', 'inspections'];
         renderStack(true);
