@@ -112,4 +112,54 @@ ${text}
     return { elements, warning: null };
 }
 
-module.exports = { extractElementsWithGemini };
+// Drafts the free-text "Conclusions" paragraph(s) for an inspection, from
+// the same defect/BCI summary the client's own template-based
+// generateDraftConclusions() uses (see inspection/spans.js) - this is an
+// alternative source for that same "Suggest Draft" button, not a different
+// feature. The client falls back to its local template if this throws for
+// any reason (missing/invalid key, quota, network), same fallback shape as
+// extractElementsWithGemini above.
+async function draftConclusionsWithGemini(summary) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
+
+    const defects = Array.isArray(summary.defects) ? summary.defects : [];
+    const defectLines = defects.map(d => {
+        const bits = [`${d.element} (${d.code}): ${d.description || 'unspecified defect'}, severity ${d.severity}, extent ${d.extent}`];
+        if (d.worksRequired === 'Y') bits.push('remedial works required');
+        else if (d.worksRequired === 'M') bits.push('recommended for monitoring');
+        if (d.comment) bits.push(`inspector's note: "${d.comment}"`);
+        return `- ${bits.join(', ')}`;
+    }).join('\n') || '(none recorded)';
+
+    const prompt = `You are drafting the "Conclusions" section of a UK bridge/structure inspection report. Write in the plain, factual, third-person register used in real UK structures engineering reports - no marketing language, no headings, no bullet points in your answer, 2-4 short paragraphs of prose.
+
+Inspection facts:
+- Structure type: ${summary.structureType || 'Bridge'}
+- Elements checked: ${summary.elementsChecked}
+- Elements with no defects: ${summary.noDefectsCount}
+- Elements that could not be inspected: ${summary.notInspectedCount}
+- Overall BCI average: ${summary.bciAv}, BCI critical: ${summary.bciCrit}
+
+Defects recorded (most severe first):
+${defectLines}
+
+Write the Conclusions section now: summarise overall condition and describe the most significant defects and their implications. Do not discuss or recommend remedial works - that's covered elsewhere in the report. Only use the facts given above - do not invent defects, dates, or figures not listed.`;
+
+    const res = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+    });
+    if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Gemini API error ${res.status}: ${errText.slice(0, 300)}`);
+    }
+    const data = await res.json();
+    const textOut = data && data.candidates && data.candidates[0] && data.candidates[0].content &&
+        data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text;
+    if (!textOut) throw new Error('Gemini returned no content');
+    return textOut.trim();
+}
+
+module.exports = { extractElementsWithGemini, draftConclusionsWithGemini };

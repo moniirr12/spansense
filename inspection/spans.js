@@ -370,7 +370,6 @@ function generateDraftConclusions() {
     const noDefectsCount = allDefects.filter(d => d.defectId === '0.0').length;
     const notInspectedCount = allDefects.filter(d => d.defectId === '0.1').length;
     const elementsChecked = new Set(allDefects.map(d => `${d.span}-${d.elementNumber}`)).size;
-    const worksRequired = realDefects.filter(d => d.works === 'Y');
 
     const spansWithBci = (inspectionData.spans || []).filter(s => s.bciAv != null && s.bciCrit != null);
     const bciAv = spansWithBci.length
@@ -406,17 +405,49 @@ function generateDraftConclusions() {
     }
 
     paragraphs.push(`Overall structural condition is assessed as ${conditionLabel} (BCI avg ${bciAv.toFixed(2)}, BCI crit ${bciCrit.toFixed(2)}).`);
-    paragraphs.push(worksRequired.length
-        ? 'It is recommended that the identified remedial works be prioritised accordingly.'
-        : 'No remedial works are currently required.');
 
     return paragraphs.join(' ');
+}
+
+// Same facts generateDraftConclusions() gathers for its own template, just
+// shaped for the Gemini prompt (see draftConclusionsWithGemini in
+// geminiExtract.js) instead of being turned into paragraphs locally.
+function buildConclusionsSummaryForGemini() {
+    const inspectionData = JSON.parse(sessionStorage.getItem('inspectionData') || '{}');
+    const allDefects = getAllDefects();
+    const realDefects = allDefects.filter(isRealDefect)
+        .sort((a, b) => (parseInt(b.severity) || 0) - (parseInt(a.severity) || 0));
+    const noDefectsCount = allDefects.filter(d => d.defectId === '0.0').length;
+    const notInspectedCount = allDefects.filter(d => d.defectId === '0.1').length;
+    const elementsChecked = new Set(allDefects.map(d => `${d.span}-${d.elementNumber}`)).size;
+
+    const spansWithBci = (inspectionData.spans || []).filter(s => s.bciAv != null && s.bciCrit != null);
+    const bciAv = spansWithBci.length
+        ? spansWithBci.reduce((sum, s) => sum + parseFloat(s.bciAv), 0) / spansWithBci.length
+        : parseFloat(document.getElementById('bciAvResult')?.textContent) || 100;
+    const bciCrit = spansWithBci.length
+        ? spansWithBci.reduce((sum, s) => sum + parseFloat(s.bciCrit), 0) / spansWithBci.length
+        : parseFloat(document.getElementById('bciCritResult')?.textContent) || 100;
+
+    return {
+        structureType: inspectionData.structureType || sessionStorage.getItem('structureType') || 'Bridge',
+        elementsChecked, noDefectsCount, notInspectedCount,
+        bciAv: Number(bciAv.toFixed(2)), bciCrit: Number(bciCrit.toFixed(2)),
+        defects: realDefects.map(d => ({
+            element: d.element,
+            code: `${d.defectType}.${d.defectNumber}`,
+            description: getDefectText(parseInt(d.defectType), parseInt(d.defectNumber)) || getFullDefectDescription(d.defectType, d.defectNumber, d.defectId),
+            severity: d.severity,
+            extent: d.extent,
+            worksRequired: d.works,
+            comment: d.comment || ''
+        }))
+    };
 }
 
 async function suggestDraftConclusions() {
     const textarea = document.getElementById('conclusionsText');
     if (!textarea) return;
-    const draft = generateDraftConclusions();
 
     // Only ask if there's actually something of the user's to lose.
     if (textarea.value.trim().length > 0) {
@@ -430,7 +461,27 @@ async function suggestDraftConclusions() {
         });
         if (!confirmed) return;
     }
-    textarea.value = draft;
+
+    const btn = document.querySelector('.btn-suggest-draft');
+    const originalHtml = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Drafting…'; }
+
+    try {
+        const response = await fetch('/api/draft-conclusions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(buildConclusionsSummaryForGemini())
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success || !result.text) throw new Error(result.error || 'No draft returned');
+        textarea.value = result.text;
+    } catch (err) {
+        console.warn('Gemini draft unavailable, using quick draft instead:', err.message);
+        textarea.value = generateDraftConclusions();
+        showToast('AI draft unavailable - used a quick draft instead.');
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
+    }
 }
 window.generateDraftConclusions = generateDraftConclusions;
 window.suggestDraftConclusions = suggestDraftConclusions;
