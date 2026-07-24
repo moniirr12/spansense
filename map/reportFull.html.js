@@ -286,10 +286,14 @@ async function buildFullInspectionReportHtml(doc) {
         mapDataURL = await captureLocationMap(parseFloat(bridgeData.latitude) || null, parseFloat(bridgeData.longitude) || null, structureName);
     }
 
-    // Photos, numbered/matched to defects the same way as the PDF/docx appendix
+    // Photos, numbered/matched to defects the same way as the PDF/docx appendix.
+    // General site photos (not tied to any defect) get the lowest numbers so
+    // they lead the appendix, ahead of the per-defect photos - two passes
+    // over allPhotos (general first) instead of one, so numbering doesn't
+    // just follow upload order.
     var photosByDefect = {};
     var generalPhotos = [];
-    var photoCounter = 0;
+    var defectPhotoEntries = [];
     allPhotos.forEach(function (photo) {
         var defectCode = null;
         if (photo.defect_id != null) {
@@ -300,16 +304,21 @@ async function buildFullInspectionReportHtml(doc) {
             var parts = String(photo.front_defectid).split('_');
             defectCode = parts[parts.length - 1];
         }
-        photoCounter++;
         // No defectCode means this is a general site photo (not tied to any
         // defect) rather than a couldn't-be-matched one - it still belongs in
         // the appendix, just without a per-defect hyperlink back to it.
         if (!defectCode) {
-            generalPhotos.push({ photo_url: photo.photo_url, photo_description: photo.photo_description, photoNumber: photoCounter });
-            return;
+            generalPhotos.push({ photo_url: photo.photo_url, photo_description: photo.photo_description });
+        } else {
+            defectPhotoEntries.push({ defectCode: defectCode, photo_url: photo.photo_url, photo_description: photo.photo_description });
         }
-        if (!photosByDefect[defectCode]) photosByDefect[defectCode] = [];
-        photosByDefect[defectCode].push({ photo_url: photo.photo_url, photo_description: photo.photo_description, photoNumber: photoCounter });
+    });
+    var photoCounter = 0;
+    generalPhotos.forEach(function (p) { photoCounter++; p.photoNumber = photoCounter; });
+    defectPhotoEntries.forEach(function (p) {
+        photoCounter++;
+        if (!photosByDefect[p.defectCode]) photosByDefect[p.defectCode] = [];
+        photosByDefect[p.defectCode].push({ photo_url: p.photo_url, photo_description: p.photo_description, photoNumber: photoCounter });
     });
     function getPhotoNumbersForDefect(defectCode) { return (photosByDefect[defectCode] || []).map(function (p) { return p.photoNumber; }); }
 

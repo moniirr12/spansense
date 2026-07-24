@@ -619,14 +619,16 @@ async function generateSimplePDFReport(doc, mode = 'download', targetWindow = nu
             });
         }
 
-        // Build photosByDefect
+        // Build photosByDefect. General site photos (not tied to any defect)
+        // are bucketed separately and given the lowest photo numbers below so
+        // they lead the appendix, ahead of the per-defect photos - the
+        // photoNumber assigned here is overwritten by the renumbering pass
+        // that builds photosWithDataURLs, so ordering only needs to be right
+        // there, not in this bucketing step.
         const photosByDefect = {};
-        let globalPhotoCounter = 0;
-        
-        allPhotos.forEach(photo => {
-            globalPhotoCounter++;
-            const photoNumber = globalPhotoCounter;
+        const generalPhotos = [];
 
+        allPhotos.forEach(photo => {
             // front_defectid (a temp key) is only set for photos queued
             // before the inspection was saved, via /save-inspection's bulk
             // insert. Photos uploaded straight to an already-saved defect
@@ -643,18 +645,20 @@ async function generateSimplePDFReport(doc, mode = 'download', targetWindow = nu
                 defectCode = parts[parts.length - 1];
             }
 
-            if (defectCode) {
-                if (!photosByDefect[defectCode]) {
-                    photosByDefect[defectCode] = [];
-                }
-
-                photosByDefect[defectCode].push({
-                    photo_url: photo.photo_url,
-                    photo_description: photo.photo_description,
-                    defect_code: defectCode,
-                    photoNumber: photoNumber
-                });
+            if (!defectCode) {
+                generalPhotos.push({ photo_url: photo.photo_url, photo_description: photo.photo_description });
+                return;
             }
+
+            if (!photosByDefect[defectCode]) {
+                photosByDefect[defectCode] = [];
+            }
+
+            photosByDefect[defectCode].push({
+                photo_url: photo.photo_url,
+                photo_description: photo.photo_description,
+                defect_code: defectCode
+            });
         });
 
         // Get bridge photo
@@ -677,9 +681,19 @@ async function generateSimplePDFReport(doc, mode = 'download', targetWindow = nu
             );
         }
 
-        // Load all defect photos
+        // Load all photos - general site photos first (see photoNumber
+        // comment above), then per-defect photos.
         const photosWithDataURLs = [];
         let photoCounter = 1;
+        for (const photo of generalPhotos) {
+            const dataURL = await imageUrlToDataURL(photo.photo_url);
+            photosWithDataURLs.push({
+                ...photo,
+                photo_description: photo.photo_description || 'General site photo',
+                photoNumber: photoCounter++,
+                photo_dataURL: dataURL
+            });
+        }
         for (const [defectCode, photos] of Object.entries(photosByDefect)) {
             for (const photo of photos) {
                 const dataURL = await imageUrlToDataURL(photo.photo_url);
