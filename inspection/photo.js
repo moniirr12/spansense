@@ -405,6 +405,7 @@ function addServerPhotoCard(grid, photo, defectId, index) {
         <img src="${photo.preview_url}" alt="Photo">
         <textarea class="photo-description-input"
                   placeholder="Add description...">${escapeHtml(photo.photo_description || '')}</textarea>
+        ${defectId === 'general' ? assignToDefectHTML() : ''}
     `;
 
     const textarea = photoElement.querySelector('.photo-description-input');
@@ -419,7 +420,76 @@ function addServerPhotoCard(grid, photo, defectId, index) {
         debounceTimer = setTimeout(() => updateServerPhotoDescription(photo.photoId, value), 600);
     });
 
+    const assignSelect = photoElement.querySelector('.assign-defect-select');
+    if (assignSelect) {
+        assignSelect.addEventListener('change', function() {
+            if (!this.value) return;
+            assignPhotoToDefect(photo.photoId, this.value);
+        });
+    }
+
     grid.appendChild(photoElement);
+}
+
+// ============================================
+// ASSIGN A GENERAL PHOTO TO A DEFECT — lets a photo taken as a general site
+// photo (no defect chosen at capture time, e.g. from Field's Notes tab) be
+// moved onto a specific defect afterwards instead of staying stranded.
+// ============================================
+
+// Only already-saved defects have a real database id for defect_photos'
+// defect_id FK to point at - a brand-new, not-yet-saved defect (or the
+// '0.0'/'0.1' No Defects/Not Inspected placeholder rows) isn't a valid
+// target yet.
+function getAssignableDefectOptions() {
+    const rows = Array.from(document.querySelectorAll('tr.expandable-row'));
+    const seen = new Set();
+    const options = [];
+    rows.forEach(row => {
+        const idEl = row.querySelector('.defectId');
+        const dbId = idEl && idEl.textContent.trim();
+        if (!dbId || !/^\d+$/.test(dbId) || seen.has(dbId)) return;
+        const codeEl = row.querySelector('.addDefect');
+        const code = codeEl?.dataset.code || '';
+        if (!code || code === '0.0' || code === '0.1') return;
+        seen.add(dbId);
+        const span = row.dataset.span || '?';
+        const elementNo = row.dataset.element;
+        const elementName = elementNo != null && typeof getElementDescriptionSafe === 'function'
+            ? getElementDescriptionSafe(parseInt(elementNo))
+            : `Element ${elementNo}`;
+        options.push({ value: dbId, label: `Span ${span} · ${elementName} · ${code}` });
+    });
+    return options;
+}
+
+function assignToDefectHTML() {
+    const options = getAssignableDefectOptions();
+    if (!options.length) {
+        return '<p class="assign-defect-empty">No saved defects to assign to yet</p>';
+    }
+    return `<select class="assign-defect-select">
+        <option value="">Assign to defect…</option>
+        ${options.map(o => `<option value="${o.value}">${escapeHtml(o.label)}</option>`).join('')}
+    </select>`;
+}
+
+async function assignPhotoToDefect(photoId, newDefectId) {
+    try {
+        const response = await fetch(`/api/inspection-photos/${photoId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ defect_id: newDefectId })
+        });
+        if (!response.ok) throw new Error('Failed to assign photo');
+        showToast('Photo moved to defect', 'success');
+        // Re-render the general-photos grid - the reassigned photo now
+        // belongs to a defect, so a fresh server fetch drops it from here.
+        loadDefectPhotos('general');
+    } catch (error) {
+        console.error('Assign photo error:', error);
+        showAlertModal('Could not assign photo: ' + error.message);
+    }
 }
 
 async function updateServerPhotoDescription(photoId, description) {

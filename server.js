@@ -350,6 +350,23 @@ async function initDatabase() {
         await pool.query(`ALTER TABLE defect_photos ADD COLUMN IF NOT EXISTS inspection_id INTEGER`);
         await pool.query(`CREATE INDEX IF NOT EXISTS idx_defect_photos_inspection_id ON defect_photos(inspection_id)`);
 
+        // Notes log - short, unpolished, multi-entry log of things worth
+        // flagging for whoever picks this inspection up next, separate from
+        // `inspections.conclusions` (the single polished narrative summary).
+        // 'source' distinguishes a note captured on site (Field) from one
+        // added back at the desk (Core) - both land in the same log.
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS inspection_notes (
+                id SERIAL PRIMARY KEY,
+                inspection_id INTEGER NOT NULL,
+                text TEXT NOT NULL,
+                source TEXT NOT NULL DEFAULT 'core',
+                author TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+        await pool.query(`CREATE INDEX IF NOT EXISTS idx_inspection_notes_inspection_id ON inspection_notes(inspection_id)`);
+
         // Maintenance history - user-editable log of work carried out on a
         // structure (repairs, routine upkeep, etc.), shown/edited from
         // twinView. Deliberately separate from inspections/defects - this
@@ -1561,7 +1578,7 @@ app.get('/api/debug/count-test', requireAuth, async (req, res) => {
 
 // SAVE INSPECTION DATA TO DATABASE
 app.post('/save-inspection', requireAuth, async (req, res) => {
-    const { inspection, defects, photoData = {} } = req.body;
+    const { inspection, defects, photoData = {}, notes = [] } = req.body;
 
 
     const client = await pool.connect();
@@ -1722,6 +1739,19 @@ app.post('/save-inspection', requireAuth, async (req, res) => {
             }
         }
 
+        // 5. Insert notes - e.g. Field's Notes tab, submitted as one
+        // 'field'-sourced entry alongside the rest of a brand-new inspection
+        // rather than requiring the inspection to exist first. Author is
+        // always the logged-in session, never trusted from the client.
+        for (const note of notes) {
+            if (!note || !note.text || !note.text.trim()) continue;
+            await client.query(
+                `INSERT INTO inspection_notes (inspection_id, text, source, author)
+                 VALUES ($1, $2, $3, $4)`,
+                [inspectionId, note.text.trim(), note.source === 'field' ? 'field' : 'core', req.session.username || null]
+            );
+        }
+
         await client.query('COMMIT');
 
         res.json({
@@ -1745,6 +1775,12 @@ app.post('/save-inspection', requireAuth, async (req, res) => {
 
 // UPDATE INSPECTION ENDPOINT
 app.put('/update-inspection', requireAuth, async (req, res) => {
+    // Notes aren't part of this payload - by the time a desktop user is
+    // editing an existing inspection, its id is already known (loaded via
+    // /api/inspection/full), so the notes panel posts new entries live via
+    // POST /api/inspections/:id/notes instead of batching them here. Only a
+    // brand-new inspection (still going through /save-inspection, no id
+    // yet) needs notes queued into the save payload itself.
     const { inspection, defects, inspectionId } = req.body;
 
     const client = await pool.connect();
@@ -2070,8 +2106,16 @@ app.get('/api/inspection/full', requireAuth, async (req, res) => {
             displayOrder: photo.display_order
         })));
 
+        // Notes log - see inspection_notes above.
+        const notes = await dbAll(
+            `SELECT id, text, source, author, created_at
+             FROM inspection_notes WHERE inspection_id = $1 ORDER BY created_at DESC`,
+            [inspection.id]
+        );
+
         // 5. Format response
         const response = {
+            id: inspection.id,
             structureId: inspection.structure_id,
             structureName: inspection.structure_name,
             inspectionDate: inspection.inspection_date,
@@ -2117,7 +2161,8 @@ app.get('/api/inspection/full', requireAuth, async (req, res) => {
                 photos: photosByDefect[defect.id] || []
             })),
 
-            generalPhotos
+            generalPhotos,
+            notes
         };
 
         res.json(response);
@@ -2703,21 +2748,45 @@ app.delete('/api/inspection-photos/:photoId', requireAuth, async (req, res) => {
     }
 });
 
-// Update an already-uploaded photo's description
+// Update an already-uploaded photo's description, and/or reassign it to a
+// different defect (or back to being a general/inspection-level photo).
 app.patch('/api/inspection-photos/:photoId', requireAuth, async (req, res) => {
     try {
         const { photoId } = req.params;
-        const { photo_description } = req.body;
+        const { photo_description, defect_id, inspection_id } = req.body;
+
+        const sets = [];
+        const values = [];
+        let i = 1;
+        if (photo_description !== undefined) {
+            sets.push(`photo_description = $${i++}`);
+            values.push(photo_description || '');
+        }
+        // A photo is either tied to a defect (defect_id set, inspection_id
+        // NULL) or general (inspection_id set, defect_id NULL) - reassigning
+        // one always clears the other so a photo can't end up claimed by both.
+        if (defect_id !== undefined) {
+            sets.push(`defect_id = $${i++}`, `inspection_id = NULL`);
+            values.push(defect_id);
+        } else if (inspection_id !== undefined) {
+            sets.push(`inspection_id = $${i++}`, `defect_id = NULL`);
+            values.push(inspection_id);
+        }
+        if (!sets.length) {
+            return res.status(400).json({ success: false, error: 'Nothing to update' });
+        }
+        values.push(photoId);
+
         const result = await pool.query(
-            'UPDATE defect_photos SET photo_description = $1 WHERE id = $2',
-            [photo_description || '', photoId]
+            `UPDATE defect_photos SET ${sets.join(', ')} WHERE id = $${i}`,
+            values
         );
         if (result.rowCount === 0) {
             return res.status(404).json({ success: false, error: 'Photo not found' });
         }
         res.json({ success: true });
     } catch (err) {
-        console.error('Update photo description error:', err);
+        console.error('Update photo error:', err);
         res.status(500).json({ success: false, error: err.message });
     }
 });
@@ -3321,6 +3390,40 @@ app.get('/api/inspections/pending-review', requireAuth, requireEngineer, async (
         res.json({ success: true, data: rows });
     } catch (err) {
         console.error('Pending review error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Notes log for an already-saved inspection - see inspection_notes above.
+// A brand-new, not-yet-saved inspection has no id to fetch/post against yet;
+// its first notes travel in /save-inspection's `notes` array instead.
+app.get('/api/inspections/:id/notes', requireAuth, async (req, res) => {
+    try {
+        const rows = await dbAll(
+            `SELECT id, text, source, author, created_at
+             FROM inspection_notes WHERE inspection_id = $1 ORDER BY created_at DESC`,
+            [req.params.id]
+        );
+        res.json({ success: true, notes: rows });
+    } catch (err) {
+        console.error('Get notes error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+app.post('/api/inspections/:id/notes', requireAuth, async (req, res) => {
+    try {
+        const text = (req.body.text || '').trim();
+        if (!text) return res.status(400).json({ success: false, error: 'Note text is required' });
+        const source = req.body.source === 'field' ? 'field' : 'core';
+        const row = await dbGet(
+            `INSERT INTO inspection_notes (inspection_id, text, source, author)
+             VALUES ($1, $2, $3, $4) RETURNING id, text, source, author, created_at`,
+            [req.params.id, text, source, req.session.username || null]
+        );
+        res.json({ success: true, note: row });
+    } catch (err) {
+        console.error('Add note error:', err);
         res.status(500).json({ success: false, error: err.message });
     }
 });

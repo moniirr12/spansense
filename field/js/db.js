@@ -36,7 +36,8 @@
   }
 
   // job: { structureId, structureName, inspectionDate, inspectionType,
-  //        inspection, defects, photos: [{tempDefectKey, blob, mimetype, filename, description, displayOrder}] }
+  //        inspection, defects, photos: [{tempDefectKey, blob, mimetype, filename, description, displayOrder}],
+  //        notes: [{text, source}] }
   async function queueJob(job) {
     const db = await openDb();
     return new Promise((resolve, reject) => {

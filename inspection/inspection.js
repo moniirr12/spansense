@@ -953,6 +953,16 @@ async function loadDefectsFromAPI(structureId, inspectionDate, currentSpan) {
         const inspectionData = await response.json();
         const inspectionMode = sessionStorage.getItem('inspectionMode');
         const isEditMode = inspectionMode === 'edit';
+        // Real inspection id + its existing notes log (see inspection_notes) -
+        // stashed the same way conclusions is below, so the Notes panel has
+        // something to fetch/post against without a second round-trip.
+        if (inspectionData.id != null) {
+            const storedForNotes = JSON.parse(sessionStorage.getItem('inspectionData') || '{}');
+            storedForNotes.id = inspectionData.id;
+            storedForNotes.notes = inspectionData.notes || [];
+            sessionStorage.setItem('inspectionData', JSON.stringify(storedForNotes));
+            if (typeof window.renderNotesList === 'function') window.renderNotesList();
+        }
         if (inspectionData.conclusions) {
             sessionStorage.setItem('inspectionConclusions', inspectionData.conclusions);
             const storedInspectionData = JSON.parse(sessionStorage.getItem('inspectionData') || '{}');

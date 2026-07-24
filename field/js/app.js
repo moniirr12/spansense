@@ -249,7 +249,7 @@
         display_order: p.displayOrder || 0
       });
     }
-    return Api.saveInspection({ inspection: job.inspection, defects: job.defects, photoData });
+    return Api.saveInspection({ inspection: job.inspection, defects: job.defects, photoData, notes: job.notes || [] });
   }
 
   /* ============================================================
@@ -511,6 +511,11 @@
       baseType: null,
       totalSpans,
       conclusions: '',
+      // A note added here is a fresh, standalone log entry (see
+      // inspection_notes) - always starts blank, even when the draft was
+      // built from a previous inspection below, since it's "something new
+      // to flag" rather than an editable existing value.
+      fieldNote: '',
       spans: Array.from({ length: totalSpans }, (_, i) => ({ spanNumber: i + 1, comments: '' })),
       defects: [],
       generalPhotos: []
@@ -528,6 +533,7 @@
       baseType: full.inspectionType,
       totalSpans: full.totalSpans || (full.spans || []).length || 1,
       conclusions: full.conclusions || '',
+      fieldNote: '',
       spans: (full.spans && full.spans.length ? full.spans : [{ spanNumber: 1 }]).map((sp) => ({
         spanNumber: sp.spanNumber, comments: sp.comments || ''
       })),
@@ -650,8 +656,8 @@
     document.body.appendChild(wrap);
   }
 
-  document.getElementById('conclusionsInput').addEventListener('input', (e) => {
-    if (S.draft) S.draft.conclusions = e.target.value;
+  document.getElementById('fieldNoteInput').addEventListener('input', (e) => {
+    if (S.draft) S.draft.fieldNote = e.target.value;
   });
 
   /* ============================================================
@@ -700,7 +706,7 @@
 
     btn.addEventListener('click', () => (listening ? stop() : start()));
   }
-  attachDictation(document.getElementById('conclusionsMicBtn'), document.getElementById('conclusionsInput'), { timestamp: true });
+  attachDictation(document.getElementById('fieldNoteMicBtn'), document.getElementById('fieldNoteInput'), { timestamp: true });
   attachDictation(document.getElementById('defCommentsMicBtn'), document.getElementById('defComments'));
   attachDictation(document.getElementById('defRemedialMicBtn'), document.getElementById('defRemedial'));
 
@@ -720,7 +726,7 @@
     // whole-inspection free-text field with no element/span of its own.
     document.getElementById('spanTabsRow').style.display = tab === 'notes' ? 'none' : 'flex';
     document.getElementById('addDefectFab').style.display = tab === 'notes' ? 'none' : 'flex';
-    if (tab === 'notes') { document.getElementById('conclusionsInput').value = S.draft.conclusions || ''; renderNotesPhotoStrip(); }
+    if (tab === 'notes') { document.getElementById('fieldNoteInput').value = S.draft.fieldNote || ''; renderNotesPhotoStrip(); }
     refreshViewerContent();
   }
   // Pauses the 3D render loop (battery) whenever the viewer+TwinView tab
@@ -1374,7 +1380,10 @@
         description: p.description, displayOrder: p.displayOrder
       }));
 
-      const job = { structureId, structureName: S.draft.structureName, inspection, defects, photos };
+      const notes = S.draft.fieldNote && S.draft.fieldNote.trim()
+        ? [{ text: S.draft.fieldNote.trim(), source: 'field' }] : [];
+
+      const job = { structureId, structureName: S.draft.structureName, inspection, defects, photos, notes };
 
       // Always attempt the live save first - navigator.onLine is only ever
       // a hint (some browsers/networks report it wrong) and the real
@@ -1418,7 +1427,9 @@
           d.photos.forEach((p) => photos.push({ tempDefectKey: tempKey, blob: p.blob, filename: p.filename, description: p.description, displayOrder: p.displayOrder }));
         });
         S.draft.generalPhotos.forEach((p) => photos.push({ tempDefectKey: 'general', blob: p.blob, filename: p.filename, description: p.description, displayOrder: p.displayOrder }));
-        await FieldDB.queueJob({ structureId, structureName: S.draft.structureName, inspection, defects, photos });
+        const notes = S.draft.fieldNote && S.draft.fieldNote.trim()
+          ? [{ text: S.draft.fieldNote.trim(), source: 'field' }] : [];
+        await FieldDB.queueJob({ structureId, structureName: S.draft.structureName, inspection, defects, photos, notes });
         toast('Offline. Inspection queued, will sync automatically.');
         updateSyncBar();
         stack = ['structures', 'inspections'];
