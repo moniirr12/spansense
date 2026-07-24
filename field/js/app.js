@@ -1008,12 +1008,24 @@
 
     const typeCode = document.getElementById('defTypeCode');
     const numCode = document.getElementById('defNumberCode');
-    const typeLabel = document.getElementById('defTypeLabel');
     const isPh = d && isPlaceholder(d);
     document.getElementById('defectTypeGroup').style.display = isPh ? 'none' : 'block';
     typeCode.value = d && !isPh ? d.defectType : '';
     numCode.value = d && !isPh ? d.defectNumber : '';
-    typeLabel.value = d ? (d.elementDescription && d.elementDescription !== el?.description ? d.elementDescription : '') : '';
+    // A stored elementDescription (legacy free text, or a custom override
+    // typed via the picker's "use as typed" row) wins when present; otherwise
+    // derive the standard name from the code itself, since most existing
+    // defects were saved with only the numeric code and never had this text
+    // populated at all - the field used to just show blank for those.
+    const customLabel = d && d.elementDescription && d.elementDescription !== el?.description ? d.elementDescription : '';
+    const stdLabel = d && !isPh ? window.DefectCodes.getDefectText(d.defectType, d.defectNumber) : null;
+    setDefectLabel(customLabel || stdLabel || '');
+    [typeCode, numCode].forEach((inp) => {
+      inp.oninput = () => {
+        const std = window.DefectCodes.getDefectText(typeCode.value.trim(), numCode.value.trim());
+        if (std) setDefectLabel(std);
+      };
+    });
 
     // Severity/extent/works are meaningless on a No Defects / Not Inspected
     // placeholder row (they're pinned at 1A by definition) - hide them and
@@ -1064,7 +1076,10 @@
         const real = prev.filter((p) => !(p.defect_type === '0'));
         if (real.length) {
           hint.hidden = false;
-          hint.textContent = `Previously recorded here: ${real.slice(0, 3).map((p) => `${p.defect_type}.${p.defect_number}`).join(', ')}`;
+          hint.textContent = `Previously recorded here: ${real.slice(0, 3).map((p) => {
+            const name = window.DefectCodes.getDefectText(p.defect_type, p.defect_number);
+            return `${p.defect_type}.${p.defect_number}${name ? ' ' + name : ''}`;
+          }).join(', ')}`;
         }
       }).catch(() => {});
     }
@@ -1078,6 +1093,10 @@
     const sel = document.querySelector(`#${id} button.sel`);
     return sel ? sel.dataset.v : null;
   }
+  function setDefectLabel(text) {
+    document.getElementById('defTypeLabel').value = text;
+    document.getElementById('defTypeLabelText').textContent = text || 'Pick defect type';
+  }
   document.querySelectorAll('.stepper').forEach((stepper) => {
     stepper.addEventListener('click', (e) => {
       const btn = e.target.closest('button'); if (!btn) return;
@@ -1090,6 +1109,71 @@
       }
     });
   });
+
+  /* ---------- defect type picker ----------
+     Lets the inspector find a defect by name (spalling, corrosion...)
+     instead of having to remember its numeric code; picking one fills the
+     code inputs and the label together, and typing a code still works and
+     fills the name back in via the oninput handlers set up above. */
+  const defectPickerOverlay = document.getElementById('defectPickerOverlay');
+  const defectPickerList = document.getElementById('defectPickerList');
+  const defectPickerSearch = document.getElementById('defectPickerSearch');
+  function openDefectPicker() {
+    defectPickerSearch.value = '';
+    renderDefectPicker('');
+    defectPickerOverlay.hidden = false;
+    requestAnimationFrame(() => defectPickerOverlay.classList.add('show'));
+    defectPickerSearch.focus();
+  }
+  function closeDefectPicker() {
+    defectPickerOverlay.classList.remove('show');
+    setTimeout(() => { defectPickerOverlay.hidden = true; }, 180);
+  }
+  function renderDefectPicker(query) {
+    const q = query.trim().toLowerCase();
+    const matches = q ? window.DefectCodes.CATALOG.filter((c) => c.search.includes(q)) : window.DefectCodes.CATALOG;
+    defectPickerList.innerHTML = '';
+    if (q) {
+      const custom = document.createElement('button');
+      custom.type = 'button';
+      custom.className = 'picker-row custom-row';
+      custom.innerHTML = `<span class="code">--</span><span class="name">Use "${escapeHtml(query.trim())}" as typed</span>`;
+      custom.onclick = () => { setDefectLabel(query.trim()); closeDefectPicker(); };
+      defectPickerList.appendChild(custom);
+    }
+    if (!matches.length) {
+      const empty = document.createElement('p');
+      empty.className = 'picker-empty';
+      empty.textContent = 'No standard defect matches - use the option above to enter it as typed.';
+      defectPickerList.appendChild(empty);
+      return;
+    }
+    let lastCat = null;
+    matches.forEach((c) => {
+      if (c.category !== lastCat) {
+        const catEl = document.createElement('p');
+        catEl.className = 'picker-cat';
+        catEl.textContent = c.category;
+        defectPickerList.appendChild(catEl);
+        lastCat = c.category;
+      }
+      const row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'picker-row';
+      row.innerHTML = `<span class="code">${c.code}</span><span class="name">${escapeHtml(c.name)}</span>`;
+      row.onclick = () => {
+        document.getElementById('defTypeCode').value = c.type;
+        document.getElementById('defNumberCode').value = c.number;
+        setDefectLabel(c.name);
+        closeDefectPicker();
+      };
+      defectPickerList.appendChild(row);
+    });
+  }
+  document.getElementById('defTypeLabelBtn').addEventListener('click', openDefectPicker);
+  document.getElementById('defectPickerCloseBtn').addEventListener('click', closeDefectPicker);
+  defectPickerOverlay.addEventListener('click', (e) => { if (e.target === defectPickerOverlay) closeDefectPicker(); });
+  defectPickerSearch.addEventListener('input', () => renderDefectPicker(defectPickerSearch.value));
 
   // Shared by the per-defect photo strip and the Notes tab's general site
   // photos - same thumbnails/remove/add-tile behavior, different container

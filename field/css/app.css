@@ -337,6 +337,35 @@ body.night-mode .edit-banner{ background:#3a2f1a; border-color:#5a4a2a; color:#e
 .confirm-actions{ display:flex; gap:10px; }
 .confirm-actions .btn{ flex:1; padding:11px; }
 
+/* ---------- defect type picker ---------- */
+.picker-overlay{
+  position:fixed; inset:0; z-index:400; background:rgba(15,20,20,.55);
+  display:flex; align-items:flex-end; justify-content:center;
+  opacity:0; pointer-events:none; transition:opacity .18s;
+}
+.picker-overlay.show{ opacity:1; pointer-events:auto; }
+.picker-sheet{
+  width:100%; max-width:412px; height:80vh; background:var(--surface); border-radius:24px 24px 0 0;
+  padding:16px 0 0; box-shadow:0 -10px 40px rgba(0,0,0,.3); transform:translateY(16px); transition:transform .18s;
+  display:flex; flex-direction:column;
+}
+.picker-overlay.show .picker-sheet{ transform:translateY(0); }
+.picker-head{ display:flex; align-items:center; justify-content:space-between; padding:0 16px 10px; flex-shrink:0; }
+.picker-title{ font-size:15.5px; font-weight:700; margin:0; }
+.picker-sheet .search-bar{ margin:2px 16px 8px; flex-shrink:0; }
+.picker-cat{ font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--teal-700); opacity:.8; margin:14px 16px 4px; }
+body.night-mode .picker-cat{ color:var(--teal-300); }
+.picker-row{
+  display:flex; align-items:center; gap:11px; margin:0 8px; padding:11px 8px; border-radius:14px; cursor:pointer; background:none; border:none;
+  width:calc(100% - 16px); text-align:left; color:var(--ink); font-family:inherit;
+}
+.picker-row:active{ background:var(--surface-2); }
+.picker-row .code{ font-family:'SFMono-Regular',Consolas,monospace; font-size:11px; font-weight:700; color:var(--ink-faint); width:30px; flex-shrink:0; }
+.picker-row .name{ font-size:13.5px; font-weight:600; }
+.picker-row.custom-row{ color:var(--teal-500); }
+.picker-row.custom-row .name{ font-weight:700; }
+.picker-empty{ text-align:center; color:var(--ink-faint); font-size:13px; padding:40px 20px; }
+
 /* ---------- desktop-browser testing: box into a phone-sized frame ---------
    Width alone isn't a safe signal - a real phone in landscape easily beats
    560px too, and this rule was wrongly squeezing it down to a portrait-
