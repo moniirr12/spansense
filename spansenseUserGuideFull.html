@@ -147,8 +147,8 @@
     <line x1="20" y1="112" x2="740" y2="112" stroke="#7ba8a5" stroke-width="2"/>
   </svg>
   <div class="meta">
-    <div><strong>Updated 5 July 2026</strong></div>
-    <div>spanSense v1.01</div>
+    <div><strong>Updated 24 July 2026</strong></div>
+    <div>spanSense v1.02</div>
   </div>
 </div>
 
@@ -167,6 +167,7 @@
   <a class="toc-row" href="#sec-08"><span class="toc-num">08</span><span class="toc-title">Inspection Planning &amp; Scheduling</span><span class="toc-page">11</span></a>
   <a class="toc-row" href="#sec-09"><span class="toc-num">09</span><span class="toc-title">Dashboard: Portfolio Overview</span><span class="toc-page">12</span></a>
   <a class="toc-row" href="#sec-10"><span class="toc-num">10</span><span class="toc-title">Your Account &amp; Preferences</span><span class="toc-page">13</span></a>
+  <a class="toc-row" href="#sec-11"><span class="toc-num">11</span><span class="toc-title">spanSense Field: Your On-Site Companion</span><span class="toc-page">14</span></a>
 
   <div class="footer-bar"><span>spanSense · User Guide</span><span>Contents · 2</span></div>
 </div>
@@ -296,6 +297,10 @@
   <h3 class="subhead">Finishing up</h3>
   <p class="body-text">Once every element is logged, add your <strong>Conclusions</strong> and hit <strong>Save</strong>. The BCI average and critical scores are calculated automatically from what you've logged, no manual math required. The inspection then enters the review queue for an engineer to approve.</p>
 
+  <div class="callout good" style="margin-top:10px;">
+    <strong>General Photos:</strong> not every useful photo belongs to one specific element. The <strong>General Photos</strong> bar in the left rail (next to Conclusions and twinView) holds site shots that don't fit any single defect, for sorting out later.
+  </div>
+
   <div class="footer-bar"><span>spanSense · User Guide</span><span>Running an Inspection · 6</span></div>
 </div>
 
@@ -361,11 +366,11 @@
   <p class="body-text"><strong>BCI avg</strong> is the condition across every inspected element, weighted by how structurally important each one is. <strong>BCI crit</strong> is narrower: each structure type has a fixed set of <strong>critical elements</strong> (e.g. main girders, bearings, abutments) and BCI crit is based purely on the worst condition among just those, not the worst element in the whole inspection. A bad defect on a non-critical element (a sign, a handrail) drags BCI avg down but leaves BCI crit untouched; if none of the critical elements have a defect, BCI crit reads 100. Both fall into the same five bands used everywhere in the app:</p>
 
   <div class="bci-bands">
-    <div class="bci-band band-critical"><div class="lbl">Very Poor</div><div class="score">0–39</div><div class="name">Immediate action</div></div>
-    <div class="bci-band band-poor"><div class="lbl">Poor</div><div class="score">40–64</div><div class="name">Investigate</div></div>
-    <div class="bci-band band-fair"><div class="lbl">Fair</div><div class="score">65–79</div><div class="name">Monitor</div></div>
-    <div class="bci-band band-good"><div class="lbl">Good</div><div class="score">80–89</div><div class="name">Maintain</div></div>
-    <div class="bci-band band-excellent"><div class="lbl">Very Good</div><div class="score">90–100</div><div class="name">No action</div></div>
+    <div class="bci-band band-critical"><div class="lbl">Very Poor</div><div class="score">0–39</div></div>
+    <div class="bci-band band-poor"><div class="lbl">Poor</div><div class="score">40–64</div></div>
+    <div class="bci-band band-fair"><div class="lbl">Fair</div><div class="score">65–79</div></div>
+    <div class="bci-band band-good"><div class="lbl">Good</div><div class="score">80–89</div></div>
+    <div class="bci-band band-excellent"><div class="lbl">Very Good</div><div class="score">90–100</div></div>
   </div>
 
   <p class="body-text" style="margin-top:12px;">You'll see this exact banding in three places: the structure card, the Add Defect modal's live impact preview, and the Dashboard's BCI Score Distribution chart. twinView's condition panel is a bit coarser: it colors the score as just Critical, Fair, or Good, so treat it as a quick at-a-glance signal rather than the precise five-band read.</p>
@@ -417,6 +422,16 @@
     <img src="reportAssets/guide-export.png" alt="Database export panel">
   </div>
   <p class="cap-text">Choose a category, pick a format, and export; filters and a column picker are below</p>
+
+  <div class="two-col" style="margin-top:14px; grid-template-columns:1.2fr 1fr; gap:16px; align-items:start;">
+    <div>
+      <h3 class="subhead" style="margin-top:0;">Document Status page</h3>
+      <p class="body-text">Every PDF and Word report opens with a <strong>Document Status</strong> page: who prepared the inspection, its current review status, who reviewed it and when, and their comments if any, straight from the review queue. It's the front-matter a formal document needs, generated automatically, with no extra step for you.</p>
+    </div>
+    <div class="shot">
+      <img src="reportAssets/guide-document-status.png" alt="Document Status page shown at the front of a generated report">
+    </div>
+  </div>
 
   <div class="footer-bar"><span>spanSense · User Guide</span><span>Reports &amp; Export · 10</span></div>
 </div>
@@ -493,6 +508,104 @@
   <p class="body-text" style="margin-top:14px;">Stuck on something this guide didn't cover? Use <strong>Contact Us</strong> from any navbar and someone will get back to you.</p>
 
   <div class="footer-bar"><span>spanSense · User Guide</span><span>Account &amp; Preferences · 13</span></div>
+</div>
+
+<!-- ================= 11 SPANSENSE FIELD ================= -->
+<div class="page" id="sec-11">
+  <div class="sec-head">
+    <h2>11. spanSense Field: Your On-Site Companion</h2>
+    <p class="lede">The same account, redesigned for standing at the bridge instead of sitting at a desk.</p>
+  </div>
+
+  <p class="body-text">spanSense Field is a companion web app built for the phone in your pocket on site, not a separate product with its own login: sign in with the same spanSense account, and it works whether you're an inspector capturing a rough first pass or checking a structure's history before you even get out of the van. Install it to your home screen like a native app, and it keeps working with patchy or no signal, on scaffolding or under a deck, queuing your work and syncing automatically once you're back in range.</p>
+
+  <div class="shot" style="max-width:64mm; margin:8px auto 0;">
+    <img src="reportAssets/guide-field-history.png" alt="A structure's detail page in spanSense Field, showing its location map, description and inspection history">
+  </div>
+  <p class="cap-text">Every structure's own page: an interactive map, its description, and full inspection history</p>
+
+  <h3 class="subhead" style="margin-top:12px;">Starting an inspection on site</h3>
+  <ol class="steps">
+    <li><p>Search or scroll the <strong>Structure List</strong> to find the bridge you're standing at</p></li>
+    <li><p>Its page shows the location map, description, and every past inspection - tap the <strong>+</strong> to start a fresh one, or tap a past inspection to start a new draft copied from it, ready to correct and update</p></li>
+    <li><p>Log defects element by element exactly like spanSense: the same <strong>Severity 1–5</strong> / <strong>Extent A–E</strong> system, so scores are consistent whichever app captured them</p></li>
+  </ol>
+
+  <div class="footer-bar"><span>spanSense · User Guide</span><span>spanSense Field · 14</span></div>
+</div>
+
+<!-- ================= 11b FIELD: TWINVIEW & DEFECTS ================= -->
+<div class="page">
+  <div class="sec-head">
+    <h2>11. TwinView and Logging a Defect</h2>
+    <p class="lede">The same 3D model as spanSense, in your hand at the structure.</p>
+  </div>
+
+  <p class="body-text">TwinView on the phone is the same digital twin you'd get behind a desk: the model is built from the structure's real span and condition data, colored by defect severity, and orbits under your thumb instead of a mouse. Pinch to zoom in on a specific span, and tap any marker to preview the defect logged there without leaving the 3D view.</p>
+
+  <div class="shot" style="max-width:85mm; margin:12px auto 0;">
+    <img src="reportAssets/guide-field-twinview.png" alt="TwinView tab in spanSense Field showing the 3D model with a live BCI average and critical score for the current span">
+  </div>
+  <p class="cap-text">Drag to orbit, pinch to zoom, tap a marker to preview - BCI average and critical scored live for the current span</p>
+
+  <div class="callout good" style="margin-top:14px;">
+    <strong>Why it's useful on site:</strong> compare the model against what you're looking at right now, rather than trying to remember it back at a desk later.
+  </div>
+
+  <div class="footer-bar"><span>spanSense · User Guide</span><span>spanSense Field · 15</span></div>
+</div>
+
+<!-- ================= 11c FIELD: DEFECT EDITOR ================= -->
+<div class="page">
+  <div class="sec-head">
+    <h2>11. Logging a Defect</h2>
+    <p class="lede">The same severity/extent system as spanSense, quicker to fill in with your thumb.</p>
+  </div>
+
+  <div class="two-col" style="gap:16px; align-items:start;">
+    <div class="shot">
+      <img src="reportAssets/guide-field-defect-editor.png" alt="Editing a defect in spanSense Field: element, defect type, severity, extent, works required, comments and remedial works">
+    </div>
+    <div>
+      <p class="body-text">The <strong>Defect List</strong> tab groups every element by category, with quick filter chips (Critical, Poor, Fair…) to jump straight to what needs attention.</p>
+      <p class="body-text">Tap a defect to open the same editor as spanSense: element, defect type, severity, extent, and works required, with a photo attached directly to that defect.</p>
+      <p class="body-text">Typing on site is slow with gloves on or a phone propped against a parapet, so <strong>Comments</strong> and <strong>Remedial Works</strong> both carry a microphone button for voice dictation - the same feature as the Notes tab, covered next.</p>
+    </div>
+  </div>
+
+  <div class="footer-bar"><span>spanSense · User Guide</span><span>spanSense Field · 16</span></div>
+</div>
+
+<!-- ================= 11d FIELD: NOTES & SYNC ================= -->
+<div class="page">
+  <div class="sec-head">
+    <h2>11. Notes, General Photos, and Staying in Sync</h2>
+    <p class="lede">Dictate a note instead of typing it, and nothing is lost when you lose signal.</p>
+  </div>
+
+  <div class="two-col" style="gap:16px; align-items:start;">
+    <div>
+      <h3 class="subhead" style="margin-top:0;">Notes &amp; General Photos</h3>
+      <p class="body-text">The <strong>Notes</strong> tab is for anything that doesn't belong to one specific element: site conditions, access issues, a quick thought worth flagging before you forget it. It's a free-text field with the same voice dictation mic, saved onto the inspection's conclusions.</p>
+      <p class="body-text">Right below it, <strong>Site Photos</strong> holds pictures that aren't tied to a defect either, the same feature as the General Photos bar in spanSense - snap it now, sort it out back at the office.</p>
+    </div>
+    <div class="shot" style="max-width:58mm; margin:0 auto;">
+      <img src="reportAssets/guide-field-notes.png" alt="Notes tab in spanSense Field with voice dictation and a general Site Photos strip">
+    </div>
+  </div>
+
+  <h3 class="subhead" style="margin-top:14px;">Working offline, and who sees it after</h3>
+  <ul class="feat-list">
+    <li><strong>Offline-first:</strong> lose signal mid-inspection and your save (photos included) queues on the device; a banner tells you you're offline, and everything syncs automatically the moment you're back online</li>
+    <li><strong>Same review queue:</strong> every Field-captured inspection is tagged with its source and flows into exactly the same engineer review queue as one authored in spanSense - nothing needs re-entering</li>
+    <li><strong>Finished back at the office:</strong> a Field draft is deliberately quick to capture rather than exhaustive; office staff can open it straight in spanSense's inspection editor afterwards (Database → Edit) to check it over or fill in anything that needed a second look</li>
+  </ul>
+
+  <div class="callout good" style="margin-top:10px;">
+    <strong>Tip:</strong> dark mode, your name, and your role carry over automatically - it's the same account and the same preferences, just a different screen.
+  </div>
+
+  <div class="footer-bar"><span>spanSense · User Guide</span><span>spanSense Field · 17</span></div>
 </div>
 
 </body>
