@@ -859,6 +859,39 @@ function buildInspectionReportDocDefinition(ctx) {
         }
     ];
 
+    // ---------- DOCUMENT STATUS ----------
+    // Where this record stands right now (inspections.status/reviewed_by/
+    // reviewed_at/engineer_comments) - not a full revision log, since the
+    // database only keeps the latest review decision, not a history of every
+    // submit/reject/resubmit cycle.
+    const statusMeta = {
+        approved: { label: 'Approved', bg: RC.priLBg, textColor: '#1e5c34', accent: RC.priL },
+        rejected: { label: 'Rejected', bg: RC.priHBg, textColor: '#7a1f1f', accent: RC.priH },
+        submitted: { label: 'Submitted — Pending Review', bg: RC.accentTint, textColor: '#2c4a48', accent: RC.accent }
+    }[inspectionData.status] || { label: 'Submitted — Pending Review', bg: RC.accentTint, textColor: '#2c4a48', accent: RC.accent };
+    const statusBannerText = inspectionData.reviewedBy
+        ? `${statusMeta.label} — reviewed ${inspectionData.reviewedAt ? formatDate(inspectionData.reviewedAt) : ''} by ${inspectionData.reviewedBy}`
+        : statusMeta.label;
+
+    const docStatusContent = [
+        { text: '', pageBreak: 'before' },
+        sectionHeading('§', 'Document Status', 'docStatus'),
+        callout(statusBannerText, { bg: statusMeta.bg, color: statusMeta.textColor, accent: statusMeta.accent }),
+        narrKvTable([
+            ['Structure', structureName],
+            ['Inspection date', formatDate(inspectionDate)],
+            ['Inspection type', inspectionData.inspectionType || 'GI'],
+            ['Prepared by', inspectionData.inspectorName ? (inspectionData.inspectorName + (inspectionData.source === 'field' ? '  ·  Field' : '')) : 'Not recorded'],
+            ['Reviewed by', inspectionData.reviewedBy || null],
+            ['Reviewed on', inspectionData.reviewedAt ? formatDate(inspectionData.reviewedAt) : null],
+            ['Status', statusMeta.label]
+        ]),
+        ...(inspectionData.engineerComments ? [
+            subhead('Reviewer Comments'),
+            callout(inspectionData.engineerComments, { bg: RC.accentTint, color: '#2c4a48', accent: RC.accent })
+        ] : [])
+    ];
+
     // ---------- TOC ----------
     const categoriesInOrder = [];
     allElementsList.forEach(el => { if (!categoriesInOrder.includes(el.category)) categoriesInOrder.push(el.category); });
@@ -1211,7 +1244,7 @@ function buildInspectionReportDocDefinition(ctx) {
             if (currentPage <= 2) return null;
             return { text: `spanSense · Generated ${new Date().toLocaleDateString('en-GB')}`, alignment: 'center', fontSize: 7.5, color: RC.muted, margin: [0, 0, 0, 16] };
         },
-        content: [].concat(coverContent, tocContent, section1, section2, section3, section4, appendixA, appendixB),
+        content: [].concat(coverContent, docStatusContent, tocContent, section1, section2, section3, section4, appendixA, appendixB),
         styles: {
             tocMain: { fontSize: 11.5, bold: true, color: RC.ink },
             tocSub: { fontSize: 9.5, color: '#5b6c70' }

@@ -369,6 +369,7 @@ async function buildFullInspectionReportDocx(doc) {
     // updates it, so it reads as "missing" until then; this is always visible.)
     children.push(new d.Paragraph({ children: [], pageBreakBefore: true }));
     children.push(new d.Paragraph({ heading: d.HeadingLevel.HEADING_1, spacing: { after: 200 }, children: [new d.TextRun({ text: 'Table of Contents' })] }));
+    children.push(tocEntry(d, 'Document Status', 'docStatus'));
     children.push(tocEntry(d, '1. Structure Details', 'section1'));
     children.push(tocEntry(d, '1.1 Structure Description', 'section1_1', 360));
     children.push(tocEntry(d, '1.2 Coordinates', 'section1_2', 360));
@@ -384,6 +385,51 @@ async function buildFullInspectionReportDocx(doc) {
     children.push(tocEntry(d, '4.2 Recommended Remedial Works', 'section4_2', 360));
     children.push(tocEntry(d, '4.3 Next Inspection', 'section4_3', 360));
     children.push(tocEntry(d, 'Appendix A: Photographs', 'appendixA'));
+
+    // ── DOCUMENT STATUS ──
+    // Where this record stands right now (inspections.status/reviewed_by/
+    // reviewed_at/engineer_comments) - not a full revision log, since the
+    // database only keeps the latest review decision, not a history of every
+    // submit/reject/resubmit cycle.
+    children.push(new d.Paragraph({ children: [], pageBreakBefore: true }));
+    children.push(bookmarkedHeading(d, 'Document Status', d.HeadingLevel.HEADING_1, 'docStatus'));
+    var statusMeta = {
+        approved: { label: 'Approved', bg: 'EAF6ED', color: '1E5C34' },
+        rejected: { label: 'Rejected', bg: 'FDECEA', color: '7A1F1F' },
+        submitted: { label: 'Submitted — Pending Review', bg: 'EEF4F2', color: '2C4A48' }
+    }[inspectionData.status] || { label: 'Submitted — Pending Review', bg: 'EEF4F2', color: '2C4A48' };
+    var statusBannerText = inspectionData.reviewedBy
+        ? (statusMeta.label + ' — reviewed ' + (inspectionData.reviewedAt ? formatDate(inspectionData.reviewedAt) : '') + ' by ' + inspectionData.reviewedBy)
+        : statusMeta.label;
+    children.push(new d.Table({
+        width: { size: 100, type: d.WidthType.PERCENTAGE },
+        rows: [new d.TableRow({ children: [new d.TableCell({
+            shading: { fill: statusMeta.bg },
+            margins: { top: 120, bottom: 120, left: 160, right: 160 },
+            children: [new d.Paragraph({ children: [new d.TextRun({ text: statusBannerText, bold: true, size: 20, color: statusMeta.color })] })]
+        })] })]
+    }));
+    children.push(new d.Paragraph({ children: [], spacing: { after: 160 } }));
+    children.push(kvTable(d, [
+        ['Structure:', structureName],
+        ['Inspection Date:', formatDate(inspectionDate)],
+        ['Inspection Type:', inspectionData.inspectionType || 'GI'],
+        ['Prepared By:', inspectionData.inspectorName ? (inspectionData.inspectorName + (inspectionData.source === 'field' ? '  ·  Field' : '')) : 'Not recorded'],
+        ['Reviewed By:', inspectionData.reviewedBy || '—'],
+        ['Reviewed On:', inspectionData.reviewedAt ? formatDate(inspectionData.reviewedAt) : '—'],
+        ['Status:', statusMeta.label]
+    ]));
+    if (inspectionData.engineerComments) {
+        children.push(new d.Paragraph({ heading: d.HeadingLevel.HEADING_2, spacing: { before: 240, after: 120 }, children: [new d.TextRun({ text: 'Reviewer Comments' })] }));
+        children.push(new d.Table({
+            width: { size: 100, type: d.WidthType.PERCENTAGE },
+            rows: [new d.TableRow({ children: [new d.TableCell({
+                shading: { fill: 'EEF4F2' },
+                margins: { top: 120, bottom: 120, left: 160, right: 160 },
+                children: [new d.Paragraph({ children: [new d.TextRun({ text: inspectionData.engineerComments, italics: true, size: 18, color: '2C4A48' })] })]
+            })] })]
+        }));
+    }
 
     // ── SECTION 1: STRUCTURE DETAILS ──
     children.push(new d.Paragraph({ children: [], pageBreakBefore: true }));

@@ -1975,7 +1975,8 @@ app.get('/api/inspection/full', requireAuth, async (req, res) => {
         const inspection = await dbGet(`
             SELECT id, structure_id, structure_name, inspection_date,
                    inspection_type, inspector_name, total_spans, conclusions,
-                   overall_bcicrit, overall_bciave, source
+                   overall_bcicrit, overall_bciave, source,
+                   status, reviewed_by, reviewed_at, engineer_comments
             FROM inspections
             WHERE structure_id = $1 AND inspection_date = $2
         `, [structure_id, date]);
@@ -2081,6 +2082,10 @@ app.get('/api/inspection/full', requireAuth, async (req, res) => {
             overallBcicrit: inspection.overall_bcicrit,
             overallBciave: inspection.overall_bciave,
             source: inspection.source,
+            status: inspection.status,
+            reviewedBy: inspection.reviewed_by,
+            reviewedAt: inspection.reviewed_at,
+            engineerComments: inspection.engineer_comments,
 
             spans: spans.map(span => ({
                 spanNumber: span.span_number,
