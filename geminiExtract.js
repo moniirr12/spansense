@@ -144,7 +144,7 @@ Inspection facts:
 Defects recorded (most severe first):
 ${defectLines}
 
-Write the Conclusions section now: summarise overall condition, describe the most significant defects and their implications, and end with a clear recommendation on remedial works (or confirm none are required). Only use the facts given above - do not invent defects, dates, or figures not listed.`;
+Write the Conclusions section now: summarise overall condition and describe the most significant defects and their implications. Do not discuss or recommend remedial works - that's covered elsewhere in the report. Only use the facts given above - do not invent defects, dates, or figures not listed.`;
 
     const res = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
         method: 'POST',

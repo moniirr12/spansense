@@ -370,7 +370,6 @@ function generateDraftConclusions() {
     const noDefectsCount = allDefects.filter(d => d.defectId === '0.0').length;
     const notInspectedCount = allDefects.filter(d => d.defectId === '0.1').length;
     const elementsChecked = new Set(allDefects.map(d => `${d.span}-${d.elementNumber}`)).size;
-    const worksRequired = realDefects.filter(d => d.works === 'Y');
 
     const spansWithBci = (inspectionData.spans || []).filter(s => s.bciAv != null && s.bciCrit != null);
     const bciAv = spansWithBci.length
@@ -406,9 +405,6 @@ function generateDraftConclusions() {
     }
 
     paragraphs.push(`Overall structural condition is assessed as ${conditionLabel} (BCI avg ${bciAv.toFixed(2)}, BCI crit ${bciCrit.toFixed(2)}).`);
-    paragraphs.push(worksRequired.length
-        ? 'It is recommended that the identified remedial works be prioritised accordingly.'
-        : 'No remedial works are currently required.');
 
     return paragraphs.join(' ');
 }
