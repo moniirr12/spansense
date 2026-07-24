@@ -112,17 +112,10 @@ ${text}
     return { elements, warning: null };
 }
 
-// Drafts the free-text "Conclusions" paragraph(s) for an inspection, from
-// the same defect/BCI summary the client's own template-based
-// generateDraftConclusions() uses (see inspection/spans.js) - this is an
-// alternative source for that same "Suggest Draft" button, not a different
-// feature. The client falls back to its local template if this throws for
-// any reason (missing/invalid key, quota, network), same fallback shape as
-// extractElementsWithGemini above.
-async function draftConclusionsWithGemini(summary) {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
-
+// Shared by draftConclusionsWithGemini and reviseConclusionsWithGemini below
+// so the "ask AI to adjust" follow-up is grounded in the same facts the
+// original draft was, rather than trusting whatever the text drifted to.
+function buildInspectionFactsBlock(summary) {
     const defects = Array.isArray(summary.defects) ? summary.defects : [];
     const defectLines = defects.map(d => {
         const bits = [`${d.element} (${d.code}): ${d.description || 'unspecified defect'}, severity ${d.severity}, extent ${d.extent}`];
@@ -132,19 +125,19 @@ async function draftConclusionsWithGemini(summary) {
         return `- ${bits.join(', ')}`;
     }).join('\n') || '(none recorded)';
 
-    const prompt = `You are drafting the "Conclusions" section of a UK bridge/structure inspection report. Write in the plain, factual, third-person register used in real UK structures engineering reports - no marketing language, no headings, no bullet points in your answer, 2-4 short paragraphs of prose.
-
-Inspection facts:
-- Structure type: ${summary.structureType || 'Bridge'}
-- Elements checked: ${summary.elementsChecked}
-- Elements with no defects: ${summary.noDefectsCount}
-- Elements that could not be inspected: ${summary.notInspectedCount}
-- Overall BCI average: ${summary.bciAv}, BCI critical: ${summary.bciCrit}
+    return `Structure type: ${summary.structureType || 'Bridge'}
+Elements checked: ${summary.elementsChecked}
+Elements with no defects: ${summary.noDefectsCount}
+Elements that could not be inspected: ${summary.notInspectedCount}
+Overall BCI average: ${summary.bciAv}, BCI critical: ${summary.bciCrit}
 
 Defects recorded (most severe first):
-${defectLines}
+${defectLines}`;
+}
 
-Write the Conclusions section now: summarise overall condition and describe the most significant defects and their implications. Do not discuss or recommend remedial works - that's covered elsewhere in the report. Only use the facts given above - do not invent defects, dates, or figures not listed.`;
+async function callGemini(prompt) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
 
     const res = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
         method: 'POST',
@@ -162,4 +155,43 @@ Write the Conclusions section now: summarise overall condition and describe the 
     return textOut.trim();
 }
 
-module.exports = { extractElementsWithGemini, draftConclusionsWithGemini };
+// Drafts the free-text "Conclusions" paragraph(s) for an inspection, from
+// the same defect/BCI summary the client's own template-based
+// generateDraftConclusions() uses (see inspection/spans.js) - this is an
+// alternative source for that same "Suggest Draft" button, not a different
+// feature. The client falls back to its local template if this throws for
+// any reason (missing/invalid key, quota, network), same fallback shape as
+// extractElementsWithGemini above.
+async function draftConclusionsWithGemini(summary) {
+    const prompt = `You are drafting the "Conclusions" section of a UK bridge/structure inspection report. Write in the plain, factual, third-person register used in real UK structures engineering reports - no marketing language, no headings, no bullet points in your answer, 2-4 short paragraphs of prose.
+
+Inspection facts:
+${buildInspectionFactsBlock(summary)}
+
+Write the Conclusions section now: summarise overall condition and describe the most significant defects and their implications. Do not discuss or recommend remedial works - that's covered elsewhere in the report. Only use the facts given above - do not invent defects, dates, or figures not listed.`;
+
+    return callGemini(prompt);
+}
+
+// The "ask AI to adjust" follow-up on an already-drafted (or inspector-
+// written) Conclusions text - a targeted rewrite per the inspector's
+// instruction, re-grounded in the original facts each time rather than
+// letting errors/inventions compound across repeated edits.
+async function reviseConclusionsWithGemini(currentText, instruction, summary) {
+    const prompt = `You previously drafted this "Conclusions" section for a UK bridge/structure inspection report:
+
+"""
+${currentText}
+"""
+
+The inspector wants this change applied: "${instruction}"
+
+Original inspection facts, for reference - the revised text must stay consistent with these, do not invent anything beyond what's here:
+${buildInspectionFactsBlock(summary)}
+
+Rewrite the Conclusions section applying the requested change, in the same plain, factual, third-person UK structures-report register - no marketing language, no headings, no bullet points. Do not discuss or recommend remedial works - that's covered elsewhere in the report. Return only the revised Conclusions text, with no commentary about what you changed.`;
+
+    return callGemini(prompt);
+}
+
+module.exports = { extractElementsWithGemini, draftConclusionsWithGemini, reviseConclusionsWithGemini };

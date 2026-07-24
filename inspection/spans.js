@@ -483,8 +483,55 @@ async function suggestDraftConclusions() {
         if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
     }
 }
+// "Ask AI to adjust" - revises whatever's currently in the textarea (a
+// Gemini draft, the local template, or something the inspector typed
+// themselves - doesn't matter which) per a typed instruction, re-grounded
+// in the same facts a fresh draft would use so a run of edits can't drift
+// into inventing things. No local-template fallback here, since there's no
+// rule-based equivalent of "make it shorter" - if this fails, the text is
+// simply left as it was and the inspector can edit it by hand instead.
+async function reviseDraftConclusions() {
+    const textarea = document.getElementById('conclusionsText');
+    const input = document.getElementById('conclusionsRefineInput');
+    if (!textarea || !input) return;
+
+    const instruction = input.value.trim();
+    if (!instruction) return;
+    if (!textarea.value.trim()) {
+        showToast('Draft or write something first, then ask for changes.');
+        return;
+    }
+
+    const btn = document.getElementById('refineConclusionsBtn');
+    const originalHtml = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+    input.disabled = true;
+
+    try {
+        const response = await fetch('/api/draft-conclusions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                currentText: textarea.value,
+                instruction,
+                ...buildConclusionsSummaryForGemini()
+            })
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success || !result.text) throw new Error(result.error || 'No revision returned');
+        textarea.value = result.text;
+        input.value = '';
+    } catch (err) {
+        console.error('Revise conclusions error:', err.message);
+        showToast('Could not apply that change - try again in a moment.');
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = originalHtml; }
+        input.disabled = false;
+    }
+}
 window.generateDraftConclusions = generateDraftConclusions;
 window.suggestDraftConclusions = suggestDraftConclusions;
+window.reviseDraftConclusions = reviseDraftConclusions;
 
 function showToast(message, type) {
     const toast = document.createElement('div');
@@ -895,6 +942,116 @@ function getDefectText(defectType, defectNumber) {
     }
     return null;
 }
+
+// ============================================================
+// COMBINED DEFECT TYPE PICKER - replaces the old Element/No. dropdown pair
+// with one searchable picker (same idea as Field's), still driving the same
+// underlying #defectType/#defectNumber <select>s every other bit of this
+// page's save/edit/guidance-panel logic already reads from.
+// ============================================================
+let defectTypeCatalog = null;
+function getDefectTypeCatalog() {
+    if (defectTypeCatalog) return defectTypeCatalog;
+    const catalog = [];
+    Object.keys(DEFECT_TYPE_MAP).forEach((type) => {
+        const category = DEFECT_TYPE_MAP[type];
+        const numbers = defectNumberText[type] || {};
+        Object.keys(numbers).forEach((number) => {
+            const name = numbers[number];
+            catalog.push({
+                type: String(type), number: String(number), code: `${type}.${number}`,
+                category, name, search: `${category} ${name}`.toLowerCase()
+            });
+        });
+    });
+    defectTypeCatalog = catalog;
+    return catalog;
+}
+
+function updateCombinedDefectLabel() {
+    const typeEl = document.getElementById('defectType');
+    const numEl = document.getElementById('defectNumber');
+    const codeEl = document.getElementById('combinedDefectCode');
+    const nameEl = document.getElementById('combinedDefectName');
+    const catEl = document.getElementById('combinedDefectCat');
+    if (!typeEl || !numEl || !codeEl || !nameEl || !catEl) return;
+    const type = typeEl.value, number = numEl.value;
+    const name = getDefectText(parseInt(type, 10), parseInt(number, 10));
+    codeEl.textContent = `${type}.${number}`;
+    nameEl.textContent = name || `Defect ${number}`;
+    catEl.textContent = (typeof getDefectTypeName === 'function' && getDefectTypeName(parseInt(type, 10))) || '';
+}
+window.updateCombinedDefectLabel = updateCombinedDefectLabel;
+
+function openDefectTypePicker() {
+    const card = document.getElementById('combinedDefectTrigger')?.closest('.combined-card');
+    const search = document.getElementById('defectTypePickerSearch');
+    if (!card) return;
+    card.classList.add('open');
+    if (search) { search.value = ''; search.focus(); }
+    renderDefectTypePicker('');
+}
+function closeDefectTypePicker() {
+    document.getElementById('combinedDefectTrigger')?.closest('.combined-card')?.classList.remove('open');
+}
+function renderDefectTypePicker(query) {
+    const list = document.getElementById('defectTypePickerList');
+    if (!list) return;
+    const q = query.trim().toLowerCase();
+    const catalog = getDefectTypeCatalog();
+    const matches = q ? catalog.filter((c) => c.search.includes(q)) : catalog;
+    list.innerHTML = '';
+    if (!matches.length) {
+        list.innerHTML = '<p class="picker-empty">No matching defect types.</p>';
+        return;
+    }
+    let lastCat = null;
+    matches.forEach((c) => {
+        if (c.category !== lastCat) {
+            const catRow = document.createElement('div');
+            catRow.className = 'picker-cat';
+            catRow.textContent = c.category;
+            list.appendChild(catRow);
+            lastCat = c.category;
+        }
+        const row = document.createElement('div');
+        row.className = 'picker-row';
+        row.innerHTML = `<span class="code">${c.code}</span><span class="name">${escapeHtml(c.name)}</span>`;
+        row.addEventListener('click', () => {
+            const typeEl = document.getElementById('defectType');
+            const numEl = document.getElementById('defectNumber');
+            typeEl.value = c.type;
+            typeEl.dispatchEvent(new Event('change', { bubbles: true }));
+            // updateDefectNumbers() (run by the change event above) rebuilds
+            // #defectNumber's options for the new type and defaults its
+            // value to the first one - set the real number now that those
+            // options exist, and dispatch change on it too so the severity
+            // guidance panel (wired to #defectNumber's own change event)
+            // syncs to the actual code picked, not the type's default first
+            // option.
+            numEl.value = c.number;
+            numEl.dispatchEvent(new Event('change', { bubbles: true }));
+            closeDefectTypePicker();
+        });
+        list.appendChild(row);
+    });
+}
+document.addEventListener('DOMContentLoaded', () => {
+    const trigger = document.getElementById('combinedDefectTrigger');
+    trigger?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const card = trigger.closest('.combined-card');
+        if (card?.classList.contains('open')) closeDefectTypePicker();
+        else openDefectTypePicker();
+    });
+    document.getElementById('defectTypePickerClose')?.addEventListener('click', (e) => { e.stopPropagation(); closeDefectTypePicker(); });
+    document.getElementById('defectTypePickerSearch')?.addEventListener('input', (e) => renderDefectTypePicker(e.target.value));
+    document.addEventListener('click', (e) => {
+        const card = document.getElementById('combinedDefectTrigger')?.closest('.combined-card');
+        if (card && !card.contains(e.target)) card.classList.remove('open');
+    });
+    updateCombinedDefectLabel();
+});
 
 function injectRetrievedRibbon(row) {
     const grid = row.querySelector('.aligned-grid');

@@ -81,6 +81,7 @@ function openModal(isEditMode = false, preferredState = null) {
         // FIX #1: Trigger change event to populate defectNumber dropdown
         document.getElementById("defectType").dispatchEvent(new Event('change', { bubbles: true }));
         document.getElementById("defectNumber").value = "1";
+        document.getElementById("defectNumber").dispatchEvent(new Event('change', { bubbles: true }));
         document.getElementById("severity").value = "1";
         document.getElementById("extent").value = "A";
         document.getElementById("works").value = "N";
@@ -353,14 +354,20 @@ function updateMainRow(potentialRow) {
           mainCells[2].textContent = "";
       }
       mainCells[3].textContent = firstDefect.querySelector(".addExtent")?.textContent || "";
-      const defectDisplay = firstDefect.querySelector(".addDefect")?.textContent || "";
+      const addDefectCell = firstDefect.querySelector(".addDefect");
+      const defectDisplay = addDefectCell?.textContent || "";
+      // This summary column is narrow (one glance per row in the main
+      // table) - the full "code name" text belongs in the expandable row
+      // below, not squeezed in here, so this reads the bare code back off
+      // the data attribute rather than the cell's display text.
+      const summaryCode = addDefectCell?.dataset.code || "";
       const defectCode = firstDefect.querySelector(".defectId")?.textContent || "";
       if (defectCode.includes('0.0') || defectDisplay.includes('No Defects')) {
         mainCells[4].innerHTML = '<span style="color:#2d7a6e;font-size:0.75rem;"><i class="fas fa-check"></i></span>';
       } else if (defectCode.includes('0.1') || defectDisplay.includes('Not Inspected')) {
         mainCells[4].innerHTML = '<span style="color:#BA7517;font-size:0.75rem;"><i class="fas fa-ban"></i></span>';
       } else {
-        mainCells[4].textContent = defectDisplay;
+        mainCells[4].textContent = summaryCode || defectDisplay;
       }
     }
   } else {
@@ -677,15 +684,19 @@ function persistCurrentDefectForm() {
         const el = currentExpandableRow.querySelector(selector);
         if (el) el.textContent = value;
     };
-    updateField(".addDefect", finalDefectCombined);
+    updateField(".addDefect", formatDefectCellText(finalDefectCombined));
     const addDefectEl = currentExpandableRow.querySelector(".addDefect");
     if (addDefectEl) addDefectEl.dataset.code = finalDefectCombined;
     const sevEl = currentExpandableRow.querySelector(".addSeverity");
     if (sevEl) sevEl.innerHTML = severityBadgeHTML(finalSeverity);
     const extEl = currentExpandableRow.querySelector(".addExtent");
     if (extEl) extEl.innerHTML = extentBadgeHTML(finalExtent);
-    updateField(".addWorks", finalWorks);
-    updateField(".addPriority", priority);
+    updateField(".addWorks", worksFullWord(finalWorks));
+    const addWorksEl = currentExpandableRow.querySelector(".addWorks");
+    if (addWorksEl) addWorksEl.dataset.value = finalWorks;
+    updateField(".addPriority", priorityFullWord(priority));
+    const addPriorityEl = currentExpandableRow.querySelector(".addPriority");
+    if (addPriorityEl) addPriorityEl.dataset.value = priority || '';
     updateField(".addCost", cost);
     updateField(".addComment", comment);
     updateField(".defectId", defectData.defectId);
@@ -1190,6 +1201,7 @@ function resetDefectFormFields() {
     // Trigger change so updateDefectNumbers() rebuilds the number dropdown for type 1.
     document.getElementById("defectType").dispatchEvent(new Event('change', { bubbles: true }));
     document.getElementById("defectNumber").value = "1";
+    document.getElementById("defectNumber").dispatchEvent(new Event('change', { bubbles: true }));
     document.getElementById("severity").value = "1";
     document.getElementById("extent").value = "A";
     document.getElementById("works").value = "N";
@@ -1216,8 +1228,8 @@ function openDefectEditModal(expandableRow) {
     const parts = defectCombined.split('.');
     const defectType = parts[0] || '1';
     const defectNumber = parts[1] || '1';
-    const worksText = expandableRow.querySelector(".addWorks").textContent.trim();
-    const worksValue = worksText === 'Yes' || worksText === 'Y' ? 'Y' : worksText === 'Monitor' || worksText === 'M' ? 'M' : 'N';
+    const addWorksEl = expandableRow.querySelector(".addWorks");
+    const worksValue = worksLetterFromDisplay(addWorksEl?.dataset.value || addWorksEl?.textContent.trim());
     const editDefectCode = `${defectType}.${defectNumber}`;
     let editSegmentState = 'defect';
     let editSegmentComment = expandableRow.querySelector(".addComment")?.textContent || '';
@@ -1227,18 +1239,19 @@ function openDefectEditModal(expandableRow) {
         document.getElementById("defectType").value = defectType;
         document.getElementById("defectType").dispatchEvent(new Event('change', { bubbles: true }));
         document.getElementById("defectNumber").value = defectNumber;
-        // updateDefectNumbers() (run by the change event just above)
-        // rebuilds the number options for the new type and renders
-        // its dropdown against whatever was selected at that point
-        // (the first option) — re-render now that the real number
-        // for this defect has been set directly.
-        if (typeof renderCustomSelect === 'function') {
-            renderCustomSelect('defectNumber', 'defectNumberLabel', 'defectNumberPanel', 'defectNumberDropdown');
-        }
+        // updateDefectNumbers() (run by the change event just above) rebuilds
+        // the number options for the new type and defaults its value to the
+        // first one - the line above sets the real number for this defect,
+        // and this dispatch re-syncs the severity guidance panel and the
+        // combined picker label to that actual number (pre-existing gap:
+        // neither ever re-ran against anything but the type's default first
+        // option when opening an existing defect for editing).
+        document.getElementById("defectNumber").dispatchEvent(new Event('change', { bubbles: true }));
         document.getElementById("severity").value = expandableRow.querySelector(".addSeverity").textContent;
         document.getElementById("extent").value = expandableRow.querySelector(".addExtent").textContent;
         document.getElementById("works").value = worksValue;
-        document.getElementById("priority").value = expandableRow.querySelector(".addPriority").textContent;
+        const addPriorityEl = expandableRow.querySelector(".addPriority");
+        document.getElementById("priority").value = priorityLetterFromDisplay(addPriorityEl?.dataset.value || addPriorityEl?.textContent);
         document.getElementById("cost").value = expandableRow.querySelector(".addCost").textContent;
         document.getElementById("comment").value = expandableRow.querySelector(".addComment").textContent;
         document.getElementById("remedialWorks").value = expandableRow.querySelector(".addRemedialWorks")?.textContent || '';
@@ -1451,6 +1464,36 @@ function extentBadgeHTML(value) {
   return value ? `<span class="ext-${value}">${value}</span>` : '';
 }
 
+// Display <-> raw-value conversions for the expandable-row cells. The row
+// shows the human-readable form (defect name, "Yes"/"Monitor", "High"/"Low"),
+// but a fair amount of existing code reads these same cells back as DATA
+// (the modal population, the "copy a retrieved defect" handler, the
+// save-in-place path) - each of those now reads the matching data-* attribute
+// instead of the display text, set alongside it at every write site below.
+function worksFullWord(v) { return v === 'Y' ? 'Yes' : v === 'M' ? 'Monitor' : 'No'; }
+function worksLetterFromDisplay(v) {
+  if (v === 'Y' || v === 'Yes') return 'Y';
+  if (v === 'M' || v === 'Monitor') return 'M';
+  return 'N';
+}
+function priorityFullWord(v) { return v === 'H' ? 'High' : v === 'M' ? 'Medium' : v === 'L' ? 'Low' : ''; }
+function priorityLetterFromDisplay(v) {
+  if (v === 'H' || v === 'High') return 'H';
+  if (v === 'M' || v === 'Medium') return 'M';
+  if (v === 'L' || v === 'Low') return 'L';
+  return '';
+}
+// "2.3 Cracking" instead of a bare "2.3" - falls back to just the code if
+// the name lookup (spans.js, loaded after this file but resolved by call
+// time) isn't available for whatever reason.
+function formatDefectCellText(code) {
+  if (!code) return '';
+  const parts = String(code).split('.');
+  const type = parts[0], number = parts[1];
+  const name = typeof getDefectText === 'function' ? getDefectText(parseInt(type, 10), parseInt(number, 10)) : null;
+  return name ? `${code} ${name}` : code;
+}
+
 function addDefectToTable(mainRow, defectData, isRetrieved, isEditable = false) {
   const currentSpan = sessionStorage.getItem('selectedSpan');
   if (!currentSpan) {
@@ -1497,6 +1540,9 @@ function addDefectToTable(mainRow, defectData, isRetrieved, isEditable = false) 
       const value = defectData[dataKey];
       if (selector === '.addSeverity') element.innerHTML = severityBadgeHTML(value);
       else if (selector === '.addExtent') element.innerHTML = extentBadgeHTML(value);
+      else if (selector === '.addDefect') { element.textContent = formatDefectCellText(value); element.dataset.code = value || ''; }
+      else if (selector === '.addWorks') { element.textContent = worksFullWord(value); element.dataset.value = value || 'N'; }
+      else if (selector === '.addPriority') { element.textContent = priorityFullWord(value); element.dataset.value = value || ''; }
       else element.textContent = value || '';
     }
   });
@@ -1509,7 +1555,7 @@ function addDefectToTable(mainRow, defectData, isRetrieved, isEditable = false) 
     const extVal = expandableRow.querySelector('.addExtent');
     if (extVal) extVal.innerHTML = extentBadgeHTML('A');
     const worksVal = expandableRow.querySelector('.addWorks');
-    if (worksVal) worksVal.textContent = 'N';
+    if (worksVal) { worksVal.textContent = 'No'; worksVal.dataset.value = 'N'; }
     const priorityRow = expandableRow.querySelector('.priority-row');
     const costRow = expandableRow.querySelector('.cost-row');
     const worksRow = expandableRow.querySelector('.works-row');
@@ -1525,7 +1571,7 @@ function addDefectToTable(mainRow, defectData, isRetrieved, isEditable = false) 
     const extVal = expandableRow.querySelector('.addExtent');
     if (extVal) extVal.textContent = '';
     const worksVal = expandableRow.querySelector('.addWorks');
-    if (worksVal) worksVal.textContent = '';
+    if (worksVal) { worksVal.textContent = ''; worksVal.dataset.value = ''; }
     const priorityRow = expandableRow.querySelector('.priority-row');
     const costRow = expandableRow.querySelector('.cost-row');
     const worksRow = expandableRow.querySelector('.works-row');
@@ -1788,12 +1834,15 @@ document.addEventListener("DOMContentLoaded", function () {
     if (target.closest("button[title='Copy']")) {
       const expandableRow = target.closest("tr.expandable-row");
       if (expandableRow && expandableRow.classList.contains("retrieved-defect")) {
-        const defectCombined = expandableRow.querySelector(".addDefect").textContent;
+        const addDefectEl = expandableRow.querySelector(".addDefect");
+        const defectCombined = addDefectEl.dataset.code || addDefectEl.textContent;
         const [defectType, defectNumber] = defectCombined.split('.');
         const severity = expandableRow.querySelector(".addSeverity").textContent;
         const extent = expandableRow.querySelector(".addExtent").textContent;
-        const works = expandableRow.querySelector(".addWorks").textContent;
-        const priority = expandableRow.querySelector(".addPriority").textContent;
+        const addWorksEl = expandableRow.querySelector(".addWorks");
+        const works = worksLetterFromDisplay(addWorksEl.dataset.value || addWorksEl.textContent);
+        const addPriorityEl = expandableRow.querySelector(".addPriority");
+        const priority = priorityLetterFromDisplay(addPriorityEl.dataset.value || addPriorityEl.textContent);
         const cost = expandableRow.querySelector(".addCost").textContent;
         const comment = expandableRow.querySelector(".addComment").textContent;
         const remedialWorks = expandableRow.querySelector(".addRemedialWorks")?.textContent || '';

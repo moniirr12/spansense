@@ -1737,6 +1737,52 @@ body {
 .btn-suggest-draft:hover { background: #eef4f2; border-color: #8ab4b0; }
 .night-mode .btn-suggest-draft { color: #8ab4b0; border-color: #3a4b53; }
 .night-mode .btn-suggest-draft:hover { background: #1e2a2f; border-color: #8ab4b0; }
+
+/* "Ask AI to adjust" row - revises whatever's currently drafted, see
+   reviseDraftConclusions() in spans.js. */
+.conclusions-refine-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 24px 18px;
+    padding: 6px 6px 6px 14px;
+    border: 1px solid #c5dbd8;
+    border-radius: 30px;
+    background: #f8fbfa;
+}
+.conclusions-refine-row > i.fa-wand-magic-sparkles { color: #8ab4b0; font-size: 0.8rem; flex-shrink: 0; }
+.conclusions-refine-row input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: none;
+    outline: none;
+    font-family: inherit;
+    font-size: 0.82rem;
+    color: #2c3e44;
+    padding: 6px 0;
+}
+.conclusions-refine-row input::placeholder { color: #a7b4bd; }
+.btn-refine-conclusions {
+    flex-shrink: 0;
+    background: #5b8c8a;
+    color: white;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 24px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.78rem;
+    transition: background 0.2s;
+}
+.btn-refine-conclusions:hover { background: #4a7a78; }
+.btn-refine-conclusions:disabled { opacity: 0.6; cursor: default; }
+.night-mode .conclusions-refine-row { background: #1a2228; border-color: #3a4b53; }
+.night-mode .conclusions-refine-row input { color: #d4dfe3; }
+.night-mode .conclusions-refine-row input::placeholder { color: #647680; }
+.night-mode .conclusions-refine-row > i.fa-wand-magic-sparkles { color: #7ba8a5; }
+.night-mode .btn-refine-conclusions { background: #2f4a48; }
+.night-mode .btn-refine-conclusions:hover { background: #3a5c5a; }
 .btn-back, .btn-cancel {
     background: #f1f3f5;
     color: #6a7c8e;
@@ -3310,6 +3356,98 @@ body.modal-photo-open .glass-scrollbar {
 .night-mode .defect-dropdown .dd-panel::-webkit-scrollbar-thumb:hover { background: rgba(138, 180, 176, 0.55); }
 .night-mode .defect-dropdown .dd-item { color: #a8c4cc; border-bottom-color: #3e525e; }
 .night-mode .defect-dropdown .dd-item:hover, .night-mode .defect-dropdown .dd-item.active { background: #3a6b62; color: white; }
+
+/* ---- Combined defect type picker (replaces the Element/No. dropdown pair
+   above) - one searchable field instead of two, see spans.js. ---- */
+.combined-card {
+    background: white;
+    border: 1px solid #e9edf2;
+    border-radius: 14px;
+    padding: 11px 13px;
+    position: relative;
+}
+.combined-trigger {
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    text-align: left;
+}
+.combined-code {
+    flex-shrink: 0;
+    width: 38px;
+    height: 32px;
+    border-radius: 9px;
+    background: #eef4f2;
+    color: #2c5a57;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-weight: 800;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.combined-text { flex: 1; min-width: 0; }
+.combined-name { font-size: 0.9rem; font-weight: 600; color: #2c3e44; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.combined-cat { font-size: 10.5px; color: #a7b4bd; margin-top: 1px; }
+.combined-chevron { font-size: 0.65rem; color: #8a9ba8; flex-shrink: 0; transition: transform 0.2s ease; }
+
+.picker-sheet {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: -1px;
+    right: -1px;
+    background: #f8fafc;
+    border: 1px solid #e9edf2;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 16px 36px rgba(0,0,0,0.14);
+    z-index: 20;
+    display: none;
+}
+.combined-card.open .picker-sheet { display: block; }
+.combined-card.open .combined-chevron { transform: rotate(180deg); }
+.picker-search { display: flex; align-items: center; gap: 8px; padding: 10px 13px; border-bottom: 1px solid #e9edf2; }
+.picker-search i.fa-magnifying-glass { color: #8a9ba8; font-size: 12px; }
+.picker-search input { flex: 1; min-width: 0; border: none; background: none; outline: none; font-family: inherit; font-size: 0.82rem; color: #2c3e44; }
+.picker-close { flex-shrink: 0; border: none; background: none; color: #8a9ba8; cursor: pointer; font-size: 12px; padding: 2px; }
+.picker-close:hover { color: #5b8c8a; }
+.picker-list {
+    max-height: 220px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(91, 140, 138, 0.3) transparent;
+}
+.picker-list::-webkit-scrollbar { width: 5px; }
+.picker-list::-webkit-scrollbar-thumb { background: rgba(91, 140, 138, 0.3); border-radius: 10px; }
+.picker-list::-webkit-scrollbar-thumb:hover { background: rgba(91, 140, 138, 0.5); }
+.night-mode .picker-list { scrollbar-color: rgba(138, 180, 176, 0.35) transparent; }
+.night-mode .picker-list::-webkit-scrollbar-thumb { background: rgba(138, 180, 176, 0.35); }
+.night-mode .picker-list::-webkit-scrollbar-thumb:hover { background: rgba(138, 180, 176, 0.55); }
+.picker-cat { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #8ab4b0; padding: 8px 13px 4px; }
+.picker-row { display: flex; align-items: center; gap: 10px; padding: 8px 13px; cursor: pointer; }
+.picker-row:hover { background: #eef4f2; }
+.picker-row .code { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 10.5px; font-weight: 700; color: #8a9ba8; width: 26px; flex-shrink: 0; }
+.picker-row .name { font-size: 0.78rem; font-weight: 600; color: #2c3e44; }
+.picker-row:hover .name { color: #2c5a57; }
+.picker-empty { text-align: center; color: #8a9ba8; font-size: 0.8rem; padding: 24px 16px; margin: 0; }
+.night-mode .combined-card { background: #1e2a2f; border-color: #2f3e45; }
+.night-mode .combined-code { background: #1e3a35; color: #8ab4b0; }
+.night-mode .combined-name { color: #d4dfe3; }
+.night-mode .combined-cat { color: #647680; }
+.night-mode .picker-sheet { background: #1a2228; border-color: #2f3e45; }
+.night-mode .picker-search { border-color: #2f3e45; }
+.night-mode .picker-search input { color: #d4dfe3; }
+.night-mode .picker-cat { color: #8ab4b0; }
+.night-mode .picker-row:hover { background: #1e3a35; }
+.night-mode .picker-row .name { color: #d4dfe3; }
+.night-mode .picker-row:hover .name { color: #8ab4b0; }
 
 /* ---- Scores row with stepper cards ---- */
 .scores-row-steppers {
