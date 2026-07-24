@@ -21,7 +21,7 @@ const storage = require('./supabaseStorage');
 const { PDFParse } = require('pdf-parse');
 const mammoth = require('mammoth');
 const { extractElements } = require('./extractPreviousInspection');
-const { extractElementsWithGemini } = require('./geminiExtract');
+const { extractElementsWithGemini, draftConclusionsWithGemini } = require('./geminiExtract');
 
 const router = express.Router();
 const session = require('express-session');
@@ -2275,6 +2275,21 @@ app.get('/api/author/diff', requireAuth, async (req, res) => {
     } catch (err) {
         console.error('Error building author diff:', err);
         res.status(500).json({ error: err.message });
+    }
+});
+
+// Drafts the inspection.html Conclusions textarea's "Suggest Draft" button
+// with Gemini instead of the client's local template - see
+// generateDraftConclusions() in inspection/spans.js, which is what the
+// client falls back to if this errors (missing/invalid key, quota,
+// network - same fallback shape as Author's extraction flow below).
+app.post('/api/draft-conclusions', requireAuth, async (req, res) => {
+    try {
+        const text = await draftConclusionsWithGemini(req.body || {});
+        res.json({ success: true, text });
+    } catch (err) {
+        console.error('Draft conclusions error:', err.message);
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 
