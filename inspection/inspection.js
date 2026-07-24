@@ -791,8 +791,105 @@ function categoryForElement(structureType, elementNo){
 }
 
 window.addEventListener('load', async function() {
+    // Editing an existing inspection: default to only the elements that
+    // already have a recorded defect (showOnlyNonEmptyRows, inspectionA.js),
+    // same idea as reviewing what's there rather than re-scanning every
+    // element from scratch. A brand-new inspection has no defects yet, so
+    // that filter would just hide everything - leave it at its normal
+    // show-all default there.
+    if (sessionStorage.getItem('inspectionMode') === 'edit') {
+        showOnlyNonEmptyRows = true;
+    }
     await loadInspectionElements();
+    await loadBridgeSidebarInfo();
+    await loadBridgePhoto(sessionStorage.getItem('structureId'));
 });
+
+// Same real-photo fetch as inspection1.js's loadBridgePhoto() - this page's
+// .mock-image box never had its own copy, so it stayed the static
+// placeholder icon/watermark for every structure.
+async function loadBridgePhoto(bridgeId) {
+    const mockImageDiv = document.querySelector('.mock-image');
+    if (!mockImageDiv) return;
+
+    try {
+        mockImageDiv.innerHTML = `<i class="fas fa-spinner fa-spin"></i><span style="font-size: 0.7rem;">Loading photo...</span>`;
+
+        if (!bridgeId || bridgeId === 'null' || bridgeId === 'undefined') throw new Error('Invalid bridge ID');
+
+        const response = await fetch(`/getBridgePhoto?bridgeId=${bridgeId}`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        const data = await response.json();
+
+        if (data.photo_url && data.photo_url !== 'null' && data.photo_url !== '') {
+            mockImageDiv.innerHTML = `<img src="${data.photo_url}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;" alt="Bridge Structure Photo">`;
+            mockImageDiv.style.background = 'none';
+            mockImageDiv.style.padding = '0';
+        } else {
+            mockImageDiv.innerHTML = `<i class="fas fa-bridge"></i><span style="font-size: 0.6rem;">No photo available</span>`;
+        }
+    } catch (error) {
+        console.error('Error loading bridge photo:', error);
+        mockImageDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i><span style="font-size: 0.6rem;">Error loading photo</span>`;
+    }
+}
+
+// Populates the right-hand sidebar (name/id/spans/length/built year/last
+// inspection) with the real structure record - mirrors inspection1.js's
+// fetchAndUpdateBridgeData()/fetchLatestInspectionDate(), which this page's
+// sidebar card was always meant to have its own copy of (see the no-store
+// comment on inspection1.js's fetch) but never actually got wired up, so it
+// was left showing that file's static placeholder markup verbatim.
+async function loadBridgeSidebarInfo() {
+  const structureId = sessionStorage.getItem('structureId');
+  if (!structureId) return;
+
+  const nameEl = document.getElementById('sidebarBridgeName');
+  const idEl = document.getElementById('sidebarBridgeId');
+  const spanCountEl = document.getElementById('sidebarSpanCount');
+  const lengthEl = document.getElementById('sidebarLength');
+  const builtYearEl = document.getElementById('sidebarBuiltYear');
+  const lastInspEl = document.getElementById('sidebarLastInsp');
+
+  try {
+    const response = await fetch(`/api/bridges/${structureId}`, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const bridgeData = await response.json();
+
+    if (nameEl && bridgeData.name) nameEl.innerText = bridgeData.name;
+    if (idEl && bridgeData.id) idEl.innerText = `Bridge ID: ${bridgeData.id}`;
+    if (spanCountEl) spanCountEl.innerText = bridgeData.span_number || bridgeData.total_spans || '--';
+    if (lengthEl) {
+      const length = bridgeData.length_metres || bridgeData.length || '--';
+      lengthEl.innerText = length !== '--' ? `${length} m` : '--';
+    }
+    if (builtYearEl) {
+      const builtYear = bridgeData.year_built || bridgeData.construction_year || bridgeData.built_year || '--';
+      builtYearEl.innerText = builtYear !== '--' ? builtYear : '--';
+    }
+  } catch (error) {
+    console.error('Error fetching bridge data:', error);
+    if (spanCountEl) spanCountEl.innerText = '--';
+    if (lengthEl) lengthEl.innerText = '--';
+    if (builtYearEl) builtYearEl.innerText = '--';
+  }
+
+  try {
+    const response = await fetch(`/api/inspection-dates/${structureId}`);
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const dates = await response.json();
+    if (lastInspEl) lastInspEl.innerText = dates && dates.length > 0 ? formatDate(dates[0].date) : 'No inspections';
+  } catch (error) {
+    console.error('Error fetching inspection dates:', error);
+    if (lastInspEl) lastInspEl.innerText = 'Error';
+  }
+}
+
+function formatDate(d) {
+  try { return new Date(d).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' }); }
+  catch { return d; }
+}
 
 async function loadInspectionElements() {
   try {
@@ -837,6 +934,11 @@ async function loadInspectionElements() {
       loadDefectsFromSession(currentSpan);
     }
     updateAllMainRows();
+    // Reapply the current row filter (inspectionA.js) - loadInspectionElements
+    // rebuilds every row from scratch on each call (span switch, post-save
+    // refresh, ...), so without this the "hide empty rows" state would
+    // silently reset to showing everything again each time.
+    if (typeof updateTableVisibility === 'function') updateTableVisibility();
     refreshBCIScores();
   } catch (error) {
     console.error("Error loading inspection elements:", error);
@@ -851,6 +953,16 @@ async function loadDefectsFromAPI(structureId, inspectionDate, currentSpan) {
         const inspectionData = await response.json();
         const inspectionMode = sessionStorage.getItem('inspectionMode');
         const isEditMode = inspectionMode === 'edit';
+        // Real inspection id + its existing notes log (see inspection_notes) -
+        // stashed the same way conclusions is below, so the Notes panel has
+        // something to fetch/post against without a second round-trip.
+        if (inspectionData.id != null) {
+            const storedForNotes = JSON.parse(sessionStorage.getItem('inspectionData') || '{}');
+            storedForNotes.id = inspectionData.id;
+            storedForNotes.notes = inspectionData.notes || [];
+            sessionStorage.setItem('inspectionData', JSON.stringify(storedForNotes));
+            if (typeof window.renderNotesList === 'function') window.renderNotesList();
+        }
         if (inspectionData.conclusions) {
             sessionStorage.setItem('inspectionConclusions', inspectionData.conclusions);
             const storedInspectionData = JSON.parse(sessionStorage.getItem('inspectionData') || '{}');

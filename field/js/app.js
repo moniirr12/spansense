@@ -249,7 +249,7 @@
         display_order: p.displayOrder || 0
       });
     }
-    return Api.saveInspection({ inspection: job.inspection, defects: job.defects, photoData });
+    return Api.saveInspection({ inspection: job.inspection, defects: job.defects, photoData, notes: job.notes || [] });
   }
 
   /* ============================================================
@@ -334,7 +334,7 @@
         `${S.structures.length} total`;
       renderStructures();
     } catch (err) {
-      area.innerHTML = `<div class="empty-state">${err.offline ? 'Offline — no cached structures yet.' : 'Could not load structures.'}</div>`;
+      area.innerHTML = `<div class="empty-state">${err.offline ? 'Offline. No cached structures yet.' : 'Could not load structures.'}</div>`;
     }
   }
   function renderStructures(filter) {
@@ -351,7 +351,7 @@
       const bciVal = s.bci_av != null ? Math.round(s.bci_av) : null;
       const pill = bciVal != null
         ? (() => { const bc = FieldBCI.BAND_COLORS[FieldBCI.bandFromScore(bciVal)]; return `<span class="bci-pill" style="background:${bc.bg};color:${bc.c};">${bciVal}</span>`; })()
-        : `<span class="bci-pill" style="background:var(--surface-2);color:var(--ink-faint);">—</span>`;
+        : `<span class="bci-pill" style="background:var(--surface-2);color:var(--ink-faint);">--</span>`;
       card.innerHTML = `
         <div class="type-icon" style="background:${meta.color}22; color:${meta.color};">${typeIconSvg(s.type)}</div>
         <div class="structure-main"><div class="s-name">${escapeHtml(s.name)}</div><div class="s-sub">${escapeHtml(String(s.id))} · ${escapeHtml(s.type || 'Bridge')}</div></div>
@@ -388,21 +388,21 @@
       S.inspectionDates = dates;
       document.getElementById('inspTitle').textContent = structure.name;
       document.getElementById('inspSubtitle').textContent = `${structure.id} · ${structure.type || 'Bridge'}`;
-      document.getElementById('inspInfoSpans').textContent = structure.span_number || structure.span || '—';
-      document.getElementById('inspInfoLength').textContent = structure.length ? `${parseFloat(structure.length).toFixed(1)} m` : '—';
-      document.getElementById('inspInfoBuilt').textContent = structure.built_year || '—';
+      document.getElementById('inspInfoSpans').textContent = structure.span_number || structure.span || '--';
+      document.getElementById('inspInfoLength').textContent = structure.length ? `${parseFloat(structure.length).toFixed(1)} m` : '--';
+      document.getElementById('inspInfoBuilt').textContent = structure.built_year || '--';
       document.getElementById('structureDescriptionText').textContent = structure.description || 'No description recorded.';
       renderStructureMap(structure);
       renderInspectionRows();
     } catch (err) {
       document.getElementById('inspectionRows').innerHTML =
-        `<div class="empty-state">${err.offline ? 'Offline — open a structure you\'ve viewed before.' : 'Could not load this structure.'}</div>`;
+        `<div class="empty-state">${err.offline ? 'Offline. Open a structure you\'ve viewed before.' : 'Could not load this structure.'}</div>`;
     }
   }
   function renderInspectionRows() {
     const area = document.getElementById('inspectionRows');
     if (S.inspectionDates.length === 0) {
-      area.innerHTML = '<div class="empty-state">No inspections recorded yet — use + to start the first one.</div>';
+      area.innerHTML = '<div class="empty-state">No inspections recorded yet. Use + to start the first one.</div>';
       return;
     }
     area.innerHTML = '';
@@ -491,14 +491,14 @@
       buildDraftFromInspection(full);
       openViewer();
     } catch (err) {
-      toast(err.offline ? 'Offline — this inspection isn\'t cached yet.' : 'Could not load that inspection.');
+      toast(err.offline ? 'Offline. This inspection isn\'t cached yet.' : 'Could not load that inspection.');
     }
   }
   async function startBlankInspection() {
     try {
       await loadElementsFor(S.currentStructure.type);
     } catch (err) {
-      toast(err.offline ? 'Offline — element list not cached yet.' : 'Could not load element list.');
+      toast(err.offline ? 'Offline. Element list not cached yet.' : 'Could not load element list.');
       return;
     }
     const totalSpans = parseInt(S.currentStructure.span_number || S.currentStructure.span || 1, 10) || 1;
@@ -511,8 +511,14 @@
       baseType: null,
       totalSpans,
       conclusions: '',
+      // A note added here is a fresh, standalone log entry (see
+      // inspection_notes) - always starts blank, even when the draft was
+      // built from a previous inspection below, since it's "something new
+      // to flag" rather than an editable existing value.
+      fieldNote: '',
       spans: Array.from({ length: totalSpans }, (_, i) => ({ spanNumber: i + 1, comments: '' })),
-      defects: []
+      defects: [],
+      generalPhotos: []
     };
     S.currentSpan = 1;
     openViewer();
@@ -527,6 +533,7 @@
       baseType: full.inspectionType,
       totalSpans: full.totalSpans || (full.spans || []).length || 1,
       conclusions: full.conclusions || '',
+      fieldNote: '',
       spans: (full.spans && full.spans.length ? full.spans : [{ spanNumber: 1 }]).map((sp) => ({
         spanNumber: sp.spanNumber, comments: sp.comments || ''
       })),
@@ -557,7 +564,10 @@
         origZ: d.z != null ? d.z : null,
         referencePhotos: d.photos || [], // old inspection's photos - view only, never re-uploaded
         photos: []
-      }))
+      })),
+      // Starting a new draft never inherits the previous visit's general
+      // site photos - those were for that visit, not this one.
+      generalPhotos: []
     };
     S.currentSpan = S.draft.spans[0] ? S.draft.spans[0].spanNumber : 1;
   }
@@ -646,8 +656,8 @@
     document.body.appendChild(wrap);
   }
 
-  document.getElementById('conclusionsInput').addEventListener('input', (e) => {
-    if (S.draft) S.draft.conclusions = e.target.value;
+  document.getElementById('fieldNoteInput').addEventListener('input', (e) => {
+    if (S.draft) S.draft.fieldNote = e.target.value;
   });
 
   /* ============================================================
@@ -696,7 +706,7 @@
 
     btn.addEventListener('click', () => (listening ? stop() : start()));
   }
-  attachDictation(document.getElementById('conclusionsMicBtn'), document.getElementById('conclusionsInput'), { timestamp: true });
+  attachDictation(document.getElementById('fieldNoteMicBtn'), document.getElementById('fieldNoteInput'), { timestamp: true });
   attachDictation(document.getElementById('defCommentsMicBtn'), document.getElementById('defComments'));
   attachDictation(document.getElementById('defRemedialMicBtn'), document.getElementById('defRemedial'));
 
@@ -716,7 +726,7 @@
     // whole-inspection free-text field with no element/span of its own.
     document.getElementById('spanTabsRow').style.display = tab === 'notes' ? 'none' : 'flex';
     document.getElementById('addDefectFab').style.display = tab === 'notes' ? 'none' : 'flex';
-    if (tab === 'notes') { document.getElementById('conclusionsInput').value = S.draft.conclusions || ''; renderNotesPhotoStrip(); }
+    if (tab === 'notes') { document.getElementById('fieldNoteInput').value = S.draft.fieldNote || ''; renderNotesPhotoStrip(); }
     refreshViewerContent();
   }
   // Pauses the 3D render loop (battery) whenever the viewer+TwinView tab
@@ -907,7 +917,7 @@
       const icon = combined === '0.0'
         ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>'
         : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>';
-      row.innerHTML = `${icon}<span style="color:${combined === '0.0' ? 'var(--good)' : 'var(--fair)'}">${escapeHtml(el.description)} — ${combined === '0.0' ? 'no defects recorded' : 'not inspected'}</span>`;
+      row.innerHTML = `${icon}<span style="color:${combined === '0.0' ? 'var(--good)' : 'var(--fair)'}">${escapeHtml(el.description)}: ${combined === '0.0' ? 'no defects recorded' : 'not inspected'}</span>`;
       return row;
     }
     const row = document.createElement('div');
@@ -999,17 +1009,29 @@
 
     document.getElementById('defTitle').textContent = d ? (isPlaceholder(d) ? 'Element status' : 'Edit defect') : 'New defect';
     document.getElementById('defSubtitle').textContent = `Span ${S.currentSpan}`;
-    document.getElementById('defElementDisplay').textContent = el ? `${el.no}. ${el.description}` : '—';
+    document.getElementById('defElementDisplay').textContent = el ? `${el.no}. ${el.description}` : '--';
     document.getElementById('defectDeleteBtn').style.visibility = d ? 'visible' : 'hidden';
 
     const typeCode = document.getElementById('defTypeCode');
     const numCode = document.getElementById('defNumberCode');
-    const typeLabel = document.getElementById('defTypeLabel');
     const isPh = d && isPlaceholder(d);
     document.getElementById('defectTypeGroup').style.display = isPh ? 'none' : 'block';
     typeCode.value = d && !isPh ? d.defectType : '';
     numCode.value = d && !isPh ? d.defectNumber : '';
-    typeLabel.value = d ? (d.elementDescription && d.elementDescription !== el?.description ? d.elementDescription : '') : '';
+    // A stored elementDescription (legacy free text, or a custom override
+    // typed via the picker's "use as typed" row) wins when present; otherwise
+    // derive the standard name from the code itself, since most existing
+    // defects were saved with only the numeric code and never had this text
+    // populated at all - the field used to just show blank for those.
+    const customLabel = d && d.elementDescription && d.elementDescription !== el?.description ? d.elementDescription : '';
+    const stdLabel = d && !isPh ? window.DefectCodes.getDefectText(d.defectType, d.defectNumber) : null;
+    setDefectLabel(customLabel || stdLabel || '');
+    [typeCode, numCode].forEach((inp) => {
+      inp.oninput = () => {
+        const std = window.DefectCodes.getDefectText(typeCode.value.trim(), numCode.value.trim());
+        if (std) setDefectLabel(std);
+      };
+    });
 
     // Severity/extent/works are meaningless on a No Defects / Not Inspected
     // placeholder row (they're pinned at 1A by definition) - hide them and
@@ -1060,7 +1082,10 @@
         const real = prev.filter((p) => !(p.defect_type === '0'));
         if (real.length) {
           hint.hidden = false;
-          hint.textContent = `Previously recorded here: ${real.slice(0, 3).map((p) => `${p.defect_type}.${p.defect_number}`).join(', ')}`;
+          hint.textContent = `Previously recorded here: ${real.slice(0, 3).map((p) => {
+            const name = window.DefectCodes.getDefectText(p.defect_type, p.defect_number);
+            return `${p.defect_type}.${p.defect_number}${name ? ' ' + name : ''}`;
+          }).join(', ')}`;
         }
       }).catch(() => {});
     }
@@ -1074,6 +1099,10 @@
     const sel = document.querySelector(`#${id} button.sel`);
     return sel ? sel.dataset.v : null;
   }
+  function setDefectLabel(text) {
+    document.getElementById('defTypeLabel').value = text;
+    document.getElementById('defTypeLabelText').textContent = text || 'Pick defect type';
+  }
   document.querySelectorAll('.stepper').forEach((stepper) => {
     stepper.addEventListener('click', (e) => {
       const btn = e.target.closest('button'); if (!btn) return;
@@ -1086,6 +1115,71 @@
       }
     });
   });
+
+  /* ---------- defect type picker ----------
+     Lets the inspector find a defect by name (spalling, corrosion...)
+     instead of having to remember its numeric code; picking one fills the
+     code inputs and the label together, and typing a code still works and
+     fills the name back in via the oninput handlers set up above. */
+  const defectPickerOverlay = document.getElementById('defectPickerOverlay');
+  const defectPickerList = document.getElementById('defectPickerList');
+  const defectPickerSearch = document.getElementById('defectPickerSearch');
+  function openDefectPicker() {
+    defectPickerSearch.value = '';
+    renderDefectPicker('');
+    defectPickerOverlay.hidden = false;
+    requestAnimationFrame(() => defectPickerOverlay.classList.add('show'));
+    defectPickerSearch.focus();
+  }
+  function closeDefectPicker() {
+    defectPickerOverlay.classList.remove('show');
+    setTimeout(() => { defectPickerOverlay.hidden = true; }, 180);
+  }
+  function renderDefectPicker(query) {
+    const q = query.trim().toLowerCase();
+    const matches = q ? window.DefectCodes.CATALOG.filter((c) => c.search.includes(q)) : window.DefectCodes.CATALOG;
+    defectPickerList.innerHTML = '';
+    if (q) {
+      const custom = document.createElement('button');
+      custom.type = 'button';
+      custom.className = 'picker-row custom-row';
+      custom.innerHTML = `<span class="code">--</span><span class="name">Use "${escapeHtml(query.trim())}" as typed</span>`;
+      custom.onclick = () => { setDefectLabel(query.trim()); closeDefectPicker(); };
+      defectPickerList.appendChild(custom);
+    }
+    if (!matches.length) {
+      const empty = document.createElement('p');
+      empty.className = 'picker-empty';
+      empty.textContent = 'No standard defect matches - use the option above to enter it as typed.';
+      defectPickerList.appendChild(empty);
+      return;
+    }
+    let lastCat = null;
+    matches.forEach((c) => {
+      if (c.category !== lastCat) {
+        const catEl = document.createElement('p');
+        catEl.className = 'picker-cat';
+        catEl.textContent = c.category;
+        defectPickerList.appendChild(catEl);
+        lastCat = c.category;
+      }
+      const row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'picker-row';
+      row.innerHTML = `<span class="code">${c.code}</span><span class="name">${escapeHtml(c.name)}</span>`;
+      row.onclick = () => {
+        document.getElementById('defTypeCode').value = c.type;
+        document.getElementById('defNumberCode').value = c.number;
+        setDefectLabel(c.name);
+        closeDefectPicker();
+      };
+      defectPickerList.appendChild(row);
+    });
+  }
+  document.getElementById('defTypeLabelBtn').addEventListener('click', openDefectPicker);
+  document.getElementById('defectPickerCloseBtn').addEventListener('click', closeDefectPicker);
+  defectPickerOverlay.addEventListener('click', (e) => { if (e.target === defectPickerOverlay) closeDefectPicker(); });
+  defectPickerSearch.addEventListener('input', () => renderDefectPicker(defectPickerSearch.value));
 
   // Shared by the per-defect photo strip and the Notes tab's general site
   // photos - same thumbnails/remove/add-tile behavior, different container
@@ -1121,38 +1215,17 @@
   }
 
   // General site photos - not tied to any element/defect, same idea as the
-  // Notes tab's free-text field. Reuses the exact same defects/defect_photos
-  // plumbing as a real defect (a reserved (elementNumber 0, defectType
-  // '0', defectNumber '2') record, same convention as the existing 0.0/0.1
-  // No-Defects/Not-Inspected codes) so save/upload needs no server changes -
-  // it never matches a real element, so it's automatically excluded from
-  // BCI scoring and never appears in the per-element Defect List.
-  const GENERAL_PHOTO_ELEMENT = 0;
-  function findGeneralPhotoEntry() {
-    return S.draft.defects.find((d) => d.elementNumber === GENERAL_PHOTO_ELEMENT && d.defectType === '0' && d.defectNumber === '2');
-  }
-  function ensureGeneralPhotoEntry() {
-    let entry = findGeneralPhotoEntry();
-    if (!entry) {
-      entry = {
-        key: `general-${Date.now()}`, defectDbId: null, spanNumber: 1, elementNumber: GENERAL_PHOTO_ELEMENT,
-        elementDescription: 'General site photos', defectType: '0', defectNumber: '2',
-        severity: '1', extent: 'A', worksRequired: 'N', priority: '', cost: '',
-        comments: '', remedial_works: '', timestamp: new Date().toISOString(), isPrimary: false,
-        referencePhotos: [], photos: []
-      };
-      S.draft.defects.push(entry);
-    }
-    return entry;
-  }
+  // Notes tab's free-text field. Attached directly to the inspection itself
+  // server-side (defect_photos.inspection_id, defect_id NULL) via the
+  // reserved 'general' key used in place of a real defect id/temp key -
+  // see submitJob() below and server.js's /save-inspection.
   function renderNotesPhotoStrip() {
-    renderPhotoStripInto('notesPhotoStrip', findGeneralPhotoEntry(), () => document.getElementById('notesCameraInput').click());
+    renderPhotoStripInto('notesPhotoStrip', { photos: S.draft.generalPhotos }, () => document.getElementById('notesCameraInput').click());
   }
   document.getElementById('notesCameraInput').addEventListener('change', (e) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
-    const entry = ensureGeneralPhotoEntry();
-    files.forEach((file) => entry.photos.push({ blob: file, filename: file.name, description: '', displayOrder: entry.photos.length, localUrl: URL.createObjectURL(file) }));
+    files.forEach((file) => S.draft.generalPhotos.push({ blob: file, filename: file.name, description: '', displayOrder: S.draft.generalPhotos.length, localUrl: URL.createObjectURL(file) }));
     renderNotesPhotoStrip();
     e.target.value = '';
   });
@@ -1302,8 +1375,15 @@
           description: p.description, displayOrder: p.displayOrder
         }));
       });
+      S.draft.generalPhotos.forEach((p) => photos.push({
+        tempDefectKey: 'general', blob: p.blob, filename: p.filename,
+        description: p.description, displayOrder: p.displayOrder
+      }));
 
-      const job = { structureId, structureName: S.draft.structureName, inspection, defects, photos };
+      const notes = S.draft.fieldNote && S.draft.fieldNote.trim()
+        ? [{ text: S.draft.fieldNote.trim(), source: 'field' }] : [];
+
+      const job = { structureId, structureName: S.draft.structureName, inspection, defects, photos, notes };
 
       // Always attempt the live save first - navigator.onLine is only ever
       // a hint (some browsers/networks report it wrong) and the real
@@ -1346,8 +1426,11 @@
           const tempKey = `${structureId}_${dateStr}_${d.spanNumber}_${d.elementNumber}_${d.defectType}.${d.defectNumber}`;
           d.photos.forEach((p) => photos.push({ tempDefectKey: tempKey, blob: p.blob, filename: p.filename, description: p.description, displayOrder: p.displayOrder }));
         });
-        await FieldDB.queueJob({ structureId, structureName: S.draft.structureName, inspection, defects, photos });
-        toast('Offline — inspection queued, will sync automatically.');
+        S.draft.generalPhotos.forEach((p) => photos.push({ tempDefectKey: 'general', blob: p.blob, filename: p.filename, description: p.description, displayOrder: p.displayOrder }));
+        const notes = S.draft.fieldNote && S.draft.fieldNote.trim()
+          ? [{ text: S.draft.fieldNote.trim(), source: 'field' }] : [];
+        await FieldDB.queueJob({ structureId, structureName: S.draft.structureName, inspection, defects, photos, notes });
+        toast('Offline. Inspection queued, will sync automatically.');
         updateSyncBar();
         stack = ['structures', 'inspections'];
         renderStack(true);

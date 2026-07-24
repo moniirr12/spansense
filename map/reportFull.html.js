@@ -143,7 +143,7 @@ function htmlBCICategory(score) {
     if (score >= 80) return { text: 'Good', band: 'good' };
     if (score >= 65) return { text: 'Fair', band: 'fair' };
     if (score >= 40) return { text: 'Poor', band: 'poor' };
-    return { text: 'Critical', band: 'critical' };
+    return { text: 'Very Poor', band: 'critical' };
 }
 function htmlPriorityClass(p) { return p === 'H' ? 'pri-h' : p === 'M' ? 'pri-m' : p === 'L' ? 'pri-l' : 'neutral'; }
 
@@ -182,7 +182,7 @@ function htmlBciStatCell(label, value, valueClass, tag) {
 }
 
 var BCI_BANDS = [
-    { label: 'Critical', lo: 0, hi: 39 }, { label: 'Poor', lo: 40, hi: 64 }, { label: 'Fair', lo: 65, hi: 79 },
+    { label: 'Very Poor', lo: 0, hi: 39 }, { label: 'Poor', lo: 40, hi: 64 }, { label: 'Fair', lo: 65, hi: 79 },
     { label: 'Good', lo: 80, hi: 89 }, { label: 'Very good', lo: 90, hi: 100 }
 ];
 function htmlBandStrip(score) {
@@ -286,11 +286,15 @@ async function buildFullInspectionReportHtml(doc) {
         mapDataURL = await captureLocationMap(parseFloat(bridgeData.latitude) || null, parseFloat(bridgeData.longitude) || null, structureName);
     }
 
-    // Photos, numbered/matched to defects the same way as the PDF/docx appendix
+    // Photos, numbered/matched to defects the same way as the PDF/docx appendix.
+    // General site photos (not tied to any defect) get the lowest numbers so
+    // they lead the appendix, ahead of the per-defect photos - two passes
+    // over allPhotos (general first) instead of one, so numbering doesn't
+    // just follow upload order.
     var photosByDefect = {};
-    var photoCounter = 0;
+    var generalPhotos = [];
+    var defectPhotoEntries = [];
     allPhotos.forEach(function (photo) {
-        photoCounter++;
         var defectCode = null;
         if (photo.defect_id != null) {
             var matched = defectsData.find(function (dd) { return dd.defectDbId === photo.defect_id; });
@@ -300,9 +304,21 @@ async function buildFullInspectionReportHtml(doc) {
             var parts = String(photo.front_defectid).split('_');
             defectCode = parts[parts.length - 1];
         }
-        if (!defectCode) return;
-        if (!photosByDefect[defectCode]) photosByDefect[defectCode] = [];
-        photosByDefect[defectCode].push({ photo_url: photo.photo_url, photo_description: photo.photo_description, photoNumber: photoCounter });
+        // No defectCode means this is a general site photo (not tied to any
+        // defect) rather than a couldn't-be-matched one - it still belongs in
+        // the appendix, just without a per-defect hyperlink back to it.
+        if (!defectCode) {
+            generalPhotos.push({ photo_url: photo.photo_url, photo_description: photo.photo_description });
+        } else {
+            defectPhotoEntries.push({ defectCode: defectCode, photo_url: photo.photo_url, photo_description: photo.photo_description });
+        }
+    });
+    var photoCounter = 0;
+    generalPhotos.forEach(function (p) { photoCounter++; p.photoNumber = photoCounter; });
+    defectPhotoEntries.forEach(function (p) {
+        photoCounter++;
+        if (!photosByDefect[p.defectCode]) photosByDefect[p.defectCode] = [];
+        photosByDefect[p.defectCode].push({ photo_url: p.photo_url, photo_description: p.photo_description, photoNumber: photoCounter });
     });
     function getPhotoNumbersForDefect(defectCode) { return (photosByDefect[defectCode] || []).map(function (p) { return p.photoNumber; }); }
 
@@ -313,6 +329,11 @@ async function buildFullInspectionReportHtml(doc) {
             var dataURL = await imageUrlToDataURL(photo.photo_url);
             photosWithDataURLs.push({ photo_description: photo.photo_description, photoNumber: photo.photoNumber, dataURL: dataURL });
         }
+    }
+    for (var g = 0; g < generalPhotos.length; g++) {
+        var gPhoto = generalPhotos[g];
+        var gDataURL = await imageUrlToDataURL(gPhoto.photo_url);
+        photosWithDataURLs.push({ photo_description: gPhoto.photo_description || 'General site photo', photoNumber: gPhoto.photoNumber, dataURL: gDataURL });
     }
     photosWithDataURLs.sort(function (a, b) { return a.photoNumber - b.photoNumber; });
 

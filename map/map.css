@@ -842,6 +842,11 @@ body.modal-open {
     background: none;
     color: #8a9ba8;
     transition: color 0.2s, background 0.2s;
+    /* .card-header aligns to flex-start (so the avatar sits at the top of a
+       two-line title instead of drifting to its vertical middle) - that
+       pins this button to the top of the row too unless it opts back into
+       centering itself. */
+    align-self: center;
 }
 #bridgeModal .card-header .close:hover {
     background: #fdf2f2;

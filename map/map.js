@@ -44,7 +44,7 @@ function bciTier(bci) {
     if (bci >= 80) return { band: 'good', label: 'Good', color: '#84cc16' };
     if (bci >= 65) return { band: 'fair', label: 'Fair', color: '#eab308' };
     if (bci >= 40) return { band: 'poor', label: 'Poor', color: '#f97316' };
-    return { band: 'critical', label: 'Critical', color: '#ef4444' };
+    return { band: 'critical', label: 'Very Poor', color: '#ef4444' };
 }
 
 function condRing(bci) {

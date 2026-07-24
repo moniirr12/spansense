@@ -160,33 +160,46 @@ var GRID_LAYOUT = {
     paddingRight:  () => 0.5,
 };
 
-// Shared so page 1 and page 2's tables stretch to the exact same total
-// height regardless of how many rows each one naturally has (otherwise
-// whichever has fewer/shorter rows - e.g. a Retaining Wall's element list
-// vs a Bridge's - ends up visibly shorter). 0.95 (up from an original 0.967
-// - which sounds like a decrease, but the *actual* rendered height used to
-// fall well short of that 0.967 target too, see PAGE1_FIXED_ROWS_HEIGHT
-// below) leaves a real, tested buffer under the 761.89pt usable A4 height
-// (841.89 minus 40pt top+bottom margins) once centeredTable's own 8pt top
-// margin is accounted for - 0.99 was tried first and overflowed the
-// footer row onto its own extra page.
+// 0.95 (up from an original 0.967 - which sounds like a decrease, but the
+// *actual* rendered height used to fall well short of that 0.967 target too,
+// see PAGE1_FIXED_ROWS_HEIGHT below) leaves a real, tested buffer under the
+// 761.89pt usable A4 height (841.89 minus 40pt top+bottom margins) once
+// centeredTable's own 8pt top margin is accounted for - 0.99 was tried first
+// and overflowed the footer row onto its own extra page.
 var PAGE_TARGET_HEIGHT = (841 - 80) * 0.95;
 
 // Page 1's 8 header/info rows + 1 footer row, at their natural (unstretched)
 // 1.5pt padding, and the natural height of one data row's text alone with
 // padding removed - both measured the same way as PAGE_TARGET_HEIGHT above
-// (render + measure), used to size the *data* rows (elements + spare) so
-// the whole table reaches PAGE_TARGET_HEIGHT regardless of element count.
-// PAGE1_FIXED_ROWS_HEIGHT was last measured before the element-description
-// and "(Table G.x)"-label text was shortened elsewhere in this file; with
-// those rows now wrapping less, they render far shorter than 164 assumed,
-// which was silently starving every data row's padding (that's what was
-// behind the large empty gap under the table) - re-measured at ~107.4.
+// (render + measure). PAGE1_FIXED_ROWS_HEIGHT was last measured before the
+// element-description and "(Table G.x)"-label text was shortened elsewhere
+// in this file; with those rows now wrapping less, they render far shorter
+// than 164 assumed, which was silently starving every data row's padding
+// (that's what was behind the large empty gap under the table) -
+// re-measured at ~107.4.
 var PAGE1_FIXED_ROWS_HEIGHT = 107.5;
 // Re-measured alongside PAGE1_FIXED_ROWS_HEIGHT above - was also stale (had
 // been 10.627), confirmed via a direct test render with padding hardcoded
 // to a known value and measuring the resulting row height back out.
 var PAGE1_DATA_TEXT_HEIGHT = 8.7;
+
+// One fixed data-row height, used for every structure type's page 1 *and*
+// page 2 - always derived from Bridge's row count (the largest/reference
+// element list), never the current structure's own count. Previously each
+// page recomputed (PAGE_TARGET_HEIGHT - PAGE1_FIXED_ROWS_HEIGHT) divided by
+// *its own* element+spare count, which stretched Retaining Wall (20 rows)
+// and Sign Gantry (16 rows) page 1s to fill the same total page height as
+// Bridge's 42-row page 1 - each row came out taller the fewer rows there
+// were. Page 2's row count (23) never varies by type at all, so tying its
+// height to whatever structure type happened to be open made it silently
+// mismatch itself between a Bridge inspection and a Gantry inspection, and
+// even mismatch page 1 on the same structure. Bridge's page 1 is unaffected
+// (it's still exactly PAGE_TARGET_HEIGHT tall, since it IS the reference);
+// Retaining Wall/Sign Gantry page 1s are now shorter than a full page rather
+// than stretched, and every page 2 renders at this same height regardless
+// of structure type.
+var BRIDGE_DATA_ROW_COUNT = BCI_ELEMENTS_BY_TYPE.Bridge.length + BCI_SPARE_BY_TYPE.Bridge.length;
+var FIXED_DATA_ROW_HEIGHT = (PAGE_TARGET_HEIGHT - PAGE1_FIXED_ROWS_HEIGHT) / BRIDGE_DATA_ROW_COUNT;
 
 // A4 usable width with 40pt margins = 515pt. Table is 375pt by base design,
 // scaled up 15% then another 10% per request (474.4pt, still under the
@@ -574,13 +587,14 @@ function buildBCIProformaContent(bciFormData, singleSpanIdx) {
             { text: '' }, { text: '' }, { text: '' }, { text: '' }, { text: '' }
         ]);
 
-        // Target height of one data row - needed up-front (not just for page1Layout's
-        // padding below) so the rotated "Set" column labels can be sized to their
-        // rowSpan before those rows are built.
+        // Row count still varies by structure type (it's genuinely how many
+        // element rows there are to draw), but the row *height* target is
+        // the shared FIXED_DATA_ROW_HEIGHT constant - see its definition for
+        // why this must not be recomputed per type.
         var dataRowCount = BCI_ELEMENTS.length + BCI_SPARE.length;
         var dataRowFirstIdx = 8;
         var dataRowLastIdx = dataRowFirstIdx + dataRowCount - 1;
-        var dataRowHeightTarget = (PAGE_TARGET_HEIGHT - PAGE1_FIXED_ROWS_HEIGHT) / dataRowCount;
+        var dataRowHeightTarget = FIXED_DATA_ROW_HEIGHT;
         var dataRowPad = Math.max(1.5, (dataRowHeightTarget - PAGE1_DATA_TEXT_HEIGHT) / 2);
 
         // ========== DATA ROWS ==========
@@ -750,14 +764,13 @@ function buildBCIPage2Content(bciFormData, singleSpanIdx) {
     var spansData = bciFormData.spansData || [];
     var worksRequired = bciFormData.worksRequired || {};
 
-    // Same per-structure-type element/spare counts page 1 uses, so this
-    // page's "Multiple Defects"/"Work Required" content rows come out at
-    // the exact same height as page 1's element rows (same fontSize:7,
-    // same PAGE1_DATA_TEXT_HEIGHT baseline) instead of their own fixed,
-    // unrelated 18*1.05 value.
-    var page2ProformaConfig = getBCIProformaConfig((bciFormData.bridgeData && bciFormData.bridgeData.type) || 'Bridge');
-    var page1DataRowCount = page2ProformaConfig.elements.length + page2ProformaConfig.spare.length;
-    var page1DataRowHeightTarget = (PAGE_TARGET_HEIGHT - PAGE1_FIXED_ROWS_HEIGHT) / page1DataRowCount;
+    // Page 2's row layout (23 rows: 5 multiple-defects + 6 work-required +
+    // fixed headers/comment boxes) never varies by structure type, so its
+    // row height is the same shared FIXED_DATA_ROW_HEIGHT constant page 1
+    // uses (same fontSize:7, same PAGE1_DATA_TEXT_HEIGHT baseline) rather
+    // than being recomputed from whichever structure type happened to be
+    // open - that was making a Gantry's page 2 taller than a Bridge's.
+    var page1DataRowHeightTarget = FIXED_DATA_ROW_HEIGHT;
 
     var USABLE_PT       = PAGE_TARGET_HEIGHT;
     var MULTI_ROW_COUNT = 5;

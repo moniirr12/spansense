@@ -222,6 +222,15 @@
                     photoData: photoData
                 };
 
+                // Notes added before this inspection has ever been saved have
+                // nowhere to POST to yet - they're queued client-side (see
+                // notesPanel.js) and only travel here, on the very first save.
+                // Once the inspection has a real id, further notes go live via
+                // POST /api/inspections/:id/notes instead.
+                if (!isEditMode) {
+                    payload.notes = JSON.parse(sessionStorage.getItem('queuedNotes') || '[]');
+                }
+
                 let inspectionId;
                 
                 if (isEditMode) {
@@ -250,6 +259,18 @@
 
                 if (result.inspectionId || inspectionId) {
                     sessionStorage.setItem('lastSavedInspectionId', result.inspectionId || inspectionId);
+                }
+                if (!isEditMode) {
+                    sessionStorage.removeItem('queuedNotes');
+                    // Now that the inspection has a real id, any further notes
+                    // added without a page reload can go live via POST instead
+                    // of queuing again.
+                    const savedId = result.inspectionId || inspectionId;
+                    if (savedId) {
+                        const stored = JSON.parse(sessionStorage.getItem('inspectionData') || '{}');
+                        stored.id = savedId;
+                        sessionStorage.setItem('inspectionData', JSON.stringify(stored));
+                    }
                 }
                 
                 console.log(`Inspection ${isEditMode ? 'updated' : 'saved'} successfully!`);

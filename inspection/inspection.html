@@ -520,6 +520,39 @@
             <div class="bar-icon"><i class="fas fa-cube"></i></div>
             <div class="bar-label">Twin View</div>
         </div>
+
+        <div class="twin-view-bar" id="generalPhotosBar" onclick="openGeneralPhotosModal()">
+            <div class="bar-icon"><i class="fas fa-camera"></i></div>
+            <div class="bar-label">General Photos</div>
+        </div>
+    </div>
+
+    <!-- STICKY RIGHT BAR: NOTES LOG (separate from Conclusions - see notesPanel.js) -->
+    <div class="notes-tab" id="notesTab" onclick="NotesPanel.open()">
+        <div class="bar-icon"><i class="fas fa-note-sticky"></i><span class="notes-badge" id="notesBadge" hidden>0</span></div>
+        <div class="bar-label">Notes</div>
+    </div>
+    <div class="notes-panel" id="notesPanel">
+        <div class="notes-panel-hdr">
+            <div class="notes-panel-hdr-left">
+                <div class="notes-panel-ico"><i class="fas fa-note-sticky"></i></div>
+                <div>
+                    <div class="notes-panel-title">Notes</div>
+                    <div class="notes-panel-sub" id="notesPanelSub">No notes yet</div>
+                </div>
+            </div>
+            <button class="close-btn" onclick="NotesPanel.close()">&times;</button>
+        </div>
+        <div class="notes-list" id="notesList">
+            <p class="notes-empty">No notes yet. Add one below.</p>
+        </div>
+        <div class="notes-add">
+            <textarea id="notesAddInput" placeholder="Add a note..."></textarea>
+            <div class="notes-add-row">
+                <span class="notes-add-hint">Visible to Field &amp; Core</span>
+                <button class="notes-add-btn" id="notesAddBtn" onclick="NotesPanel.addNote()" disabled>Add note</button>
+            </div>
+        </div>
     </div>
 
     <!-- ORIGINAL NAVBAR (now floating) -->
@@ -724,7 +757,7 @@
                     
                     <div class="mock-image">
                         <i class="fas fa-bridge"></i>
-                        <span>spanSense Â©</span>
+                        <span>spanSense ©</span>
                     </div>
                     
                     <div class="sidebar-divider"></div>
@@ -1459,6 +1492,7 @@
     <script src="../test.js"></script>
     <script src="spans.js"></script>
     <script src="photo.js"></script>
+    <script src="notesPanel.js"></script>
     <script src="../inspection1/inspection1.js"></script>
     <script src="prevDefects.js"></script>
     <script src="historicalCheck.js"></script>

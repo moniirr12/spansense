@@ -30,7 +30,7 @@ function docxBCICategory(score) {
     if (score >= 80) return 'Good';
     if (score >= 65) return 'Fair';
     if (score >= 40) return 'Poor';
-    return 'Critical';
+    return 'Very Poor';
 }
 
 // Same per-structure-type element/category list as test.js's
@@ -297,11 +297,15 @@ async function buildFullInspectionReportDocx(doc) {
         mapDataURL = await captureLocationMap(parseFloat(bridgeData.latitude) || null, parseFloat(bridgeData.longitude) || null, structureName);
     }
 
-    // Defect photos, numbered the same way as the PDF appendix
+    // Defect photos, numbered the same way as the PDF appendix. General site
+    // photos (not tied to any defect) get the lowest numbers so they lead the
+    // appendix, ahead of the per-defect photos - two passes over allPhotos
+    // (general first) instead of one, so numbering doesn't just follow
+    // upload order.
     var photosByDefect = {};
-    var photoNumberCounter = 0;
+    var generalPhotos = [];
+    var defectPhotoEntries = [];
     allPhotos.forEach(function(photo) {
-        photoNumberCounter++;
         var defectCode = null;
         if (photo.defect_id != null) {
             var matched = defectsData.find(function(dd) { return dd.defectDbId === photo.defect_id; });
@@ -311,9 +315,21 @@ async function buildFullInspectionReportDocx(doc) {
             var parts = String(photo.front_defectid).split('_');
             defectCode = parts[parts.length - 1];
         }
-        if (!defectCode) return;
-        if (!photosByDefect[defectCode]) photosByDefect[defectCode] = [];
-        photosByDefect[defectCode].push({ photo_url: photo.photo_url, photo_description: photo.photo_description, photoNumber: photoNumberCounter });
+        // No defectCode means this is a general site photo (not tied to any
+        // defect) rather than a couldn't-be-matched one - it still belongs in
+        // the appendix, just without a per-defect hyperlink back to it.
+        if (!defectCode) {
+            generalPhotos.push({ photo_url: photo.photo_url, photo_description: photo.photo_description });
+        } else {
+            defectPhotoEntries.push({ defectCode: defectCode, photo_url: photo.photo_url, photo_description: photo.photo_description });
+        }
+    });
+    var photoNumberCounter = 0;
+    generalPhotos.forEach(function(p) { photoNumberCounter++; p.photoNumber = photoNumberCounter; });
+    defectPhotoEntries.forEach(function(p) {
+        photoNumberCounter++;
+        if (!photosByDefect[p.defectCode]) photosByDefect[p.defectCode] = [];
+        photosByDefect[p.defectCode].push({ photo_url: p.photo_url, photo_description: p.photo_description, photoNumber: photoNumberCounter });
     });
     function getPhotoNumbersForDefect(defectCode) {
         return (photosByDefect[defectCode] || []).map(function(p) { return p.photoNumber; });
@@ -326,6 +342,11 @@ async function buildFullInspectionReportDocx(doc) {
             var dataURL = await imageUrlToDataURL(photo.photo_url);
             photosWithDataURLs.push({ photo_description: photo.photo_description, photoNumber: photo.photoNumber, dataURL: dataURL });
         }
+    }
+    for (var g = 0; g < generalPhotos.length; g++) {
+        var gPhoto = generalPhotos[g];
+        var gDataURL = await imageUrlToDataURL(gPhoto.photo_url);
+        photosWithDataURLs.push({ photo_description: gPhoto.photo_description || 'General site photo', photoNumber: gPhoto.photoNumber, dataURL: gDataURL });
     }
     photosWithDataURLs.sort(function(a, b) { return a.photoNumber - b.photoNumber; });
 
@@ -348,6 +369,7 @@ async function buildFullInspectionReportDocx(doc) {
     // updates it, so it reads as "missing" until then; this is always visible.)
     children.push(new d.Paragraph({ children: [], pageBreakBefore: true }));
     children.push(new d.Paragraph({ heading: d.HeadingLevel.HEADING_1, spacing: { after: 200 }, children: [new d.TextRun({ text: 'Table of Contents' })] }));
+    children.push(tocEntry(d, 'Document Status', 'docStatus'));
     children.push(tocEntry(d, '1. Structure Details', 'section1'));
     children.push(tocEntry(d, '1.1 Structure Description', 'section1_1', 360));
     children.push(tocEntry(d, '1.2 Coordinates', 'section1_2', 360));
@@ -363,6 +385,51 @@ async function buildFullInspectionReportDocx(doc) {
     children.push(tocEntry(d, '4.2 Recommended Remedial Works', 'section4_2', 360));
     children.push(tocEntry(d, '4.3 Next Inspection', 'section4_3', 360));
     children.push(tocEntry(d, 'Appendix A: Photographs', 'appendixA'));
+
+    // ── DOCUMENT STATUS ──
+    // Where this record stands right now (inspections.status/reviewed_by/
+    // reviewed_at/engineer_comments) - not a full revision log, since the
+    // database only keeps the latest review decision, not a history of every
+    // submit/reject/resubmit cycle.
+    children.push(new d.Paragraph({ children: [], pageBreakBefore: true }));
+    children.push(bookmarkedHeading(d, 'Document Status', d.HeadingLevel.HEADING_1, 'docStatus'));
+    var statusMeta = {
+        approved: { label: 'Approved', bg: 'EAF6ED', color: '1E5C34' },
+        rejected: { label: 'Rejected', bg: 'FDECEA', color: '7A1F1F' },
+        submitted: { label: 'Submitted — Pending Review', bg: 'EEF4F2', color: '2C4A48' }
+    }[inspectionData.status] || { label: 'Submitted — Pending Review', bg: 'EEF4F2', color: '2C4A48' };
+    var statusBannerText = inspectionData.reviewedBy
+        ? (statusMeta.label + ' — reviewed ' + (inspectionData.reviewedAt ? formatDate(inspectionData.reviewedAt) : '') + ' by ' + inspectionData.reviewedBy)
+        : statusMeta.label;
+    children.push(new d.Table({
+        width: { size: 100, type: d.WidthType.PERCENTAGE },
+        rows: [new d.TableRow({ children: [new d.TableCell({
+            shading: { fill: statusMeta.bg },
+            margins: { top: 120, bottom: 120, left: 160, right: 160 },
+            children: [new d.Paragraph({ children: [new d.TextRun({ text: statusBannerText, bold: true, size: 20, color: statusMeta.color })] })]
+        })] })]
+    }));
+    children.push(new d.Paragraph({ children: [], spacing: { after: 160 } }));
+    children.push(kvTable(d, [
+        ['Structure:', structureName],
+        ['Inspection Date:', formatDate(inspectionDate)],
+        ['Inspection Type:', inspectionData.inspectionType || 'GI'],
+        ['Prepared By:', inspectionData.inspectorName ? (inspectionData.inspectorName + (inspectionData.source === 'field' ? '  ·  Field' : '')) : 'Not recorded'],
+        ['Reviewed By:', inspectionData.reviewedBy || '—'],
+        ['Reviewed On:', inspectionData.reviewedAt ? formatDate(inspectionData.reviewedAt) : '—'],
+        ['Status:', statusMeta.label]
+    ]));
+    if (inspectionData.engineerComments) {
+        children.push(new d.Paragraph({ heading: d.HeadingLevel.HEADING_2, spacing: { before: 240, after: 120 }, children: [new d.TextRun({ text: 'Reviewer Comments' })] }));
+        children.push(new d.Table({
+            width: { size: 100, type: d.WidthType.PERCENTAGE },
+            rows: [new d.TableRow({ children: [new d.TableCell({
+                shading: { fill: 'EEF4F2' },
+                margins: { top: 120, bottom: 120, left: 160, right: 160 },
+                children: [new d.Paragraph({ children: [new d.TextRun({ text: inspectionData.engineerComments, italics: true, size: 18, color: '2C4A48' })] })]
+            })] })]
+        }));
+    }
 
     // ── SECTION 1: STRUCTURE DETAILS ──
     children.push(new d.Paragraph({ children: [], pageBreakBefore: true }));
