@@ -30,7 +30,7 @@ function docxBCICategory(score) {
     if (score >= 80) return 'Good';
     if (score >= 65) return 'Fair';
     if (score >= 40) return 'Poor';
-    return 'Critical';
+    return 'Very Poor';
 }
 
 // Same per-structure-type element/category list as test.js's

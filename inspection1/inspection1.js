@@ -763,16 +763,18 @@ function initializeNewLayout(numberOfSpans) {
     completed = new Array(spans.length).fill(false);
     inspectionData.totalSpans = spanNumber;
     
+    // Default both to Yes - true for almost every span in practice, so
+    // starting unanswered just meant an extra tap per span for no reason.
     responses = new Array(spans.length).fill(null).map(() => ({
-        inspection: null,
-        photos: null,
+        inspection: true,
+        photos: true,
         comments: ""
     }));
-    
+
     inspectionData.spans = spans.map((span, index) => ({
         spanNumber: index + 1,
-        elementsInspected: null,
-        photographsTaken: null,
+        elementsInspected: true,
+        photographsTaken: true,
         comments: "",
         bciC: null,
         bciA: null

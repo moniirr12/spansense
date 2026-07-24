@@ -143,7 +143,7 @@ function htmlBCICategory(score) {
     if (score >= 80) return { text: 'Good', band: 'good' };
     if (score >= 65) return { text: 'Fair', band: 'fair' };
     if (score >= 40) return { text: 'Poor', band: 'poor' };
-    return { text: 'Critical', band: 'critical' };
+    return { text: 'Very Poor', band: 'critical' };
 }
 function htmlPriorityClass(p) { return p === 'H' ? 'pri-h' : p === 'M' ? 'pri-m' : p === 'L' ? 'pri-l' : 'neutral'; }
 
@@ -182,7 +182,7 @@ function htmlBciStatCell(label, value, valueClass, tag) {
 }
 
 var BCI_BANDS = [
-    { label: 'Critical', lo: 0, hi: 39 }, { label: 'Poor', lo: 40, hi: 64 }, { label: 'Fair', lo: 65, hi: 79 },
+    { label: 'Very Poor', lo: 0, hi: 39 }, { label: 'Poor', lo: 40, hi: 64 }, { label: 'Fair', lo: 65, hi: 79 },
     { label: 'Good', lo: 80, hi: 89 }, { label: 'Very good', lo: 90, hi: 100 }
 ];
 function htmlBandStrip(score) {

@@ -226,7 +226,7 @@ function getBCICategory(score) {
     if (score >= 80) return { text: 'Good', color: NARR_COLORS.accentSoft };
     if (score >= 65) return { text: 'Fair', color: '#eab308' };
     if (score >= 40) return { text: 'Poor', color: '#f97316' };
-    return { text: 'Critical', color: '#dc2626' };
+    return { text: 'Very Poor', color: '#dc2626' };
 }
 
 function priorityColors(p) {
