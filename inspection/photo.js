@@ -301,7 +301,16 @@ async function uploadPhotoNow(defectId, clientId) {
         if (!uploaded) throw new Error('Upload failed');
 
         setPhotoUploadState(defectId, clientId, {
-            photo_url: uploaded.url,
+            // photo_url must be the raw storage path, not uploaded.url (a
+            // signed, expiring URL) - this is what /save-inspection persists
+            // verbatim into defect_photos.photo_url for any defect that was
+            // still a temp key at upload time (i.e. every defect in a
+            // brand-new inspection). Storing the signed URL here meant the
+            // DB ended up with a URL+token string as its "storage path",
+            // which getSignedUrl() then tried to re-sign as an object key
+            // and failed with "Object not found" - the photo was sitting in
+            // Supabase the whole time, just under a path nothing pointed to.
+            photo_url: uploaded.path,
             server_url: uploaded.url,
             photoId: uploaded.id,
             id: uploaded.id,

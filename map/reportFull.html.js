@@ -288,6 +288,7 @@ async function buildFullInspectionReportHtml(doc) {
 
     // Photos, numbered/matched to defects the same way as the PDF/docx appendix
     var photosByDefect = {};
+    var generalPhotos = [];
     var photoCounter = 0;
     allPhotos.forEach(function (photo) {
         var defectCode = null;
@@ -299,13 +300,14 @@ async function buildFullInspectionReportHtml(doc) {
             var parts = String(photo.front_defectid).split('_');
             defectCode = parts[parts.length - 1];
         }
-        // No defectCode either means this couldn't be matched to a defect, or
-        // (since /api/bridges/:structureId/inspection-photos also returns
-        // general site photos now) it's a general photo, which doesn't belong
-        // in this per-defect appendix at all - skip before bumping the
-        // counter so the visible photo numbers stay contiguous.
-        if (!defectCode) return;
         photoCounter++;
+        // No defectCode means this is a general site photo (not tied to any
+        // defect) rather than a couldn't-be-matched one - it still belongs in
+        // the appendix, just without a per-defect hyperlink back to it.
+        if (!defectCode) {
+            generalPhotos.push({ photo_url: photo.photo_url, photo_description: photo.photo_description, photoNumber: photoCounter });
+            return;
+        }
         if (!photosByDefect[defectCode]) photosByDefect[defectCode] = [];
         photosByDefect[defectCode].push({ photo_url: photo.photo_url, photo_description: photo.photo_description, photoNumber: photoCounter });
     });
@@ -318,6 +320,11 @@ async function buildFullInspectionReportHtml(doc) {
             var dataURL = await imageUrlToDataURL(photo.photo_url);
             photosWithDataURLs.push({ photo_description: photo.photo_description, photoNumber: photo.photoNumber, dataURL: dataURL });
         }
+    }
+    for (var g = 0; g < generalPhotos.length; g++) {
+        var gPhoto = generalPhotos[g];
+        var gDataURL = await imageUrlToDataURL(gPhoto.photo_url);
+        photosWithDataURLs.push({ photo_description: gPhoto.photo_description || 'General site photo', photoNumber: gPhoto.photoNumber, dataURL: gDataURL });
     }
     photosWithDataURLs.sort(function (a, b) { return a.photoNumber - b.photoNumber; });
 
