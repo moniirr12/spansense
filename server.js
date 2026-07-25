@@ -21,7 +21,7 @@ const storage = require('./supabaseStorage');
 const { PDFParse } = require('pdf-parse');
 const mammoth = require('mammoth');
 const { extractElements } = require('./extractPreviousInspection');
-const { extractElementsWithGemini, draftConclusionsWithGemini } = require('./geminiExtract');
+const { extractElementsWithGemini, draftConclusionsWithGemini, reviseConclusionsWithGemini } = require('./geminiExtract');
 
 const router = express.Router();
 const session = require('express-session');
@@ -2282,10 +2282,15 @@ app.get('/api/author/diff', requireAuth, async (req, res) => {
 // with Gemini instead of the client's local template - see
 // generateDraftConclusions() in inspection/spans.js, which is what the
 // client falls back to if this errors (missing/invalid key, quota,
-// network - same fallback shape as Author's extraction flow below).
+// network - same fallback shape as Author's extraction flow below). When
+// the request also carries currentText/instruction (the "ask AI to adjust"
+// follow-up), this revises that text instead of drafting a fresh one.
 app.post('/api/draft-conclusions', requireAuth, async (req, res) => {
     try {
-        const text = await draftConclusionsWithGemini(req.body || {});
+        const { currentText, instruction, ...summary } = req.body || {};
+        const text = (currentText && instruction)
+            ? await reviseConclusionsWithGemini(currentText, instruction, summary)
+            : await draftConclusionsWithGemini(summary);
         res.json({ success: true, text });
     } catch (err) {
         console.error('Draft conclusions error:', err.message);

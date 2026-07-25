@@ -146,10 +146,7 @@
                 numEl.value = String(d.defect_number);
                 numEl.dispatchEvent(new Event('change', { bubbles: true }));
             }
-            if (typeof renderCustomSelect === 'function') {
-                renderCustomSelect('defectType',   'defectTypeLabel',   'defectTypePanel',   'defectTypeDropdown');
-                renderCustomSelect('defectNumber',  'defectNumberLabel', 'defectNumberPanel', 'defectNumberDropdown');
-            }
+            if (typeof updateCombinedDefectLabel === 'function') updateCombinedDefectLabel();
         }, 30);
 
         // severity, extent, works
