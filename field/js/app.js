@@ -18,10 +18,12 @@
     currentDefectKey: null
   };
 
+  // Colors match typeFill in map/map.js and typeCircleMeta in database/database.js -
+  // one palette for structure type across every spanSense surface (core + Field).
   const TYPE_META = {
-    Bridge: { color: '#5b8c8a' }, Footbridge: { color: '#8ab4b0' },
-    'Retaining wall': { color: '#c9a227' }, Culvert: { color: '#e07b39' },
-    'Sign Gantry': { color: '#7c6fc4' }
+    Bridge: { color: '#2c645c' }, Footbridge: { color: '#4f9088' },
+    Culvert: { color: '#c79a4b' }, 'Retaining wall': { color: '#9b4f4f' },
+    'Sign Gantry': { color: '#7a6fb0' }
   };
   const INSP_TYPE_META = {
     GI: { label: 'General Inspection', color: '#5b8c8a' },
@@ -409,11 +411,16 @@
   }
   document.getElementById('structureSearch').addEventListener('input', (e) => renderStructures(e.target.value));
 
+  // Bridge/culvert/retaining_wall paths are ported verbatim from typeIcons in
+  // map/map.js so the symbol is pixel-identical to core's map + database pages.
+  // Footbridge/sign_gantry use hand-drawn equivalents instead of core's
+  // FontAwesome glyphs, since Field is an offline PWA and can't rely on a CDN font.
   function typeIconSvg(type) {
     if (type === 'Footbridge') return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.8" fill="currentColor" stroke="none"/><path d="M12 8v5M9 21l3-8 3 8M9 12l-2 3M15 12l2 3"/></svg>';
-    if (type === 'Retaining wall') return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="9" width="18" height="11"/><path d="M3 9h18M8 9v11M13 9v11M18 9v11M3 14h18"/></svg>';
-    if (type === 'Culvert' || type === 'Sign Gantry') return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.4"/></svg>';
-    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17c2-4 4-6 9-6s7 2 9 6"/><path d="M3 17h18M6 17v-4M12 17v-6M18 17v-4"/></svg>';
+    if (type === 'Retaining wall') return '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9"><rect x="2" y="5" width="16" height="11" rx="1.5"/><line x1="2" y1="10.5" x2="18" y2="10.5"/><line x1="7" y1="5" x2="7" y2="10.5"/><line x1="13" y1="10.5" x2="13" y2="16"/></svg>';
+    if (type === 'Culvert') return '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.9"><circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="3"/><line x1="3" y1="17" x2="17" y2="17"/></svg>';
+    if (type === 'Sign Gantry') return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="10" rx="1.5"/><path d="M9 20h6M12 14v6"/></svg>';
+    return '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9"><line x1="2" y1="6" x2="18" y2="6"/><line x1="5" y1="6" x2="5" y2="13"/><line x1="10" y1="6" x2="10" y2="13"/><line x1="15" y1="6" x2="15" y2="13"/><path d="M1 16 Q5 13.5 9 16 T17 16"/></svg>';
   }
   function escapeHtml(str) {
     return String(str == null ? '' : str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -442,11 +449,15 @@
     if (bciVal == null) return '#8a9ba8';
     return FieldBCI.BAND_COLORS[FieldBCI.bandFromScore(bciVal)].c;
   }
-  function structuresMultiPinIcon(color) {
+  // Fill = structure type (matches TYPE_META / core's map.js typeFill), ring = BCI
+  // condition band - same "type color + condition ring" scheme as core's map markers.
+  function structuresMultiPinIcon(type, bciVal) {
+    const meta = TYPE_META[type] || TYPE_META.Bridge;
+    const ring = bciBandColor(bciVal);
     return L.divIcon({
       className: 'structures-multi-pin',
-      html: `<svg viewBox="0 0 24 24" fill="${color}" stroke="#ffffff" stroke-width="1.5"><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.6" fill="#fff"/></svg>`,
-      iconSize: [26, 32], iconAnchor: [13, 32]
+      html: `<div style="width:32px;height:32px;border-radius:50%;background:${meta.color};border:3px solid ${ring};box-shadow:0 2px 8px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;color:#fff;">${typeIconSvg(type)}</div>`,
+      iconSize: [32, 32], iconAnchor: [16, 16]
     });
   }
   function showStructuresMapPopup(s) {
@@ -485,10 +496,10 @@
     structuresMarkerGroup.clearLayers();
     withLocation.forEach((s) => {
       const lat = parseFloat(s.latitude), lng = parseFloat(s.longitude);
-      const marker = L.marker([lat, lng], { icon: structuresMultiPinIcon(bciBandColor(s.bci_av != null ? Math.round(s.bci_av) : null)) });
+      const marker = L.marker([lat, lng], { icon: structuresMultiPinIcon(s.type, s.bci_av != null ? Math.round(s.bci_av) : null) });
       marker.bindTooltip(
         `<span class="structures-label-id">${escapeHtml(String(s.id))}</span>${escapeHtml(s.name)}`,
-        { permanent: true, direction: 'top', offset: [0, -30], className: 'structures-label' }
+        { permanent: true, direction: 'top', offset: [0, -18], className: 'structures-label' }
       );
       marker.on('click', (e) => { L.DomEvent.stopPropagation(e); showStructuresMapPopup(s); });
       marker.addTo(structuresMarkerGroup);
