@@ -181,17 +181,21 @@ body.night-mode .chip.active{ background:#1e3a3e; border-color:#3a5a56; color:#8
 .chip-icon svg{ width:15px; height:15px; display:block; }
 
 .scrollarea{ flex:1; overflow-y:auto; padding-bottom:110px; -webkit-overflow-scrolling:touch; }
-/* spanSense-style scrollbar - teal in light mode, coral in dark mode
-   (dark mode intentionally diverges from desktop's teal-on-teal here). */
-.scrollarea, .description-scroll{ scrollbar-width:thin; scrollbar-color:rgba(91,140,138,.3) var(--border); }
-.scrollarea::-webkit-scrollbar, .description-scroll::-webkit-scrollbar{ width:5px; }
-.scrollarea::-webkit-scrollbar-button, .description-scroll::-webkit-scrollbar-button{ display:none; width:0; height:0; }
-.scrollarea::-webkit-scrollbar-track, .description-scroll::-webkit-scrollbar-track{ background:var(--border); border-radius:10px; margin:4px 0; }
-.scrollarea::-webkit-scrollbar-thumb, .description-scroll::-webkit-scrollbar-thumb{ background:rgba(91,140,138,.3); border-radius:10px; }
-.scrollarea::-webkit-scrollbar-thumb:hover, .description-scroll::-webkit-scrollbar-thumb:hover{ background:rgba(91,140,138,.5); }
-body.night-mode .scrollarea, body.night-mode .description-scroll{ scrollbar-color:rgba(255,99,71,.65) var(--border); }
-body.night-mode .scrollarea::-webkit-scrollbar-thumb, body.night-mode .description-scroll::-webkit-scrollbar-thumb{ background:rgba(255,99,71,.65); }
-body.night-mode .scrollarea::-webkit-scrollbar-thumb:hover, body.night-mode .description-scroll::-webkit-scrollbar-thumb:hover{ background:rgba(255,99,71,.85); }
+/* spanSense-style floating scrollbar - thumb only, no track, no end arrows.
+   Teal in light mode, coral in dark mode (intentionally diverges from
+   desktop's teal-on-teal here). */
+.scrollarea{ scrollbar-width:thin; scrollbar-color:rgba(91,140,138,.3) transparent; }
+.scrollarea::-webkit-scrollbar{ width:5px; }
+.scrollarea::-webkit-scrollbar-button{ display:none; width:0; height:0; }
+.scrollarea::-webkit-scrollbar-track{ background:transparent; }
+.scrollarea::-webkit-scrollbar-thumb{ background:rgba(91,140,138,.3); border-radius:10px; }
+.scrollarea::-webkit-scrollbar-thumb:hover{ background:rgba(91,140,138,.5); }
+body.night-mode .scrollarea{ scrollbar-color:rgba(255,99,71,.65) transparent; }
+body.night-mode .scrollarea::-webkit-scrollbar-thumb{ background:rgba(255,99,71,.65); }
+body.night-mode .scrollarea::-webkit-scrollbar-thumb:hover{ background:rgba(255,99,71,.85); }
+/* Description box scrolls but shows no scrollbar at all. */
+.description-scroll{ scrollbar-width:none; -ms-overflow-style:none; }
+.description-scroll::-webkit-scrollbar{ display:none; }
 /* #twinTab/#listTab are toggled to display:flex in JS - flex-direction and
    min-height:0 have to live here since a JS style.display flip alone
    doesn't set them, and without min-height:0 a flex child can't shrink
