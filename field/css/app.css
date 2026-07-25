@@ -208,6 +208,33 @@ body.night-mode .no-defect-row span{ color:#8ab4b0; }
 }
 .structure-map-pin{ background:none; border:none; }
 .structure-map-pin svg{ width:30px; height:30px; display:block; filter:drop-shadow(0 2px 4px rgba(0,0,0,.35)); }
+
+/* ---------- Structures screen: Map view (List/Map toggle) ---------- */
+.structures-map-view{ position:relative; flex:1; min-height:0; }
+#structuresMap{ position:absolute; inset:0; background:var(--surface-2); }
+.structures-multi-pin{ background:none; border:none; cursor:pointer; }
+.structures-multi-pin svg{ width:26px; height:32px; display:block; filter:drop-shadow(0 2px 4px rgba(0,0,0,.35)); }
+.map-legend{
+  position:absolute; left:14px; bottom:14px; z-index:15; background:var(--surface); border:1px solid var(--border);
+  border-radius:14px; padding:9px 12px; box-shadow:0 6px 18px rgba(0,0,0,.15); display:flex; flex-direction:column; gap:5px;
+}
+.map-legend .row{ display:flex; align-items:center; gap:6px; font-size:9.5px; font-weight:600; color:var(--ink-dim); }
+.map-legend .dot{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.map-recenter-btn{
+  position:absolute; right:14px; bottom:14px; z-index:15; width:38px; height:38px; border-radius:50%;
+  background:var(--surface); border:1px solid var(--border); box-shadow:0 6px 18px rgba(0,0,0,.15);
+  display:flex; align-items:center; justify-content:center; color:var(--teal-500);
+}
+.map-recenter-btn svg{ width:17px; height:17px; }
+.structures-map-popup{
+  position:absolute; left:14px; right:14px; bottom:64px; z-index:16; background:var(--surface); border:1px solid var(--border);
+  border-radius:18px; box-shadow:0 16px 36px rgba(0,0,0,.2); padding:14px;
+}
+.structures-map-popup .top{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.structures-map-popup .view-btn{
+  width:100%; background:linear-gradient(135deg,var(--teal-300),var(--teal-500)); color:#fff; border:none;
+  border-radius:14px; padding:10px; font-size:12.5px; font-weight:700; font-family:inherit; cursor:pointer;
+}
 .description-box{ margin:0 0 14px; background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:12px 14px; }
 .description-scroll{ max-height:88px; overflow-y:auto; font-size:13px; line-height:1.55; color:var(--ink-dim); }
 .info-strip{ display:flex; margin:0 0 14px; background:var(--surface); border:1px solid var(--border); border-radius:18px; overflow:hidden; flex-shrink:0; }

@@ -85,7 +85,21 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
         <input type="text" id="structureSearch" placeholder="Search structures or IDs">
       </div>
+      <div class="segmented" id="structuresViewToggle">
+        <button data-view="list" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> List</button>
+        <button data-view="map"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4z"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg> Map</button>
+      </div>
       <div class="scrollarea" id="structureListArea"><div class="empty-state">Loading…</div></div>
+      <div class="structures-map-view" id="structuresMapView" hidden>
+        <div id="structuresMap"></div>
+        <div class="map-legend">
+          <span class="row"><span class="dot" style="background:#2d7a6e;"></span>Good+</span>
+          <span class="row"><span class="dot" style="background:#BA7517;"></span>Fair</span>
+          <span class="row"><span class="dot" style="background:#c47070;"></span>Poor-</span>
+        </div>
+        <button class="map-recenter-btn" id="structuresMapRecenterBtn" title="Fit all structures"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg></button>
+        <div class="structures-map-popup" id="structuresMapPopup" hidden></div>
+      </div>
     </section>
 
     <!-- INSPECTIONS -->

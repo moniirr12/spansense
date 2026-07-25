@@ -938,7 +938,7 @@ function buildInspectionReportDocDefinition(ctx) {
 
     // ---------- SECTION 2: INSPECTION SUMMARY ----------
     const bandDefs = [
-        { label: 'Critical', lo: 0, hi: 39 }, { label: 'Poor', lo: 40, hi: 64 }, { label: 'Fair', lo: 65, hi: 79 },
+        { label: 'Very Poor', lo: 0, hi: 39 }, { label: 'Poor', lo: 40, hi: 64 }, { label: 'Fair', lo: 65, hi: 79 },
         { label: 'Good', lo: 80, hi: 89 }, { label: 'Very good', lo: 90, hi: 100 }
     ];
     function bciBandStrip(score) {

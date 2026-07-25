@@ -802,6 +802,13 @@ function categoryForElement(structureType, elementNo){
 }
 
 window.addEventListener('load', async function() {
+    // This file is also loaded on map.html (for its own bridge-modal logic),
+    // which has none of the elements this page-init block depends on -
+    // #inspectionElementsTable only exists on inspection.html itself, so
+    // skip all of it there rather than throwing on a missing table and
+    // firing off sidebar/photo fetches nothing on that page will show.
+    if (!document.getElementById('inspectionElementsTable')) return;
+
     // Editing an existing inspection: default to only the elements that
     // already have a recorded defect (showOnlyNonEmptyRows, inspectionA.js),
     // same idea as reviewing what's there rather than re-scanning every
@@ -904,10 +911,11 @@ function formatDate(d) {
 
 async function loadInspectionElements() {
   try {
+    const tableBody = document.querySelector("#inspectionElementsTable tbody");
+    if (!tableBody) return; // not on inspection.html (e.g. map.html also loads this file)
     const structureType = sessionStorage.getItem('structureType') || 'Bridge';
     const elementsResponse = await fetch(`/api/elements?type=${encodeURIComponent(structureType)}`);
     const elementsData = await elementsResponse.json();
-    const tableBody = document.querySelector("#inspectionElementsTable tbody");
     tableBody.innerHTML = "";
     let currentCategory = null;
     elementsData.forEach(item => {

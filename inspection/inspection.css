@@ -2290,7 +2290,7 @@ body {
 .night-mode .note-src-field { background: #28223d; color: #b3a3f2; border-color: #453a68; }
 .night-mode .note-src-core { background: #1e3a35; color: #8ab4b0; border-color: #2f4a48; }
 .note-meta { font-size: 9.5px; color: #a7b4bd; }
-.note-text { font-size: 0.78rem; line-height: 1.5; color: #2c3e44; }
+.note-text { font-size: 0.78rem; line-height: 1.5; color: #2c3e44; white-space: pre-wrap; }
 .night-mode .note-text { color: #d4dfe3; }
 .note-author { font-size: 9.5px; color: #a7b4bd; margin-top: 4px; }
 

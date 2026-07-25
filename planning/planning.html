@@ -7,7 +7,7 @@
     <script>(function(){var nm=localStorage.getItem('nightMode');var dark=nm==='on'||(nm===null&&!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches));if(dark)document.documentElement.classList.add('nm-preload');})();</script>
     <style>html.nm-preload,html.nm-preload body{background-color:#1a2428!important;}</style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>spanSense — Inspection Planning</title>
+    <title>spanSense · Inspection Planning</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -1112,8 +1112,8 @@
                 <div class="days-grid" id="monthDaysGrid"></div>
             </div>
             <div class="calendar-legend">
-                <div class="legend-item"><div class="legend-dot" style="background: #eef4f2; border: 2px solid #5b8c8a;"></div>General Inspection (GI) — Every 2 years</div>
-                <div class="legend-item"><div class="legend-dot" style="background: #faf0ef; border: 2px solid #a8524f;"></div>Principal Inspection (PI) — Every 6 years</div>
+                <div class="legend-item"><div class="legend-dot" style="background: #eef4f2; border: 2px solid #5b8c8a;"></div>General Inspection (GI): every 2 years</div>
+                <div class="legend-item"><div class="legend-dot" style="background: #faf0ef; border: 2px solid #a8524f;"></div>Principal Inspection (PI): every 6 years</div>
                 <div class="legend-item"><div class="legend-dot" style="background: #fdf2f2; border: 2px solid #c47070;"></div>Overdue</div>
                 <div class="legend-item"><div class="legend-dot" style="background: #eef4f2; border: 2px dashed #5b8c8a;"></div>Today</div>
             </div>
@@ -1164,7 +1164,7 @@
             <label class="schedule-field">
                 <span>PI frequency (years)</span>
                 <input type="number" id="schedulePiYears" min="1" step="1" placeholder="6">
-                <div class="hint">One inspection every cycle alternates GI/PI — e.g. 2 &amp; 6 means every 3rd inspection is a PI.</div>
+                <div class="hint">One inspection every cycle alternates GI/PI, e.g. 2 &amp; 6 means every 3rd inspection is a PI.</div>
             </label>
             <label class="schedule-field">
                 <span>Next inspection due</span>
@@ -1377,7 +1377,7 @@
                 html += `<div class="inspection-item">
                     <div class="inspection-status ${insp.position === 'Overdue' ? 'overdue' : 'assigned'}"></div>
                     <div class="inspection-date"><div class="day">${insp.dueDate.getDate()}</div><div class="month">${insp.dueDate.toLocaleString('default', { month: 'short' })}</div></div>
-                    <div class="inspection-info"><div class="name">${insp.bridgeName}</div><div class="meta">${insp.type} — Due ${insp.dueDate.toLocaleDateString()}</div></div>
+                    <div class="inspection-info"><div class="name">${insp.bridgeName}</div><div class="meta">${insp.type} · Due ${insp.dueDate.toLocaleDateString()}</div></div>
                     <span class="inspection-type ${typeClass}">${insp.type}</span>
                 </div>`;
             });
@@ -1459,7 +1459,7 @@
                 let eventsHtml = '';
                 dueInspections.slice(0, 2).forEach(insp => {
                     const chipClass = insp.position === 'Overdue' ? 'overdue' : (insp.type === 'PI' ? 'pi' : 'gi');
-                    eventsHtml += `<div class="event-chip ${chipClass}" onclick="event.stopPropagation(); openScheduleModal(${insp.bridgeId})">${insp.bridgeName.substring(0, 12)} — ${insp.type}</div>`;
+                    eventsHtml += `<div class="event-chip ${chipClass}" onclick="event.stopPropagation(); openScheduleModal(${insp.bridgeId})">${insp.bridgeName.substring(0, 12)} · ${insp.type}</div>`;
                 });
                 if (dueInspections.length > 2) eventsHtml += `<div class="event-more">+${dueInspections.length - 2} more</div>`;
                 gridHtml += `<div class="day-cell ${isToday ? 'today' : ''}"><div class="day-number">${d}</div><div class="day-events">${eventsHtml}</div></div>`;
@@ -1475,7 +1475,7 @@
                 let eventsHtml = '';
                 dueThisMonth.slice(0, 3).forEach(insp => {
                     const cls = insp.position === 'Overdue' ? 'overdue' : (insp.type === 'PI' ? 'pi' : 'gi');
-                    eventsHtml += `<div class="month-event ${cls}" onclick="event.stopPropagation(); openScheduleModal(${insp.bridgeId})">${insp.bridgeName.substring(0, 20)} — ${insp.type}</div>`;
+                    eventsHtml += `<div class="month-event ${cls}" onclick="event.stopPropagation(); openScheduleModal(${insp.bridgeId})">${insp.bridgeName.substring(0, 20)} · ${insp.type}</div>`;
                 });
                 yearHtml += `<div class="month-card" onclick="switchToMonth(${m})">
                     <div class="month-header">${months[m]} ${year}</div>
@@ -1810,7 +1810,7 @@
             if (!bridge) return;
             scheduleEditBridgeId = bridgeId;
 
-            document.getElementById('scheduleModalTitle').textContent = 'Edit Inspection Schedule — ' + bridge.name;
+            document.getElementById('scheduleModalTitle').textContent = 'Edit Inspection Schedule: ' + bridge.name;
             document.getElementById('scheduleGiYears').value = bridge.gi_cycle_years || '';
             document.getElementById('schedulePiYears').value = bridge.pi_cycle_years || '';
             const overrideDate = bridge.next_inspection_override ? String(bridge.next_inspection_override).split('T')[0] : '';

@@ -7,7 +7,7 @@
     <script>(function(){var nm=localStorage.getItem('nightMode');var dark=nm==='on'||(nm===null&&!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches));if(dark)document.documentElement.classList.add('nm-preload');})();</script>
     <style>html.nm-preload,html.nm-preload body{background-color:#1a2428!important;}</style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>spanSense — Account</title>
+    <title>spanSense · Account</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <script>
@@ -1528,7 +1528,7 @@
                         <div class="activity-row">
                             <div class="act-icon ${cfg.cls}"><i class="fas ${cfg.icon}"></i></div>
                             <div class="act-details">
-                                <div class="act-title">${cfg.label} — ${row.structure_name || 'Unknown structure'}</div>
+                                <div class="act-title">${cfg.label} · ${row.structure_name || 'Unknown structure'}</div>
                                 <div class="act-meta">${inspector} · ${formatDate(row.inspection_date)}${bciPart}</div>
                             </div>
                             <div class="act-time">${relativeTime(row.inspection_date)}</div>

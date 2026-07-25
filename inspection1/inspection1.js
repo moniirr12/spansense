@@ -797,6 +797,12 @@ function renderSpanTabs() {
 function renderStep(index) {
     if (!formContent) return;
     const response = responses[index];
+    // The very first call (line ~1132, at script load) fires before the
+    // async span/response setup (initializeNewLayout/populateInspectionForm)
+    // has run - responses[index] doesn't exist yet at that moment. That
+    // setup calls renderStep() again itself once it's actually ready, so
+    // skipping this premature call is enough; there's nothing to render yet.
+    if (!response) return;
     formContent.innerHTML = `
         <div class="step ${index === currentIndex ? 'active' : ''}">
             <h2>${spans[index]}</h2>

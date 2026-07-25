@@ -333,6 +333,7 @@
       document.getElementById('structuresSubtitle').textContent =
         `${S.structures.length} total`;
       renderStructures();
+      setStructuresView(localStorage.getItem('fieldStructuresView') === 'map' ? 'map' : 'list');
     } catch (err) {
       area.innerHTML = `<div class="empty-state">${err.offline ? 'Offline. No cached structures yet.' : 'Could not load structures.'}</div>`;
     }
@@ -369,6 +370,79 @@
   }
   function escapeHtml(str) {
     return String(str == null ? '' : str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  /* --- Structures list: List/Map toggle (remembers the last choice used) --- */
+  let structuresMapInstance = null, structuresMapTileLayer = null, structuresMarkerGroup = null;
+  document.querySelectorAll('#structuresViewToggle button').forEach((btn) => {
+    btn.addEventListener('click', () => setStructuresView(btn.dataset.view));
+  });
+  function setStructuresView(view) {
+    localStorage.setItem('fieldStructuresView', view);
+    document.querySelectorAll('#structuresViewToggle button').forEach((b) => b.classList.toggle('active', b.dataset.view === view));
+    document.getElementById('structureListArea').hidden = view === 'map';
+    document.getElementById('structuresMapView').hidden = view !== 'map';
+    if (view === 'map') {
+      renderStructuresMap();
+      // Same reasoning as renderStructureMap()'s own invalidateSize() call -
+      // the container was hidden (or mid slide-in) at whatever moment
+      // Leaflet last measured it, so nudge it once it's actually visible.
+      setTimeout(() => structuresMapInstance && structuresMapInstance.invalidateSize(), 300);
+    }
+  }
+
+  function bciBandColor(bciVal) {
+    if (bciVal == null) return '#8a9ba8';
+    return FieldBCI.BAND_COLORS[FieldBCI.bandFromScore(bciVal)].c;
+  }
+  function structuresMultiPinIcon(color) {
+    return L.divIcon({
+      className: 'structures-multi-pin',
+      html: `<svg viewBox="0 0 24 24" fill="${color}" stroke="#ffffff" stroke-width="1.5"><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.6" fill="#fff"/></svg>`,
+      iconSize: [26, 32], iconAnchor: [13, 32]
+    });
+  }
+  function showStructuresMapPopup(s) {
+    const popup = document.getElementById('structuresMapPopup');
+    const meta = TYPE_META[s.type] || TYPE_META.Bridge;
+    const bciVal = s.bci_av != null ? Math.round(s.bci_av) : null;
+    const pill = bciVal != null
+      ? (() => { const bc = FieldBCI.BAND_COLORS[FieldBCI.bandFromScore(bciVal)]; return `<span class="bci-pill" style="background:${bc.bg};color:${bc.c};">${bciVal}</span>`; })()
+      : `<span class="bci-pill" style="background:var(--surface-2);color:var(--ink-faint);">--</span>`;
+    popup.innerHTML = `
+      <div class="top">
+        <div class="type-icon" style="background:${meta.color}22; color:${meta.color};">${typeIconSvg(s.type)}</div>
+        <div class="structure-main"><div class="s-name">${escapeHtml(s.name)}</div><div class="s-sub">${escapeHtml(String(s.id))} · ${escapeHtml(s.type || 'Bridge')}</div></div>
+        ${pill}
+      </div>
+      <button class="view-btn">View Structure</button>`;
+    popup.querySelector('.view-btn').onclick = () => openInspections(s.id);
+    popup.hidden = false;
+  }
+  function renderStructuresMap() {
+    const withLocation = (S.structures || []).filter((s) => s.latitude != null && s.longitude != null && !Number.isNaN(parseFloat(s.latitude)) && !Number.isNaN(parseFloat(s.longitude)));
+    if (!structuresMapInstance) {
+      structuresMapInstance = L.map('structuresMap', { scrollWheelZoom: false }).setView([54.5, -2.5], 6);
+      refreshMapTileForNightMode();
+      structuresMarkerGroup = L.layerGroup().addTo(structuresMapInstance);
+      structuresMapInstance.on('click', () => { document.getElementById('structuresMapPopup').hidden = true; });
+      document.getElementById('structuresMapRecenterBtn').addEventListener('click', fitStructuresMapBounds);
+    }
+    structuresMarkerGroup.clearLayers();
+    withLocation.forEach((s) => {
+      const lat = parseFloat(s.latitude), lng = parseFloat(s.longitude);
+      const marker = L.marker([lat, lng], { icon: structuresMultiPinIcon(bciBandColor(s.bci_av != null ? Math.round(s.bci_av) : null)) });
+      marker.on('click', (e) => { L.DomEvent.stopPropagation(e); showStructuresMapPopup(s); });
+      marker.addTo(structuresMarkerGroup);
+    });
+    fitStructuresMapBounds();
+  }
+  function fitStructuresMapBounds() {
+    if (!structuresMapInstance || !structuresMarkerGroup) return;
+    const layers = structuresMarkerGroup.getLayers();
+    if (!layers.length) return;
+    const bounds = L.latLngBounds(layers.map((m) => m.getLatLng()));
+    structuresMapInstance.fitBounds(bounds, { padding: [36, 36], maxZoom: 15 });
   }
 
   /* ============================================================
@@ -431,14 +505,27 @@
     html: '<svg viewBox="0 0 24 24" fill="#5b8c8a" stroke="#ffffff" stroke-width="1.5"><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.6" fill="#fff"/></svg>',
     iconSize: [30, 30], iconAnchor: [15, 30]
   });
-  function refreshMapTileForNightMode() {
-    if (!structureMapInstance) return;
-    if (structureMapTileLayer) structureMapInstance.removeLayer(structureMapTileLayer);
+  function freshTileLayer() {
     const isNight = document.body.classList.contains('night-mode');
-    structureMapTileLayer = isNight
+    return isNight
       ? L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { subdomains: 'abcd', maxZoom: 19, attribution: '&copy; OpenStreetMap &copy; CARTO' })
       : L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' });
-    structureMapTileLayer.addTo(structureMapInstance);
+  }
+  // Refreshes tiles on whichever of the two Leaflet instances (single-
+  // structure location map, all-structures list map) currently exist -
+  // either, both, or neither could be initialised at any given moment
+  // depending on which screens have been visited.
+  function refreshMapTileForNightMode() {
+    if (structureMapInstance) {
+      if (structureMapTileLayer) structureMapInstance.removeLayer(structureMapTileLayer);
+      structureMapTileLayer = freshTileLayer();
+      structureMapTileLayer.addTo(structureMapInstance);
+    }
+    if (structuresMapInstance) {
+      if (structuresMapTileLayer) structuresMapInstance.removeLayer(structuresMapTileLayer);
+      structuresMapTileLayer = freshTileLayer();
+      structuresMapTileLayer.addTo(structuresMapInstance);
+    }
   }
   let currentMapLatLng = null;
   function openInGoogleMaps() {
@@ -523,6 +610,27 @@
     S.currentSpan = 1;
     openViewer();
   }
+  // Existing notes (this inspector's own past dictation, or ones added on
+  // spanSense's desktop notes panel since) rendered into the same
+  // "[HH:MM] text." log format fresh dictation already appends to - oldest
+  // first, since new dictation appends below whatever's already there.
+  // A 'field' entry's text already has its own embedded per-line [HH:MM]
+  // timestamps (see the dictation handler below) - re-wrapping it in the
+  // row's created_at would just double-stamp it, so only 'core' (desktop)
+  // entries, which are one plain untimed line each, get a synthesized
+  // timestamp + an Office tag so they read as clearly not this inspector's
+  // own words.
+  function formatNotesLog(notes) {
+    if (!notes || !notes.length) return '';
+    return notes.slice().reverse().map((n) => {
+      if (n.source === 'field') return n.text || '';
+      const time = n.created_at
+        ? new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : '';
+      return `[${time} · Office] ${n.text || ''}`;
+    }).join('\n');
+  }
+
   function buildDraftFromInspection(full) {
     S.draft = {
       structureId: S.currentStructure.id,
@@ -533,7 +641,7 @@
       baseType: full.inspectionType,
       totalSpans: full.totalSpans || (full.spans || []).length || 1,
       conclusions: full.conclusions || '',
-      fieldNote: '',
+      fieldNote: formatNotesLog(full.notes),
       spans: (full.spans && full.spans.length ? full.spans : [{ spanNumber: 1 }]).map((sp) => ({
         spanNumber: sp.spanNumber, comments: sp.comments || ''
       })),
