@@ -356,10 +356,13 @@
     const types = Object.keys(counts).sort();
     container.innerHTML = '';
     types.forEach((t) => {
+      const meta = TYPE_META[t] || TYPE_META.Bridge;
       const chip = document.createElement('button');
       chip.type = 'button';
       chip.className = 'structures-filter-chip' + (activeTypeFilters.has(t) ? ' sel' : '');
-      chip.innerHTML = `${escapeHtml(t)} <span class="count">${counts[t]}</span>`;
+      chip.title = t;
+      chip.style.setProperty('--chip-color', meta.color);
+      chip.innerHTML = `${typeIconSvg(t)}<span class="count">${counts[t]}</span>`;
       chip.onclick = () => {
         if (activeTypeFilters.has(t)) activeTypeFilters.delete(t); else activeTypeFilters.add(t);
         renderFilterChips();
@@ -463,6 +466,12 @@
     popup.querySelector('.view-btn').onclick = () => openInspections(s.id);
     popup.hidden = false;
   }
+  // Structure ID/name labels only render once zoomed in past this level, to avoid clutter - mirrors LABEL_ZOOM_THRESHOLD in map/map.js
+  const STRUCTURES_LABEL_ZOOM_THRESHOLD = 8;
+  function updateStructuresLabelVisibility() {
+    const mapEl = document.getElementById('structuresMap');
+    if (mapEl && structuresMapInstance) mapEl.classList.toggle('labels-visible', structuresMapInstance.getZoom() >= STRUCTURES_LABEL_ZOOM_THRESHOLD);
+  }
   function renderStructuresMap() {
     const withLocation = getFilteredStructures().filter((s) => s.latitude != null && s.longitude != null && !Number.isNaN(parseFloat(s.latitude)) && !Number.isNaN(parseFloat(s.longitude)));
     if (!structuresMapInstance) {
@@ -470,15 +479,21 @@
       refreshMapTileForNightMode();
       structuresMarkerGroup = L.layerGroup().addTo(structuresMapInstance);
       structuresMapInstance.on('click', () => { document.getElementById('structuresMapPopup').hidden = true; });
+      structuresMapInstance.on('zoomend', updateStructuresLabelVisibility);
       document.getElementById('structuresMapRecenterBtn').addEventListener('click', fitStructuresMapBounds);
     }
     structuresMarkerGroup.clearLayers();
     withLocation.forEach((s) => {
       const lat = parseFloat(s.latitude), lng = parseFloat(s.longitude);
       const marker = L.marker([lat, lng], { icon: structuresMultiPinIcon(bciBandColor(s.bci_av != null ? Math.round(s.bci_av) : null)) });
+      marker.bindTooltip(
+        `<span class="structures-label-id">${escapeHtml(String(s.id))}</span>${escapeHtml(s.name)}`,
+        { permanent: true, direction: 'top', offset: [0, -30], className: 'structures-label' }
+      );
       marker.on('click', (e) => { L.DomEvent.stopPropagation(e); showStructuresMapPopup(s); });
       marker.addTo(structuresMarkerGroup);
     });
+    updateStructuresLabelVisibility();
     fitStructuresMapBounds();
   }
   function fitStructuresMapBounds() {
