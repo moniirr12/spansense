@@ -181,18 +181,20 @@ body.night-mode .chip.active{ background:#1e3a3e; border-color:#3a5a56; color:#8
 .chip-icon svg{ width:15px; height:15px; display:block; }
 
 .scrollarea{ flex:1; overflow-y:auto; padding-bottom:110px; -webkit-overflow-scrolling:touch; }
-/* spanSense-style floating scrollbar - thumb only, no track, no end arrows.
-   Teal in light mode, coral in dark mode (intentionally diverges from
-   desktop's teal-on-teal here). */
-.scrollarea{ scrollbar-width:thin; scrollbar-color:rgba(91,140,138,.3) transparent; }
-.scrollarea::-webkit-scrollbar{ width:5px; }
+/* spanSense-style scrollbar - visible floating track+thumb (same pairing as
+   desktop core's .modal-body/.preview-container-photo), no end arrows.
+   Teal thumb in light mode, coral thumb in dark mode (dark intentionally
+   diverges from desktop's teal-on-teal here). */
+.scrollarea{ scrollbar-width:thin; scrollbar-color:#c5dbd8 #eef2f8; }
+.scrollarea::-webkit-scrollbar{ width:6px; }
 .scrollarea::-webkit-scrollbar-button{ display:none; width:0; height:0; }
-.scrollarea::-webkit-scrollbar-track{ background:transparent; }
-.scrollarea::-webkit-scrollbar-thumb{ background:rgba(91,140,138,.3); border-radius:10px; }
-.scrollarea::-webkit-scrollbar-thumb:hover{ background:rgba(91,140,138,.5); }
-body.night-mode .scrollarea{ scrollbar-color:rgba(255,99,71,.65) transparent; }
-body.night-mode .scrollarea::-webkit-scrollbar-thumb{ background:rgba(255,99,71,.65); }
-body.night-mode .scrollarea::-webkit-scrollbar-thumb:hover{ background:rgba(255,99,71,.85); }
+.scrollarea::-webkit-scrollbar-track{ background:#eef2f8; border-radius:10px; margin:4px 0; }
+.scrollarea::-webkit-scrollbar-thumb{ background:#c5dbd8; border-radius:10px; }
+.scrollarea::-webkit-scrollbar-thumb:hover{ background:#8ab4b0; }
+body.night-mode .scrollarea{ scrollbar-color:#ff6347 #1e2a2f; }
+body.night-mode .scrollarea::-webkit-scrollbar-track{ background:#1e2a2f; }
+body.night-mode .scrollarea::-webkit-scrollbar-thumb{ background:#ff6347; }
+body.night-mode .scrollarea::-webkit-scrollbar-thumb:hover{ background:#ff7a5f; }
 /* Description box scrolls but shows no scrollbar at all. */
 .description-scroll{ scrollbar-width:none; -ms-overflow-style:none; }
 .description-scroll::-webkit-scrollbar{ display:none; }
