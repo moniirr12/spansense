@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="/fetch-credentials.js"></script>
+    <script src="/roleBadge.js"></script>
+    <script>(function(){var nm=localStorage.getItem('nightMode');var dark=nm==='on'||(nm===null&&!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches));if(dark)document.documentElement.classList.add('nm-preload');})();</script>
+    <style>html.nm-preload,html.nm-preload body{background-color:#1a2428!important;}</style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>spanSense · Add Structure</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <base target="_self">
+<style>
+/* ============================================
+   SPANSENSE - ADD STRUCTURE (front-end prototype)
+   Not wired to the server - "Create Structure" only
+   logs the payload it would POST. See the banner.
+   ============================================ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f7fb;
+    color: #2c3e44;
+    transition: background 0.3s ease, color 0.3s ease;
+    overflow-x: hidden;
+}
+
+/* ---------- PROTOTYPE BANNER ---------- */
+.proto-banner {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1200;
+    background: #8a5a1f; color: #fff7ea;
+    font-size: 0.75rem; font-weight: 600;
+    text-align: center; padding: 6px 10px;
+    letter-spacing: 0.02em;
+}
+.proto-banner i { margin-right: 6px; }
+.night-mode .proto-banner { background: #5a4a2a; }
+
+/* ---------- NAVIGATION BAR ---------- */
+.navbar {
+    position: fixed;
+    top: 46px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 67%;
+    max-width: 1190px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 60px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    height: 64px;
+}
+.navbar .left { display: flex; align-items: center; gap: 24px; }
+.navbar .logo {
+    font-size: 1.2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #5b8c8a 0%, #7ba8a5 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.navbar .menu { display: flex; gap: 16px; }
+.navbar .menu a {
+    text-decoration: none;
+    color: #4a5b6e;
+    font-weight: 500;
+    font-size: 0.85rem;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.navbar .menu a:hover, .navbar .menu a.active { color: #5b8c8a; }
+.navbar .menu a.active {
+    background: rgba(91, 140, 138, 0.1);
+    padding: 6px 14px;
+    border-radius: 20px;
+}
+.navbar .right { display: flex; align-items: center; gap: 10px; }
+.night-mode-toggle {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    color: #8a9ba8;
+    background: #f0f2f5;
+    transition: all 0.2s;
+}
+.night-mode-toggle:hover { background: #e2e8f0; color: #5b8c8a; }
+.navbar .account-links { display: flex; align-items: center; gap: 10px; }
+.navbar .account-links a {
+    text-decoration: none;
+    color: #8a9ba8;
+    font-size: 1.2rem;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    transition: color 0.2s, transform 0.15s, background 0.2s;
+}
+.navbar .account-links a:hover { background: #f0f4f8; color: #5b8c8a; transform: scale(1.1); }
+
+/* ---------- MAIN WRAPPER ---------- */
+.page-wrapper {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 146px 0 80px 0;
+}
+
+/* ---------- BACK PILL ---------- */
+.back-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    border-radius: 30px;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(138, 180, 176, 0.3);
+    color: #5b8c8a;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 12px rgba(91, 140, 138, 0.1);
+    user-select: none;
+}
+.back-pill:hover { background: #5b8c8a; color: white; border-color: #5b8c8a; transform: translateX(-4px); box-shadow: 0 4px 20px rgba(91, 140, 138, 0.25); }
+.back-pill:active { transform: translateX(-2px) scale(0.98); }
+.back-pill i { font-size: 0.8rem; transition: transform 0.3s ease; }
+.back-pill:hover i { transform: translateX(-3px); }
+
+/* ---------- PAGE HEADER ---------- */
+.page-header { margin-bottom: 28px; }
+.page-header h1 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: #2c5a57;
+    border-left: 4px solid #8ab4b0;
+    padding-left: 14px;
+    margin-bottom: 8px;
+}
+.page-header p { color: #8a9ba8; font-size: 0.9rem; padding-left: 18px; max-width: 62ch; line-height: 1.5; }
+
+/* ---------- FORM SECTIONS ---------- */
+.form-section {
+    background: white;
+    border-radius: 22px;
+    border: 1px solid #cbd5df;
+    padding: 24px 26px;
+    margin-bottom: 18px;
+}
+.form-section h2 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #2c4a48;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+.form-section h2 i { color: #8ab4b0; font-size: 0.9rem; }
+.form-section .section-sub {
+    font-size: 0.78rem;
+    color: #8a9ba8;
+    margin-bottom: 18px;
+    line-height: 1.5;
+}
+
+/* ---------- FORM FIELDS ---------- */
+.form-group { margin-bottom: 16px; }
+.form-group:last-child { margin-bottom: 0; }
+.form-group label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #4a5b6e;
+    margin-bottom: 6px;
+}
+.form-group label .opt { color: #a7b4bd; font-weight: 400; }
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    color: #2c4a48;
+    background: white;
+    transition: all 0.2s;
+    outline: none;
+}
+.form-group textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: #8ab4b0;
+    box-shadow: 0 0 0 3px rgba(138, 180, 176, 0.15);
+}
+.form-group .hint { font-size: 0.72rem; color: #a7b4bd; margin-top: 6px; line-height: 1.4; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-row.three { grid-template-columns: 1fr 1fr 1fr; }
+
+/* ---------- TYPE PILLS ---------- */
+.type-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+.type-pill {
+    flex: 1 1 auto;
+    min-width: 108px;
+    border: 1px solid #e2e8f0;
+    background: #fafbfc;
+    color: #6a7c8e;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 10px 12px;
+    border-radius: 14px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    font-family: inherit;
+}
+.type-pill i { font-size: 0.85rem; }
+.type-pill:hover { border-color: #8ab4b0; color: #5b8c8a; }
+.type-pill.sel { color: white; border-color: transparent; }
+.type-pill[data-type="bridge"].sel { background: #2c645c; }
+.type-pill[data-type="footbridge"].sel { background: #4f9088; }
+.type-pill[data-type="culvert"].sel { background: #c79a4b; }
+.type-pill[data-type="retaining_wall"].sel { background: #9b4f4f; }
+.type-pill[data-type="sign_gantry"].sel { background: #7a6fb0; }
+
+/* ---------- STEPPER ---------- */
+.stepper { display: flex; align-items: center; gap: 14px; }
+.stepper button {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: 1px solid #e2e8f0;
+    background: white;
+    color: #5b8c8a;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+.stepper button:hover { background: #eef4f2; border-color: #8ab4b0; }
+.stepper button:active { transform: scale(0.94); }
+.stepper span { font-size: 1rem; font-weight: 700; color: #2c4a48; min-width: 22px; text-align: center; }
+
+/* ---------- ADVANCED (COLLAPSIBLE) ---------- */
+.adv-toggle {
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; user-select: none;
+}
+.adv-toggle i.chev { transition: transform 0.2s; color: #8a9ba8; }
+.form-section.collapsed .adv-toggle i.chev { transform: rotate(-90deg); }
+.form-section.collapsed .adv-body { display: none; }
+.adv-body { margin-top: 18px; padding-top: 18px; border-top: 1px solid #eef2f6; }
+
+/* ---------- PHOTO GRID (reused from inspection.html's photo widget) ---------- */
+.photo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 14px;
+}
+.add-photo-card {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    aspect-ratio: 1;
+    border: 2px dashed rgba(91, 140, 138, 0.3);
+    border-radius: 14px;
+    background: rgba(91, 140, 138, 0.03);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.add-photo-card:hover { border-color: rgba(91, 140, 138, 0.6); background: rgba(91, 140, 138, 0.08); transform: translateY(-2px); }
+.plus-sign { font-size: 32px; font-weight: 300; color: #5b8c8a; line-height: 1; margin-bottom: 4px; }
+.add-text { font-size: 11px; color: #5b8c8a; font-weight: 500; letter-spacing: 0.3px; text-align: center; padding: 0 6px; }
+.preview-item-photo {
+    position: relative; border-radius: 14px; overflow: hidden; background: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06); transition: all 0.25s ease;
+    aspect-ratio: 1; display: flex; flex-direction: column;
+}
+.preview-item-photo:hover { transform: translateY(-3px); box-shadow: 0 8px 22px rgba(0,0,0,0.12); }
+.preview-item-photo img { width: 100%; flex: 1; object-fit: cover; display: block; min-height: 0; }
+.remove-photo {
+    position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 50%;
+    border: none; background: rgba(220, 38, 38, 0.85); color: white; font-size: 16px; line-height: 1;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.2s ease, transform 0.2s ease; z-index: 2;
+}
+.preview-item-photo:hover .remove-photo { opacity: 1; }
+.remove-photo:hover { transform: scale(1.1); background: #dc2626; }
+.photo-description-input {
+    width: 100%; padding: 8px 10px; border: none; border-top: 1px solid rgba(0,0,0,0.06);
+    font-size: 11px; color: #444; background: rgba(255,255,255,0.95); resize: none; outline: none;
+    font-family: inherit; line-height: 1.4; min-height: 36px;
+}
+.photo-description-input::placeholder { color: #bbb; }
+.photo-description-input:focus { background: white; }
+.cover-badge {
+    position: absolute; top: 8px; left: 8px; z-index: 2;
+    background: rgba(45, 122, 110, 0.9); color: white; font-size: 9.5px; font-weight: 700;
+    padding: 3px 8px; border-radius: 20px; letter-spacing: 0.03em;
+}
+
+/* ---------- ACTION BAR ---------- */
+.form-actions {
+    display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px;
+}
+.btn-cancel {
+    padding: 12px 24px; border: 1px solid #e2e8f0; border-radius: 30px;
+    background: white; color: #6a7c8e; font-weight: 600; font-size: 0.85rem;
+    cursor: pointer; font-family: inherit; transition: all 0.2s;
+}
+.btn-cancel:hover { border-color: #cbd5df; color: #2c4a48; }
+.btn-create {
+    padding: 12px 32px; border: none; border-radius: 30px;
+    background: linear-gradient(135deg, #5b8c8a 0%, #7ba8a5 100%);
+    color: white; font-weight: 600; font-size: 0.9rem; cursor: pointer;
+    transition: all 0.3s; display: flex; align-items: center; gap: 10px;
+    font-family: inherit; box-shadow: 0 4px 14px rgba(91, 140, 138, 0.3);
+}
+.btn-create:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(91, 140, 138, 0.4); }
+.btn-create:active { transform: translateY(0); }
+
+/* ---------- TOAST ---------- */
+.toast-container { position: fixed; bottom: 30px; right: 30px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; }
+.toast {
+    background: white; border-radius: 16px; padding: 16px 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    border: 1px solid #cbd5df; display: flex; align-items: center; gap: 12px; min-width: 300px;
+    transform: translateX(120%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.toast.show { transform: translateX(0); }
+.toast-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+.toast-icon.success { background: #e8f5f0; color: #2d7a6e; }
+.toast-icon.error { background: #fdf2f2; color: #c47070; }
+.toast-content { flex: 1; }
+.toast-content .toast-title { font-size: 0.9rem; font-weight: 600; color: #2c4a48; margin-bottom: 2px; }
+.toast-content .toast-msg { font-size: 0.8rem; color: #8a9ba8; }
+.toast-close { width: 28px; height: 28px; border-radius: 50%; border: none; background: #f8fafc; color: #8a9ba8; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+.toast-close:hover { background: #e9ecef; color: #4a5b6e; }
+
+/* ---------- RESPONSIVE ---------- */
+@media (max-width: 1100px) { .navbar { width: 78%; } }
+@media (max-width: 860px) {
+    .page-wrapper { max-width: 92%; }
+    .navbar .menu { display: none; }
+    .navbar { width: 90%; padding: 0 18px; }
+    .form-row, .form-row.three { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+    .form-actions { flex-direction: column-reverse; }
+    .btn-cancel, .btn-create { width: 100%; justify-content: center; }
+}
+
+/* ============================================
+   NIGHT MODE
+   ============================================ */
+.night-mode { background-color: #1a2428 !important; color: #d4dfe3; }
+.night-mode .navbar { background: rgba(35, 46, 52, 0.95) !important; border-color: #2f3e45; }
+.night-mode .navbar .logo { background: linear-gradient(135deg, #8ab4b0 0%, #a0c8c4 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.night-mode .navbar .menu a { color: #9ab0b8; }
+.night-mode .navbar .menu a.active { background: rgba(138, 180, 176, 0.15); color: #8ab4b0; }
+.night-mode .navbar .account-links a { color: #9ab0b8; }
+.night-mode .navbar .account-links a:hover { background: #2f3e45; color: #8ab4b0; }
+.night-mode .night-mode-toggle { background: #2f3e45; color: #9ab0b8; }
+.night-mode .night-mode-toggle:hover { background: #3a4b53; color: #8ab4b0; }
+
+.night-mode .back-pill { background: rgba(35, 46, 52, 0.8) !important; border-color: rgba(138, 180, 176, 0.3) !important; color: #8ab4b0 !important; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2) !important; }
+.night-mode .back-pill:hover { background: #5b8c8a !important; color: white !important; border-color: #5b8c8a !important; box-shadow: 0 4px 20px rgba(91, 140, 138, 0.3) !important; }
+
+.night-mode .page-header h1 { color: #8ab4b0; }
+.night-mode .page-header p { color: #8aa4ac; }
+
+.night-mode .form-section { background: #232e34; border-color: #2f3e45; }
+.night-mode .form-section h2 { color: #d4dfe3; }
+.night-mode .form-section .section-sub { color: #8aa4ac; }
+.night-mode .adv-body { border-color: #2f3e45; }
+.night-mode .adv-toggle i.chev { color: #8aa4ac; }
+
+.night-mode .form-group label { color: #9ab0b8; }
+.night-mode .form-group label .opt { color: #647680; }
+.night-mode .form-group input,
+.night-mode .form-group select,
+.night-mode .form-group textarea { background: #1e2a2f; border-color: #3a4b53; color: #d4dfe3; }
+.night-mode .form-group input:focus,
+.night-mode .form-group select:focus,
+.night-mode .form-group textarea:focus { border-color: #6e9c98; box-shadow: 0 0 0 3px rgba(138, 180, 176, 0.12); }
+.night-mode .form-group .hint { color: #647680; }
+.night-mode .form-group input::placeholder,
+.night-mode .form-group textarea::placeholder { color: #647680; }
+
+.night-mode .type-pill { background: #1e2a2f; border-color: #3a4b53; color: #9ab0b8; }
+.night-mode .type-pill:hover { border-color: #6e9c98; color: #8ab4b0; }
+
+.night-mode .stepper button { background: #1e2a2f; border-color: #3a4b53; color: #8ab4b0; }
+.night-mode .stepper button:hover { background: #2f4a48; border-color: #6e9c98; }
+.night-mode .stepper span { color: #d4dfe3; }
+
+.night-mode .add-photo-card { background: rgba(138, 180, 176, 0.05); border-color: rgba(138, 180, 176, 0.3); }
+.night-mode .add-photo-card:hover { background: rgba(138, 180, 176, 0.1); border-color: rgba(138, 180, 176, 0.55); }
+.night-mode .preview-item-photo { background: #1e2a2f; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+.night-mode .photo-description-input { background: rgba(30, 42, 47, 0.95); border-color: #2f3e45; color: #c5d3d9; }
+.night-mode .photo-description-input:focus { background: #1e2a2f; }
+.night-mode .photo-description-input::placeholder { color: #647680; }
+
+.night-mode .btn-cancel { background: #1e2a2f; border-color: #3a4b53; color: #9ab0b8; }
+.night-mode .btn-cancel:hover { border-color: #6e9c98; color: #d4dfe3; }
+
+.night-mode .toast { background: #232e34; border-color: #2f3e45; }
+.night-mode .toast-content .toast-title { color: #d4dfe3; }
+.night-mode .toast-content .toast-msg { color: #8aa4ac; }
+.night-mode .toast-close { background: #1e2a2f; color: #8aa4ac; }
+.night-mode .toast-close:hover { background: #2a3a40; color: #d4dfe3; }
+</style>
+</head>
+<body>
+<script>if(document.documentElement.classList.contains('nm-preload'))document.body.classList.add('night-mode');</script>
+
+<div class="proto-banner"><i class="fas fa-flask"></i>Front-end prototype — "Create Structure" doesn't save anywhere yet, there's no backend endpoint for it</div>
+
+<!-- FLOATING NAVBAR -->
+<div class="navbar">
+    <div class="left">
+        <div class="logo">spanSense</div>
+        <div class="menu">
+            <a href="../map/map.html"><i class="fas fa-map"></i>Map</a>
+            <a href="../dashboard/dashboard.html"><i class="fas fa-chart-pie"></i>Dashboard</a>
+            <a href="../database/database.html"><i class="fas fa-database"></i>Database</a>
+            <a href="../planning/planning.html"><i class="fas fa-calendar-alt"></i>Planning</a>
+            <a href="../twin/twin.html"><i class="fas fa-cube"></i>twinView</a>
+        </div>
+    </div>
+    <div class="right">
+        <div class="night-mode-toggle" id="nightModeToggle"><i class="fas fa-moon"></i></div>
+        <div class="account-links">
+            <a href="../accounts/accounts.html" title="Account"><i class="fas fa-user-circle"></i></a>
+            <a href="../contacts/contacts.html" title="Contact Us"><i class="fas fa-envelope"></i></a>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN WRAPPER -->
+<div class="page-wrapper">
+
+    <div class="back-pill" onclick="history.back()">
+        <i class="fas fa-arrow-left"></i>
+        <span>Back</span>
+    </div>
+
+    <div class="page-header">
+        <h1><i class="fas fa-plus" style="font-size:0.9em;"></i> Add Structure</h1>
+        <p>Create a new structure record. Everything here maps onto the same <code>bridges</code> table used by Map, Database and Planning — fill in what you know now, the rest can always be added later from the structure's own page.</p>
+    </div>
+
+    <form id="addStructureForm" novalidate>
+
+        <!-- BASIC INFO -->
+        <div class="form-section">
+            <h2><i class="fas fa-signature"></i> Basic info</h2>
+            <p class="section-sub">The name, type and location every other page uses to identify this structure.</p>
+
+            <div class="form-group">
+                <label for="fName">Name</label>
+                <input type="text" id="fName" placeholder="e.g. Ouseburn Viaduct" required>
+            </div>
+
+            <div class="form-group">
+                <label>Type</label>
+                <div class="type-pills" id="typePills">
+                    <button type="button" class="type-pill" data-type="bridge"><i class="fas fa-archway"></i>Bridge</button>
+                    <button type="button" class="type-pill" data-type="footbridge"><i class="fas fa-person-walking"></i>Footbridge</button>
+                    <button type="button" class="type-pill" data-type="culvert"><i class="fas fa-water"></i>Culvert</button>
+                    <button type="button" class="type-pill" data-type="retaining_wall"><i class="fas fa-grip-lines-vertical"></i>Ret. Wall</button>
+                    <button type="button" class="type-pill" data-type="sign_gantry"><i class="fas fa-sign-hanging"></i>Sign Gantry</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="fLocation">Location <span class="opt">(address or place name)</span></label>
+                <input type="text" id="fLocation" placeholder="e.g. Newcastle upon Tyne">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="fLat">Latitude <span class="opt">(optional)</span></label>
+                    <input type="number" id="fLat" step="any" placeholder="54.9738">
+                </div>
+                <div class="form-group">
+                    <label for="fLng">Longitude <span class="opt">(optional)</span></label>
+                    <input type="number" id="fLng" step="any" placeholder="-1.6131">
+                </div>
+            </div>
+            <p class="hint" style="margin-top:-8px;">Leave coordinates blank if you'd rather drop a pin for this on the Map page later — the OS grid reference gets derived from these automatically.</p>
+        </div>
+
+        <!-- STRUCTURE DETAILS -->
+        <div class="form-section">
+            <h2><i class="fas fa-ruler-combined"></i> Structure details</h2>
+            <p class="section-sub">Dimensions and age — used across BCI scoring, planning cycles and reports.</p>
+
+            <div class="form-row three">
+                <div class="form-group">
+                    <label for="fSpan">Span length <span class="opt">(m)</span></label>
+                    <input type="number" id="fSpan" min="0" placeholder="e.g. 24">
+                </div>
+                <div class="form-group">
+                    <label for="fLength">Total length <span class="opt">(m)</span></label>
+                    <input type="number" id="fLength" min="0" placeholder="e.g. 72">
+                </div>
+                <div class="form-group">
+                    <label for="fWidth">Deck width <span class="opt">(m)</span></label>
+                    <input type="number" id="fWidth" min="0" step="0.1" placeholder="e.g. 8.5">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Number of spans</label>
+                    <div class="stepper">
+                        <button type="button" id="spanMinus">−</button>
+                        <span id="spanCount">1</span>
+                        <button type="button" id="spanPlus">+</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="fBuiltYear">Built year <span class="opt">(optional)</span></label>
+                    <input type="number" id="fBuiltYear" min="1700" max="2100" placeholder="e.g. 1876">
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:0;">
+                <label for="fLoadCapacity">Load capacity <span class="opt">(tonnes, optional)</span></label>
+                <input type="number" id="fLoadCapacity" min="0" placeholder="e.g. 44">
+            </div>
+        </div>
+
+        <!-- MATERIALS -->
+        <div class="form-section">
+            <h2><i class="fas fa-layer-group"></i> Materials</h2>
+            <p class="section-sub">Primary is required for BCI element scoring to pick sensible defaults.</p>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="fMaterialPrimary">Primary material</label>
+                    <select id="fMaterialPrimary">
+                        <option value="">Select material…</option>
+                        <option>Steel</option>
+                        <option>Concrete</option>
+                        <option>Masonry / Brick</option>
+                        <option>Stone</option>
+                        <option>Wrought iron</option>
+                        <option>Cast iron</option>
+                        <option>Timber</option>
+                        <option>Composite / FRP</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="fMaterialSecondary">Secondary material <span class="opt">(optional)</span></label>
+                    <select id="fMaterialSecondary">
+                        <option value="">None</option>
+                        <option>Steel</option>
+                        <option>Concrete</option>
+                        <option>Masonry / Brick</option>
+                        <option>Stone</option>
+                        <option>Wrought iron</option>
+                        <option>Cast iron</option>
+                        <option>Timber</option>
+                        <option>Composite / FRP</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- DESCRIPTION -->
+        <div class="form-section">
+            <h2><i class="fas fa-align-left"></i> Description</h2>
+            <p class="section-sub">Free text — shown on the structure's Span Info panel.</p>
+            <div class="form-group" style="margin-bottom:0;">
+                <textarea id="fDescription" placeholder="Anything worth noting about this structure — history, access notes, known issues…"></textarea>
+            </div>
+        </div>
+
+        <!-- PHOTOS -->
+        <div class="form-section">
+            <h2><i class="fas fa-camera"></i> Photos</h2>
+            <p class="section-sub">Add one or more photos with a short description each. The first photo becomes the cover photo shown on the Map.</p>
+            <div class="photo-grid" id="photoGrid">
+                <div class="add-photo-card" id="addPhotoCard">
+                    <div class="plus-sign">+</div>
+                    <div class="add-text">Add photos</div>
+                </div>
+            </div>
+            <input type="file" id="photoInput" accept="image/*" multiple style="display:none;">
+        </div>
+
+        <!-- ADVANCED -->
+        <div class="form-section collapsed" id="advSection">
+            <div class="adv-toggle" id="advToggle">
+                <h2 style="margin-bottom:0;"><i class="fas fa-sliders"></i> Advanced <span class="opt" style="font-weight:400;">(optional)</span></h2>
+                <i class="fas fa-chevron-down chev"></i>
+            </div>
+            <div class="adv-body">
+                <p class="section-sub">OS grid reference and inspection cycle overrides. Fine to skip — sensible defaults (2-year General, 6-year Principal) apply until these are set.</p>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="fOSE">OS Grid Easting</label>
+                        <input type="text" id="fOSE" placeholder="e.g. 425600">
+                    </div>
+                    <div class="form-group">
+                        <label for="fOSN">OS Grid Northing</label>
+                        <input type="text" id="fOSN" placeholder="e.g. 564200">
+                    </div>
+                </div>
+                <div class="form-row" style="margin-top:16px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label for="fGiCycle">General inspection cycle <span class="opt">(years)</span></label>
+                        <input type="number" id="fGiCycle" min="1" placeholder="2">
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label for="fPiCycle">Principal inspection cycle <span class="opt">(years)</span></label>
+                        <input type="number" id="fPiCycle" min="1" placeholder="6">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="button" class="btn-cancel" onclick="history.back()">Cancel</button>
+            <button type="submit" class="btn-create"><i class="fas fa-check"></i> Create Structure</button>
+        </div>
+    </form>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ---------- Night mode toggle (matches database.js wiring) ----------
+(function() {
+    var toggleBtn = document.getElementById('nightModeToggle');
+    if (!toggleBtn) return;
+    toggleBtn.onclick = function() {
+        document.body.classList.toggle('night-mode');
+        if (document.body.classList.contains('night-mode')) {
+            this.innerHTML = '<i class="fas fa-sun"></i>';
+            localStorage.setItem('nightMode', 'on');
+        } else {
+            this.innerHTML = '<i class="fas fa-moon"></i>';
+            localStorage.setItem('nightMode', 'off');
+        }
+    };
+    var savedNightMode = localStorage.getItem('nightMode');
+    var systemPrefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    document.documentElement.classList.remove('nm-preload');
+    if (savedNightMode === 'on' || (savedNightMode === null && !systemPrefersLight)) {
+        document.body.classList.add('night-mode');
+        toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
+    }
+})();
+
+// ---------- Toast ----------
+function showToast(title, msg, kind) {
+    var container = document.getElementById('toastContainer');
+    var toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML =
+        '<div class="toast-icon ' + kind + '"><i class="fas ' + (kind === 'success' ? 'fa-check' : 'fa-triangle-exclamation') + '"></i></div>' +
+        '<div class="toast-content"><div class="toast-title">' + title + '</div><div class="toast-msg">' + msg + '</div></div>' +
+        '<button class="toast-close"><i class="fas fa-times"></i></button>';
+    container.appendChild(toast);
+    requestAnimationFrame(function() { toast.classList.add('show'); });
+    function remove() {
+        toast.classList.remove('show');
+        setTimeout(function() { toast.remove(); }, 400);
+    }
+    toast.querySelector('.toast-close').onclick = remove;
+    setTimeout(remove, 5000);
+}
+
+// ---------- Type pills ----------
+var selectedType = null;
+document.querySelectorAll('.type-pill').forEach(function(pill) {
+    pill.addEventListener('click', function() {
+        document.querySelectorAll('.type-pill').forEach(function(p) { p.classList.remove('sel'); });
+        pill.classList.add('sel');
+        selectedType = pill.dataset.type;
+    });
+});
+
+// ---------- Span stepper ----------
+var spanCount = 1;
+var spanCountEl = document.getElementById('spanCount');
+document.getElementById('spanMinus').addEventListener('click', function() {
+    if (spanCount > 1) spanCount--;
+    spanCountEl.textContent = spanCount;
+});
+document.getElementById('spanPlus').addEventListener('click', function() {
+    spanCount++;
+    spanCountEl.textContent = spanCount;
+});
+
+// ---------- Advanced collapse ----------
+document.getElementById('advToggle').addEventListener('click', function() {
+    document.getElementById('advSection').classList.toggle('collapsed');
+});
+
+// ---------- Photos (multi-photo grid with per-photo description) ----------
+var photos = []; // { id, dataURL, description }
+var photoGrid = document.getElementById('photoGrid');
+var addPhotoCard = document.getElementById('addPhotoCard');
+var photoInput = document.getElementById('photoInput');
+
+addPhotoCard.addEventListener('click', function() { photoInput.click(); });
+
+photoInput.addEventListener('change', function() {
+    Array.prototype.forEach.call(photoInput.files, function(file) {
+        if (!file.type.startsWith('image/')) return;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var photo = { id: 'p' + Date.now() + Math.random().toString(36).slice(2), dataURL: e.target.result, description: '' };
+            photos.push(photo);
+            renderPhotos();
+        };
+        reader.readAsDataURL(file);
+    });
+    photoInput.value = '';
+});
+
+function renderPhotos() {
+    // remove all preview cards, keep the add-tile
+    Array.prototype.slice.call(photoGrid.querySelectorAll('.preview-item-photo')).forEach(function(el) { el.remove(); });
+    photos.forEach(function(photo, idx) {
+        var card = document.createElement('div');
+        card.className = 'preview-item-photo';
+        card.innerHTML =
+            (idx === 0 ? '<div class="cover-badge">COVER</div>' : '') +
+            '<button type="button" class="remove-photo">&times;</button>' +
+            '<img src="' + photo.dataURL + '" alt="">' +
+            '<textarea class="photo-description-input" placeholder="Add description…"></textarea>';
+        card.querySelector('.remove-photo').addEventListener('click', function() {
+            photos = photos.filter(function(p) { return p.id !== photo.id; });
+            renderPhotos();
+        });
+        var textarea = card.querySelector('.photo-description-input');
+        textarea.value = photo.description;
+        textarea.addEventListener('input', function() { photo.description = textarea.value; });
+        photoGrid.appendChild(card);
+    });
+}
+
+// ---------- Submit ----------
+document.getElementById('addStructureForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    var name = document.getElementById('fName').value.trim();
+    if (!name) {
+        showToast('Missing name', 'Give the structure a name before creating it.', 'error');
+        document.getElementById('fName').focus();
+        return;
+    }
+    if (!selectedType) {
+        showToast('Missing type', 'Pick a structure type — Bridge, Footbridge, Culvert, Retaining Wall or Sign Gantry.', 'error');
+        return;
+    }
+
+    var payload = {
+        name: name,
+        type: selectedType,
+        location: document.getElementById('fLocation').value.trim() || null,
+        latitude: document.getElementById('fLat').value ? parseFloat(document.getElementById('fLat').value) : null,
+        longitude: document.getElementById('fLng').value ? parseFloat(document.getElementById('fLng').value) : null,
+        span: document.getElementById('fSpan').value ? parseInt(document.getElementById('fSpan').value, 10) : null,
+        length: document.getElementById('fLength').value ? parseInt(document.getElementById('fLength').value, 10) : null,
+        width: document.getElementById('fWidth').value ? parseFloat(document.getElementById('fWidth').value) : null,
+        span_number: spanCount,
+        built_year: document.getElementById('fBuiltYear').value ? parseInt(document.getElementById('fBuiltYear').value, 10) : null,
+        load_capacity: document.getElementById('fLoadCapacity').value ? parseFloat(document.getElementById('fLoadCapacity').value) : null,
+        primary_material: document.getElementById('fMaterialPrimary').value || null,
+        secondary_material: document.getElementById('fMaterialSecondary').value || null,
+        description: document.getElementById('fDescription').value.trim() || null,
+        OSE: document.getElementById('fOSE').value.trim() || null,
+        OSN: document.getElementById('fOSN').value.trim() || null,
+        gi_cycle_years: document.getElementById('fGiCycle').value ? parseInt(document.getElementById('fGiCycle').value, 10) : null,
+        pi_cycle_years: document.getElementById('fPiCycle').value ? parseInt(document.getElementById('fPiCycle').value, 10) : null,
+        photos: photos.map(function(p) { return { description: p.description, dataURL: p.dataURL }; })
+    };
+
+    // Prototype only — no POST /api/bridges endpoint exists yet.
+    // This is the exact shape the request body would take once one does.
+    console.log('Add Structure payload (would POST to /api/bridges):', payload);
+
+    showToast('Structure created (prototype)', name + ' logged to the console — nothing saved yet, there\'s no backend endpoint for this.', 'success');
+});
+</script>
+
+</body>
+</html>
