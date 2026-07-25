@@ -333,15 +333,59 @@
       document.getElementById('structuresSubtitle').textContent =
         `${S.structures.length} total`;
       renderStructures();
+      renderFilterChips();
       setStructuresView(localStorage.getItem('fieldStructuresView') === 'map' ? 'map' : 'list');
     } catch (err) {
       area.innerHTML = `<div class="empty-state">${err.offline ? 'Offline. No cached structures yet.' : 'Could not load structures.'}</div>`;
     }
   }
+  let structuresSearchQuery = '';
+  let activeTypeFilters = new Set();
+  function getFilteredStructures() {
+    const q = (structuresSearchQuery || '').toLowerCase();
+    return (S.structures || []).filter((s) =>
+      (!q || (s.name || '').toLowerCase().includes(q) || String(s.id).toLowerCase().includes(q)) &&
+      (activeTypeFilters.size === 0 || activeTypeFilters.has(s.type || 'Bridge'))
+    );
+  }
+  function renderFilterChips() {
+    const container = document.getElementById('structuresFilterOptions');
+    if (!container) return;
+    const counts = {};
+    (S.structures || []).forEach((s) => { const t = s.type || 'Bridge'; counts[t] = (counts[t] || 0) + 1; });
+    const types = Object.keys(counts).sort();
+    container.innerHTML = '';
+    types.forEach((t) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'structures-filter-chip' + (activeTypeFilters.has(t) ? ' sel' : '');
+      chip.innerHTML = `${escapeHtml(t)} <span class="count">${counts[t]}</span>`;
+      chip.onclick = () => {
+        if (activeTypeFilters.has(t)) activeTypeFilters.delete(t); else activeTypeFilters.add(t);
+        renderFilterChips();
+        updateFilterButtonBadge();
+        renderStructures();
+        if (structuresMapInstance) renderStructuresMap();
+      };
+      container.appendChild(chip);
+    });
+  }
+  function updateFilterButtonBadge() {
+    const btn = document.getElementById('structuresFilterBtn');
+    const countEl = document.getElementById('structuresFilterCount');
+    const n = activeTypeFilters.size;
+    btn.classList.toggle('has-filters', n > 0);
+    countEl.hidden = n === 0;
+    countEl.textContent = String(n);
+  }
+  document.getElementById('structuresFilterBtn').addEventListener('click', () => {
+    document.getElementById('structuresFilterSheet').hidden = !document.getElementById('structuresFilterSheet').hidden;
+  });
+
   function renderStructures(filter) {
-    const q = (filter || '').toLowerCase();
+    if (filter !== undefined) structuresSearchQuery = filter;
     const area = document.getElementById('structureListArea');
-    const list = S.structures.filter((s) => !q || (s.name || '').toLowerCase().includes(q) || String(s.id).toLowerCase().includes(q));
+    const list = getFilteredStructures();
     if (list.length === 0) { area.innerHTML = '<div class="empty-state">No structures match.</div>'; return; }
     area.innerHTML = '';
     list.forEach((s) => {
@@ -420,7 +464,7 @@
     popup.hidden = false;
   }
   function renderStructuresMap() {
-    const withLocation = (S.structures || []).filter((s) => s.latitude != null && s.longitude != null && !Number.isNaN(parseFloat(s.latitude)) && !Number.isNaN(parseFloat(s.longitude)));
+    const withLocation = getFilteredStructures().filter((s) => s.latitude != null && s.longitude != null && !Number.isNaN(parseFloat(s.latitude)) && !Number.isNaN(parseFloat(s.longitude)));
     if (!structuresMapInstance) {
       structuresMapInstance = L.map('structuresMap', { scrollWheelZoom: false }).setView([54.5, -2.5], 6);
       refreshMapTileForNightMode();
