@@ -912,9 +912,9 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
                     <label>New inspection type</label>
                     <select id="newInspectionType">
                         <option value="">Select type…</option>
-                        <option value="GI">GI — General Inspection</option>
-                        <option value="PI">PI — Principal Inspection</option>
-                        <option value="SI">SI — Safety Inspection</option>
+                        <option value="GI">GI: General Inspection</option>
+                        <option value="PI">PI: Principal Inspection</option>
+                        <option value="SI">SI: Safety Inspection</option>
                     </select>
                 </div>
             </div>
@@ -934,7 +934,7 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
                 <div class="upload-zone" id="prevInspectionZone">
                     <i class="fas fa-file-arrow-up"></i>
                     <div class="u-title" id="prevInspectionZoneTitle">Upload a previous inspection report</div>
-                    <div class="u-sub">PDF or Word — for a structure whose last inspection wasn't done in spanSense</div>
+                    <div class="u-sub">PDF or Word, for a structure whose last inspection wasn't done in spanSense</div>
                 </div>
                 <input type="file" id="prevInspectionInput" accept=".pdf,.doc,.docx" hidden>
                 <button class="btn-load" id="loadUploadBtn" disabled style="margin-top:14px;"><i class="fas fa-arrow-right"></i> Load from this document</button>
@@ -944,7 +944,7 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 
         <div class="card" id="brandingCard">
             <h2 class="card-title"><i class="fas fa-palette" style="color:var(--ai);"></i> Branding &amp; Template</h2>
-            <p class="card-sub">Choose the look reports for this client go out in. spanSense builds the document — this only changes its logo, accent colour, and overall layout. Set once, reused automatically for every future report for this client.</p>
+            <p class="card-sub">Choose the look reports for this client go out in. spanSense builds the document; this only changes its logo, accent colour, and overall layout. Set once, reused automatically for every future report for this client.</p>
 
             <div class="brand-row">
                 <div class="brand-logo-zone">
@@ -1070,7 +1070,7 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
     <div class="screen" id="screen-export">
         <div class="card">
             <h2 class="card-title"><i class="fas fa-file-export" style="color:var(--teal);"></i> Generate &amp; Export</h2>
-            <p class="card-sub">The full report (cover, structure details, BCI summary, description of defects, conclusions, photo appendix and BCI Proforma appendix) is spanSense's standard inspection report format — the only difference here is that Author's drafted narrative fills in each defect's description instead of the raw stored comment.</p>
+            <p class="card-sub">The full report (cover, structure details, BCI summary, description of defects, conclusions, photo appendix and BCI Proforma appendix) is spanSense's standard inspection report format. The only difference here is that Author's drafted narrative fills in each defect's description instead of the raw stored comment.</p>
             <div class="u-sub" id="exportDateNote" style="margin-bottom:14px;"></div>
             <div class="export-actions">
                 <button class="btn-primary-lg" id="genFullReportBtn"><i class="fas fa-file-pdf"></i> Download Full Report (PDF)</button>

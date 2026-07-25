@@ -523,6 +523,27 @@
     S.currentSpan = 1;
     openViewer();
   }
+  // Existing notes (this inspector's own past dictation, or ones added on
+  // spanSense's desktop notes panel since) rendered into the same
+  // "[HH:MM] text." log format fresh dictation already appends to - oldest
+  // first, since new dictation appends below whatever's already there.
+  // A 'field' entry's text already has its own embedded per-line [HH:MM]
+  // timestamps (see the dictation handler below) - re-wrapping it in the
+  // row's created_at would just double-stamp it, so only 'core' (desktop)
+  // entries, which are one plain untimed line each, get a synthesized
+  // timestamp + an Office tag so they read as clearly not this inspector's
+  // own words.
+  function formatNotesLog(notes) {
+    if (!notes || !notes.length) return '';
+    return notes.slice().reverse().map((n) => {
+      if (n.source === 'field') return n.text || '';
+      const time = n.created_at
+        ? new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : '';
+      return `[${time} · Office] ${n.text || ''}`;
+    }).join('\n');
+  }
+
   function buildDraftFromInspection(full) {
     S.draft = {
       structureId: S.currentStructure.id,
@@ -533,7 +554,7 @@
       baseType: full.inspectionType,
       totalSpans: full.totalSpans || (full.spans || []).length || 1,
       conclusions: full.conclusions || '',
-      fieldNote: '',
+      fieldNote: formatNotesLog(full.notes),
       spans: (full.spans && full.spans.length ? full.spans : [{ spanNumber: 1 }]).map((sp) => ({
         spanNumber: sp.spanNumber, comments: sp.comments || ''
       })),
