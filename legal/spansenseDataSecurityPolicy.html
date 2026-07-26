@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>spanSense · Data Security Policy</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    color: #2c3e44;
+    font-size: 13px;
+    line-height: 1.55;
+    background: #dfe6e6;
+  }
+  @page { size: A4; margin: 0; }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 20mm 22mm;
+    background: white;
+    position: relative;
+    page-break-after: always;
+    break-after: page;
+  }
+  .page:last-child { page-break-after: auto; break-after: auto; }
+
+  /* ===== COVER ===== */
+  .cover {
+    background: linear-gradient(150deg, #101f1c 0%, #1e3432 45%, #2c4a48 75%, #3d6462 100%);
+    color: white;
+    display: flex;
+    flex-direction: column;
+  }
+  .cover .brand { font-size: 12px; font-weight: 700; letter-spacing: 0.14em; color: #8ab4b0; margin-bottom: 26px; }
+  .cover h1 { font-size: 38px; font-weight: 800; line-height: 1.18; letter-spacing: -0.02em; margin-bottom: 20px; max-width: 480px; }
+  .cover .desc { font-size: 14.5px; color: rgba(255,255,255,0.68); line-height: 1.7; max-width: 430px; margin-bottom: 40px; }
+  .cover .meta { margin-top: auto; padding-top: 60px; display: flex; gap: 28px; font-size: 11.5px; color: rgba(255,255,255,0.5); }
+  .cover .meta strong { color: rgba(255,255,255,0.8); }
+
+  /* ===== SECTION HEADER ===== */
+  .sec-head { margin-bottom: 16px; }
+  .sec-head h2 { font-size: 17px; font-weight: 800; color: #1e3432; border-left: 4px solid #5b8c8a; padding-left: 12px; line-height: 1.3; }
+
+  .footer-bar { position: absolute; left: 22mm; right: 22mm; bottom: 12mm; display: flex; justify-content: space-between; font-size: 10px; color: #a0aeb5; border-top: 1px solid #eef2f6; padding-top: 8px; }
+
+  h3.subhead { font-size: 13px; font-weight: 700; color: #1e3432; margin: 14px 0 6px; }
+  p.clause { position: relative; padding-left: 34px; color: #3d4a4f; font-size: 12px; line-height: 1.55; margin-bottom: 7px; }
+  p.clause .n { position: absolute; left: 0; top: 0; color: #5b8c8a; font-weight: 700; }
+  p.clause strong { color: #1e3432; }
+  ul.sub-list { list-style: none; margin: 2px 0 8px 38px; }
+  ul.sub-list li { font-size: 12px; color: #3d4a4f; padding: 3px 0 3px 14px; position: relative; line-height: 1.5; }
+  ul.sub-list li::before { content: '–'; position: absolute; left: 0; color: #8a9ba8; }
+
+  table.data-tbl { width: 100%; border-collapse: collapse; margin: 8px 0 10px; }
+  table.data-tbl th { text-align: left; font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #6b8685; background: #f2f6f5; padding: 6px 10px; }
+  table.data-tbl td { padding: 7px 10px; font-size: 11.5px; color: #3d4a4f; border-bottom: 1px solid #eef2f6; vertical-align: top; }
+  table.data-tbl td strong { color: #1e3432; }
+  table.data-tbl tr:last-child td { border-bottom: none; }
+
+  .callout { background: #fbf3e7; border-left: 4px solid #c2914a; border-radius: 0 10px 10px 0; padding: 10px 16px; font-size: 11.5px; color: #5c4526; line-height: 1.5; margin: 10px 0; }
+  .callout strong { color: #8a5d1f; }
+  .callout.good { background: #eef4f2; border-left-color: #5b8c8a; color: #2c4a48; }
+  .callout.good strong { color: #2c4a48; }
+
+  .placeholder { background: #fdf2f2; color: #a8524f; padding: 1px 6px; border-radius: 4px; font-weight: 700; font-size: 11.5px; }
+
+  @media print {
+    body { background: white; }
+    .page { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= COVER ================= -->
+<div class="page cover">
+  <div class="brand">SPANSENSE</div>
+  <h1>Data Security Policy</h1>
+  <p class="desc">This policy sets out the technical and organisational measures spanSense uses to protect Customer Data and personal data processed through the spanSense platform and the spanSense Field companion app.</p>
+  <div class="meta">
+    <span><strong>Document</strong><br>Data Security Policy</span>
+    <span><strong>Last updated</strong><br>26 July 2026</span>
+    <span><strong>Applies to</strong><br>spanSense &amp; spanSense Field</span>
+  </div>
+</div>
+
+<!-- ================= SCOPE / INFRASTRUCTURE ================= -->
+<div class="page">
+  <div class="sec-head"><h2>1. Purpose and Scope</h2></div>
+  <p class="clause"><span class="n">1.1</span>This policy describes how we protect the confidentiality, integrity, and availability of data processed through the Service, including Customer Data and personal data. It supplements, and should be read alongside, our Privacy Policy.</p>
+  <p class="clause"><span class="n">1.2</span>This policy applies to spanSense's own application and infrastructure. It does not cover security measures within a Customer's own organisation, such as how the Customer manages its Authorised Users' devices or credentials.</p>
+
+  <div class="sec-head" style="margin-top:22px;"><h2>2. Infrastructure and Hosting</h2></div>
+  <p class="clause"><span class="n">2.1</span>The Service is hosted using established, reputable cloud providers rather than self-managed servers, so that physical and network-level security is handled by providers who specialise in it:</p>
+  <table class="data-tbl">
+    <tr><th>Provider</th><th>Role</th></tr>
+    <tr><td><strong>Render</strong></td><td>Application hosting</td></tr>
+    <tr><td><strong>Supabase</strong></td><td>Our PostgreSQL database, and storage of uploaded photographs and files</td></tr>
+  </table>
+  <p class="clause"><span class="n">2.2</span>All traffic between your device and our servers is encrypted in transit using HTTPS.</p>
+
+  <div class="footer-bar"><span>spanSense · Data Security Policy</span><span>Page 2</span></div>
+</div>
+
+<!-- ================= ACCESS CONTROL / AUTHENTICATION ================= -->
+<div class="page">
+  <div class="sec-head"><h2>3. Account Security and Authentication</h2></div>
+  <p class="clause"><span class="n">3.1</span>Passwords are never stored in plain text. They are hashed using bcrypt, an industry-standard salted hashing algorithm designed to resist brute-force attacks, before being stored.</p>
+  <p class="clause"><span class="n">3.2</span>We support optional two-factor authentication (2FA) using time-based one-time passcodes (TOTP), compatible with standard authenticator apps (e.g. Google Authenticator, Microsoft Authenticator). We recommend Customers enable this for all accounts, particularly administrative ones.</p>
+  <p class="clause"><span class="n">3.3</span>Sessions are managed server-side: authentication state is stored in our database rather than in a token held entirely by the browser, allowing sessions to be invalidated centrally if needed.</p>
+
+  <div class="sec-head" style="margin-top:22px;"><h2>4. Access Control</h2></div>
+  <p class="clause"><span class="n">4.1</span>The Service uses role-based permissions, so that what an Authorised User can view or change within an account reflects their assigned role.</p>
+  <p class="clause"><span class="n">4.2</span>Internal access to production systems and data is limited to personnel who need it to operate and support the Service.</p>
+
+  <div class="footer-bar"><span>spanSense · Data Security Policy</span><span>Page 3</span></div>
+</div>
+
+<!-- ================= DATA STORAGE / FILES ================= -->
+<div class="page">
+  <div class="sec-head"><h2>5. Storage of Data and Files</h2></div>
+  <p class="clause"><span class="n">5.1</span>Structured Customer Data (structures, inspections, defects, and related records) is stored in a PostgreSQL database that is not directly reachable from the public internet outside of the Service's own application layer.</p>
+  <p class="clause"><span class="n">5.2</span>Uploaded photographs and files are stored in a private storage bucket. They are never given a public URL; instead, access is granted only through short-lived, individually-generated signed links, generated on demand by the Service for an authenticated user.</p>
+
+  <div class="sec-head" style="margin-top:22px;"><h2>6. spanSense Field and Offline Data</h2></div>
+  <p class="clause"><span class="n">6.1</span>The spanSense Field app can queue inspection data and photographs locally on a device when working with no signal, syncing to our servers once connectivity resumes. Data queued in this way is only as secure as the device it is held on, so we recommend Customers apply their own device-level protections (e.g. a passcode or biometric lock) on devices used for fieldwork.</p>
+
+  <div class="footer-bar"><span>spanSense · Data Security Policy</span><span>Page 4</span></div>
+</div>
+
+<!-- ================= OPERATIONAL SECURITY / INCIDENTS ================= -->
+<div class="page">
+  <div class="sec-head"><h2>7. Ongoing Security Practices</h2></div>
+  <p class="clause"><span class="n">7.1</span>We monitor for and apply security updates to the software libraries and infrastructure the Service depends on.</p>
+  <p class="clause"><span class="n">7.2</span>Changes to the Service go through review before being deployed to the live environment.</p>
+  <div class="callout good">
+    <strong>Note:</strong> Some controls referenced elsewhere in our documentation as being "in preparation" — including formal backup/disaster-recovery procedures, independent security testing, and a written incident response plan — are being built out as the business grows, and this policy will be updated as they are put in place.
+  </div>
+
+  <div class="sec-head" style="margin-top:22px;"><h2>8. Security Incidents</h2></div>
+  <p class="clause"><span class="n">8.1</span>If we become aware of a security incident affecting your data, we will investigate promptly and notify affected Customers without undue delay, and in any event within the timeframes required by applicable data protection law where the incident constitutes a personal data breach.</p>
+
+  <div class="sec-head" style="margin-top:22px;"><h2>9. Reporting a Security Concern</h2></div>
+  <p class="clause"><span class="n">9.1</span>If you believe you have found a security vulnerability in the Service, please report it to <strong>support@spansense.io</strong> rather than disclosing it publicly, so we can investigate and address it.</p>
+
+  <div class="sec-head" style="margin-top:22px;"><h2>10. Changes to This Policy</h2></div>
+  <p class="clause"><span class="n">10.1</span>We may update this policy as our security practices evolve. Material changes will be reflected in the "Last updated" date above.</p>
+
+  <div class="footer-bar"><span>spanSense · Data Security Policy</span><span>Page 5</span></div>
+</div>
+
+</body>
+</html>
