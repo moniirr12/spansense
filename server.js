@@ -1069,15 +1069,17 @@ app.get('/api/twin/:structureId', requireAuth, async (req, res) => {
                 [selectedInspection.id]
             );
             const defectRows = await dbAll(
-                `SELECT span_number, element_no, severity, extent, defect_type, defect_number,
-                        works_required, priority, cost, comments, remedial_works, pos_x, pos_y, pos_z
-                 FROM defects WHERE inspection_id = $1
-                 ORDER BY span_number, element_no`,
+                `SELECT d.id, d.span_number, d.element_no, d.severity, d.extent, d.defect_type, d.defect_number,
+                        d.works_required, d.priority, d.cost, d.comments, d.remedial_works, d.pos_x, d.pos_y, d.pos_z,
+                        (SELECT COUNT(*) FROM defect_photos dp WHERE dp.defect_id = d.id) AS photo_count
+                 FROM defects d WHERE d.inspection_id = $1
+                 ORDER BY d.span_number, d.element_no`,
                 [selectedInspection.id]
             );
             defects = defectRows.map(d => {
                 const sev = parseInt(d.severity, 10);
                 return {
+                    id: d.id,
                     spanNumber: d.span_number,
                     elementNo: d.element_no,
                     severity: sev || null,
@@ -1092,7 +1094,8 @@ app.get('/api/twin/:structureId', requireAuth, async (req, res) => {
                     remedialWorks: d.remedial_works || null,
                     x: d.pos_x !== null ? parseFloat(d.pos_x) : null,
                     y: d.pos_y !== null ? parseFloat(d.pos_y) : null,
-                    z: d.pos_z !== null ? parseFloat(d.pos_z) : null
+                    z: d.pos_z !== null ? parseFloat(d.pos_z) : null,
+                    photoCount: parseInt(d.photo_count, 10) || 0
                 };
             });
         }
@@ -2692,6 +2695,29 @@ app.get('/api/bridges/:structureId/inspection-photos', requireAuth, async (req, 
             success: false,
             error: 'Database error'
         });
+    }
+});
+
+// Photos for a single defect - lazy-fetched by twinView's defect popup
+// (only signs URLs for the one defect actually clicked, rather than every
+// defect on the bridge up front).
+app.get('/api/defects/:defectId/photos', requireAuth, async (req, res) => {
+    try {
+        const photos = await dbAll(
+            `SELECT id, photo_url, photo_description, display_order
+             FROM defect_photos WHERE defect_id = $1
+             ORDER BY display_order`,
+            [req.params.defectId]
+        );
+        const signedPhotos = await Promise.all(photos.map(async photo => ({
+            id: photo.id,
+            url: await storage.getSignedUrl(photo.photo_url),
+            description: photo.photo_description
+        })));
+        res.json({ photos: signedPhotos });
+    } catch (err) {
+        console.error('Defect photos error:', err);
+        res.status(500).json({ error: err.message });
     }
 });
 

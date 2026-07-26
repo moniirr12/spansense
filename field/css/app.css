@@ -393,6 +393,15 @@ body.night-mode .edit-banner{ background:#3a2f1a; border-color:#5a4a2a; color:#e
 .stepper button.sel{ background:var(--teal-500); color:#fff; }
 .stepper.works button{ font-family:inherit; font-size:12.5px; }
 
+/* Severity 1-5, green to red - same values as desktop core's severity
+   stepper fill (inspection/inspection.css), same in light and dark mode
+   there too, so no night-mode override needed here either. */
+#sevStepper button[data-v="1"].sel{ background:#2d7a6e; }
+#sevStepper button[data-v="2"].sel{ background:#BA7517; }
+#sevStepper button[data-v="3"].sel{ background:#c47070; }
+#sevStepper button[data-v="4"].sel{ background:#c0392b; }
+#sevStepper button[data-v="5"].sel{ background:#a93226; }
+
 .notes-input{
   width:100%; min-height:88px; border:1px solid var(--border); background:var(--surface); color:var(--ink);
   border-radius:16px; padding:12px 14px; font-size:14px; resize:vertical;

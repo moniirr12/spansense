@@ -1281,6 +1281,23 @@
     document.getElementById('defTypeLabel').value = text;
     document.getElementById('defTypeLabelText').textContent = text || 'Pick defect type';
   }
+  // Mirrors desktop's setSeverityStepper/setExtentStepper auto-correct
+  // (inspection/inspection.js): picking severity 1 snaps extent to A,
+  // picking severity 2-5 while extent is A snaps it to B, and vice versa -
+  // so an invalid combo can't actually be left selected, rather than only
+  // catching it with a warning on Done.
+  function autoCorrectSeverityExtent(changedId, val) {
+    if (changedId === 'sevStepper') {
+      const sev = parseInt(val, 10);
+      const ext = getStepperValue('extStepper');
+      if (sev === 1 && ext !== 'A') setStepperValue('extStepper', 'A');
+      else if (sev >= 2 && (ext === 'A' || !ext)) setStepperValue('extStepper', 'B');
+    } else {
+      const sev = parseInt(getStepperValue('sevStepper'), 10);
+      if (val === 'A' && sev !== 1) setStepperValue('sevStepper', '1');
+      else if (val !== 'A' && (!sev || sev === 1)) setStepperValue('sevStepper', '2');
+    }
+  }
   document.querySelectorAll('.stepper').forEach((stepper) => {
     stepper.addEventListener('click', (e) => {
       const btn = e.target.closest('button'); if (!btn) return;
@@ -1290,6 +1307,7 @@
       }
       if (stepper.id === 'sevStepper' || stepper.id === 'extStepper') {
         document.getElementById('sevExtWarning').hidden = true;
+        autoCorrectSeverityExtent(stepper.id, btn.dataset.v);
       }
     });
   });

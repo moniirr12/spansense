@@ -284,12 +284,70 @@ body {
 .btn-icon:hover { background: #f8fafc; color: #5b8c8a; border-color: #8ab4b0; }
 
 /* ---------- FILTERS ---------- */
+.filters-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+    container-type: inline-size;
+    container-name: filters-row;
+}
 .filters-bar {
     display: flex;
     gap: 12px;
-    margin-bottom: 20px;
     flex-wrap: wrap;
+    flex: 1 1 auto;
+    min-width: 0;
 }
+.db-search-wrap {
+    position: relative;
+    flex: 1 1 160px;
+    min-width: 140px;
+    max-width: 340px;
+}
+/* Below this the chip labels + a comfortably-wide search box no longer fit
+   on one line - drop to icon-only chips (title attr covers the tooltip)
+   before letting anything wrap. */
+@container filters-row (max-width: 760px) {
+    .filter-chip .chip-label { display: none; }
+    .filter-chip { padding: 8px 11px; }
+}
+.db-search-wrap > i.fa-search {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #8a9ba8;
+    font-size: 0.7rem;
+    pointer-events: none;
+}
+.db-search-wrap input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 30px 8px 30px;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-family: inherit;
+    color: #2c4a48;
+    background: #fafbfc;
+    transition: border-color 0.2s;
+}
+.db-search-wrap input:focus {
+    outline: none;
+    border-color: #8ab4b0;
+}
+.db-search-clear {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #8a9ba8;
+    font-size: 0.7rem;
+    cursor: pointer;
+}
+.db-search-clear:hover { color: #5b8c8a; }
 .filter-chip {
     padding: 8px 16px;
     border-radius: 30px;
@@ -814,7 +872,7 @@ body {
     .navbar { width: 90%; padding: 0 18px; }
 }
 @media (max-width: 768px) {
-    .filters-bar { flex-direction: column; }
+    .db-search-wrap { flex: 1 1 100%; max-width: none; }
     .data-table-wrap { overflow-x: auto; }
     .export-action-bar { flex-direction: column; gap: 16px; align-items: stretch; }
     .btn-export { width: 100%; justify-content: center; }
@@ -877,6 +935,11 @@ body {
 .night-mode .data-table tbody tr:hover td { background: #2a3a40; }
 .night-mode .filter-chip { background: #1e2a2f; border-color: #3a4b53; color: #9ab0b8; }
 .night-mode .filter-chip.active { background: #2f4a48; border-color: #6e9c98; color: white; }
+.night-mode .db-search-wrap input { background: #1e2a2f; border-color: #3a4b53; color: #d4dfe3; }
+.night-mode .db-search-wrap input:focus { border-color: #8ab4b0; }
+.night-mode .db-search-wrap > i.fa-search { color: #6a8090; }
+.night-mode .db-search-clear { color: #6a8090; }
+.night-mode .db-search-clear:hover { color: #8ab4b0; }
 .night-mode .format-btn { background: #1e2a2f; border-color: #3a4b53; color: #9ab0b8; }
 .night-mode .format-btn.active { background: #2f4a48; border-color: #6e9c98; color: white; }
 .night-mode .date-range input { background: #1e2a2f; border-color: #3a4b53; color: #c5d3d9; }

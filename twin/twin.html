@@ -8,6 +8,7 @@
 <script>(function(){var nm=localStorage.getItem('nightMode');var dark=nm==='on'||(nm===null&&!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches));if(dark)document.documentElement.classList.add('nm-preload');})();</script>
 <style>html.nm-preload,html.nm-preload body{background-color:#1a2428!important;}</style>
 <title>spanSense · twinView</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -711,13 +712,66 @@ body {
     line-height: 1; cursor: pointer; padding: 0 2px; flex-shrink: 0;
 }
 .defect-popup-close:hover { color: #f2f6f5; }
-.defect-popup-row { display: flex; justify-content: space-between; gap: 10px; padding: 2px 0; }
+.defect-popup-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 2px 0; }
 .defect-popup-row span { color: rgba(242,246,245,0.65); }
+.defect-popup-pill {
+    display: inline-block; min-width: 42px; padding: 2px 11px; border-radius: 20px;
+    border: 1px solid rgba(242,246,245,0.32); background: rgba(242,246,245,0.08);
+    color: #f2f6f5 !important; font-weight: 700; font-size: 0.76rem; line-height: 1.4;
+    text-align: center;
+}
+/* Severity 1-5, green to red - same values as Field's #sevStepper and
+   desktop core's severity fill, unchanged between light/dark like both. */
+.defect-popup-pill.sev-1 { background: #2d7a6e; border-color: #2d7a6e; }
+.defect-popup-pill.sev-2 { background: #BA7517; border-color: #BA7517; }
+.defect-popup-pill.sev-3 { background: #c47070; border-color: #c47070; }
+.defect-popup-pill.sev-4 { background: #c0392b; border-color: #c0392b; }
+.defect-popup-pill.sev-5 { background: #a93226; border-color: #a93226; }
 .defect-popup-note { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(242,246,245,0.14); color: rgba(242,246,245,0.85); }
 .defect-popup-remedial { margin-top: 6px; color: rgba(242,246,245,0.85); }
 .defect-popup-remedial b { color: #f2f6f5; }
 .defect-popup-approx { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(242,246,245,0.14); color: #e8a87c; font-size: 0.72rem; }
 .defect-popup-approx i { margin-right: 4px; }
+.defect-popup-photos-btn {
+    background: none; border: 1px solid rgba(242,246,245,0.3); color: rgba(242,246,245,0.85);
+    border-radius: 6px; font-size: 0.72rem; line-height: 1; cursor: pointer;
+    padding: 4px 6px; flex-shrink: 0; margin-top: 8px;
+}
+.defect-popup-photos-btn:hover { background: rgba(242,246,245,0.12); border-color: rgba(242,246,245,0.5); }
+.defect-popup-photos-btn.active { background: #8ab4b0; border-color: #8ab4b0; color: #0f1619; }
+.defect-popup-photos-btn i { margin-right: 5px; }
+
+/* Photo viewer that drops below the defect popup - same width, same visual
+   language, kept as a separate element so it can be positioned/hidden
+   independently (e.g. closing the parent popup also closes this). */
+.defect-photos-popup {
+    display: none;
+    position: absolute;
+    z-index: 8;
+    width: 240px;
+    max-height: 260px;
+    overflow-y: auto;
+    background: #2c4a48;
+    color: #f2f6f5;
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 0.78rem;
+    box-shadow: 0 10px 28px rgba(0,0,0,0.28);
+}
+.night-mode .defect-photos-popup { background: #0f1619; }
+.defect-photos-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.defect-photos-head b { font-size: 0.8rem; }
+.defect-photos-close {
+    background: none; border: none; color: rgba(242,246,245,0.6); font-size: 1.1rem;
+    line-height: 1; cursor: pointer; padding: 0 2px; flex-shrink: 0;
+}
+.defect-photos-close:hover { color: #f2f6f5; }
+.defect-photos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.defect-photos-grid img {
+    width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 6px;
+    cursor: pointer; display: block; background: rgba(242,246,245,0.08);
+}
+.defect-photos-empty, .defect-photos-loading { color: rgba(242,246,245,0.65); text-align: center; padding: 6px 0; }
 
 .stage-bci-chip {
     position:absolute; top:16px; left:48px;
@@ -1163,6 +1217,7 @@ body.night-mode .glass-scrollbar .thumb {
                     </div>
                     <div class="stage-hint">drag to orbit · scroll to zoom</div>
                     <div class="defect-popup" id="defectPopup"></div>
+                    <div class="defect-photos-popup" id="defectPhotosPopup"></div>
                 </div>
             </div>
 

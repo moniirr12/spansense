@@ -1214,6 +1214,7 @@ canvas.addEventListener('wheel', function(e) {
    ============================================================ */
 const raycaster = new THREE.Raycaster();
 const defectPopup = document.getElementById('defectPopup');
+const defectPhotosPopup = document.getElementById('defectPhotosPopup');
 const modelStage = document.querySelector('.model-stage');
 
 function handleCanvasClick(e) {
@@ -1240,12 +1241,17 @@ function showDefectPopup(d, positionExact, clientX, clientY) {
     var typeLabel = twinDefectTypeLabel(d.defectType, d.defectNumber);
     var defectCode = d.defectType && d.defectNumber ? (d.defectType + '.' + d.defectNumber) : null;
 
-    var rows = [];
-    if (d.severity != null) rows.push(['Severity', String(d.severity)]);
-    if (d.extent) rows.push(['Extent', d.extent]);
-    rows.push(['Works required', d.worksRequired ? 'Yes' : 'No']);
-    if (d.worksRequired && d.priority) rows.push(['Priority', d.priority]);
-    if (d.worksRequired && d.cost != null && d.cost > 0) rows.push(['Est. cost', '£' + d.cost.toLocaleString()]);
+    // Severity/Extent/Works required get the bordered pill treatment (same
+    // idea as Field's steppers), severity additionally colour-coded green
+    // to red - same values as Field's #sevStepper / desktop's severity fill.
+    var pillRows = [];
+    if (d.severity != null) pillRows.push(['Severity', String(d.severity), 'sev-' + d.severity]);
+    if (d.extent) pillRows.push(['Extent', d.extent, '']);
+    pillRows.push(['Works required', d.worksRequired ? 'Yes' : 'No', '']);
+
+    var plainRows = [];
+    if (d.worksRequired && d.priority) plainRows.push(['Priority', d.priority]);
+    if (d.worksRequired && d.cost != null && d.cost > 0) plainRows.push(['Est. cost', '£' + d.cost.toLocaleString()]);
 
     var html = '<div class="defect-popup-head">' +
         '<div><b>' + escapeHtmlTwin(elementName) + '</b>' +
@@ -1254,14 +1260,25 @@ function showDefectPopup(d, positionExact, clientX, clientY) {
         '<button type="button" class="defect-popup-close" aria-label="Close">&times;</button>' +
         '</div>' +
         '<div class="defect-popup-body">' +
-        rows.map(function(r) { return '<div class="defect-popup-row"><span>' + r[0] + '</span><b>' + escapeHtmlTwin(r[1]) + '</b></div>'; }).join('') +
+        pillRows.map(function(r) {
+            return '<div class="defect-popup-row"><span>' + r[0] + '</span>' +
+                '<span class="defect-popup-pill' + (r[2] ? ' ' + r[2] : '') + '">' + escapeHtmlTwin(r[1]) + '</span></div>';
+        }).join('') +
+        plainRows.map(function(r) { return '<div class="defect-popup-row"><span>' + r[0] + '</span><b>' + escapeHtmlTwin(r[1]) + '</b></div>'; }).join('') +
         (d.comments ? '<div class="defect-popup-note"><i>' + escapeHtmlTwin(d.comments) + '</i></div>' : '') +
         (d.remedialWorks ? '<div class="defect-popup-remedial"><b>Remedial: </b>' + escapeHtmlTwin(d.remedialWorks) + '</div>' : '') +
         (!positionExact ? '<div class="defect-popup-approx"><i class="fa-solid fa-triangle-exclamation"></i> Approximate location - not yet placed on the model</div>' : '') +
+        (d.photoCount ? '<button type="button" class="defect-popup-photos-btn"><i class="fa-solid fa-camera"></i>' +
+            d.photoCount + (d.photoCount === 1 ? ' photo' : ' photos') + '</button>' : '') +
         '</div>';
 
     defectPopup.innerHTML = html;
     defectPopup.querySelector('.defect-popup-close').addEventListener('click', hideDefectPopup);
+    var photosBtn = defectPopup.querySelector('.defect-popup-photos-btn');
+    if (photosBtn) {
+        photosBtn.addEventListener('click', function() { toggleDefectPhotosPopup(d, photosBtn); });
+    }
+    hideDefectPhotosPopup();
 
     var stageRect = modelStage.getBoundingClientRect();
     var x = clientX - stageRect.left;
@@ -1284,10 +1301,84 @@ function showDefectPopup(d, positionExact, clientX, clientY) {
 
 function hideDefectPopup() {
     defectPopup.style.display = 'none';
+    hideDefectPhotosPopup();
     // Same idle delay the drag-to-orbit interaction already uses before
     // resuming auto-rotate, rather than snapping straight back to spinning.
     clearTimeout(idleTimer);
     idleTimer = setTimeout(function() { autoRotate = true; }, 3000);
+}
+
+/* ============================================================
+   DEFECT PHOTOS - a second card that drops in directly below the defect
+   popup (same width), lazy-fetched only when the camera button is clicked
+   so opening a defect never pays for signed-URL generation it doesn't need.
+   ============================================================ */
+var defectPhotosLoadToken = 0;
+
+function hideDefectPhotosPopup() {
+    defectPhotosPopup.style.display = 'none';
+    defectPhotosPopup.innerHTML = '';
+    var openBtn = defectPopup.querySelector('.defect-popup-photos-btn.active');
+    if (openBtn) openBtn.classList.remove('active');
+}
+
+function toggleDefectPhotosPopup(d, btn) {
+    if (defectPhotosPopup.style.display === 'block') {
+        hideDefectPhotosPopup();
+        return;
+    }
+    btn.classList.add('active');
+
+    // Position directly under the defect popup, same left edge, clamped to
+    // the stage like the popup itself so it can't spill past the edges.
+    var stageRect = modelStage.getBoundingClientRect();
+    var left = parseFloat(defectPopup.style.left) || 0;
+    var top = defectPopup.offsetTop + defectPopup.offsetHeight + 8;
+    // .defect-photos-popup caps out at 260px tall (max-height + its own
+    // scrollbar), so that's the safe worst case to clamp against here.
+    var maxTop = stageRect.height - 260 - 12;
+    defectPhotosPopup.style.left = left + 'px';
+    defectPhotosPopup.style.top = Math.min(top, maxTop) + 'px';
+    defectPhotosPopup.innerHTML = '<div class="defect-photos-head"><b>Photos</b>' +
+        '<button type="button" class="defect-photos-close" aria-label="Close">&times;</button></div>' +
+        '<div class="defect-photos-loading"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>';
+    defectPhotosPopup.querySelector('.defect-photos-close').addEventListener('click', hideDefectPhotosPopup);
+    defectPhotosPopup.style.display = 'block';
+
+    var token = ++defectPhotosLoadToken;
+    fetch(API_BASE + '/api/defects/' + d.id + '/photos')
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            if (token !== defectPhotosLoadToken || defectPhotosPopup.style.display !== 'block') return;
+            renderDefectPhotos(data.photos || []);
+        })
+        .catch(function(err) {
+            console.error('Error loading defect photos:', err);
+            if (token !== defectPhotosLoadToken || defectPhotosPopup.style.display !== 'block') return;
+            renderDefectPhotos([], true);
+        });
+}
+
+function renderDefectPhotos(photos, failed) {
+    var body;
+    if (failed) {
+        body = '<div class="defect-photos-empty">Could not load photos.</div>';
+    } else if (!photos.length) {
+        body = '<div class="defect-photos-empty">No photos for this defect.</div>';
+    } else {
+        body = '<div class="defect-photos-grid">' + photos.map(function(p) {
+            return '<img src="' + escapeHtmlTwin(p.url) + '" alt="' +
+                escapeHtmlTwin(p.description || 'Defect photo') + '" title="' +
+                escapeHtmlTwin(p.description || '') + '">';
+        }).join('') + '</div>';
+    }
+    var head = defectPhotosPopup.querySelector('.defect-photos-head');
+    defectPhotosPopup.innerHTML = '';
+    defectPhotosPopup.appendChild(head);
+    defectPhotosPopup.insertAdjacentHTML('beforeend', body);
+    defectPhotosPopup.querySelectorAll('.defect-photos-grid img').forEach(function(img) {
+        img.addEventListener('click', function() { window.open(img.src, '_blank'); });
+    });
 }
 
 function escapeHtmlTwin(s) {
@@ -1295,7 +1386,8 @@ function escapeHtmlTwin(s) {
 }
 
 document.addEventListener('click', function(e) {
-    if (defectPopup.style.display === 'block' && !defectPopup.contains(e.target) && e.target !== canvas) {
+    if (defectPopup.style.display === 'block' && !defectPopup.contains(e.target) &&
+        !defectPhotosPopup.contains(e.target) && e.target !== canvas) {
         hideDefectPopup();
     }
 });
