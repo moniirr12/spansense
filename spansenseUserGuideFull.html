@@ -167,7 +167,7 @@
   <a class="toc-row" href="#sec-08"><span class="toc-num">08</span><span class="toc-title">Inspection Planning &amp; Scheduling</span><span class="toc-page">11</span></a>
   <a class="toc-row" href="#sec-09"><span class="toc-num">09</span><span class="toc-title">Dashboard: Portfolio Overview</span><span class="toc-page">12</span></a>
   <a class="toc-row" href="#sec-10"><span class="toc-num">10</span><span class="toc-title">Your Account &amp; Preferences</span><span class="toc-page">13</span></a>
-  <a class="toc-row" href="#sec-11"><span class="toc-num">11</span><span class="toc-title">spanSense Field: Your On-Site Companion</span><span class="toc-page">14</span></a>
+  <a class="toc-row" href="#sec-11"><span class="toc-num">11</span><span class="toc-title">spanSense Field: On-Site Data Capture</span><span class="toc-page">14</span></a>
 
   <div class="footer-bar"><span>spanSense · User Guide</span><span>Contents · 2</span></div>
 </div>
@@ -513,11 +513,11 @@
 <!-- ================= 11 SPANSENSE FIELD ================= -->
 <div class="page" id="sec-11">
   <div class="sec-head">
-    <h2>11. spanSense Field: Your On-Site Companion</h2>
-    <p class="lede">The same account, redesigned for standing at the bridge instead of sitting at a desk.</p>
+    <h2>11. spanSense Field: On-Site Data Capture</h2>
+    <p class="lede">The same account, redesigned for use at the bridge instead of at a desk.</p>
   </div>
 
-  <p class="body-text">spanSense Field is a companion web app built for the phone in your pocket on site, not a separate product with its own login: sign in with the same spanSense account, and it works whether you're an inspector capturing a rough first pass or checking a structure's history before you even get out of the van. Install it to your home screen like a native app, and it keeps working with patchy or no signal, on scaffolding or under a deck, queuing your work and syncing automatically once you're back in range.</p>
+  <p class="body-text">spanSense Field is a mobile-optimised web app for capturing inspection data on site, not a separate product with its own login: sign in with the same spanSense account to record a first pass or check a structure's history before arriving. Install it to your home screen like a native app, and it continues to work with patchy or no signal, queuing your work and syncing automatically once back in range.</p>
 
   <div class="shot" style="max-width:64mm; margin:8px auto 0;">
     <img src="reportAssets/guide-field-history.png" alt="A structure's detail page in spanSense Field, showing its location map, description and inspection history">
@@ -526,7 +526,7 @@
 
   <h3 class="subhead" style="margin-top:12px;">Starting an inspection on site</h3>
   <ol class="steps">
-    <li><p>Search or scroll the <strong>Structure List</strong> to find the bridge you're standing at</p></li>
+    <li><p>Search or scroll the <strong>Structure List</strong> to find the structure being inspected</p></li>
     <li><p>Its page shows the location map, description, and every past inspection - tap the <strong>+</strong> to start a fresh one, or tap a past inspection to start a new draft copied from it, ready to correct and update</p></li>
     <li><p>Log defects element by element exactly like spanSense: the same <strong>Severity 1–5</strong> / <strong>Extent A–E</strong> system, so scores are consistent whichever app captured them</p></li>
   </ol>
@@ -541,7 +541,7 @@
     <p class="lede">The same 3D model as spanSense, in your hand at the structure.</p>
   </div>
 
-  <p class="body-text">TwinView on the phone is the same digital twin you'd get behind a desk: the model is built from the structure's real span and condition data, colored by defect severity, and orbits under your thumb instead of a mouse. Pinch to zoom in on a specific span, and tap any marker to preview the defect logged there without leaving the 3D view.</p>
+  <p class="body-text">TwinView on the phone is the same digital twin available on desktop: the model is built from the structure's real span and condition data, colored by defect severity, and orbits via touch instead of a mouse. Pinch to zoom in on a specific span, and tap any marker to preview the defect logged there without leaving the 3D view.</p>
 
   <div class="shot" style="max-width:85mm; margin:12px auto 0;">
     <img src="reportAssets/guide-field-twinview.png" alt="TwinView tab in spanSense Field showing the 3D model with a live BCI average and critical score for the current span">
@@ -549,7 +549,7 @@
   <p class="cap-text">Drag to orbit, pinch to zoom, tap a marker to preview - BCI average and critical scored live for the current span</p>
 
   <div class="callout good" style="margin-top:14px;">
-    <strong>Why it's useful on site:</strong> compare the model against what you're looking at right now, rather than trying to remember it back at a desk later.
+    <strong>On site:</strong> the model can be compared directly against the structure in view, rather than from memory back at a desk.
   </div>
 
   <div class="footer-bar"><span>spanSense · User Guide</span><span>spanSense Field · 15</span></div>
@@ -559,7 +559,7 @@
 <div class="page">
   <div class="sec-head">
     <h2>11. Logging a Defect</h2>
-    <p class="lede">The same severity/extent system as spanSense, quicker to fill in with your thumb.</p>
+    <p class="lede">The same severity/extent system as spanSense, entered by touch.</p>
   </div>
 
   <div class="two-col" style="gap:16px; align-items:start;">
@@ -568,8 +568,11 @@
     </div>
     <div>
       <p class="body-text">The <strong>Defect List</strong> tab groups every element by category, with quick filter chips (Critical, Poor, Fair…) to jump straight to what needs attention.</p>
-      <p class="body-text">Tap a defect to open the same editor as spanSense: element, defect type, severity, extent, and works required, with a photo attached directly to that defect.</p>
-      <p class="body-text">Typing on site is slow with gloves on or a phone propped against a parapet, so <strong>Comments</strong> and <strong>Remedial Works</strong> both carry a microphone button for voice dictation - the same feature as the Notes tab, covered next.</p>
+      <p class="body-text">Tap a defect to open the same editor as spanSense: element, defect type, severity, extent, and works required, with a photo attached directly to that defect. Invalid severity/extent combinations (e.g. 1B, 2A) are blocked, matching desktop's validation.</p>
+      <p class="body-text">Typing on site is slower with gloves on or a phone propped against a parapet, so <strong>Comments</strong> and <strong>Remedial Works</strong> both carry a microphone button for voice dictation - the same feature as the Notes tab, covered next.</p>
+      <div class="callout" style="margin-top:10px;">
+        <strong>Note:</strong> Field doesn't currently support placing a new defect's position on the 3D model - that's still done in spanSense's desktop editor once the inspection has synced back.
+      </div>
     </div>
   </div>
 
@@ -580,14 +583,14 @@
 <div class="page">
   <div class="sec-head">
     <h2>11. Notes, General Photos, and Staying in Sync</h2>
-    <p class="lede">Dictate a note instead of typing it, and nothing is lost when you lose signal.</p>
+    <p class="lede">Free-text notes via voice dictation, and nothing lost when offline.</p>
   </div>
 
   <div class="two-col" style="gap:16px; align-items:start;">
     <div>
       <h3 class="subhead" style="margin-top:0;">Notes &amp; General Photos</h3>
-      <p class="body-text">The <strong>Notes</strong> tab is for anything that doesn't belong to one specific element: site conditions, access issues, a quick thought worth flagging before you forget it. It's a free-text field with the same voice dictation mic, saved onto the inspection's conclusions.</p>
-      <p class="body-text">Right below it, <strong>Site Photos</strong> holds pictures that aren't tied to a defect either, the same feature as the General Photos bar in spanSense - snap it now, sort it out back at the office.</p>
+      <p class="body-text">The <strong>Notes</strong> tab is for anything that doesn't belong to one specific element: site conditions, access issues, or other observations worth recording. It's a free-text field with the same voice dictation mic, saved onto the inspection's conclusions.</p>
+      <p class="body-text">Below it, <strong>Site Photos</strong> holds pictures not tied to a specific defect - the same feature as the General Photos bar in spanSense.</p>
     </div>
     <div class="shot" style="max-width:58mm; margin:0 auto;">
       <img src="reportAssets/guide-field-notes.png" alt="Notes tab in spanSense Field with voice dictation and a general Site Photos strip">
@@ -596,13 +599,13 @@
 
   <h3 class="subhead" style="margin-top:14px;">Working offline, and who sees it after</h3>
   <ul class="feat-list">
-    <li><strong>Offline-first:</strong> lose signal mid-inspection and your save (photos included) queues on the device; a banner tells you you're offline, and everything syncs automatically the moment you're back online</li>
-    <li><strong>Same review queue:</strong> every Field-captured inspection is tagged with its source and flows into exactly the same engineer review queue as one authored in spanSense - nothing needs re-entering</li>
-    <li><strong>Finished back at the office:</strong> a Field draft is deliberately quick to capture rather than exhaustive; office staff can open it straight in spanSense's inspection editor afterwards (Database → Edit) to check it over or fill in anything that needed a second look</li>
+    <li><strong>Offline-first:</strong> if signal is lost mid-inspection, the save (photos included) queues on the device; an offline banner is shown, and everything syncs automatically once back online</li>
+    <li><strong>Same review queue:</strong> every Field-captured inspection is tagged with its source and flows into the same engineer review queue as one authored in spanSense - nothing needs re-entering</li>
+    <li><strong>Finished back at the office:</strong> a Field draft is deliberately quick to capture rather than exhaustive; office staff can open it directly in spanSense's inspection editor afterwards (Database → Edit) to check it over or fill in anything that needs a second look</li>
   </ul>
 
   <div class="callout good" style="margin-top:10px;">
-    <strong>Tip:</strong> dark mode, your name, and your role carry over automatically - it's the same account and the same preferences, just a different screen.
+    <strong>Note:</strong> dark mode, name, and role carry over automatically - it's the same account and preferences, on a different screen.
   </div>
 
   <div class="footer-bar"><span>spanSense · User Guide</span><span>spanSense Field · 17</span></div>
