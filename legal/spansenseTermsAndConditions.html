@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>spanSense · Terms &amp; Conditions</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    color: #2c3e44;
+    font-size: 13px;
+    line-height: 1.55;
+    background: #dfe6e6;
+  }
+  @page { size: A4; margin: 0; }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 20mm 22mm;
+    background: white;
+    position: relative;
+    page-break-after: always;
+    break-after: page;
+  }
+  .page:last-child { page-break-after: auto; break-after: auto; }
+
+  /* ===== COVER ===== */
+  .cover {
+    background: linear-gradient(150deg, #101f1c 0%, #1e3432 45%, #2c4a48 75%, #3d6462 100%);
+    color: white;
+    display: flex;
+    flex-direction: column;
+  }
+  .cover .brand { font-size: 12px; font-weight: 700; letter-spacing: 0.14em; color: #8ab4b0; margin-bottom: 26px; }
+  .cover h1 { font-size: 38px; font-weight: 800; line-height: 1.18; letter-spacing: -0.02em; margin-bottom: 20px; max-width: 480px; }
+  .cover .desc { font-size: 14.5px; color: rgba(255,255,255,0.68); line-height: 1.7; max-width: 430px; margin-bottom: 40px; }
+  .cover .meta { margin-top: auto; padding-top: 60px; display: flex; gap: 28px; font-size: 11.5px; color: rgba(255,255,255,0.5); }
+  .cover .meta strong { color: rgba(255,255,255,0.8); }
+
+  /* ===== TOC ===== */
+  .toc h1 { font-size: 26px; font-weight: 800; color: #1e3432; margin-bottom: 6px; }
+  .toc .sub { font-size: 13px; color: #8a9ba8; margin-bottom: 34px; }
+  .toc-row { display: flex; align-items: baseline; gap: 16px; padding: 11px 0; border-bottom: 1px solid #eef2f6; }
+  .toc-num { font-size: 12.5px; font-weight: 800; color: #5b8c8a; min-width: 26px; }
+  .toc-title { flex: 1; font-size: 13.5px; color: #2c3e44; }
+
+  /* ===== SECTION HEADER ===== */
+  .sec-head { margin-bottom: 16px; }
+  .sec-head h2 { font-size: 17px; font-weight: 800; color: #1e3432; border-left: 4px solid #5b8c8a; padding-left: 12px; line-height: 1.3; }
+
+  .footer-bar { position: absolute; left: 22mm; right: 22mm; bottom: 12mm; display: flex; justify-content: space-between; font-size: 10px; color: #a0aeb5; border-top: 1px solid #eef2f6; padding-top: 8px; }
+
+  h3.subhead { font-size: 13px; font-weight: 700; color: #1e3432; margin: 14px 0 6px; }
+  p.clause { position: relative; padding-left: 34px; color: #3d4a4f; font-size: 12px; line-height: 1.55; margin-bottom: 7px; }
+  p.clause .n { position: absolute; left: 0; top: 0; color: #5b8c8a; font-weight: 700; }
+  p.clause strong { color: #1e3432; }
+  p.clause a { color: #5b8c8a; }
+  ul.sub-list { list-style: none; margin: 2px 0 8px 38px; }
+  ul.sub-list li { font-size: 12px; color: #3d4a4f; padding: 3px 0 3px 14px; position: relative; line-height: 1.5; }
+  ul.sub-list li::before { content: '–'; position: absolute; left: 0; color: #8a9ba8; }
+
+  .callout { background: #fbf3e7; border-left: 4px solid #c2914a; border-radius: 0 10px 10px 0; padding: 10px 16px; font-size: 11.5px; color: #5c4526; line-height: 1.5; margin: 10px 0; }
+  .callout strong { color: #8a5d1f; }
+  .callout.good { background: #eef4f2; border-left-color: #5b8c8a; color: #2c4a48; }
+  .callout.good strong { color: #2c4a48; }
+
+  .placeholder { background: #fdf2f2; color: #a8524f; padding: 1px 6px; border-radius: 4px; font-weight: 700; font-size: 11.5px; }
+
+  @media print {
+    body { background: white; }
+    .page { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= COVER ================= -->
+<div class="page cover">
+  <div class="brand">SPANSENSE</div>
+  <h1>Terms &amp; Conditions</h1>
+  <p class="desc">These Terms &amp; Conditions govern access to and use of the spanSense bridge and structure inspection management platform, including its web application and the spanSense Field companion app. Please read them carefully before using the Service.</p>
+  <div class="meta">
+    <span><strong>Document</strong><br>Terms &amp; Conditions</span>
+    <span><strong>Last updated</strong><br>26 July 2026</span>
+    <span><strong>Governing law</strong><br>England &amp; Wales</span>
+  </div>
+</div>
+
+<!-- ================= INTRO / DEFINITIONS ================= -->
+<div class="page">
+  <div class="sec-head"><h2>1. Introduction and Acceptance</h2></div>
+  <p class="clause"><span class="n">1.1</span>These Terms &amp; Conditions ("<strong>Terms</strong>") are a legal agreement between <strong>spanSense Ltd</strong>, trading as <strong>spanSense</strong> ("<strong>spanSense</strong>", "<strong>we</strong>", "<strong>us</strong>", "<strong>our</strong>"), and the person or organisation that registers for or uses the Service ("<strong>you</strong>", "<strong>your</strong>", the "<strong>Customer</strong>").</p>
+  <p class="clause"><span class="n">1.2</span>By creating an account, accessing, or using the Service, you confirm that you accept these Terms and agree to comply with them. If you are entering into these Terms on behalf of an organisation, you confirm that you have authority to bind that organisation.</p>
+  <p class="clause"><span class="n">1.3</span>If you do not agree to these Terms, you must not access or use the Service.</p>
+  <p class="clause"><span class="n">1.4</span>Our Privacy Policy explains how we collect, use, and protect personal data in connection with the Service, and forms part of these Terms by reference.</p>
+
+  <div class="sec-head" style="margin-top:22px;"><h2>2. Definitions</h2></div>
+  <p class="clause"><span class="n">2.1</span><strong>"Service"</strong> means the spanSense web application (including the Database, Inspections, Planning, twinView, Dashboard and Reports areas) and the spanSense Field mobile-optimised companion app, together with any related support we provide.</p>
+  <p class="clause"><span class="n">2.2</span><strong>"Customer Data"</strong> means all data submitted to, or generated within, the Service by or on behalf of the Customer, including structure records, inspection records, defect entries, severity/extent scores, BCI calculations, photographs, notes, and maintenance history.</p>
+  <p class="clause"><span class="n">2.3</span><strong>"Authorised User"</strong> means an individual authorised by the Customer to access the Service under the Customer's account, including inspectors, engineers, and administrative staff.</p>
+  <p class="clause"><span class="n">2.4</span><strong>"Order Form"</strong> means any order, quotation, account plan, or other document agreed between the parties that sets out the specific commercial terms (such as fees and subscription duration) applicable to the Customer.</p>
+
+  <div class="footer-bar"><span>spanSense · Terms &amp; Conditions</span><span>Page 2</span></div>
+</div>
+
+<!-- ================= THE SERVICE / ACCOUNTS ================= -->
+<div class="page">
+  <div class="sec-head"><h2>3. The Service</h2></div>
+  <p class="clause"><span class="n">3.1</span>spanSense is a software platform that helps organisations record, manage, plan, and report on the condition of bridges and similar highway/civil structures, including general and principal inspection records, defect logging (severity 1–5 / extent A–E), Bridge Condition Index (BCI) calculations, a 3D digital twin viewer, inspection scheduling, and data export and reporting tools.</p>
+  <p class="clause"><span class="n">3.2</span>We may update, change, or improve the Service from time to time, including adding or removing features, provided that we will not materially reduce the core functionality you rely on without reasonable notice.</p>
+  <p class="clause"><span class="n">3.3</span>We do not guarantee that the Service will be uninterrupted, error-free, or available at all times, and we may suspend access for maintenance, security, or operational reasons as set out in clause 12.</p>
+
+  <div class="sec-head" style="margin-top:22px;"><h2>4. Accounts and Registration</h2></div>
+  <p class="clause"><span class="n">4.1</span>To use the Service you must register for an account and provide accurate, current, and complete information.</p>
+  <p class="clause"><span class="n">4.2</span>You are responsible for maintaining the confidentiality of your account credentials and for all activity that occurs under your account, whether or not authorised by you, except to the extent caused by our breach of these Terms.</p>
+  <p class="clause"><span class="n">4.3</span>You must notify us promptly at <strong>support@spansense.io</strong> if you become aware of any unauthorised use of your account or any other security breach.</p>
+  <p class="clause"><span class="n">4.4</span>You are responsible for ensuring that each Authorised User complies with these Terms, and you remain liable for their acts and omissions in connection with the Service.</p>
+
+  <div class="footer-bar"><span>spanSense · Terms &amp; Conditions</span><span>Page 3</span></div>
+</div>
+
+<!-- ================= ACCEPTABLE USE / CUSTOMER DATA ================= -->
+<div class="page">
+  <div class="sec-head"><h2>5. Your Responsibilities and Acceptable Use</h2></div>
+  <p class="clause"><span class="n">5.1</span>You must use the Service only for lawful purposes and in accordance with these Terms. You must not:</p>
+  <ul class="sub-list">
+    <li>attempt to gain unauthorised access to the Service, other accounts, or related systems or networks;</li>
+    <li>interfere with or disrupt the integrity or performance of the Service;</li>
+    <li>reverse engineer, decompile, or attempt to extract the source code of the Service, except as permitted by law;</li>
+    <li>use the Service to store or transmit unlawful, infringing, or harmful material;</li>
+    <li>resell, sublicense, or make the Service available to any third party without our prior written consent; or</li>
+    <li>use automated means to scrape or extract data from the Service other than through features we provide for that purpose (e.g. the Database export tools).</li>
+  </ul>
+  <p class="clause"><span class="n">5.2</span>You are responsible for ensuring that Customer Data submitted to the Service is accurate, lawfully obtained, and that you have all necessary rights and consents to submit it.</p>
+
+  <div class="sec-head" style="margin-top:22px;"><h2>6. Customer Data</h2></div>
+  <p class="clause"><span class="n">6.1</span>As between you and us, you retain all right, title, and interest in and to Customer Data.</p>
+  <p class="clause"><span class="n">6.2</span>You grant us a non-exclusive, worldwide licence to host, store, process, transmit, and display Customer Data solely to the extent necessary to provide the Service to you and as otherwise permitted by these Terms and our Privacy Policy.</p>
+  <p class="clause"><span class="n">6.3</span>You are solely responsible for maintaining independent backups of any Customer Data you regard as critical, in addition to relying on the Service, except where we have separately agreed to provide backup services.</p>
+  <p class="clause"><span class="n">6.4</span>On termination of your account, we will make Customer Data available for export for a reasonable period (as set out in our Privacy Policy or as otherwise agreed), after which it may be deleted in accordance with our data retention practices.</p>
+
+  <div class="footer-bar"><span>spanSense · Terms &amp; Conditions</span><span>Page 4</span></div>
+</div>
+
+<!-- ================= FEES / IP / CONFIDENTIALITY ================= -->
+<div class="page">
+  <div class="sec-head"><h2>7. Subscription, Fees and Payment</h2></div>
+  <p class="clause"><span class="n">7.1</span>Fees for the Service (if any) are as set out in the applicable Order Form or account plan agreed between you and us.</p>
+  <p class="clause"><span class="n">7.2</span>Unless otherwise stated in an Order Form, fees are exclusive of VAT and any other applicable taxes, which will be added where chargeable.</p>
+  <p class="clause"><span class="n">7.3</span>Where fees are payable, late payment may result in suspension of access to the Service in accordance with clause 16, following reasonable notice.</p>
+
+  <div class="sec-head" style="margin-top:22px;"><h2>8. Intellectual Property Rights</h2></div>
+  <p class="clause"><span class="n">8.1</span>We (or our licensors) own all intellectual property rights in and to the Service, including its software, design, structure-type icon sets, and underlying technology. Nothing in these Terms transfers any such rights to you, except the limited right to access and use the Service as set out here.</p>
+  <p class="clause"><span class="n">8.2</span>You may not copy, modify, or create derivative works of the Service, or use our name, logo, or branding without our prior written consent, except as reasonably necessary to identify the source of exported reports.</p>
+
+  <div class="sec-head" style="margin-top:22px;"><h2>9. Confidentiality</h2></div>
+  <p class="clause"><span class="n">9.1</span>Each party must keep confidential any non-public information disclosed by the other party in connection with these Terms, and use it only for the purposes of exercising its rights and performing its obligations under these Terms.</p>
+  <p class="clause"><span class="n">9.2</span>This clause does not apply to information that is or becomes public through no fault of the receiving party, was already known to the receiving party, or is required to be disclosed by law or a competent authority.</p>
+
+  <div class="footer-bar"><span>spanSense · Terms &amp; Conditions</span><span>Page 5</span></div>
+</div>
+
+<!-- ================= DATA PROTECTION / PROFESSIONAL DISCLAIMER ================= -->
+<div class="page">
+  <div class="sec-head"><h2>10. Data Protection</h2></div>
+  <p class="clause"><span class="n">10.1</span>Each party will comply with applicable data protection law in connection with these Terms. Our Privacy Policy sets out how we collect and process personal data as part of providing the Service.</p>
+  <p class="clause"><span class="n">10.2</span>Where Customer Data submitted to the Service includes personal data (for example, inspector names, or individuals incidentally captured in site photographs), you are responsible for ensuring you have a lawful basis to submit that data, and for informing relevant individuals as required by applicable law.</p>
+
+  <div class="sec-head" style="margin-top:22px;"><h2>11. Professional Responsibility and Disclaimer</h2></div>
+  <div class="callout">
+    <strong>Important:</strong> spanSense is a record-keeping, data management, and reporting tool for bridge and structure inspections. It does not perform, replace, or certify professional engineering judgement, structural assessment, or compliance determinations.
+  </div>
+  <p class="clause"><span class="n">11.1</span>All severity, extent, BCI, and condition scores entered into the Service reflect the judgement of the individual who entered them. We do not verify, and are not responsible for, the accuracy, adequacy, or completeness of any inspection data, engineering assessment, or remedial recommendation entered by you or your Authorised Users.</p>
+  <p class="clause"><span class="n">11.2</span>You remain solely responsible for ensuring that inspections are carried out by suitably qualified and competent persons, and that your use of the Service complies with any applicable industry standards, codes of practice, and statutory duties relevant to the management of your structures.</p>
+  <p class="clause"><span class="n">11.3</span>The Service is a tool to support, not substitute, the professional judgement of qualified inspecting engineers.</p>
+
+  <div class="footer-bar"><span>spanSense · Terms &amp; Conditions</span><span>Page 6</span></div>
+</div>
+
+<!-- ================= AVAILABILITY / WARRANTIES / LIABILITY ================= -->
+<div class="page">
+  <div class="sec-head"><h2>12. Availability, Support and Maintenance</h2></div>
+  <p class="clause"><span class="n">12.1</span>We will use reasonable endeavours to make the Service available, but may suspend it for scheduled or emergency maintenance, to address security issues, or where required by law, and will give advance notice where reasonably practicable.</p>
+  <p class="clause"><span class="n">12.2</span>The spanSense Field app is designed to continue functioning with limited or no connectivity, queuing data locally and syncing once connectivity resumes; we are not responsible for data loss caused by uninstalling the app, clearing device storage, or device failure before a sync completes.</p>
+
+  <div class="sec-head" style="margin-top:22px;"><h2>13. Warranties</h2></div>
+  <p class="clause"><span class="n">13.1</span>We warrant that we will provide the Service with reasonable skill and care.</p>
+  <p class="clause"><span class="n">13.2</span>Except as expressly stated in these Terms, the Service is provided "as is" and we exclude all other warranties, conditions, and representations, whether express or implied, to the fullest extent permitted by law.</p>
+
+  <div class="sec-head" style="margin-top:22px;"><h2>14. Limitation of Liability</h2></div>
+  <p class="clause"><span class="n">14.1</span>Nothing in these Terms limits or excludes either party's liability for death or personal injury caused by negligence, fraud or fraudulent misrepresentation, or any other liability that cannot lawfully be limited or excluded.</p>
+  <p class="clause"><span class="n">14.2</span>Subject to clause 14.1, our total aggregate liability arising out of or in connection with these Terms, whether in contract, tort (including negligence), or otherwise, will not exceed the total fees paid by you to us in the 12 months preceding the event giving rise to the claim.</p>
+  <p class="clause"><span class="n">14.3</span>Subject to clause 14.1, we will not be liable for any loss of profits, loss of business, loss of data, or any indirect or consequential loss, nor for any loss or damage arising from inspection data, engineering judgements, or remedial decisions made using the Service (see clause 11).</p>
+
+  <div class="footer-bar"><span>spanSense · Terms &amp; Conditions</span><span>Page 7</span></div>
+</div>
+
+<!-- ================= TERMINATION / GENERAL ================= -->
+<div class="page">
+  <div class="sec-head"><h2>15. Indemnity</h2></div>
+  <p class="clause"><span class="n">15.1</span>You will indemnify us against any claims, losses, or costs arising from your breach of these Terms, your unlawful use of the Service, or Customer Data infringing the rights of a third party.</p>
+
+  <div class="sec-head" style="margin-top:22px;"><h2>16. Term, Suspension and Termination</h2></div>
+  <p class="clause"><span class="n">16.1</span>These Terms take effect when you first access the Service and continue until terminated in accordance with this clause or an applicable Order Form.</p>
+  <p class="clause"><span class="n">16.2</span>We may suspend or terminate your access to the Service, with notice where reasonably practicable, if you materially breach these Terms and fail to remedy the breach within a reasonable period of being notified, or immediately if suspension is necessary to protect the security or integrity of the Service.</p>
+  <p class="clause"><span class="n">16.3</span>Either party may terminate for the other's insolvency or where required to comply with applicable law.</p>
+  <p class="clause"><span class="n">16.4</span>On termination, your right to access the Service ends, subject to clause 6.4 regarding export of Customer Data.</p>
+
+  <div class="sec-head" style="margin-top:22px;"><h2>17. Force Majeure</h2></div>
+  <p class="clause"><span class="n">17.1</span>Neither party will be liable for any failure or delay in performance caused by events beyond its reasonable control, including internet or hosting provider outages, natural disasters, or governmental action.</p>
+
+  <div class="sec-head" style="margin-top:22px;"><h2>18. Changes to These Terms</h2></div>
+  <p class="clause"><span class="n">18.1</span>We may update these Terms from time to time. Where changes are material, we will give reasonable notice (for example, by email or an in-app notice) before they take effect. Continued use of the Service after changes take effect constitutes acceptance of the updated Terms.</p>
+
+  <div class="footer-bar"><span>spanSense · Terms &amp; Conditions</span><span>Page 8</span></div>
+</div>
+
+<!-- ================= GENERAL / CONTACT ================= -->
+<div class="page">
+  <div class="sec-head"><h2>19. General</h2></div>
+  <p class="clause"><span class="n">19.1</span><strong>Entire agreement:</strong> These Terms, together with any Order Form and our Privacy Policy, constitute the entire agreement between the parties regarding the Service, superseding any prior agreements.</p>
+  <p class="clause"><span class="n">19.2</span><strong>Severability:</strong> If any provision of these Terms is found unenforceable, the remaining provisions will continue in full force and effect.</p>
+  <p class="clause"><span class="n">19.3</span><strong>Waiver:</strong> A failure to enforce any right under these Terms is not a waiver of that right.</p>
+  <p class="clause"><span class="n">19.4</span><strong>Assignment:</strong> You may not assign or transfer your rights under these Terms without our prior written consent. We may assign these Terms in connection with a merger, acquisition, or sale of assets.</p>
+  <p class="clause"><span class="n">19.5</span><strong>No third-party rights:</strong> These Terms do not confer any rights on any person other than the parties to them.</p>
+  <p class="clause"><span class="n">19.6</span><strong>Notices:</strong> Notices under these Terms should be sent to <strong>support@spansense.io</strong> or to the postal address at clause 20.2.</p>
+
+  <div class="sec-head" style="margin-top:22px;"><h2>20. Governing Law, Jurisdiction and Contact</h2></div>
+  <p class="clause"><span class="n">20.1</span>These Terms are governed by the laws of England and Wales, and the courts of England and Wales have exclusive jurisdiction over any dispute arising from them.</p>
+  <p class="clause"><span class="n">20.2</span>spanSense is operated by <strong>spanSense Ltd</strong> (company number <span class="placeholder">[COMPANY NUMBER]</span>), registered office at <span class="placeholder">[REGISTERED OFFICE ADDRESS]</span>.</p>
+  <p class="clause"><span class="n">20.3</span>For any questions about these Terms, contact us at <strong>support@spansense.io</strong>.</p>
+
+  <div class="footer-bar"><span>spanSense · Terms &amp; Conditions</span><span>Page 9</span></div>
+</div>
+
+</body>
+</html>

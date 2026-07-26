@@ -524,7 +524,14 @@
         .filter-chip.active { background: #eef4f2; border-color: #8ab4b0; color: #2c5a57; }
 
         .header-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-        .header-actions > button { flex-shrink: 0; white-space: nowrap; }
+        .gantt-icon-btn {
+            width: 34px; height: 34px; border-radius: 50%; border: 1px solid #e2e8f0;
+            background: white; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            color: #6a7c8e; font-size: 0.8rem; flex-shrink: 0; transition: all 0.2s;
+        }
+        .gantt-icon-btn:hover { background: #eef4f2; border-color: #8ab4b0; color: #5b8c8a; }
+        .night-mode .gantt-icon-btn { background: #1e2a2f; border-color: #3a4b53; color: #9ab0b8; }
+        .night-mode .gantt-icon-btn:hover { background: #2f4a48; border-color: #3a6b62; color: #8ab4b0; }
         .gantt-search-wrap { position: relative; flex: 0 1 190px; min-width: 130px; }
         .gantt-search-wrap i.fa-search {
             position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
@@ -1170,7 +1177,7 @@
                         <i class="fas fa-search"></i>
                         <input type="text" id="ganttSearchInput" placeholder="Search bridge..." oninput="onGanttSearchInput(this.value)">
                     </div>
-                    <button class="btn-secondary" id="exportGanttBtn" style="padding: 8px 16px; border-radius: 30px; border: 1px solid #e2e8f0; background: white; font-size: 0.7rem; font-weight: 600; cursor: pointer; font-family: inherit;"><i class="fas fa-download"></i> Export PDF</button>
+                    <button class="gantt-icon-btn" id="exportGanttBtn" title="Export PDF"><i class="fas fa-download"></i></button>
                 </div>
             </div>
             <div class="gantt-body" id="ganttBody"></div>
