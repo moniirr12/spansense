@@ -480,19 +480,22 @@
             align-items: center;
             padding: 14px 24px;
             border-bottom: 1px solid #eef2f6;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+            overflow-x: auto;
             gap: 12px;
         }
         .gantt-toolbar-left {
             display: flex;
             align-items: center;
             gap: 20px;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+            flex-shrink: 0;
         }
         .gantt-toolbar-left h2 {
             font-size: 0.9rem;
             font-weight: 700;
             color: #2c4a48;
+            white-space: nowrap;
         }
         .gantt-bridge-count {
             display: inline-block; margin-left: 6px; padding: 2px 9px; border-radius: 20px;
@@ -502,7 +505,8 @@
         .gantt-filters {
             display: flex;
             gap: 6px;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
+            flex-shrink: 0;
         }
         .filter-chip {
             padding: 5px 14px;
@@ -519,7 +523,8 @@
         .filter-chip:hover { border-color: #8ab4b0; color: #5b8c8a; }
         .filter-chip.active { background: #eef4f2; border-color: #8ab4b0; color: #2c5a57; }
 
-        .header-actions { display: flex; align-items: center; gap: 10px; }
+        .header-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+        .header-actions > button { flex-shrink: 0; white-space: nowrap; }
         .gantt-search-wrap { position: relative; flex: 0 1 190px; min-width: 130px; }
         .gantt-search-wrap i.fa-search {
             position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
