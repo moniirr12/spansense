@@ -27,6 +27,7 @@
     : 'https://spansense.onrender.com';
     var currentCategory = 'bridges';
     var currentFilter = 'all';
+    var searchQuery = '';
     var bridgesData = [];
     var inspectionsData = [];
     var reportsData = [];
@@ -225,6 +226,12 @@
                 if (yearRange.from != null && y < yearRange.from) return false;
                 if (yearRange.to != null && y > yearRange.to) return false;
                 return true;
+            });
+        }
+        if (searchQuery) {
+            filteredBridgesData = filteredBridgesData.filter(function(bridge) {
+                return (bridge.id && String(bridge.id).toLowerCase().indexOf(searchQuery) !== -1) ||
+                       (bridge.name && bridge.name.toLowerCase().indexOf(searchQuery) !== -1);
             });
         }
 
@@ -479,10 +486,16 @@
 
         // Filter data
         filteredInspectionsData = inspectionsData.filter(function(row) {
-            if (currentFilter === 'all') return true;
-            if (currentFilter === 'src-field') return row.source === 'field';
-            if (currentFilter === 'src-desktop') return (row.source || 'desktop') === 'desktop';
-            return row.inspection_type === currentFilter;
+            if (currentFilter === 'all') { /* fall through to search below */ }
+            else if (currentFilter === 'src-field') { if (row.source !== 'field') return false; }
+            else if (currentFilter === 'src-desktop') { if ((row.source || 'desktop') !== 'desktop') return false; }
+            else if (row.inspection_type !== currentFilter) return false;
+
+            if (!searchQuery) return true;
+            return (row.id && String(row.id).toLowerCase().indexOf(searchQuery) !== -1) ||
+                   (row.structure_id && String(row.structure_id).toLowerCase().indexOf(searchQuery) !== -1) ||
+                   (row.structure_name && row.structure_name.toLowerCase().indexOf(searchQuery) !== -1) ||
+                   (row.inspector_name && row.inspector_name.toLowerCase().indexOf(searchQuery) !== -1);
         });
 
         // Sort data
@@ -609,6 +622,12 @@
                 if (isNaN(d.getTime())) return false;
                 if (reportDateRange.from && d < new Date(reportDateRange.from)) return false;
                 if (reportDateRange.to && d > new Date(reportDateRange.to + 'T23:59:59')) return false;
+            }
+            if (searchQuery) {
+                var matches = (row.id && String(row.id).toLowerCase().indexOf(searchQuery) !== -1) ||
+                    (row.structure_id && String(row.structure_id).toLowerCase().indexOf(searchQuery) !== -1) ||
+                    (row.bridge && row.bridge.toLowerCase().indexOf(searchQuery) !== -1);
+                if (!matches) return false;
             }
             return true;
         });
@@ -1083,6 +1102,22 @@
         else if (currentCategory === 'reports') rebuildReportsTable();
     };
 
+    window.onDbSearchInput = function(value) {
+        searchQuery = (value || '').trim().toLowerCase();
+        currentPage = 1;
+        var clearBtn = document.getElementById('dbSearchClear');
+        if (clearBtn) clearBtn.style.display = searchQuery ? '' : 'none';
+        if (currentCategory === 'bridges') rebuildBridgesTable();
+        else if (currentCategory === 'inspections') rebuildInspectionsTable();
+        else if (currentCategory === 'reports') rebuildReportsTable();
+    };
+
+    window.clearDbSearch = function() {
+        var input = document.getElementById('dbSearchInput');
+        if (input) input.value = '';
+        window.onDbSearchInput('');
+    };
+
     window.selectFormat = function(btn) {
         document.querySelectorAll('.format-btn').forEach(function(b) { b.classList.remove('active'); });
         btn.classList.add('active');
@@ -1094,6 +1129,19 @@
     window.selectCategory = function(cat) {
         currentCategory = cat;
         currentFilter   = 'all';
+        searchQuery     = '';
+        var searchInput = document.getElementById('dbSearchInput');
+        if (searchInput) {
+            searchInput.value = '';
+            var searchPlaceholders = {
+                bridges: 'Search bridge ID or name...',
+                inspections: 'Search bridge, structure #, or inspector...',
+                reports: 'Search bridge or structure #...'
+            };
+            searchInput.placeholder = searchPlaceholders[cat] || searchPlaceholders.bridges;
+        }
+        var searchClear = document.getElementById('dbSearchClear');
+        if (searchClear) searchClear.style.display = 'none';
 
         document.querySelectorAll('.export-card').forEach(function(card) { card.classList.remove('active'); });
         var activeCard = document.querySelector('.export-card[data-category="' + cat + '"]');
