@@ -1081,9 +1081,9 @@
                 <div class="stat-sub" id="overdueSub">Loading...</div>
             </div>
             <div class="stat-card">
-                <div class="stat-header"><span class="stat-label">This Quarter</span><div class="stat-icon amber"><i class="fas fa-clock"></i></div></div>
-                <div class="stat-value" id="quarterCount">--</div>
-                <div class="stat-sub" id="quarterSub">Loading...</div>
+                <div class="stat-header"><span class="stat-label">This Financial Year</span><div class="stat-icon amber"><i class="fas fa-clock"></i></div></div>
+                <div class="stat-value" id="fyCount">--</div>
+                <div class="stat-sub" id="fySub">Loading...</div>
             </div>
         </div>
 
@@ -1323,8 +1323,12 @@
         function updateStats() {
             const today = new Date();
             const currentYear = today.getFullYear();
-            const currentQuarter = Math.floor(today.getMonth() / 3);
-            let plannedCurrentYear = 0, overdue = 0, thisQuarter = 0;
+            // UK financial year: 1 Apr - 31 Mar, e.g. "FY25/26" covers Apr 2025 -
+            // Mar 2026 regardless of which calendar year `today` falls in.
+            const fyStartYear = today.getMonth() >= 3 ? currentYear : currentYear - 1;
+            const fyStart = new Date(fyStartYear, 3, 1);
+            const fyEnd = new Date(fyStartYear + 1, 3, 1);
+            let plannedCurrentYear = 0, overdue = 0, plannedThisFY = 0;
             // Two different horizons on purpose: "is the next inspection overdue"
             // needs to actually reach that next occurrence (which can be years out
             // for a bridge inspected recently), while "planned this year" only
@@ -1340,10 +1344,8 @@
                 if (schedule[0].position === 'Overdue') overdue++;
 
                 for (const s of schedule) {
-                    if (s.dueDate.getFullYear() === currentYear) {
-                        plannedCurrentYear++;
-                        if (Math.floor(s.dueDate.getMonth() / 3) === currentQuarter) thisQuarter++;
-                    }
+                    if (s.dueDate.getFullYear() === currentYear) plannedCurrentYear++;
+                    if (s.dueDate >= fyStart && s.dueDate < fyEnd) plannedThisFY++;
                 }
             }
 
@@ -1352,8 +1354,9 @@
             document.getElementById('plannedSub').innerHTML = `${plannedCurrentYear} inspections scheduled`;
             document.getElementById('overdueCount').textContent = overdue;
             document.getElementById('overdueSub').innerHTML = overdue === 1 ? '1 bridge requires attention' : `${overdue} bridges require attention`;
-            document.getElementById('quarterCount').textContent = thisQuarter;
-            document.getElementById('quarterSub').innerHTML = `Due in Q${currentQuarter + 1} ${currentYear}`;
+            document.getElementById('fyCount').textContent = plannedThisFY;
+            const fyLabel = `${String(fyStartYear).slice(-2)}/${String(fyStartYear + 1).slice(-2)}`;
+            document.getElementById('fySub').innerHTML = `Due in FY ${fyLabel}`;
         }
 
         function generateUpcomingInspections() {

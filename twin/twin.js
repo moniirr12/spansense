@@ -1241,12 +1241,17 @@ function showDefectPopup(d, positionExact, clientX, clientY) {
     var typeLabel = twinDefectTypeLabel(d.defectType, d.defectNumber);
     var defectCode = d.defectType && d.defectNumber ? (d.defectType + '.' + d.defectNumber) : null;
 
-    var rows = [];
-    if (d.severity != null) rows.push(['Severity', String(d.severity)]);
-    if (d.extent) rows.push(['Extent', d.extent]);
-    rows.push(['Works required', d.worksRequired ? 'Yes' : 'No']);
-    if (d.worksRequired && d.priority) rows.push(['Priority', d.priority]);
-    if (d.worksRequired && d.cost != null && d.cost > 0) rows.push(['Est. cost', '£' + d.cost.toLocaleString()]);
+    // Severity/Extent/Works required get the bordered pill treatment (same
+    // idea as Field's steppers), severity additionally colour-coded green
+    // to red - same values as Field's #sevStepper / desktop's severity fill.
+    var pillRows = [];
+    if (d.severity != null) pillRows.push(['Severity', String(d.severity), 'sev-' + d.severity]);
+    if (d.extent) pillRows.push(['Extent', d.extent, '']);
+    pillRows.push(['Works required', d.worksRequired ? 'Yes' : 'No', '']);
+
+    var plainRows = [];
+    if (d.worksRequired && d.priority) plainRows.push(['Priority', d.priority]);
+    if (d.worksRequired && d.cost != null && d.cost > 0) plainRows.push(['Est. cost', '£' + d.cost.toLocaleString()]);
 
     var html = '<div class="defect-popup-head">' +
         '<div><b>' + escapeHtmlTwin(elementName) + '</b>' +
@@ -1255,7 +1260,11 @@ function showDefectPopup(d, positionExact, clientX, clientY) {
         '<button type="button" class="defect-popup-close" aria-label="Close">&times;</button>' +
         '</div>' +
         '<div class="defect-popup-body">' +
-        rows.map(function(r) { return '<div class="defect-popup-row"><span>' + r[0] + '</span><b>' + escapeHtmlTwin(r[1]) + '</b></div>'; }).join('') +
+        pillRows.map(function(r) {
+            return '<div class="defect-popup-row"><span>' + r[0] + '</span>' +
+                '<span class="defect-popup-pill' + (r[2] ? ' ' + r[2] : '') + '">' + escapeHtmlTwin(r[1]) + '</span></div>';
+        }).join('') +
+        plainRows.map(function(r) { return '<div class="defect-popup-row"><span>' + r[0] + '</span><b>' + escapeHtmlTwin(r[1]) + '</b></div>'; }).join('') +
         (d.comments ? '<div class="defect-popup-note"><i>' + escapeHtmlTwin(d.comments) + '</i></div>' : '') +
         (d.remedialWorks ? '<div class="defect-popup-remedial"><b>Remedial: </b>' + escapeHtmlTwin(d.remedialWorks) + '</div>' : '') +
         (!positionExact ? '<div class="defect-popup-approx"><i class="fa-solid fa-triangle-exclamation"></i> Approximate location - not yet placed on the model</div>' : '') +
