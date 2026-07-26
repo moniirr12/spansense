@@ -855,7 +855,8 @@
             btn.className = 'filter-chip' + (i === 0 ? ' active' : '');
             btn.onclick = function() { window.setFilter(this, f.id); };
             var iconHtml = svgIcons[f.id] ? svgIcons[f.id](13, f.color) : '<i class="fas ' + f.icon + '"' + (f.color ? ' style="color:' + f.color + '"' : '') + '></i>';
-            btn.innerHTML = iconHtml + ' ' + f.label;
+            btn.title = f.label;
+            btn.innerHTML = iconHtml + ' <span class="chip-label">' + f.label + '</span>';
             filtersBar.appendChild(btn);
         });
 
@@ -1223,7 +1224,8 @@
             btn.className = 'filter-chip' + (i === 0 ? ' active' : '');
             btn.onclick = function() { window.setFilter(this, f.id); };
             var iconHtml = svgIcons[f.id] ? svgIcons[f.id](13, f.color) : '<i class="fas ' + f.icon + '"' + (f.color ? ' style="color:' + f.color + '"' : '') + '></i>';
-            btn.innerHTML = iconHtml + ' ' + f.label;
+            btn.title = f.label;
+            btn.innerHTML = iconHtml + ' <span class="chip-label">' + f.label + '</span>';
             filtersBar.appendChild(btn);
         });
 

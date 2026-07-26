@@ -287,18 +287,31 @@ body {
 .filters-row {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 12px;
     margin-bottom: 20px;
+    container-type: inline-size;
+    container-name: filters-row;
 }
 .filters-bar {
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
-    flex: 1;
+    flex: 1 1 auto;
+    min-width: 0;
 }
 .db-search-wrap {
     position: relative;
-    flex: 0 0 220px;
+    flex: 1 1 160px;
+    min-width: 140px;
+    max-width: 340px;
+}
+/* Below this the chip labels + a comfortably-wide search box no longer fit
+   on one line - drop to icon-only chips (title attr covers the tooltip)
+   before letting anything wrap. */
+@container filters-row (max-width: 760px) {
+    .filter-chip .chip-label { display: none; }
+    .filter-chip { padding: 8px 11px; }
 }
 .db-search-wrap > i.fa-search {
     position: absolute;
@@ -859,9 +872,7 @@ body {
     .navbar { width: 90%; padding: 0 18px; }
 }
 @media (max-width: 768px) {
-    .filters-row { flex-direction: column; align-items: stretch; }
-    .filters-bar { flex-direction: column; }
-    .db-search-wrap { flex-basis: auto; }
+    .db-search-wrap { flex: 1 1 100%; max-width: none; }
     .data-table-wrap { overflow-x: auto; }
     .export-action-bar { flex-direction: column; gap: 16px; align-items: stretch; }
     .btn-export { width: 100%; justify-content: center; }
