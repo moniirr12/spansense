@@ -1447,7 +1447,28 @@ body {
     max-height: calc(100vh - 100px);
 }
 #modal .modal-header {
-    padding: 14px 24px;
+    padding: 14px 56px 14px 24px;
+    position: relative;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+}
+#modal .modal-header .close-btn {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+}
+#modal .modal-header-title-row h2 {
+    line-height: 1.3;
+}
+#modal .modal-header-controls-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+#modal .modal-header-controls-row:not(:has(> [style*="flex"], > [style*="inline-flex"])) {
+    display: none;
 }
 /* Only the Add Defect segment needs room for the guidance panel on the
    right — No Defects/Not Inspected have nothing beside them, so they stay

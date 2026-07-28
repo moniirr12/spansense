@@ -1359,6 +1359,11 @@ function toggleDefectPhotosPopup(d, btn) {
         });
 }
 
+// Single photo at a time, fit to the frame, stepped with prev/next arrows -
+// state lives here rather than on the DOM since the whole panel body is
+// rebuilt (innerHTML reset) each time photos load.
+var defectPhotoState = { list: [], index: 0 };
+
 function renderDefectPhotos(photos, failed) {
     var body;
     if (failed) {
@@ -1366,19 +1371,46 @@ function renderDefectPhotos(photos, failed) {
     } else if (!photos.length) {
         body = '<div class="defect-photos-empty">No photos for this defect.</div>';
     } else {
-        body = '<div class="defect-photos-grid">' + photos.map(function(p) {
-            return '<img src="' + escapeHtmlTwin(p.url) + '" alt="' +
-                escapeHtmlTwin(p.description || 'Defect photo') + '" title="' +
-                escapeHtmlTwin(p.description || '') + '">';
-        }).join('') + '</div>';
+        defectPhotoState.list = photos;
+        defectPhotoState.index = 0;
+        body = '<div class="defect-photo-frame">' +
+            (photos.length > 1 ? '<button type="button" class="defect-photo-nav prev" aria-label="Previous photo"><i class="fa-solid fa-chevron-left"></i></button>' : '') +
+            '<img id="defectPhotoImg" src="" alt="">' +
+            (photos.length > 1 ? '<button type="button" class="defect-photo-nav next" aria-label="Next photo"><i class="fa-solid fa-chevron-right"></i></button>' : '') +
+            '</div>' +
+            (photos.length > 1 ? '<div class="defect-photo-counter" id="defectPhotoCounter"></div>' : '');
     }
     var head = defectPhotosPopup.querySelector('.defect-photos-head');
     defectPhotosPopup.innerHTML = '';
     defectPhotosPopup.appendChild(head);
     defectPhotosPopup.insertAdjacentHTML('beforeend', body);
-    defectPhotosPopup.querySelectorAll('.defect-photos-grid img').forEach(function(img) {
-        img.addEventListener('click', function() { window.open(img.src, '_blank'); });
-    });
+
+    if (photos && photos.length) {
+        defectPhotosPopup.querySelector('#defectPhotoImg').addEventListener('click', function() {
+            window.open(defectPhotoState.list[defectPhotoState.index].url, '_blank');
+        });
+        var prevBtn = defectPhotosPopup.querySelector('.defect-photo-nav.prev');
+        var nextBtn = defectPhotosPopup.querySelector('.defect-photo-nav.next');
+        if (prevBtn) prevBtn.addEventListener('click', function() { stepDefectPhoto(-1); });
+        if (nextBtn) nextBtn.addEventListener('click', function() { stepDefectPhoto(1); });
+        showDefectPhotoAt(0);
+    }
+}
+
+function stepDefectPhoto(delta) {
+    var n = defectPhotoState.list.length;
+    defectPhotoState.index = (defectPhotoState.index + delta + n) % n;
+    showDefectPhotoAt(defectPhotoState.index);
+}
+
+function showDefectPhotoAt(i) {
+    var p = defectPhotoState.list[i];
+    var img = defectPhotosPopup.querySelector('#defectPhotoImg');
+    img.src = p.url;
+    img.alt = p.description || 'Defect photo';
+    img.title = p.description || '';
+    var counter = defectPhotosPopup.querySelector('#defectPhotoCounter');
+    if (counter) counter.textContent = (i + 1) + ' / ' + defectPhotoState.list.length;
 }
 
 function escapeHtmlTwin(s) {
