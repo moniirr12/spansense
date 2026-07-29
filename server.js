@@ -972,6 +972,22 @@ app.patch('/api/bridges/:id/info', requireAuth, async (req, res) => {
     }
 });
 
+// Narrow counterpart to the above for Author's Conclusions tab - unlike
+// inspection.html's Conclusions (which only lands in the DB via the big
+// /update-inspection rewrite of every span/defect row), Author edits an
+// already-recorded inspection it doesn't own the spans/defects arrays for,
+// so this touches only the one column.
+app.patch('/api/inspections/:id/conclusions', requireAuth, async (req, res) => {
+    try {
+        const { conclusions } = req.body;
+        await pool.query('UPDATE inspections SET conclusions = $1 WHERE id = $2', [conclusions || null, req.params.id]);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Update inspection conclusions error:', err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
 // Severity codes match the dropdown in inspection/inspectionA.js (1-5)
 const SEVERITY_LABELS = { 1: 'Minor', 2: 'Moderate', 3: 'Severe', 4: 'Critical', 5: 'Emergency' };
 const GI_CYCLE_YEARS = 2;
