@@ -207,8 +207,7 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
    relying on colour alone, which is the validator's own documented
    exception for that case. */
 .bci-trend{margin-top:16px;}
-.bci-trend-header{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:8px;}
-.bci-trend-label{font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-mute);}
+.bci-trend-header{display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:10px; margin-bottom:8px;}
 .bci-legend{display:flex; align-items:center; gap:16px;}
 .bci-legend-item{display:flex; align-items:baseline; gap:6px; font-size:.78rem; font-weight:600; color:var(--text-mute2); font-variant-numeric:tabular-nums;}
 .bci-legend-item i{width:9px; height:9px; border-radius:50%; display:inline-block; flex-shrink:0; position:relative; top:-1px;}
@@ -520,12 +519,12 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
    dead-centre in the viewport, full stop.
    Conclusions/Notes/Photos used to be tabs bolted onto this same modal,
    but that buried them a click deeper than they're worth - they're now
-   their own always-visible floating rail/tab further down this file
-   (.draft-floating-rail, .draft-notes-tab), the same "one click away"
-   convention inspection.html's left-floating-rail/notes-tab use. This
-   modal is Structure-info-only again; .sip-overlay/.struct-info-panel
-   stay shared/generic since the Conclusions and Photos panels below
-   reuse the exact same glass-card shell. */
+   their own always-visible right-side rail further down this file
+   (.draft-right-rail), the same "one click away" convention
+   inspection.html's left-floating-rail/notes-tab use. This modal is
+   Structure-info-only again; .sip-overlay/.struct-info-panel stay
+   shared/generic since the Conclusions and Photos panels below reuse the
+   exact same glass-card shell. */
 body.modal-open{overflow:hidden;}
 .sip-overlay{
   position:fixed; inset:0; z-index:1000;
@@ -616,19 +615,19 @@ body.modal-open{overflow:hidden;}
 .sip-photos-empty{font-size:.78rem; color:var(--text-mute); font-style:italic; padding:8px 0 14px;}
 .sip-photo-pending{font-size:.76rem; color:var(--text-mute2); margin-bottom:8px;}
 
-/* ===== DRAFT FLOATING RAIL (Conclusions, Photos) + NOTES TAB/PANEL =====
-   Same fixed-sticky-bar convention as inspection.html's
-   .left-floating-rail/.conclusions-bar/.twin-view-bar and
-   .notes-tab/.notes-panel - kept one click away instead of behind the
-   Info modal's tabs. Only shown while #screen-draft is the active wizard
-   step (toggled in author.js's goTo()), since Author's fixed navbar
-   already claims the page's top band the way inspection.html's doesn't. */
-.draft-floating-rail{
-  /* left:110px, not a centered percentage - clears the .wizard-steps
-     column (fixed at left:26px, width:44px, z-index:900) that already
-     occupies this vertical band; a percentage-based position drifted
-     into overlapping it (and losing the click, since it sits on top). */
-  position:fixed; left:110px; top:320px; z-index:90;
+/* ===== DRAFT RIGHT RAIL (Conclusions, Photos, Notes) =====
+   One shared fixed wrapper, not three independent position:fixed
+   elements - they stack with a plain flex gap so nothing has to guess a
+   safe offset (that's what caused the earlier left-gutter clash: two
+   JS-repositioned widgets there vs. a hardcoded one). The left gutter
+   stays BCI-cards + wizard-steps only, unchanged from before this rail
+   existed. right:40px clears the glass scrollbar (fixed at right:10px,
+   width:10px, i.e. occupying the last 20px of the viewport) with room to
+   spare - the previous right:23px on the notes tab alone left only ~3px.
+   Only shown while #screen-draft is the active wizard step (toggled in
+   author.js's goTo()). */
+.draft-right-rail{
+  position:fixed; right:40px; top:46%; transform:translateY(-50%); z-index:90;
   display:none; flex-direction:column; align-items:center; gap:8px;
 }
 .draft-rail-bar{
@@ -646,21 +645,14 @@ body.modal-open{overflow:hidden;}
 .rail-icon-photos{background:var(--bg-mint); color:var(--teal-dark);}
 .rail-icon-notes{background:var(--ai-bg); color:var(--ai);}
 .rail-label{font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-mute); white-space:nowrap;}
+.right-rail-divider{width:60px; height:1px; background:var(--border2);}
 
-.draft-notes-tab{
-  position:fixed; right:23px; top:46%; transform:translateY(-50%); z-index:90;
-  background:#fff; border:1px solid var(--border2); border-radius:18px;
-  box-shadow:0 4px 20px rgba(0,0,0,.08); padding:16px 16px; width:120px;
-  display:none; flex-direction:column; align-items:center; gap:7px;
-  transition:box-shadow .2s ease, opacity .15s ease; cursor:pointer;
-}
-.draft-notes-tab:hover{box-shadow:0 8px 30px rgba(0,0,0,.12); border-color:#8ab4b0;}
 .draft-notes-tab.hide{opacity:0; pointer-events:none;}
 .notes-badge{position:absolute; top:-6px; right:-6px; min-width:17px; height:17px; padding:0 4px; border-radius:9px; background:var(--ai); color:#fff; font-size:9.5px; font-weight:800; display:flex; align-items:center; justify-content:center;}
 .notes-badge[hidden]{display:none;}
 
 .draft-notes-panel{
-  position:fixed; right:24px; top:50%; transform:translateY(-50%) translateX(440px); z-index:1002;
+  position:fixed; right:40px; top:50%; transform:translateY(-50%) translateX(440px); z-index:1002;
   width:340px; max-height:78vh; background:#fff; border:1px solid var(--border2);
   border-radius:24px; box-shadow:0 20px 44px rgba(0,0,0,.16); overflow:hidden;
   display:flex; flex-direction:column; opacity:0;
@@ -673,8 +665,8 @@ body.modal-open{overflow:hidden;}
 .notes-panel-title{font-size:.85rem; font-weight:700; color:var(--text);}
 .notes-panel-sub{font-size:.68rem; color:var(--text-mute); margin-top:1px;}
 .draft-notes-panel .sip-notes-list{padding:14px 16px 6px; max-height:none;}
-@media (max-width: 860px){ .draft-floating-rail{left:24px; transform:none;} }
-@media (max-width: 768px){ .draft-floating-rail, .draft-notes-tab{display:none !important;} }
+@media (max-width: 860px){ .draft-right-rail{right:16px;} .draft-notes-panel{right:16px;} }
+@media (max-width: 768px){ .draft-right-rail{display:none !important;} }
 
 /* ===== STEP 3: AUTHOR VIEW ===== */
 .view-toolbar{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:18px;}
@@ -782,8 +774,6 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .new-insp-row{background:#1e3a38; border-color:#3a6b62;}
 .night-mode .loaded-chip{color:#7ec9ba;}
 .night-mode .no-history-note{background:#3a3020; border-color:#5a4a2a; color:#e0b060;}
-
-.night-mode .bci-trend-label{color:#7d939b;}
 .night-mode .bci-legend-item{color:#8aa4ac;}
 .night-mode .bci-legend-item b{color:#d4dfe3;}
 .night-mode .bci-legend-item.avg i{background:#8ab4b0;}
@@ -946,8 +936,7 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .rail-icon{background:#1e3a38; color:#8ab4b0;}
 .night-mode .rail-icon-notes{background:#2a2450; color:#a794f5;}
 .night-mode .rail-label{color:#7d939b;}
-.night-mode .draft-notes-tab{background:#212f33; border-color:#2f3e45;}
-.night-mode .draft-notes-tab:hover{border-color:#3a6b62;}
+.night-mode .right-rail-divider{background:#2f3e45;}
 .night-mode .draft-notes-panel{background:#212f33; border-color:#2f3e45;}
 .night-mode .notes-panel-hdr{background:#1a2428; border-color:#2f3e45;}
 .night-mode .notes-panel-ico{background:#2a2450; color:#a794f5;}
@@ -999,6 +988,8 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
     <div class="left">
         <div class="logo">spanSense</div>
         <div class="menu">
+            <a href="../map/map.html"><i class="fas fa-map"></i>Map</a>
+            <a href="../dashboard/dashboard.html"><i class="fas fa-chart-pie"></i>Dashboard</a>
             <a href="../author/author.html" class="active"><i class="fas fa-feather-pointed"></i>Author</a>
         </div>
     </div>
@@ -1177,12 +1168,14 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
                 <div class="struct-info-panel" id="structInfoPanel"></div>
             </div>
 
-            <!-- Floating rail (Conclusions, General Photos) + right Notes tab -
-                 same fixed sticky-bar convention inspection.html's left-floating-
-                 rail/notes-tab use, so these three stay one click away while
-                 drafting instead of nested behind the Info modal's tabs. Shown
-                 only while this screen is active (see goTo() in author.js). -->
-            <div class="draft-floating-rail" id="draftFloatingRail">
+            <!-- Right-side rail: Conclusions, General Photos, Notes - one
+                 shared fixed wrapper (not three independent position:fixed
+                 elements) so they stack with a plain flex gap instead of
+                 needing their own collision-prone offsets, clear of the
+                 glass scrollbar (right:10px, width:10px). The left gutter
+                 stays BCI-cards + wizard-steps only, unchanged. Shown only
+                 while this screen is active (see goTo() in author.js). -->
+            <div class="draft-right-rail" id="draftRightRail">
                 <div class="draft-rail-bar" id="conclusionsBar" title="Conclusions">
                     <div class="rail-pulse" id="conclusionsPulse"></div>
                     <div class="rail-icon"><i class="fas fa-clipboard-check"></i></div>
@@ -1192,10 +1185,11 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
                     <div class="rail-icon rail-icon-photos"><i class="fas fa-camera"></i></div>
                     <div class="rail-label">Photos</div>
                 </div>
-            </div>
-            <div class="draft-notes-tab" id="draftNotesTab" title="Notes">
-                <div class="rail-icon rail-icon-notes"><i class="fas fa-note-sticky"></i><span class="notes-badge" id="draftNotesBadge" hidden>0</span></div>
-                <div class="rail-label">Notes</div>
+                <div class="right-rail-divider"></div>
+                <div class="draft-rail-bar draft-notes-tab" id="draftNotesTab" title="Notes">
+                    <div class="rail-icon rail-icon-notes"><i class="fas fa-note-sticky"></i><span class="notes-badge" id="draftNotesBadge" hidden>0</span></div>
+                    <div class="rail-label">Notes</div>
+                </div>
             </div>
             <div class="draft-notes-panel" id="draftNotesPanel">
                 <div class="notes-panel-hdr">

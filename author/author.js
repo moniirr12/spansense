@@ -350,14 +350,11 @@ function goTo(step){
   document.querySelectorAll('.wizard-connector').forEach((el, i) => {
     el.classList.toggle('filled', i < idx);
   });
-  // The floating rail/notes tab are Draft-only - Author's fixed navbar
-  // already claims the page's top band the way inspection.html's doesn't,
-  // and Setup/Author View/Export have no use for editing raw notes/photos
-  // mid-review, so these stay out of the way (and their modals/drawer
-  // closed) everywhere else.
+  // The right rail (Conclusions/Photos/Notes) is Draft-only - Setup/Author
+  // View/Export have no use for editing raw notes/photos mid-review, so it
+  // stays out of the way (and its modals/drawer closed) everywhere else.
   const onDraft = step === 'draft';
-  document.getElementById('draftFloatingRail').style.display = onDraft ? 'flex' : 'none';
-  document.getElementById('draftNotesTab').style.display = onDraft ? 'flex' : 'none';
+  document.getElementById('draftRightRail').style.display = onDraft ? 'flex' : 'none';
   if(step === 'draft') {
     renderDraft();
     refreshConclusionsRailState();
@@ -547,15 +544,12 @@ function bciTrendHTML(trend, live){
   if (!scored.length) {
     if (!live) return '';
     return `<div class="bci-trend"${live ? ' id="draftBciOriginal"' : ''}>
-      <div class="bci-trend-header"><div class="bci-trend-label">This report's BCI</div>${legend}</div>
+      <div class="bci-trend-header">${legend}</div>
     </div>`;
   }
   const shown = scored.slice(-BCI_TREND_MAX_POINTS);
-  const label = scored.length > shown.length
-    ? `BCI trend — last ${shown.length} of ${scored.length} inspections`
-    : `BCI trend across ${scored.length} inspection${scored.length===1?'':'s'}`;
   return `<div class="bci-trend"${live ? ' id="draftBciOriginal"' : ''}>
-    <div class="bci-trend-header"><div class="bci-trend-label">${label}</div>${legend}</div>
+    <div class="bci-trend-header">${legend}</div>
     ${bciTrendChartHTML(shown)}
   </div>`;
 }
@@ -1459,7 +1453,7 @@ document.getElementById('backToSetupBtn').addEventListener('click', () => goTo('
 // spanSense records" and "Upload a previous inspection" paths, since both
 // set AUTHOR.structureId/structureDescription/etc before this can open.
 // Conclusions/Notes/Photos used to be tabs on this same popover; they're
-// now their own always-visible floating rail/tab further below, so this
+// now their own always-visible right-side rail further below, so this
 // stays a single-purpose panel opened on demand from its toolbar button
 // (not rendered as part of every renderDraft(), which would reset it
 // mid-typing if it happened to be open).
@@ -1600,13 +1594,14 @@ function sipBciTrendHTML(){
 }
 
 // ============================================================
-// DRAFT FLOATING RAIL — Conclusions + General Photos (left) and Notes
-// (right sliding drawer), the same "always one click away" convention
-// inspection.html's left-floating-rail/notes-tab use, instead of nesting
-// these behind the Structure Info modal's tabs. Each opens its own small
-// modal/drawer (reusing the .sip-overlay/.struct-info-panel glass-card
-// shell Structure Info already established) rather than sharing one
-// tab-switched surface. Shown/hidden per wizard step from goTo().
+// DRAFT RIGHT RAIL — Conclusions, General Photos and Notes, stacked in
+// one shared right-side rail (the same "always one click away"
+// convention inspection.html's left-floating-rail/notes-tab use),
+// instead of nesting these behind the Structure Info modal's tabs. Each
+// opens its own small modal/drawer (reusing the .sip-overlay/
+// .struct-info-panel glass-card shell Structure Info already established)
+// rather than sharing one tab-switched surface. The left gutter stays
+// BCI-cards + wizard-steps only. Shown/hidden per wizard step from goTo().
 // ============================================================
 
 // ---- Conclusions: a free-text field the base inspection never had a
