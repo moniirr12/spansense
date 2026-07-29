@@ -511,18 +511,21 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .defect-card.collapsed .dc-body{display:none;}
 .defect-card.collapsed .dc-collapse-btn i{transform:rotate(-90deg);}
 
-/* Report Details modal - a real centered modal, same convention as
-   spanSense's own #bridgeModal on the map page (fixed full-screen
-   backdrop, flex-centered glass card), rather than a dropdown anchored to
-   the toolbar button - a dropdown's position depends on scroll offset and
-   how far down the page the button sits, which made it unreliable at
-   smaller window heights. A modal is always dead-centre in the viewport,
-   full stop.
-   One tabbed surface (Structure / Conclusions / Notes / Photos) rather
-   than four separate toolbar buttons or floating bars - this replaces a
-   single popover that was already there, so the toolbar's button count
-   doesn't grow even though three more features (general photos, notes, an
-   editable conclusions field) now live inside it. */
+/* Structure/inspection info modal - a real centered modal, same
+   convention as spanSense's own #bridgeModal on the map page (fixed
+   full-screen backdrop, flex-centered glass card), rather than a
+   dropdown anchored to the toolbar button - a dropdown's position
+   depends on scroll offset and how far down the page the button sits,
+   which made it unreliable at smaller window heights. A modal is always
+   dead-centre in the viewport, full stop.
+   Conclusions/Notes/Photos used to be tabs bolted onto this same modal,
+   but that buried them a click deeper than they're worth - they're now
+   their own always-visible floating rail/tab further down this file
+   (.draft-floating-rail, .draft-notes-tab), the same "one click away"
+   convention inspection.html's left-floating-rail/notes-tab use. This
+   modal is Structure-info-only again; .sip-overlay/.struct-info-panel
+   stay shared/generic since the Conclusions and Photos panels below
+   reuse the exact same glass-card shell. */
 body.modal-open{overflow:hidden;}
 .sip-overlay{
   position:fixed; inset:0; z-index:1000;
@@ -531,24 +534,18 @@ body.modal-open{overflow:hidden;}
 }
 .sip-overlay.show{display:flex;}
 .struct-info-panel{
-  position:relative; width:480px; max-width:100%; max-height:86vh; overflow-y:auto;
+  position:relative; width:420px; max-width:100%; max-height:86vh; overflow-y:auto;
   background:rgba(255,255,255,.98); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
-  border:1px solid rgba(255,255,255,.4); border-radius:22px; padding-bottom:24px;
+  border:1px solid rgba(255,255,255,.4); border-radius:22px; padding:26px;
   box-shadow:0 24px 80px rgba(0,0,0,.16), 0 8px 24px rgba(0,0,0,.08);
   transform:scale(.96); opacity:0; transition:all .2s cubic-bezier(.34,1.56,.64,1);
 }
 .sip-overlay.show .struct-info-panel{transform:scale(1); opacity:1;}
 .sip-close{position:absolute; top:16px; right:16px; width:34px; height:34px; border-radius:50%; border:none; background:var(--bg-soft); color:var(--text-mute2); font-size:1.3rem; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:.15s; z-index:2;}
 .sip-close:hover{background:var(--red-bg); color:var(--red);}
-.sip-head{padding:24px 26px 0;}
+.sip-panel-title{font-size:1.05rem; font-weight:800; color:var(--green-dark); margin-bottom:2px;}
 .sip-name{font-size:1.05rem; font-weight:800; color:var(--green-dark); margin-bottom:2px;}
 .sip-meta{font-size:.74rem; color:var(--text-mute2); margin-bottom:18px;}
-.sip-tabs{display:flex; gap:2px; padding:0 18px; border-bottom:1px solid var(--border2); position:sticky; top:0; background:inherit; z-index:1;}
-.sip-tab{flex:1; display:flex; align-items:center; justify-content:center; gap:6px; background:none; border:none; padding:11px 4px; font-size:.7rem; font-weight:700; color:var(--text-mute); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; transition:.15s; white-space:nowrap;}
-.sip-tab i{font-size:.8rem;}
-.sip-tab:hover{color:var(--teal-dark);}
-.sip-tab.active{color:var(--teal-dark); border-bottom-color:var(--teal);}
-.sip-tab-body{padding:20px 26px 0;}
 .sip-divider{border-top:1px solid var(--border2); margin:14px 0;}
 .sip-edit-grp{display:flex; flex-direction:column; gap:10px;}
 .sip-edit-field{display:flex; flex-direction:column; gap:4px;}
@@ -578,7 +575,7 @@ body.modal-open{overflow:hidden;}
 .sip-bci-chip .sc-vals{font-weight:700; color:var(--text); font-variant-numeric:tabular-nums;}
 .sip-bci-chip .sc-vals .crit{color:var(--red); margin-left:6px;}
 
-/* Conclusions tab */
+/* Conclusions panel */
 .sip-conclusions-textarea{width:100%; min-height:150px; border:1px solid var(--border); border-radius:12px; padding:11px 13px; font-family:inherit; font-size:.82rem; line-height:1.55; color:var(--text); background:#fff; resize:vertical; margin-bottom:12px;}
 .sip-conclusions-textarea:focus{border-color:var(--teal); outline:none;}
 .sip-conclusions-actions{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:4px;}
@@ -589,7 +586,7 @@ body.modal-open{overflow:hidden;}
 .sip-save-btn:hover{background:var(--teal-dark);}
 .sip-save-btn:disabled{opacity:.6; cursor:default;}
 
-/* Notes tab */
+/* Notes panel (sliding drawer content) */
 .sip-notes-list{display:flex; flex-direction:column; gap:8px; max-height:260px; overflow-y:auto; margin-bottom:14px;}
 .sip-notes-empty{font-size:.78rem; color:var(--text-mute); font-style:italic; padding:8px 0;}
 .sip-note-card{background:var(--bg-soft); border:1px solid var(--border2); border-radius:12px; padding:10px 12px;}
@@ -604,7 +601,7 @@ body.modal-open{overflow:hidden;}
 .sip-notes-add textarea:focus{border-color:var(--teal); outline:none;}
 .sip-notes-add-row{display:flex; justify-content:flex-end;}
 
-/* Photos tab */
+/* Photos panel */
 .sip-photos-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:6px;}
 .sip-photo-item{display:flex; flex-direction:column; gap:6px;}
 .sip-photo-tile{position:relative; border-radius:12px; overflow:hidden; background:var(--bg-soft); border:1px solid var(--border2); aspect-ratio:4/3;}
@@ -618,6 +615,66 @@ body.modal-open{overflow:hidden;}
 .sip-photo-add-tile i{font-size:1.3rem;}
 .sip-photos-empty{font-size:.78rem; color:var(--text-mute); font-style:italic; padding:8px 0 14px;}
 .sip-photo-pending{font-size:.76rem; color:var(--text-mute2); margin-bottom:8px;}
+
+/* ===== DRAFT FLOATING RAIL (Conclusions, Photos) + NOTES TAB/PANEL =====
+   Same fixed-sticky-bar convention as inspection.html's
+   .left-floating-rail/.conclusions-bar/.twin-view-bar and
+   .notes-tab/.notes-panel - kept one click away instead of behind the
+   Info modal's tabs. Only shown while #screen-draft is the active wizard
+   step (toggled in author.js's goTo()), since Author's fixed navbar
+   already claims the page's top band the way inspection.html's doesn't. */
+.draft-floating-rail{
+  /* left:110px, not a centered percentage - clears the .wizard-steps
+     column (fixed at left:26px, width:44px, z-index:900) that already
+     occupies this vertical band; a percentage-based position drifted
+     into overlapping it (and losing the click, since it sits on top). */
+  position:fixed; left:110px; top:320px; z-index:90;
+  display:none; flex-direction:column; align-items:center; gap:8px;
+}
+.draft-rail-bar{
+  background:#fff; border:1px solid var(--border2); border-radius:18px;
+  box-shadow:0 4px 20px rgba(0,0,0,.08); padding:10px 14px; width:120px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px;
+  transition:.2s; cursor:pointer;
+}
+.draft-rail-bar:hover{box-shadow:0 8px 30px rgba(0,0,0,.12); border-color:#8ab4b0;}
+.draft-rail-bar .rail-pulse{width:11px; height:11px; background:var(--amber); border-radius:50%; display:flex; align-items:center; justify-content:center;}
+.draft-rail-bar.done .rail-pulse{background:var(--ok);}
+.draft-rail-bar .rail-pulse::after{font-family:"Font Awesome 6 Free"; font-weight:900; content:""; font-size:6px; color:#fff; opacity:0;}
+.draft-rail-bar.done .rail-pulse::after{content:"\f00c"; opacity:1;}
+.rail-icon{width:34px; height:34px; border-radius:10px; background:var(--bg-mint); color:var(--teal-dark); display:flex; align-items:center; justify-content:center; font-size:1.05rem; position:relative;}
+.rail-icon-photos{background:var(--bg-mint); color:var(--teal-dark);}
+.rail-icon-notes{background:var(--ai-bg); color:var(--ai);}
+.rail-label{font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-mute); white-space:nowrap;}
+
+.draft-notes-tab{
+  position:fixed; right:23px; top:46%; transform:translateY(-50%); z-index:90;
+  background:#fff; border:1px solid var(--border2); border-radius:18px;
+  box-shadow:0 4px 20px rgba(0,0,0,.08); padding:16px 16px; width:120px;
+  display:none; flex-direction:column; align-items:center; gap:7px;
+  transition:box-shadow .2s ease, opacity .15s ease; cursor:pointer;
+}
+.draft-notes-tab:hover{box-shadow:0 8px 30px rgba(0,0,0,.12); border-color:#8ab4b0;}
+.draft-notes-tab.hide{opacity:0; pointer-events:none;}
+.notes-badge{position:absolute; top:-6px; right:-6px; min-width:17px; height:17px; padding:0 4px; border-radius:9px; background:var(--ai); color:#fff; font-size:9.5px; font-weight:800; display:flex; align-items:center; justify-content:center;}
+.notes-badge[hidden]{display:none;}
+
+.draft-notes-panel{
+  position:fixed; right:24px; top:50%; transform:translateY(-50%) translateX(440px); z-index:1002;
+  width:340px; max-height:78vh; background:#fff; border:1px solid var(--border2);
+  border-radius:24px; box-shadow:0 20px 44px rgba(0,0,0,.16); overflow:hidden;
+  display:flex; flex-direction:column; opacity:0;
+  transition:transform .24s cubic-bezier(.2,.8,.2,1), opacity .2s ease;
+}
+.draft-notes-panel.open{transform:translateY(-50%) translateX(0); opacity:1;}
+.notes-panel-hdr{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:16px 18px 14px; border-bottom:1px solid var(--border2); background:var(--bg-soft); flex-shrink:0;}
+.notes-panel-hdr-left{display:flex; align-items:center; gap:10px; overflow:hidden;}
+.notes-panel-ico{width:32px; height:32px; border-radius:10px; background:var(--ai-bg); color:var(--ai); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0;}
+.notes-panel-title{font-size:.85rem; font-weight:700; color:var(--text);}
+.notes-panel-sub{font-size:.68rem; color:var(--text-mute); margin-top:1px;}
+.draft-notes-panel .sip-notes-list{padding:14px 16px 6px; max-height:none;}
+@media (max-width: 860px){ .draft-floating-rail{left:24px; transform:none;} }
+@media (max-width: 768px){ .draft-floating-rail, .draft-notes-tab{display:none !important;} }
 
 /* ===== STEP 3: AUTHOR VIEW ===== */
 .view-toolbar{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:18px;}
@@ -842,10 +899,7 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .sip-close:hover{background:#3a2323; color:#e57373;}
 .night-mode .sip-name{color:#8ab4b0;}
 .night-mode .sip-meta{color:#8aa4ac;}
-.night-mode .sip-tabs{border-color:#2f3e45;}
-.night-mode .sip-tab{color:#7d939b;}
-.night-mode .sip-tab:hover{color:#8ab4b0;}
-.night-mode .sip-tab.active{color:#8ab4b0; border-bottom-color:#3a6b62;}
+.night-mode .sip-panel-title{color:#8ab4b0;}
 .night-mode .sip-divider{border-color:#2f3e45;}
 .night-mode .sip-edit-field span{color:#7d939b;}
 .night-mode .sip-edit-field input, .night-mode .sip-edit-field select{background:#1a2428; border-color:#3a4b53; color:#d4dfe3;}
@@ -887,6 +941,18 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .sip-photo-add-tile:hover{border-color:#6e9c98; color:#8ab4b0;}
 .night-mode .sip-photos-empty{color:#7d939b;}
 .night-mode .sip-photo-pending{color:#8aa4ac;}
+.night-mode .draft-rail-bar{background:#212f33; border-color:#2f3e45;}
+.night-mode .draft-rail-bar:hover{border-color:#3a6b62;}
+.night-mode .rail-icon{background:#1e3a38; color:#8ab4b0;}
+.night-mode .rail-icon-notes{background:#2a2450; color:#a794f5;}
+.night-mode .rail-label{color:#7d939b;}
+.night-mode .draft-notes-tab{background:#212f33; border-color:#2f3e45;}
+.night-mode .draft-notes-tab:hover{border-color:#3a6b62;}
+.night-mode .draft-notes-panel{background:#212f33; border-color:#2f3e45;}
+.night-mode .notes-panel-hdr{background:#1a2428; border-color:#2f3e45;}
+.night-mode .notes-panel-ico{background:#2a2450; color:#a794f5;}
+.night-mode .notes-panel-title{color:#d4dfe3;}
+.night-mode .notes-panel-sub{color:#8aa4ac;}
 .night-mode .dc-why{background:#2a2450; border-color:#3c3266; color:#a794f5;}
 .night-mode .btn-bulk{background:#3a6b62;}
 .night-mode .btn-bulk:hover{background:#4a8579;}
@@ -1099,7 +1165,7 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
             <div class="draft-toolbar">
                 <div class="filter-pills" id="draftFilterPills"></div>
                 <div class="draft-toolbar-actions">
-                    <button class="btn-mini" id="structInfoToggle" title="Structure info, conclusions, notes & photos"><i class="fas fa-circle-info"></i> Report Details</button>
+                    <button class="btn-mini" id="structInfoToggle" title="Structure & inspection info"><i class="fas fa-circle-info"></i> Info</button>
                     <button class="btn-mini" id="toggleCollapseAllBtn" title="Collapse all"><i class="fas fa-compress"></i> Collapse</button>
                     <button class="btn-bulk" id="markUnchangedBtn" title="Mark all unchanged as reviewed"><i class="fas fa-check-double"></i> Mark unchanged</button>
                 </div>
@@ -1110,6 +1176,54 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
             <div class="sip-overlay" id="sipOverlay">
                 <div class="struct-info-panel" id="structInfoPanel"></div>
             </div>
+
+            <!-- Floating rail (Conclusions, General Photos) + right Notes tab -
+                 same fixed sticky-bar convention inspection.html's left-floating-
+                 rail/notes-tab use, so these three stay one click away while
+                 drafting instead of nested behind the Info modal's tabs. Shown
+                 only while this screen is active (see goTo() in author.js). -->
+            <div class="draft-floating-rail" id="draftFloatingRail">
+                <div class="draft-rail-bar" id="conclusionsBar" title="Conclusions">
+                    <div class="rail-pulse" id="conclusionsPulse"></div>
+                    <div class="rail-icon"><i class="fas fa-clipboard-check"></i></div>
+                    <div class="rail-label">Conclusions</div>
+                </div>
+                <div class="draft-rail-bar" id="draftPhotosBar" title="General Photos">
+                    <div class="rail-icon rail-icon-photos"><i class="fas fa-camera"></i></div>
+                    <div class="rail-label">Photos</div>
+                </div>
+            </div>
+            <div class="draft-notes-tab" id="draftNotesTab" title="Notes">
+                <div class="rail-icon rail-icon-notes"><i class="fas fa-note-sticky"></i><span class="notes-badge" id="draftNotesBadge" hidden>0</span></div>
+                <div class="rail-label">Notes</div>
+            </div>
+            <div class="draft-notes-panel" id="draftNotesPanel">
+                <div class="notes-panel-hdr">
+                    <div class="notes-panel-hdr-left">
+                        <div class="notes-panel-ico"><i class="fas fa-note-sticky"></i></div>
+                        <div>
+                            <div class="notes-panel-title">Notes</div>
+                            <div class="notes-panel-sub" id="draftNotesSub">No notes yet</div>
+                        </div>
+                    </div>
+                    <button class="sip-close" id="draftNotesClose" title="Close">&times;</button>
+                </div>
+                <div class="sip-notes-list" id="draftNotesList" style="flex:1; overflow-y:auto; margin:0; padding:14px 16px 6px; max-height:none;"></div>
+                <div class="sip-notes-add" style="padding:0 16px 16px;">
+                    <textarea id="draftNotesInput" placeholder="Add a note…"></textarea>
+                    <div class="sip-notes-add-row">
+                        <button class="sip-save-btn" id="draftNotesAddBtn" disabled>Add note</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sip-overlay" id="conclusionsOverlay">
+                <div class="struct-info-panel" id="conclusionsPanel" style="width:520px;"></div>
+            </div>
+            <div class="sip-overlay" id="photosOverlay">
+                <div class="struct-info-panel" id="photosPanel" style="width:520px;"></div>
+            </div>
+
             <div class="bottom-nav">
                 <button class="btn-ghost" id="backToSetupBtn"><i class="fas fa-arrow-left"></i> Back</button>
                 <span class="progress-text" id="draftProgressText" style="font-size:.8rem; color:var(--text-mute2);"></span>
