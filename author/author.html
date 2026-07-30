@@ -163,11 +163,6 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 @keyframes fadeIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
 
 .card{background:#fff; border:1px solid var(--border2); border-radius:24px; box-shadow:0 10px 28px rgba(44,90,87,.06); padding:26px 28px; position:relative;}
-/* No white card background behind the element list - same convention as
-   inspection.html's .span-content{background:transparent}, so the
-   pill-shaped clear-rows and defect-cards read as individual cards
-   floating on the page's own background instead of one flat panel. */
-.draft-groups-wrap{position:relative;}
 .card::before{content:''; position:absolute; top:0; left:28px; right:28px; height:3px; border-radius:0 0 3px 3px; background:linear-gradient(90deg,var(--teal),var(--ai)); opacity:.55;}
 .card + .card{margin-top:20px;}
 .card-title{font-size:1.08rem; font-weight:700; color:var(--green-dark); margin:0 0 4px; display:flex; align-items:center; gap:8px;}
@@ -296,7 +291,8 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .tsw-corporate{background:#eef1f6;}
 .tsw-corporate .ts-bar{background:#1f3a5f; height:22px; margin:-10px -10px 8px;}
 
-/* ===== STEP 2: DRAFT REPORT - defect review cards ===== */
+/* ===== STEP 2: REPORT VIEW - status/comparison chips, shared by Data
+   pane and Report Visual pane ===== */
 .status-pill{font-size:.64rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; padding:3px 9px; border-radius:20px; display:inline-block; margin-bottom:6px; margin-right:6px;}
 .status-pill.defect{background:var(--amber-bg); color:var(--amber);}
 .status-pill.good{background:var(--ok-bg); color:var(--ok);}
@@ -324,205 +320,6 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .draft-header .bci-trend{margin-top:0;}
 .draft-toolbar{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; padding-top:16px; border-top:1px solid var(--border2); margin-bottom:20px;}
 .draft-toolbar-actions{display:flex; gap:8px; flex-wrap:wrap; flex-shrink:0;}
-.filter-pills{display:flex; gap:6px; flex-wrap:wrap;}
-.f-pill{font-size:.72rem; font-weight:600; color:var(--text-mute2); background:#fff; border:1px solid var(--border); padding:6px 12px; border-radius:30px; cursor:pointer; transition:.15s; white-space:nowrap;}
-.f-pill:hover{border-color:var(--teal);}
-.f-pill.on{background:var(--bg-mint); border-color:var(--teal); color:var(--teal-dark);}
-.btn-bulk{font-size:.76rem; font-weight:700; color:#fff; background:var(--teal); border:none; padding:7px 14px; border-radius:30px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:.15s; white-space:nowrap;}
-.btn-bulk:hover{background:var(--teal-dark);}
-.btn-bulk:disabled{opacity:.45; cursor:not-allowed;}
-
-.cat-group{margin-bottom:20px;}
-.cat-title{font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--teal-dark); margin:0 0 10px; padding-bottom:6px; border-bottom:1px solid var(--border2);}
-
-/* Compact rows for elements with nothing to draft (good/na/not inspected)
-   - only elements with an actual defect get a full card below. Exact same
-   technique as inspection.html's #inspectionElementsTable: a <table> with
-   border-collapse:separate + border-spacing for the gaps, transparent
-   background, and border-radius only on the first/last <td> - so each
-   <tr> reads as an individual pill-shaped card floating on the page's own
-   background rather than one long bordered box holding every row. */
-.clear-table{width:100%; border-collapse:separate; border-spacing:0 6px; background:transparent; margin-bottom:6px;}
-.clear-row td{background:#fff; border-top:1px solid var(--border2); border-bottom:1px solid var(--border2); padding:7px 16px; font-size:.82rem; color:var(--text); vertical-align:middle; transition:border-color .15s ease, background-color .15s ease;}
-/* A radius bigger than the row is ever tall gets clamped to exactly half
-   the row's height (CSS spec behaviour), which guarantees a true
-   semicircle on each end regardless of the actual computed row height -
-   more robust than picking a fixed px value that only happens to match
-   one particular height. */
-.clear-row td:first-child{border-left:1px solid var(--border2); border-top-left-radius:999px; border-bottom-left-radius:999px; width:1%; white-space:nowrap;}
-.clear-row td:last-child{border-right:1px solid var(--border2); border-top-right-radius:999px; border-bottom-right-radius:999px; width:1%; white-space:nowrap;}
-.clear-row:hover td{border-color:#c5dbd8; background:rgba(91,140,138,.04);}
-.cr-actions-inner{display:flex; align-items:center; gap:10px; justify-content:flex-end;}
-
-.defect-card{border:1px solid var(--border2); border-left:2px solid var(--amber); border-radius:16px; padding:16px 20px; margin-bottom:10px; background:#fff; transition:.2s;}
-.defect-card.cmp-new, .defect-card.cmp-worsened{border-left-color:var(--red);}
-.defect-card.cmp-improved, .defect-card.cmp-resolved{border-left-color:var(--ok);}
-.defect-card.reviewed{opacity:.6;}
-.dc-top{display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:4px;}
-.dc-elem{font-size:.95rem; font-weight:700; color:var(--text);}
-/* Neutral circular item-number badge - same shape/size (26px) and plain
-   grey tone as inspection.html's own #inspectionElementsTable td.itemno,
-   rather than a small colour-branded rounded-rect. */
-.cr-num{display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; width:26px; height:26px; border-radius:50%; background:var(--border2); color:var(--text-mute); font-size:.72rem; font-weight:700; font-variant-numeric:tabular-nums; margin-right:8px; vertical-align:middle;}
-.dc-code{font-size:.76rem; color:var(--text-mute2); margin-top:1px;}
-.dc-actions{display:flex; align-items:center; gap:8px; flex-shrink:0;}
-
-/* Add another/Remove + Mark reviewed live at the bottom of the card, after
-   the narrative, since they're the "I'm done with this defect" actions
-   rather than something to reach for before you've looked at it. */
-.dc-footer-actions{display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:10px; margin-top:16px; padding-top:14px; border-top:1px solid var(--border2);}
-
-/* Editable defect type/number - searchable dropdowns matching twinview's
-   bridge selector (.selector-dropdown/.dropdown-menu/.dd-search/.dd-list).
-   Sits inside .dc-history, to the right of the history text, next to the
-   photo column rather than stacked in the card header. */
-.dc-class-row{display:flex; align-items:center; gap:6px; flex-shrink:0; max-width:56%;}
-.dc-class-row .class-dd-trigger{max-width:150px;}
-.class-dd{position:relative;}
-.class-dd-trigger{display:flex; align-items:center; gap:7px; border:1px solid var(--border); background:var(--bg-soft); border-radius:9px; padding:5px 9px; font-size:.76rem; font-weight:600; color:var(--text); font-family:inherit; cursor:pointer; max-width:210px;}
-.class-dd-trigger:hover{border-color:var(--teal);}
-.class-dd.open .class-dd-trigger{border-color:var(--teal); background:#fff;}
-.class-dd-trigger .cdd-val{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-.class-dd-trigger i{font-size:.62rem; color:var(--text-mute); flex-shrink:0; transition:transform .15s;}
-.class-dd.open .class-dd-trigger i{transform:rotate(180deg);}
-.class-dd-menu{position:absolute; top:calc(100% + 4px); left:0; width:260px; background:#fff; border-radius:14px; border:1px solid var(--border2); box-shadow:0 12px 32px rgba(44,90,87,.14); z-index:60; opacity:0; visibility:hidden; transform:translateY(-6px) scale(.98); transition:all .18s cubic-bezier(.34,1.56,.64,1); overflow:hidden;}
-/* Added when there isn't enough room to the right of the trigger (e.g. a
-   dropdown near the card's right edge) - opens flush with the trigger's
-   own right edge instead of always anchoring to its left edge. */
-.class-dd.align-right .class-dd-menu{left:auto; right:0;}
-.class-dd.open .class-dd-menu{opacity:1; visibility:visible; transform:translateY(0) scale(1);}
-.class-dd-search{padding:8px 10px; border-bottom:1px solid var(--border2); position:relative;}
-.class-dd-search input{width:100%; padding:7px 10px 7px 28px; border-radius:8px; border:1px solid var(--border); background:var(--bg-soft); font-family:inherit; font-size:.78rem; color:var(--text); outline:none;}
-.class-dd-search input:focus{border-color:var(--teal); background:#fff;}
-.class-dd-search i{position:absolute; left:19px; top:50%; transform:translateY(-50%); color:var(--text-mute); font-size:.68rem; pointer-events:none;}
-.class-dd-list{max-height:220px; overflow-y:auto; padding:5px;}
-.class-dd-item{display:flex; align-items:center; gap:9px; padding:7px 9px; border-radius:8px; cursor:pointer; font-size:.78rem;}
-.class-dd-item:hover{background:var(--bg-soft);}
-.class-dd-item.selected{background:var(--bg-mint);}
-.class-dd-item .cdd-num{width:22px; flex-shrink:0; font-weight:800; color:var(--teal-dark); font-variant-numeric:tabular-nums;}
-.class-dd-item .cdd-name{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text);}
-.class-dd-item .cdd-check{color:var(--teal); opacity:0; font-size:.72rem;}
-.class-dd-item.selected .cdd-check{opacity:1;}
-.class-dd-sep{color:var(--text-mute); font-weight:700; font-size:.76rem;}
-.dc-review-check{display:flex; align-items:center; gap:6px; font-size:.72rem; font-weight:700; color:var(--text-mute2); cursor:pointer; user-select:none; background:var(--bg-soft); border:1px solid var(--border); padding:6px 12px; border-radius:30px;}
-.dc-review-check input{accent-color:var(--teal); cursor:pointer;}
-.dc-review-check.checked{background:var(--ok-bg); border-color:var(--ok-border); color:var(--ok);}
-
-.dc-history{display:flex; align-items:center; justify-content:space-between; gap:14px; margin:0 0 14px; padding:0 0 12px; border-bottom:1px solid var(--border2); font-size:.76rem; color:var(--text-mute2);}
-.dc-history-left{display:flex; align-items:center; gap:8px; flex:1; min-width:0;}
-.dc-history-left span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;}
-.dc-history .trend-badge{font-size:.68rem; font-weight:700; padding:3px 10px; border-radius:20px; flex-shrink:0;}
-.dc-history .trend-badge.worsened, .dc-history .trend-badge.new{background:var(--red-bg); color:var(--red);}
-.dc-history .trend-badge.improved, .dc-history .trend-badge.resolved{background:var(--ok-bg); color:var(--ok);}
-.dc-history .trend-badge.unchanged{background:#eef0f2; color:var(--text-mute2);}
-.dc-history .trend-badge.changed, .dc-history .trend-badge.first{background:var(--amber-bg); color:var(--amber);}
-
-.dc-grid{display:grid; grid-template-columns:300px 1fr; gap:22px;}
-@media (max-width:800px){ .dc-grid{grid-template-columns:1fr;} .dc-history{flex-wrap:wrap;} .dc-history-left span{white-space:normal;} }
-.dc-photos{display:flex; flex-direction:column; gap:8px;}
-.dc-hero{position:relative; width:100%; aspect-ratio:4/3; border-radius:14px; overflow:hidden; background:var(--bg-soft); border:1px solid var(--border2);}
-.dc-hero img{width:100%; height:100%; object-fit:cover; display:block; cursor:pointer;}
-.dc-hero-del{position:absolute; top:8px; right:8px; width:24px; height:24px; border-radius:50%; background:rgba(20,30,32,.6); color:#fff; border:none; cursor:pointer; font-size:.7rem; display:flex; align-items:center; justify-content:center; opacity:0; transition:.15s;}
-.dc-hero:hover .dc-hero-del{opacity:1;}
-.dc-photo-placeholder{
-  position:relative; width:100%; aspect-ratio:4/3; border-radius:14px; cursor:pointer; overflow:hidden;
-  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
-  border:1px solid var(--border2); transition:border-color .15s ease;
-}
-/* A simple two-tone landscape (sky/sun/rolling hills) rather than a flat
-   dashed box or a busy texture - the classic "placeholder image" motif,
-   drawn in the app's own palette instead of a generic gray icon. */
-.dc-ph-art{position:absolute; inset:0; width:100%; height:100%;}
-.dc-ph-sky{fill:var(--bg-mint);}
-.dc-ph-sun{fill:var(--teal); opacity:.16;}
-.dc-ph-hill-back{fill:var(--teal); opacity:.14;}
-.dc-ph-hill-front{fill:var(--teal); opacity:.22;}
-.dc-photo-placeholder-icon{position:relative; width:52px; height:52px; border-radius:50%; background:#fff; box-shadow:0 4px 14px rgba(44,90,87,.12); display:flex; align-items:center; justify-content:center; color:var(--teal); font-size:1.3rem; transition:transform .15s ease, color .15s ease;}
-.dc-photo-placeholder-txt{position:relative; font-size:.72rem; font-weight:700; color:var(--text-mute2);}
-.dc-photo-placeholder:hover{border-color:var(--teal);}
-.dc-photo-placeholder:hover .dc-photo-placeholder-icon{color:var(--teal-dark); transform:scale(1.07);}
-.dc-photo-caption{width:100%; border:1px solid transparent; background:none; font-size:.72rem; color:var(--text-mute2); padding:4px 5px; font-family:inherit; border-radius:6px;}
-.dc-photo-caption:hover, .dc-photo-caption:focus{border-color:var(--border); background:var(--bg-soft); outline:none;}
-.dc-photo-caption::placeholder{color:var(--text-mute); font-style:italic;}
-.dc-strip{display:flex; gap:7px; margin-top:2px; overflow-x:auto; padding-bottom:2px;}
-.dc-strip-thumb{width:48px; height:48px; border-radius:9px; object-fit:cover; flex-shrink:0; cursor:pointer; border:2px solid transparent; opacity:.6; transition:.12s;}
-.dc-strip-thumb:hover{opacity:.85;}
-.dc-strip-thumb.active{border-color:var(--teal); opacity:1;}
-.dc-strip-add{width:48px; height:48px; border-radius:9px; flex-shrink:0; border:2px dashed var(--border); display:flex; align-items:center; justify-content:center; color:var(--text-mute); cursor:pointer; font-size:.9rem;}
-.dc-strip-add:hover{border-color:var(--teal); color:var(--teal);}
-.dc-photo-pending{background:var(--bg-soft); border:1px solid var(--border2); border-radius:12px; padding:10px; margin-top:2px;}
-.dc-pending-item{display:flex; gap:8px; align-items:center; margin-bottom:8px;}
-.dc-pending-item:last-child{margin-bottom:0;}
-.dc-pending-item img{width:44px; height:44px; object-fit:cover; border-radius:8px; flex-shrink:0;}
-.dc-pending-item input{flex:1; border:1px solid var(--border); border-radius:8px; padding:6px 9px; font-size:.76rem; font-family:inherit; background:#fff;}
-.dc-pending-actions{display:flex; gap:8px; margin-top:4px;}
-.dc-pending-actions button{font-size:.72rem; font-weight:700; padding:6px 12px; border-radius:20px; cursor:pointer; border:none;}
-.dc-pending-upload{background:var(--teal); color:#fff;}
-.dc-pending-cancel{background:none; border:1px solid var(--border) !important; color:var(--text-mute2);}
-
-/* Editable severity/extent/works - a segmented "switch" control, same
-   pill-with-sliding-fill convention as the app's view-toggle, rather than
-   a row of individually-bordered boxes. Per-value colour coding carries
-   over so meaning (severity/extent scale, works Y/N/M) still reads at a
-   glance once a segment is selected. */
-.dc-stepper-row{display:flex; gap:22px; flex-wrap:wrap; margin-bottom:14px;}
-.dc-stepper-lbl{font-size:.64rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-mute); margin-bottom:6px; display:block;}
-.dc-step-track{display:inline-flex; gap:2px; background:var(--bg-soft); border:1px solid var(--border2); border-radius:30px; padding:3px;}
-.dc-step{width:28px; height:28px; border-radius:26px; border:none; background:none; font-size:.74rem; font-weight:700; color:var(--text-mute2); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:background-color .18s ease, color .18s ease, transform .1s ease, box-shadow .18s ease;}
-.dc-step:active{transform:scale(.9);}
-.dc-step:focus{outline:none;}
-.dc-step:focus-visible{box-shadow:0 0 0 3px rgba(91,140,138,.35);}
-/* Hover tints toward the value's own colour (same convention as the main
-   inspection editor's severity stepper) instead of a neutral grey, so
-   there's no "grey, then colour" flash between hovering and selecting. */
-.dc-step.sev-1:hover{background:rgba(45,122,110,.12); color:#2d7a6e;}
-.dc-step.sev-2:hover{background:rgba(122,154,58,.12); color:#7a9a3a;}
-.dc-step.sev-3:hover{background:rgba(186,117,23,.12); color:#ba7517;}
-.dc-step.sev-4:hover{background:rgba(217,114,47,.12); color:#d9722f;}
-.dc-step.sev-5:hover{background:rgba(192,57,43,.14); color:#c0392b;}
-.dc-step.ext-A:hover{background:rgba(91,140,138,.12); color:#5b8c8a;}
-.dc-step.ext-B:hover{background:rgba(74,154,176,.12); color:#4a9ab0;}
-.dc-step.ext-C:hover{background:rgba(58,136,192,.12); color:#3a88c0;}
-.dc-step.ext-D:hover{background:rgba(55,138,221,.12); color:#378add;}
-.dc-step.ext-E:hover{background:rgba(42,111,212,.12); color:#2a6fd4;}
-.dc-step.works-N:hover{background:rgba(106,124,142,.12); color:var(--text-mute2);}
-.dc-step.works-Y:hover{background:rgba(192,57,43,.12); color:var(--red);}
-.dc-step.works-M:hover{background:rgba(186,117,23,.12); color:var(--amber);}
-.dc-step.active.sev-1{background:#2d7a6e; color:#fff; box-shadow:0 2px 8px rgba(45,122,110,.35);}
-.dc-step.active.sev-2{background:#7a9a3a; color:#fff; box-shadow:0 2px 8px rgba(122,154,58,.35);}
-.dc-step.active.sev-3{background:#ba7517; color:#fff; box-shadow:0 2px 8px rgba(186,117,23,.35);}
-.dc-step.active.sev-4{background:#d9722f; color:#fff; box-shadow:0 2px 8px rgba(217,114,47,.35);}
-.dc-step.active.sev-5{background:#c0392b; color:#fff; box-shadow:0 2px 8px rgba(192,57,43,.4);}
-.dc-step.active.ext-A{background:#5b8c8a; color:#fff; box-shadow:0 2px 8px rgba(91,140,138,.35);}
-.dc-step.active.ext-B{background:#4a9ab0; color:#fff; box-shadow:0 2px 8px rgba(74,154,176,.35);}
-.dc-step.active.ext-C{background:#3a88c0; color:#fff; box-shadow:0 2px 8px rgba(58,136,192,.35);}
-.dc-step.active.ext-D{background:#378add; color:#fff; box-shadow:0 2px 8px rgba(55,138,221,.35);}
-.dc-step.active.ext-E{background:#2a6fd4; color:#fff; box-shadow:0 2px 8px rgba(42,111,212,.35);}
-.dc-step.works-btn{width:auto; padding:0 14px; font-size:.7rem; text-transform:uppercase; letter-spacing:.03em;}
-.dc-step.active.works-N{background:var(--text-mute2); color:#fff;}
-.dc-step.active.works-Y{background:var(--red); color:#fff; box-shadow:0 2px 8px rgba(192,57,43,.35);}
-.dc-step.active.works-M{background:var(--amber); color:#fff; box-shadow:0 2px 8px rgba(186,117,23,.35);}
-
-.dc-works-detail{display:flex; gap:14px; flex-wrap:wrap; background:var(--bg-soft); border-radius:12px;
-  max-height:0; opacity:0; overflow:hidden; padding:0 14px; margin:0;
-  transition:max-height .32s ease, opacity .22s ease, padding .32s ease, margin .32s ease;}
-.dc-works-detail.show{max-height:140px; opacity:1; padding:12px 14px; margin:-4px 0 14px;}
-.dc-works-field{flex:1; min-width:130px;}
-.dc-works-field select, .dc-works-field input{width:100%; border:1px solid var(--border); border-radius:9px; padding:7px 10px; font-size:.82rem; font-family:inherit; color:var(--text); background:#fff;}
-
-.dc-narrative-lbl{display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;}
-.dc-reset-btn{font-size:.68rem; font-weight:700; color:var(--teal-dark); background:var(--bg-mint); border:1px solid #d6e6e3; padding:4px 10px; border-radius:20px; cursor:pointer; display:inline-flex; align-items:center; gap:5px;}
-.dc-reset-btn:hover{background:#dcece9;}
-.dc-narrative{width:100%; min-height:76px; border:1px solid var(--border); border-radius:10px; padding:10px 13px; font-size:.84rem; font-family:inherit; color:var(--text); background:var(--bg-soft); resize:vertical; line-height:1.5;}
-.dc-narrative:focus{outline:none; border-color:var(--teal); background:#fff;}
-
-.dc-why{margin-top:12px; display:flex; align-items:flex-start; gap:8px; background:var(--ai-bg); border:1px solid var(--ai-border); color:var(--ai); font-size:.76rem; font-weight:600; padding:9px 12px; border-radius:12px; line-height:1.45;}
-
-/* Collapse/expand */
-.dc-collapse-btn{background:none; border:none; color:var(--text-mute); cursor:pointer; padding:4px; font-size:.9rem; flex-shrink:0;}
-.dc-collapse-btn:hover{color:var(--teal);}
-.defect-card.collapsed .dc-body{display:none;}
-.defect-card.collapsed .dc-collapse-btn i{transform:rotate(-90deg);}
 
 /* Structure/inspection info modal - a real centered modal, same
    convention as spanSense's own #bridgeModal on the map page (fixed
@@ -638,8 +435,8 @@ body.modal-open{overflow:hidden;}
    existed. right:40px clears the glass scrollbar (fixed at right:10px,
    width:10px, i.e. occupying the last 20px of the viewport) with room to
    spare - the previous right:23px on the notes tab alone left only ~3px.
-   Only shown while #screen-draft is the active wizard step (toggled in
-   author.js's goTo()). */
+   Only shown while #screen-author (Report View) is the active wizard
+   step (toggled in author.js's goTo()). */
 .draft-right-rail{
   position:fixed; right:40px; top:46%; transform:translateY(-50%); z-index:90;
   display:none; flex-direction:column; align-items:center; gap:8px;
@@ -834,7 +631,6 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .tsw-classic{background:#2a2620;}
 .night-mode .tsw-corporate{background:#1c2733;}
 
-.night-mode .cat-title{color:#8ab4b0; border-color:#2f3e45;}
 .night-mode .draft-toolbar{border-color:#2f3e45;}
 .night-mode .status-pill.defect{background:#3a3020; color:#e0b060;}
 .night-mode .status-pill.good{background:#1e3a38; color:#7ec9ba;}
@@ -847,63 +643,6 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .cmp-chip.first{background:#2a2450; color:#a794f5;}
 .night-mode .mini-lbl{color:#7d939b;}
 
-.night-mode .f-pill{background:#1a2428; border-color:#3a4b53; color:#9ab0b8;}
-.night-mode .f-pill.on{background:#1e3a38; border-color:#3a6b62; color:#8ab4b0;}
-.night-mode .clear-row td{background:#18242a; border-color:#2f3e45; color:#d4dfe3;}
-.night-mode .clear-row:hover td{border-color:#3a6b62; background:rgba(91,140,138,.10);}
-.night-mode .defect-card{background:#212f33; border-color:#2f3e45;}
-.night-mode .dc-elem{color:#d4dfe3;}
-.night-mode .cr-num{background:#2f3e45; color:#9ab0b8;}
-.night-mode .dc-code{color:#8aa4ac;}
-.night-mode .dc-review-check{background:#1a2428; border-color:#3a4b53; color:#9ab0b8;}
-.night-mode .dc-review-check.checked{background:#1e3a38; border-color:#3a6b62; color:#7ec9ba;}
-.night-mode .dc-history{border-color:#2f3e45; color:#9ab0b8;}
-.night-mode .dc-footer-actions{border-color:#2f3e45;}
-.night-mode .dc-history .trend-badge.worsened, .night-mode .dc-history .trend-badge.new{background:#3a2323; color:#e57373;}
-.night-mode .dc-history .trend-badge.improved, .night-mode .dc-history .trend-badge.resolved{background:#1e3a38; color:#7ec9ba;}
-.night-mode .dc-history .trend-badge.unchanged{background:#2a343a; color:#7d939b;}
-.night-mode .dc-history .trend-badge.changed, .night-mode .dc-history .trend-badge.first{background:#3a3020; color:#e0b060;}
-.night-mode .dc-hero{background:#1a2428; border-color:#2f3e45;}
-.night-mode .dc-hero-del{background:rgba(0,0,0,.55);}
-.night-mode .dc-photo-placeholder{border-color:#3a4b53;}
-.night-mode .dc-ph-sky{fill:#1c2d2b;}
-.night-mode .dc-ph-sun{fill:#8ab4b0; opacity:.18;}
-.night-mode .dc-ph-hill-back{fill:#8ab4b0; opacity:.14;}
-.night-mode .dc-ph-hill-front{fill:#8ab4b0; opacity:.22;}
-.night-mode .dc-photo-placeholder-icon{background:#212f33; color:#8ab4b0; box-shadow:0 4px 14px rgba(0,0,0,.3);}
-.night-mode .dc-photo-placeholder-txt{color:#7d939b;}
-.night-mode .dc-photo-placeholder:hover{border-color:#6e9c98;}
-.night-mode .dc-photo-placeholder:hover .dc-photo-placeholder-icon{color:#a3cac4;}
-.night-mode .dc-photo-caption{color:#8aa4ac;}
-.night-mode .dc-photo-caption:hover, .night-mode .dc-photo-caption:focus{border-color:#3a4b53; background:#1a2428; color:#d4dfe3;}
-.night-mode .dc-strip-add{border-color:#3a4b53; color:#7d939b;}
-.night-mode .dc-strip-add:hover{border-color:#6e9c98; color:#8ab4b0;}
-.night-mode .dc-photo-pending{background:#1a2428; border-color:#2f3e45;}
-.night-mode .class-dd-trigger{background:#1a2428; border-color:#3a4b53; color:#d4dfe3;}
-.night-mode .class-dd.open .class-dd-trigger{background:#212f33; border-color:#6e9c98;}
-.night-mode .class-dd-menu{background:#212f33; border-color:#2f3e45; box-shadow:0 12px 32px rgba(0,0,0,.35);}
-.night-mode .class-dd-search{border-color:#2f3e45;}
-.night-mode .class-dd-search input{background:#1a2428; border-color:#3a4b53; color:#d4dfe3;}
-.night-mode .class-dd-search input:focus{border-color:#6e9c98; background:#212f33;}
-.night-mode .class-dd-item:hover{background:#1a2428;}
-.night-mode .class-dd-item.selected{background:#1e3a38;}
-.night-mode .class-dd-item .cdd-num{color:#8ab4b0;}
-.night-mode .class-dd-item .cdd-name{color:#d4dfe3;}
-.night-mode .class-dd-sep{color:#7d939b;}
-.night-mode .dc-pending-item input{background:#212f33; border-color:#3a4b53; color:#d4dfe3;}
-.night-mode .dc-pending-cancel{color:#9ab0b8; border-color:#3a4b53 !important;}
-.night-mode .dc-stepper-lbl{color:#7d939b;}
-.night-mode .dc-step-track{background:#1a2428; border-color:#3a4b53;}
-.night-mode .dc-step{background:none; color:#9ab0b8;}
-.night-mode .dc-step:hover{background:rgba(255,255,255,.06);}
-.night-mode .dc-works-detail{background:#1a2428;}
-.night-mode .dc-works-field select, .night-mode .dc-works-field input{background:#212f33; border-color:#3a4b53; color:#d4dfe3;}
-.night-mode .dc-collapse-btn{color:#7d939b;}
-.night-mode .dc-collapse-btn:hover{color:#8ab4b0;}
-.night-mode .dc-reset-btn{background:#1e3a38; border-color:#3a6b62; color:#8ab4b0;}
-.night-mode .dc-reset-btn:hover{background:#26443f;}
-.night-mode .dc-narrative{background:#1a2428; border-color:#3a4b53; color:#d4dfe3;}
-.night-mode .dc-narrative:focus{background:#212f33; border-color:#6e9c98;}
 .night-mode .sip-overlay{background:rgba(0,0,0,.6);}
 .night-mode .struct-info-panel{background:rgba(33,47,51,.97); border-color:#2f3e45; box-shadow:0 24px 80px rgba(0,0,0,.5);}
 .night-mode .sip-close{background:#1a2428; color:#9ab0b8;}
@@ -963,9 +702,6 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .notes-panel-ico{background:#2a2450; color:#a794f5;}
 .night-mode .notes-panel-title{color:#d4dfe3;}
 .night-mode .notes-panel-sub{color:#8aa4ac;}
-.night-mode .dc-why{background:#2a2450; border-color:#3c3266; color:#a794f5;}
-.night-mode .btn-bulk{background:#3a6b62;}
-.night-mode .btn-bulk:hover{background:#4a8579;}
 
 .night-mode .view-toggle{background:#1a2428; border-color:#2f3e45;}
 .night-mode .vt-btn{color:#9ab0b8;}
@@ -1039,11 +775,9 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
     <div class="wizard-steps" id="wizardSteps">
         <div class="wizard-step" data-step="setup" title="Start"><span class="num">1</span></div>
         <div class="wizard-connector"></div>
-        <div class="wizard-step" data-step="draft" title="Draft Report"><span class="num">2</span></div>
+        <div class="wizard-step" data-step="author" title="Report View"><span class="num">2</span></div>
         <div class="wizard-connector"></div>
-        <div class="wizard-step" data-step="author" title="Author View"><span class="num">3</span></div>
-        <div class="wizard-connector"></div>
-        <div class="wizard-step" data-step="export" title="Export"><span class="num">4</span></div>
+        <div class="wizard-step" data-step="export" title="Export"><span class="num">3</span></div>
     </div>
 
     <!-- ================= SCREEN 1: SETUP ================= -->
@@ -1163,92 +897,83 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
         </div>
 
         <div class="bottom-nav" id="setupBottomNav" style="justify-content:flex-end; display:none;">
-            <button class="btn-primary-lg" id="toDraftBtn"><i class="fas fa-arrow-right"></i> Continue to Draft Report</button>
+            <button class="btn-primary-lg" id="toReportViewBtn"><i class="fas fa-arrow-right"></i> Continue to Report View</button>
         </div>
     </div>
 
-    <!-- ================= SCREEN 2: DRAFT REPORT ================= -->
-    <div class="screen" id="screen-draft">
-        <div class="draft-main">
-            <div class="draft-header">
-                <span id="draftStructureName" style="display:none;">—</span>
-                <div id="draftBciTrend"></div>
-            </div>
-            <div class="draft-toolbar">
-                <div class="filter-pills" id="draftFilterPills"></div>
-                <div class="draft-toolbar-actions">
-                    <button class="btn-mini" id="structInfoToggle" title="Structure & inspection info"><i class="fas fa-circle-info"></i> Info</button>
-                    <button class="btn-mini" id="toggleCollapseAllBtn" title="Collapse all"><i class="fas fa-compress"></i> Collapse</button>
-                    <button class="btn-bulk" id="markUnchangedBtn" title="Mark all unchanged as reviewed"><i class="fas fa-check-double"></i> Mark unchanged</button>
-                </div>
-            </div>
-            <div class="draft-groups-wrap">
-                <div id="draftGroups"></div>
-            </div>
-            <div class="sip-overlay" id="sipOverlay">
-                <div class="struct-info-panel" id="structInfoPanel"></div>
-            </div>
-
-            <!-- Right-side rail: Conclusions, General Photos, Notes - one
-                 shared fixed wrapper (not three independent position:fixed
-                 elements) so they stack with a plain flex gap instead of
-                 needing their own collision-prone offsets, clear of the
-                 glass scrollbar (right:10px, width:10px). The left gutter
-                 stays BCI-cards + wizard-steps only, unchanged. Shown only
-                 while this screen is active (see goTo() in author.js). -->
-            <div class="draft-right-rail" id="draftRightRail">
-                <div class="draft-rail-bar" id="conclusionsBar" title="Conclusions">
-                    <div class="rail-pulse" id="conclusionsPulse"></div>
-                    <div class="rail-icon"><i class="fas fa-clipboard-check"></i></div>
-                    <div class="rail-label">Conclusions</div>
-                </div>
-                <div class="draft-rail-bar" id="draftPhotosBar" title="General Photos">
-                    <div class="rail-icon rail-icon-photos"><i class="fas fa-camera"></i></div>
-                    <div class="rail-label">Photos</div>
-                </div>
-                <div class="right-rail-divider"></div>
-                <div class="draft-rail-bar draft-notes-tab" id="draftNotesTab" title="Notes">
-                    <div class="rail-icon rail-icon-notes"><i class="fas fa-note-sticky"></i><span class="notes-badge" id="draftNotesBadge" hidden>0</span></div>
-                    <div class="rail-label">Notes</div>
-                </div>
-            </div>
-            <div class="draft-notes-panel" id="draftNotesPanel">
-                <div class="notes-panel-hdr">
-                    <div class="notes-panel-hdr-left">
-                        <div class="notes-panel-ico"><i class="fas fa-note-sticky"></i></div>
-                        <div>
-                            <div class="notes-panel-title">Notes</div>
-                            <div class="notes-panel-sub" id="draftNotesSub">No notes yet</div>
-                        </div>
-                    </div>
-                    <button class="sip-close" id="draftNotesClose" title="Close">&times;</button>
-                </div>
-                <div class="sip-notes-list" id="draftNotesList" style="flex:1; overflow-y:auto; margin:0; padding:14px 16px 6px; max-height:none;"></div>
-                <div class="sip-notes-add" style="padding:0 16px 16px;">
-                    <textarea id="draftNotesInput" placeholder="Add a note…"></textarea>
-                    <div class="sip-notes-add-row">
-                        <button class="sip-save-btn" id="draftNotesAddBtn" disabled>Add note</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="sip-overlay" id="conclusionsOverlay">
-                <div class="struct-info-panel" id="conclusionsPanel" style="width:520px;"></div>
-            </div>
-            <div class="sip-overlay" id="photosOverlay">
-                <div class="struct-info-panel" id="photosPanel" style="width:520px;"></div>
-            </div>
-
-            <div class="bottom-nav">
-                <button class="btn-ghost" id="backToSetupBtn"><i class="fas fa-arrow-left"></i> Back</button>
-                <span class="progress-text" id="draftProgressText" style="font-size:.8rem; color:var(--text-mute2);"></span>
-                <button class="btn-primary-lg" id="toAuthorBtn"><i class="fas fa-arrow-right"></i> Continue to Author View</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ================= SCREEN 3: AUTHOR VIEW ================= -->
+    <!-- ================= SCREEN 2: REPORT VIEW =================
+         Was two screens (a custom "Draft" defect-editing/narrative-drafting
+         step, then this one) - Draft is gone now that all defect-data
+         editing happens in the real inspection1.html/inspection.html
+         capture flow (reachable from Setup's review card) and Author no
+         longer auto-drafts narrative text (uses each defect's raw
+         comments, same as core). What Draft still contributed - the BCI
+         header and the Conclusions/Photos/Notes rail - moved here, since
+         this is now Author's one editing-free review-and-generate step. -->
     <div class="screen" id="screen-author">
+        <div class="draft-header">
+            <span id="draftStructureName" style="display:none;">—</span>
+            <div id="draftBciTrend"></div>
+        </div>
+        <div class="draft-toolbar" style="justify-content:flex-end;">
+            <div class="draft-toolbar-actions">
+                <button class="btn-mini" id="structInfoToggle" title="Structure & inspection info"><i class="fas fa-circle-info"></i> Info</button>
+            </div>
+        </div>
+        <div class="sip-overlay" id="sipOverlay">
+            <div class="struct-info-panel" id="structInfoPanel"></div>
+        </div>
+
+        <!-- Right-side rail: Conclusions, General Photos, Notes - one
+             shared fixed wrapper (not three independent position:fixed
+             elements) so they stack with a plain flex gap instead of
+             needing their own collision-prone offsets, clear of the
+             glass scrollbar (right:10px, width:10px). The left gutter
+             stays BCI-cards + wizard-steps only, unchanged. Shown only
+             while this screen is active (see goTo() in author.js). -->
+        <div class="draft-right-rail" id="draftRightRail">
+            <div class="draft-rail-bar" id="conclusionsBar" title="Conclusions">
+                <div class="rail-pulse" id="conclusionsPulse"></div>
+                <div class="rail-icon"><i class="fas fa-clipboard-check"></i></div>
+                <div class="rail-label">Conclusions</div>
+            </div>
+            <div class="draft-rail-bar" id="draftPhotosBar" title="General Photos">
+                <div class="rail-icon rail-icon-photos"><i class="fas fa-camera"></i></div>
+                <div class="rail-label">Photos</div>
+            </div>
+            <div class="right-rail-divider"></div>
+            <div class="draft-rail-bar draft-notes-tab" id="draftNotesTab" title="Notes">
+                <div class="rail-icon rail-icon-notes"><i class="fas fa-note-sticky"></i><span class="notes-badge" id="draftNotesBadge" hidden>0</span></div>
+                <div class="rail-label">Notes</div>
+            </div>
+        </div>
+        <div class="draft-notes-panel" id="draftNotesPanel">
+            <div class="notes-panel-hdr">
+                <div class="notes-panel-hdr-left">
+                    <div class="notes-panel-ico"><i class="fas fa-note-sticky"></i></div>
+                    <div>
+                        <div class="notes-panel-title">Notes</div>
+                        <div class="notes-panel-sub" id="draftNotesSub">No notes yet</div>
+                    </div>
+                </div>
+                <button class="sip-close" id="draftNotesClose" title="Close">&times;</button>
+            </div>
+            <div class="sip-notes-list" id="draftNotesList" style="flex:1; overflow-y:auto; margin:0; padding:14px 16px 6px; max-height:none;"></div>
+            <div class="sip-notes-add" style="padding:0 16px 16px;">
+                <textarea id="draftNotesInput" placeholder="Add a note…"></textarea>
+                <div class="sip-notes-add-row">
+                    <button class="sip-save-btn" id="draftNotesAddBtn" disabled>Add note</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="sip-overlay" id="conclusionsOverlay">
+            <div class="struct-info-panel" id="conclusionsPanel" style="width:520px;"></div>
+        </div>
+        <div class="sip-overlay" id="photosOverlay">
+            <div class="struct-info-panel" id="photosPanel" style="width:520px;"></div>
+        </div>
+
         <div class="card" style="padding:20px 24px;">
             <div class="view-toolbar">
                 <div class="view-toggle" id="viewToggle">
@@ -1270,16 +995,16 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
             </div>
         </div>
         <div class="bottom-nav">
-            <button class="btn-ghost" id="backToDraftBtn"><i class="fas fa-arrow-left"></i> Back to Draft</button>
+            <button class="btn-ghost" id="backToSetupBtn"><i class="fas fa-arrow-left"></i> Back</button>
             <button class="btn-primary-lg" id="toExportBtn"><i class="fas fa-arrow-right"></i> Continue to Export</button>
         </div>
     </div>
 
-    <!-- ================= SCREEN 4: EXPORT ================= -->
+    <!-- ================= SCREEN 3: EXPORT ================= -->
     <div class="screen" id="screen-export">
         <div class="card">
             <h2 class="card-title"><i class="fas fa-file-export" style="color:var(--teal);"></i> Generate &amp; Export</h2>
-            <p class="card-sub">The full report (cover, structure details, BCI summary, description of defects, conclusions, photo appendix and BCI Proforma appendix) is spanSense's standard inspection report format. The only difference here is that Author's drafted narrative fills in each defect's description instead of the raw stored comment.</p>
+            <p class="card-sub">The full report (cover, structure details, BCI summary, description of defects, conclusions, photo appendix and BCI Proforma appendix) is spanSense's standard inspection report format.</p>
             <div class="u-sub" id="exportDateNote" style="margin-bottom:14px;"></div>
             <div class="export-actions">
                 <button class="btn-primary-lg" id="genFullReportBtn"><i class="fas fa-file-pdf"></i> Download Full Report (PDF)</button>
@@ -1292,7 +1017,7 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
             </details>
         </div>
         <div class="bottom-nav">
-            <button class="btn-ghost" id="backToAuthorBtn"><i class="fas fa-arrow-left"></i> Back to Author View</button>
+            <button class="btn-ghost" id="backToAuthorBtn"><i class="fas fa-arrow-left"></i> Back to Report View</button>
         </div>
     </div>
 
