@@ -250,7 +250,13 @@ const AUTHOR = {
   inspectionId: null, conclusions: '', generalPhotos: [], notes: [],
   diffElements: [], // [{ elementNumber, name, category, current, previous, comparison, editedNarrative? }]
   branding: { accentColor: '#5b8c8a', template: 'modern', logoUrl: null },
-  maxStepReached: 0
+  maxStepReached: 0,
+  // Whether the loaded data came from "Upload a previous inspection"
+  // (AI-extracted, never a real DB row) rather than "From spanSense
+  // records" - the extracted case has nothing for inspection1.html to
+  // load, so Continue skips the redirect and goes straight to Report
+  // View for it (see the #toReportViewBtn listener below).
+  loadedFromUpload: false
 };
 
 // ============================================================
@@ -401,84 +407,18 @@ function animateBciValue(el, value){
   bciTweenFrames.set(el, requestAnimationFrame(step));
 }
 
-// BCI trend strip - twin.inspections is already sorted oldest-to-newest by
-// /api/twin/:structureId, with a null bciAvg for inspections that predate BCI
-// scoring or never had one recorded.
-const BCI_TREND_MAX_POINTS = 8;
-// `live`, when passed, prepends a single combined "this report" chip -
-// same visual language as the historical chips (avg/crit stacked) - onto
-// the very same row, rather than a separate BCI stat row above it. Keeps
-// the ids recomputeLiveBCI() already animates, so live edits update it in
-// place without needing to re-render this whole row.
-// A line chart reads a multi-inspection trend far better than a row of
-// chips (each carrying 4 numbers - date/type/avg/crit - the more history a
-// structure has, the more numbers get crammed into a fixed-height strip).
-// Two series sharing one 0-100 axis, so a legend (with the live "this
-// report" readout riding it) plus direct end-labels covers identity -
-// no dual axis, no per-point value labels. The connecting stroke is a
-// smoothed Catmull-Rom curve through the real values, run through an
-// feTurbulence/feDisplacementMap filter for a gentle hand-drawn wobble -
-// only the stroke gets the sketchy treatment, the dots stay put exactly on
-// the real data coordinates so the wobble never misrepresents a value.
-function catmullRomPath(pts){
-  if (pts.length < 2) return '';
-  if (pts.length === 2) return `M${pts[0].x},${pts[0].y} L${pts[1].x},${pts[1].y}`;
-  let d = `M${pts[0].x},${pts[0].y}`;
-  for (let i = 0; i < pts.length - 1; i++){
-    const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
-    const cp1x = p1.x + (p2.x - p0.x) / 6, cp1y = p1.y + (p2.y - p0.y) / 6;
-    const cp2x = p2.x - (p3.x - p1.x) / 6, cp2y = p2.y - (p3.y - p1.y) / 6;
-    d += ` C${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
-  }
-  return d;
-}
-let bciChartSeq = 0;
-function bciTrendChartHTML(shown){
-  const n = shown.length;
-  const W = 640, H = 120, padX = 4, padT = 10, padB = 20;
-  const innerW = W - padX * 2, innerH = H - padT - padB;
-  const xAt = i => n > 1 ? padX + (i / (n - 1)) * innerW : padX + innerW / 2;
-  const yAt = v => padT + (100 - Math.max(0, Math.min(100, v))) / 100 * innerH;
-  const lastIdx = n - 1;
-  const hasCrit = shown.every(t => t.bciCrit != null);
-  const filterId = `bciSketch${bciChartSeq++}`;
-
-  const avgPath = catmullRomPath(shown.map((t, i) => ({ x: xAt(i), y: yAt(t.bciAvg) })));
-  const critPath = hasCrit ? catmullRomPath(shown.map((t, i) => ({ x: xAt(i), y: yAt(t.bciCrit) }))) : '';
-  const dotsFor = (key, cls) => shown.map((t, i) => t[key] == null ? '' : `<circle cx="${xAt(i)}" cy="${yAt(t[key])}" r="${i === lastIdx ? 5 : 3}" class="bci-dot ${cls}"><title>${t.date} ${t.type} · ${cls === 'avg' ? 'Avg' : 'Crit'} ${t[key].toFixed(1)}</title></circle>`).join('');
-
-  return `<svg class="bci-chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="BCI average and critical trend over time">
-    <defs>
-      <filter id="${filterId}" x="-10%" y="-40%" width="120%" height="180%">
-        <feTurbulence type="fractalNoise" baseFrequency="0.05 0.15" numOctaves="2" seed="7" result="noise"/>
-        <feDisplacementMap in="SourceGraphic" in2="noise" scale="3.5" xChannelSelector="R" yChannelSelector="G"/>
-      </filter>
-    </defs>
-    <line x1="${padX}" y1="${H - padB}" x2="${W - padX}" y2="${H - padB}" class="bci-chart-baseline"/>
-    <path d="${avgPath}" class="bci-line avg" filter="url(#${filterId})"/>
-    ${hasCrit ? `<path d="${critPath}" class="bci-line crit" filter="url(#${filterId})"/>` : ''}
-    ${dotsFor('bciAvg', 'avg')}
-    ${hasCrit ? dotsFor('bciCrit', 'crit') : ''}
-    <text x="${padX}" y="${H - 4}" class="bci-chart-axis-label">${shown[0].date}</text>
-    <text x="${W - padX}" y="${H - 4}" text-anchor="end" class="bci-chart-axis-label">${shown[lastIdx].date}</text>
-  </svg>`;
-}
-function bciTrendHTML(trend, live){
-  const scored = trend.filter(t => t.bciAvg != null);
-  const legend = `<div class="bci-legend">
-    <span class="bci-legend-item avg"><i></i>Avg <b${live ? ' id="draftBciAvgOriginal"' : ''}>${live ? (live.avg != null ? live.avg.toFixed(1) : '···') : (scored.length ? scored[scored.length - 1].bciAvg.toFixed(1) : '—')}</b></span>
-    <span class="bci-legend-item crit"><i></i>Crit <b${live ? ' id="draftBciCritOriginal"' : ''}>${live ? (live.crit != null ? live.crit.toFixed(1) : '···') : (scored.length && scored[scored.length - 1].bciCrit != null ? scored[scored.length - 1].bciCrit.toFixed(1) : '—')}</b></span>
-  </div>`;
-  if (!scored.length) {
-    if (!live) return '';
-    return `<div class="bci-trend"${live ? ' id="draftBciOriginal"' : ''}>
-      <div class="bci-trend-header">${legend}</div>
-    </div>`;
-  }
-  const shown = scored.slice(-BCI_TREND_MAX_POINTS);
-  return `<div class="bci-trend"${live ? ' id="draftBciOriginal"' : ''}>
-    <div class="bci-trend-header">${legend}</div>
-    ${bciTrendChartHTML(shown)}
+// Just the live Avg/Crit legend now - no history chart. #draftBciOriginal
+// still wraps it (rather than being removed) since the sticky BCI-cards
+// widget above still reads its position to decide when to fade its clone
+// in, regardless of what's inside it.
+function bciTrendHTML(live){
+  return `<div class="bci-trend" id="draftBciOriginal">
+    <div class="bci-trend-header">
+      <div class="bci-legend">
+        <span class="bci-legend-item avg"><i></i>Avg <b id="draftBciAvgOriginal">${live.avg != null ? live.avg.toFixed(1) : '···'}</b></span>
+        <span class="bci-legend-item crit"><i></i>Crit <b id="draftBciCritOriginal">${live.crit != null ? live.crit.toFixed(1) : '···'}</b></span>
+      </div>
+    </div>
   </div>`;
 }
 
@@ -502,6 +442,8 @@ async function onLoad(){
     const bridge = await bridgeRes.json();
     const twin = twinRes.ok ? await twinRes.json() : { inspections: [] };
     const full = fullRes.ok ? await fullRes.json() : { defects: [] };
+
+    AUTHOR.loadedFromUpload = false;
 
     // generateBCIFormForPDF (in test.js) reads these from sessionStorage
     // rather than accepting them as arguments - set here so the full-report
@@ -552,15 +494,17 @@ async function onLoad(){
 
     // A real review card rather than just a "Loaded" chip - a chance to
     // double-check this is actually the right structure/date/type before
-    // committing to it, plus the hand-off point into the real capture flow
-    // (inspection1.html -> inspection.html) for fixing/adding underlying
-    // defect data or photos. That flow is the same "open in edit mode"
-    // convention already used by database.js/dashboard.js/map.js's own
-    // "Edit"/"Edit Report" links - editInspectionRow (database/database.js)
-    // is the canonical example - plus one new sessionStorage key,
-    // authorReturn, so those pages know to show a way back into Author
-    // (see the navbar badge in inspection.html/inspection1.html and the
-    // auto-resume check near loadStructures() below).
+    // clicking Continue, which now hands off straight into the real
+    // capture flow (inspection1.html -> inspection.html) for fixing/adding
+    // underlying defect data or photos - see goEditInInspection() and the
+    // #toReportViewBtn listener below. That flow is the same "open in edit
+    // mode" convention already used by database.js/dashboard.js/map.js's
+    // own "Edit"/"Edit Report" links - editInspectionRow
+    // (database/database.js) is the canonical example - plus one new
+    // sessionStorage key, authorReturn, so those pages know to show a way
+    // back into Author (see the navbar badge in inspection.html/
+    // inspection1.html and the auto-resume check near loadStructures()
+    // below).
     const summary = document.getElementById('loadedSummary');
     summary.innerHTML = `
       <div class="load-review-card">
@@ -573,9 +517,7 @@ async function onLoad(){
           <div class="lrc-fact"><span>BCI avg</span><b>${AUTHOR.bciAvg != null ? AUTHOR.bciAvg.toFixed(1) : '—'}</b></div>
           <div class="lrc-fact"><span>BCI crit</span><b class="crit">${AUTHOR.bciCrit != null ? AUTHOR.bciCrit.toFixed(1) : '—'}</b></div>
         </div>
-        <button class="lrc-edit-btn" id="editInInspectionBtn"><i class="fas fa-arrow-up-right-from-square"></i> Edit defect data &amp; photos</button>
       </div>`;
-    document.getElementById('editInInspectionBtn').addEventListener('click', goEditInInspection);
 
     document.getElementById('leftBciCards').style.display = 'flex';
     recomputeLiveBCI();
@@ -691,6 +633,7 @@ async function onLoadFromUpload(){
     const extract = await extractRes.json();
     const bridge = await bridgeRes.json();
 
+    AUTHOR.loadedFromUpload = true;
     sessionStorage.setItem('structureId', structureId);
     sessionStorage.setItem('structureName', bridge.name);
 
@@ -818,7 +761,10 @@ document.getElementById('templateGallery').addEventListener('click', function(e)
   AUTHOR.branding.template = card.dataset.template;
   saveBranding();
 });
-document.getElementById('toReportViewBtn').addEventListener('click', () => goTo('author'));
+document.getElementById('toReportViewBtn').addEventListener('click', () => {
+  if (AUTHOR.loadedFromUpload) goTo('author');
+  else goEditInInspection();
+});
 
 // ============================================================
 // REPORT VIEW helpers (real data, read-only - no editing happens here;
@@ -853,7 +799,7 @@ function elPhotosHTML(photos, containerCls){
 // changed. Called from goTo() whenever Report View is entered.
 function renderBciHeader(){
   document.getElementById('draftStructureName').textContent = AUTHOR.structureName || '—';
-  document.getElementById('draftBciTrend').innerHTML = bciTrendHTML(AUTHOR.bciTrend, { avg: AUTHOR.bciAvg, crit: AUTHOR.bciCrit });
+  document.getElementById('draftBciTrend').innerHTML = bciTrendHTML({ avg: AUTHOR.bciAvg, crit: AUTHOR.bciCrit });
 }
 document.getElementById('backToSetupBtn').addEventListener('click', () => goTo('setup'));
 

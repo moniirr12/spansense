@@ -203,18 +203,10 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .lrc-fact span{font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-mute);}
 .lrc-fact b{font-size:.88rem; font-weight:700; color:var(--text);}
 .lrc-fact b.crit{color:var(--red);}
-.lrc-edit-btn{display:inline-flex; align-items:center; gap:8px; background:none; border:1px solid var(--border); color:var(--teal-dark); font-weight:700; font-size:.8rem; padding:9px 16px; border-radius:20px; cursor:pointer; transition:.15s; font-family:inherit;}
-.lrc-edit-btn:hover{background:var(--bg-mint); border-color:#cfe4e0;}
 
-/* BCI trend chart - a real line chart reads a multi-inspection trend far
-   better than a row of chips (each chip carried 4 numbers - date/type/
-   avg/crit - the more inspection history, the more numbers crammed into a
-   fixed-height strip). Avg/crit keep the exact colours already used
-   everywhere else in Author (stat cards, the info modal) for consistency,
-   even though a strict categorical-palette check flags their chroma as
-   low - both series carry a direct label (the legend below) rather than
-   relying on colour alone, which is the validator's own documented
-   exception for that case. */
+/* This report's live BCI avg/crit readout - no history chart, just the
+   current numbers. Avg/crit keep the exact colours already used
+   everywhere else in Author (stat cards, the info modal) for consistency. */
 .bci-trend{margin-top:16px;}
 .bci-trend-header{display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:10px; margin-bottom:8px;}
 .bci-legend{display:flex; align-items:center; gap:16px;}
@@ -224,15 +216,6 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .bci-legend-item.crit i{background:var(--red);}
 .bci-legend-item b{font-size:.92rem; font-weight:800; color:var(--text);}
 .bci-legend-item.crit b{color:var(--red);}
-.bci-chart-svg{width:100%; height:120px; display:block; overflow:visible;}
-.bci-chart-baseline{stroke:var(--border2); stroke-width:1;}
-.bci-chart-axis-label{font-size:9px; fill:var(--text-mute); font-family:inherit;}
-.bci-line{fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round;}
-.bci-line.avg{stroke:var(--teal-dark);}
-.bci-line.crit{stroke:var(--red);}
-.bci-dot{stroke:#fff; stroke-width:2;}
-.bci-dot.avg{fill:var(--teal-dark);}
-.bci-dot.crit{fill:var(--red);}
 
 /* Structure description - carried into both the report preview and the setup summary */
 
@@ -590,20 +573,11 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .lrc-fact span{color:#7d939b;}
 .night-mode .lrc-fact b{color:#d4dfe3;}
 .night-mode .lrc-fact b.crit{color:#e57373;}
-.night-mode .lrc-edit-btn{border-color:#3a4b53; color:#8ab4b0;}
-.night-mode .lrc-edit-btn:hover{background:#1e3a38; border-color:#3a6b62;}
 .night-mode .bci-legend-item{color:#8aa4ac;}
 .night-mode .bci-legend-item b{color:#d4dfe3;}
 .night-mode .bci-legend-item.avg i{background:#8ab4b0;}
 .night-mode .bci-legend-item.crit i{background:#e57373;}
 .night-mode .bci-legend-item.crit b{color:#e57373;}
-.night-mode .bci-chart-baseline{stroke:#2f3e45;}
-.night-mode .bci-chart-axis-label{fill:#7d939b;}
-.night-mode .bci-line.avg{stroke:#8ab4b0;}
-.night-mode .bci-line.crit{stroke:#e57373;}
-.night-mode .bci-dot.avg{fill:#8ab4b0;}
-.night-mode .bci-dot.crit{fill:#e57373;}
-.night-mode .bci-dot{stroke:#212f33;}
 .night-mode .el-photo-thumb, .night-mode .doc-photo-thumb{border-color:#2f3e45;}
 
 .night-mode .source-tabs{background:#1a2428; border-color:#2f3e45;}
@@ -897,7 +871,7 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
         </div>
 
         <div class="bottom-nav" id="setupBottomNav" style="justify-content:flex-end; display:none;">
-            <button class="btn-primary-lg" id="toReportViewBtn"><i class="fas fa-arrow-right"></i> Continue to Report View</button>
+            <button class="btn-primary-lg" id="toReportViewBtn"><i class="fas fa-arrow-right"></i> Continue</button>
         </div>
     </div>
 
