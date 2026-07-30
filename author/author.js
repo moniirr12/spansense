@@ -598,6 +598,7 @@ async function onLoad(){
     // as structure info above), not to newInspectionDate, which only labels
     // this report's cover page and may not be a real DB row yet.
     AUTHOR.inspectionId = full.id || null;
+    AUTHOR.inspectionType = full.inspectionType || null;
     AUTHOR.conclusions = full.conclusions || '';
     AUTHOR.generalPhotos = full.generalPhotos || [];
     AUTHOR.notes = full.notes || [];
@@ -630,13 +631,32 @@ async function onLoad(){
       }
     });
 
-    // Structure/date are already visible in the selects themselves, and the
-    // description + BCI trend are shown again on the Draft screen - this
-    // just needs to confirm the load succeeded, not restate everything,
-    // except the one thing that isn't otherwise visible: no previous
-    // inspection to compare against.
+    // A real review card rather than just a "Loaded" chip - a chance to
+    // double-check this is actually the right structure/date/type before
+    // committing to it, plus the hand-off point into the real capture flow
+    // (inspection1.html -> inspection.html) for fixing/adding underlying
+    // defect data or photos. That flow is the same "open in edit mode"
+    // convention already used by database.js/dashboard.js/map.js's own
+    // "Edit"/"Edit Report" links - editInspectionRow (database/database.js)
+    // is the canonical example - plus one new sessionStorage key,
+    // authorReturn, so those pages know to show a way back into Author
+    // (see the navbar badge in inspection.html/inspection1.html and the
+    // auto-resume check near loadStructures() below).
     const summary = document.getElementById('loadedSummary');
-    summary.innerHTML = `<div class="loaded-chip"><i class="fas fa-circle-check"></i> Loaded${diff.previousDate ? '' : ' — first recorded inspection, no previous data to compare against'}</div>`;
+    summary.innerHTML = `
+      <div class="load-review-card">
+        <div class="lrc-head"><i class="fas fa-circle-check"></i> Loaded${diff.previousDate ? '' : ' — first recorded inspection, no previous data to compare against'}</div>
+        <div class="lrc-facts">
+          <div class="lrc-fact"><span>Structure</span><b>${AUTHOR.structureName || '—'}</b></div>
+          <div class="lrc-fact"><span>Date</span><b>${fmtDate(AUTHOR.inspectionDate)}</b></div>
+          <div class="lrc-fact"><span>Type</span><b>${INSPECTION_TYPE_LABELS[AUTHOR.inspectionType] || AUTHOR.inspectionType || '—'}</b></div>
+          <div class="lrc-fact"><span>Inspector</span><b>${AUTHOR.inspectorName || '—'}</b></div>
+          <div class="lrc-fact"><span>BCI avg</span><b>${AUTHOR.bciAvg != null ? AUTHOR.bciAvg.toFixed(1) : '—'}</b></div>
+          <div class="lrc-fact"><span>BCI crit</span><b class="crit">${AUTHOR.bciCrit != null ? AUTHOR.bciCrit.toFixed(1) : '—'}</b></div>
+        </div>
+        <button class="lrc-edit-btn" id="editInInspectionBtn"><i class="fas fa-arrow-up-right-from-square"></i> Edit defect data &amp; photos</button>
+      </div>`;
+    document.getElementById('editInInspectionBtn').addEventListener('click', goEditInInspection);
 
     document.getElementById('leftBciCards').style.display = 'flex';
     recomputeLiveBCI();
@@ -664,7 +684,54 @@ document.getElementById('structureSelect').addEventListener('change', onStructur
 document.getElementById('loadBtn').addEventListener('click', onLoad);
 document.getElementById('newInspectionDate').addEventListener('change', function(){ AUTHOR.newInspectionDate = this.value; });
 document.getElementById('newInspectionType').addEventListener('change', function(){ AUTHOR.newInspectionType = this.value || null; });
-loadStructures();
+
+// Hands off to the real capture flow for this exact structure/date - the
+// same sessionStorage keys editInspectionRow (database/database.js) sets
+// before opening inspection1.html, plus authorReturn so that page (and
+// inspection.html after it) knows to show a way back into Author. Same
+// tab, not a new one - this is a "go there, come back" trip, not a
+// side-reference lookup like the database page's own Edit links.
+function goEditInInspection(){
+  sessionStorage.removeItem('inspectionData');
+  sessionStorage.removeItem('defects');
+  sessionStorage.removeItem('photoData');
+  sessionStorage.removeItem('selectedSpan');
+  sessionStorage.setItem('inspectionStructureNumber', AUTHOR.structureId);
+  sessionStorage.setItem('inspectionDate', AUTHOR.inspectionDate);
+  sessionStorage.setItem('inspectionMode', 'edit');
+  sessionStorage.setItem('structureId', AUTHOR.structureId);
+  sessionStorage.setItem('structureName', AUTHOR.structureName);
+  sessionStorage.setItem('authorReturn', JSON.stringify({ structureId: AUTHOR.structureId, date: AUTHOR.inspectionDate }));
+  window.location.href = '../inspection1/inspection1.html';
+}
+
+// If we're arriving back from inspection1.html/inspection.html (the badge
+// or the post-save "Continue authoring" action), auto-resume exactly
+// where the user left off instead of making them re-pick the structure
+// and date: select them, run the normal load, and jump straight to Draft.
+// Cleared as soon as it's consumed so a later plain refresh of this page
+// doesn't keep re-triggering it. Runs after loadStructures() (not instead
+// of it) - the structure picker still needs populating on every load
+// regardless of whether there's a return trip to resume.
+async function resumeAuthorReturn(){
+  const raw = sessionStorage.getItem('authorReturn');
+  if (!raw) return;
+  sessionStorage.removeItem('authorReturn');
+  let target;
+  try { target = JSON.parse(raw); } catch { return; }
+  if (!target || !target.structureId || !target.date) return;
+
+  const structureSelect = document.getElementById('structureSelect');
+  if (!structureSelect.querySelector(`option[value="${target.structureId}"]`)) return;
+  structureSelect.value = target.structureId;
+  await onStructureChange();
+  const inspectionSelect = document.getElementById('inspectionSelect');
+  if (!inspectionSelect.querySelector(`option[value="${target.date}"]`)) return;
+  inspectionSelect.value = target.date;
+  await onLoad();
+  goTo('draft');
+}
+loadStructures().then(resumeAuthorReturn);
 
 // ---- Upload a previous inspection (structure whose last inspection
 // wasn't done in spanSense) - extracts per-element narrative out of an
