@@ -197,6 +197,20 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .no-history-note{display:flex; align-items:center; gap:10px; background:var(--amber-bg); border:1px solid var(--amber-border); border-radius:16px; padding:12px 16px; margin-top:14px; font-size:.82rem; color:#8a5c15;}
 .no-history-note i{color:var(--amber);}
 
+/* Review card - a chance to double-check this is the right structure/
+   date/type before committing, plus the hand-off point into the real
+   capture flow for fixing/adding underlying defect data or photos. */
+.load-review-card{margin-top:14px; background:var(--bg-soft); border:1px solid var(--border2); border-radius:16px; padding:16px 18px;}
+.lrc-head{display:flex; align-items:center; gap:8px; font-size:.82rem; font-weight:700; color:var(--ok); margin-bottom:14px;}
+.lrc-head i{font-size:1rem;}
+.lrc-facts{display:grid; grid-template-columns:repeat(3,1fr); gap:12px 18px; margin-bottom:16px;}
+.lrc-fact{display:flex; flex-direction:column; gap:2px;}
+.lrc-fact span{font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-mute);}
+.lrc-fact b{font-size:.88rem; font-weight:700; color:var(--text);}
+.lrc-fact b.crit{color:var(--red);}
+.lrc-edit-btn{display:inline-flex; align-items:center; gap:8px; background:none; border:1px solid var(--border); color:var(--teal-dark); font-weight:700; font-size:.8rem; padding:9px 16px; border-radius:20px; cursor:pointer; transition:.15s; font-family:inherit;}
+.lrc-edit-btn:hover{background:var(--bg-mint); border-color:#cfe4e0;}
+
 /* BCI trend chart - a real line chart reads a multi-inspection trend far
    better than a row of chips (each chip carried 4 numbers - date/type/
    avg/crit - the more inspection history, the more numbers crammed into a
@@ -207,8 +221,7 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
    relying on colour alone, which is the validator's own documented
    exception for that case. */
 .bci-trend{margin-top:16px;}
-.bci-trend-header{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:8px;}
-.bci-trend-label{font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-mute);}
+.bci-trend-header{display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:10px; margin-bottom:8px;}
 .bci-legend{display:flex; align-items:center; gap:16px;}
 .bci-legend-item{display:flex; align-items:baseline; gap:6px; font-size:.78rem; font-weight:600; color:var(--text-mute2); font-variant-numeric:tabular-nums;}
 .bci-legend-item i{width:9px; height:9px; border-radius:50%; display:inline-block; flex-shrink:0; position:relative; top:-1px;}
@@ -511,13 +524,21 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .defect-card.collapsed .dc-body{display:none;}
 .defect-card.collapsed .dc-collapse-btn i{transform:rotate(-90deg);}
 
-/* Structure/inspection info - a real centered modal, same convention as
-   spanSense's own #bridgeModal on the map page (fixed full-screen
-   backdrop, flex-centered glass card), rather than a dropdown anchored to
-   the toolbar button - a dropdown's position depends on scroll offset and
-   how far down the page the button sits, which made it unreliable at
-   smaller window heights. A modal is always dead-centre in the viewport,
-   full stop. */
+/* Structure/inspection info modal - a real centered modal, same
+   convention as spanSense's own #bridgeModal on the map page (fixed
+   full-screen backdrop, flex-centered glass card), rather than a
+   dropdown anchored to the toolbar button - a dropdown's position
+   depends on scroll offset and how far down the page the button sits,
+   which made it unreliable at smaller window heights. A modal is always
+   dead-centre in the viewport, full stop.
+   Conclusions/Notes/Photos used to be tabs bolted onto this same modal,
+   but that buried them a click deeper than they're worth - they're now
+   their own always-visible right-side rail further down this file
+   (.draft-right-rail), the same "one click away" convention
+   inspection.html's left-floating-rail/notes-tab use. This modal is
+   Structure-info-only again; .sip-overlay/.struct-info-panel stay
+   shared/generic since the Conclusions and Photos panels below reuse the
+   exact same glass-card shell. */
 body.modal-open{overflow:hidden;}
 .sip-overlay{
   position:fixed; inset:0; z-index:1000;
@@ -527,22 +548,23 @@ body.modal-open{overflow:hidden;}
 .sip-overlay.show{display:flex;}
 .struct-info-panel{
   position:relative; width:420px; max-width:100%; max-height:86vh; overflow-y:auto;
-  background:rgba(255,255,255,.97); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+  background:rgba(255,255,255,.98); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
   border:1px solid rgba(255,255,255,.4); border-radius:22px; padding:26px;
   box-shadow:0 24px 80px rgba(0,0,0,.16), 0 8px 24px rgba(0,0,0,.08);
   transform:scale(.96); opacity:0; transition:all .2s cubic-bezier(.34,1.56,.64,1);
 }
 .sip-overlay.show .struct-info-panel{transform:scale(1); opacity:1;}
-.sip-close{position:absolute; top:16px; right:16px; width:34px; height:34px; border-radius:50%; border:none; background:var(--bg-soft); color:var(--text-mute2); font-size:1.3rem; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:.15s;}
+.sip-close{position:absolute; top:16px; right:16px; width:34px; height:34px; border-radius:50%; border:none; background:var(--bg-soft); color:var(--text-mute2); font-size:1.3rem; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:.15s; z-index:2;}
 .sip-close:hover{background:var(--red-bg); color:var(--red);}
+.sip-panel-title{font-size:1.05rem; font-weight:800; color:var(--green-dark); margin-bottom:2px;}
+.sip-name{font-size:1.05rem; font-weight:800; color:var(--green-dark); margin-bottom:2px;}
+.sip-meta{font-size:.74rem; color:var(--text-mute2); margin-bottom:18px;}
 .sip-divider{border-top:1px solid var(--border2); margin:14px 0;}
 .sip-edit-grp{display:flex; flex-direction:column; gap:10px;}
 .sip-edit-field{display:flex; flex-direction:column; gap:4px;}
 .sip-edit-field span{font-size:.64rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-mute);}
 .sip-edit-field input, .sip-edit-field select{width:100%; box-sizing:border-box; border:1px solid var(--border); border-radius:9px; padding:7px 10px; font-family:inherit; font-size:.82rem; color:var(--text); background:#fff;}
 .sip-edit-field input:focus, .sip-edit-field select:focus{border-color:var(--teal); outline:none;}
-.sip-name{font-size:1rem; font-weight:800; color:var(--green-dark); margin-bottom:2px;}
-.sip-meta{font-size:.74rem; color:var(--text-mute2); margin-bottom:14px;}
 .sip-label{font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-mute); margin-bottom:6px;}
 .sip-label-row{display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;}
 .sip-label-row .sip-label{margin-bottom:0;}
@@ -553,18 +575,112 @@ body.modal-open{overflow:hidden;}
 .sip-info-textarea{width:100%; min-height:64px; border:1px solid var(--border); border-radius:12px; padding:9px 11px; font-family:inherit; font-size:.8rem; color:var(--text); background:#fff; resize:vertical; margin-bottom:10px;}
 .sip-info-textarea:focus{border-color:var(--teal); outline:none;}
 .sip-info-facts{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;}
-.sip-info-actions{display:flex; justify-content:flex-end; gap:8px; margin-bottom:16px;}
+.sip-info-actions{display:flex; justify-content:flex-end; gap:8px; margin-bottom:4px;}
 .sip-info-cancel, .sip-info-save{padding:7px 16px; border-radius:20px; font-size:.76rem; font-weight:700; cursor:pointer; font-family:inherit;}
 .sip-info-cancel{background:none; border:1px solid var(--border); color:var(--text-mute2);}
 .sip-info-cancel:hover{background:var(--bg-soft);}
 .sip-info-save{background:var(--teal); border:none; color:#fff;}
 .sip-info-save:hover{background:var(--teal-dark);}
-.sip-bci-track{display:flex; flex-direction:column; gap:6px;}
+.sip-bci-track{display:flex; flex-direction:column; gap:6px; margin-bottom:4px;}
 .sip-bci-chip{display:flex; align-items:center; justify-content:space-between; background:var(--bg-soft); border:1px solid var(--border2); border-radius:10px; padding:7px 10px; font-size:.72rem;}
 .sip-bci-chip.current{background:var(--bg-mint); border-color:#cfe4e0;}
 .sip-bci-chip .sc-date{color:var(--text-mute2);}
 .sip-bci-chip .sc-vals{font-weight:700; color:var(--text); font-variant-numeric:tabular-nums;}
 .sip-bci-chip .sc-vals .crit{color:var(--red); margin-left:6px;}
+
+/* Conclusions panel */
+.sip-conclusions-textarea{width:100%; min-height:150px; border:1px solid var(--border); border-radius:12px; padding:11px 13px; font-family:inherit; font-size:.82rem; line-height:1.55; color:var(--text); background:#fff; resize:vertical; margin-bottom:12px;}
+.sip-conclusions-textarea:focus{border-color:var(--teal); outline:none;}
+.sip-conclusions-actions{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:4px;}
+.sip-suggest-btn{background:var(--ai-bg); border:1px solid var(--ai-border); color:var(--ai); font-size:.76rem; font-weight:700; padding:8px 14px; border-radius:20px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:.15s; font-family:inherit;}
+.sip-suggest-btn:hover{background:var(--ai-border);}
+.sip-suggest-btn:disabled{opacity:.6; cursor:default;}
+.sip-save-btn{background:var(--teal); border:none; color:#fff; font-size:.76rem; font-weight:700; padding:8px 18px; border-radius:20px; cursor:pointer; transition:.15s; font-family:inherit;}
+.sip-save-btn:hover{background:var(--teal-dark);}
+.sip-save-btn:disabled{opacity:.6; cursor:default;}
+
+/* Notes panel (sliding drawer content) */
+.sip-notes-list{display:flex; flex-direction:column; gap:8px; max-height:260px; overflow-y:auto; margin-bottom:14px;}
+.sip-notes-empty{font-size:.78rem; color:var(--text-mute); font-style:italic; padding:8px 0;}
+.sip-note-card{background:var(--bg-soft); border:1px solid var(--border2); border-radius:12px; padding:10px 12px;}
+.sip-note-top{display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;}
+.sip-note-src{font-size:.6rem; font-weight:800; text-transform:uppercase; letter-spacing:.04em; padding:2px 8px; border-radius:20px;}
+.sip-note-src-field{background:var(--amber-bg); color:var(--amber);}
+.sip-note-src-core{background:var(--bg-mint); color:var(--teal-dark);}
+.sip-note-meta{font-size:.68rem; color:var(--text-mute);}
+.sip-note-text{font-size:.8rem; color:var(--text); line-height:1.5; white-space:pre-wrap;}
+.sip-note-author{font-size:.68rem; color:var(--text-mute2); margin-top:4px;}
+.sip-notes-add textarea{width:100%; min-height:56px; border:1px solid var(--border); border-radius:12px; padding:9px 11px; font-family:inherit; font-size:.8rem; color:var(--text); background:#fff; resize:vertical; margin-bottom:8px;}
+.sip-notes-add textarea:focus{border-color:var(--teal); outline:none;}
+.sip-notes-add-row{display:flex; justify-content:flex-end;}
+
+/* Photos panel */
+.sip-photos-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:6px;}
+.sip-photo-item{display:flex; flex-direction:column; gap:6px;}
+.sip-photo-tile{position:relative; border-radius:12px; overflow:hidden; background:var(--bg-soft); border:1px solid var(--border2); aspect-ratio:4/3;}
+.sip-photo-tile img{width:100%; height:100%; object-fit:cover; cursor:pointer;}
+.sip-photo-del{position:absolute; top:6px; right:6px; width:24px; height:24px; border-radius:50%; border:none; background:rgba(20,30,32,.55); color:#fff; font-size:.8rem; cursor:pointer; display:flex; align-items:center; justify-content:center;}
+.sip-photo-del:hover{background:var(--red);}
+.sip-photo-caption{width:100%; box-sizing:border-box; border:1px solid var(--border); border-radius:9px; background:#fff; font-size:.72rem; padding:6px 8px; font-family:inherit; color:var(--text-mute2);}
+.sip-photo-caption:focus{border-color:var(--teal); outline:none;}
+.sip-photo-add-tile{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; border:1.5px dashed var(--border); border-radius:12px; aspect-ratio:4/3; color:var(--text-mute); font-size:.72rem; font-weight:600; cursor:pointer; background:var(--bg-soft); transition:.15s;}
+.sip-photo-add-tile:hover{border-color:var(--teal); color:var(--teal-dark);}
+.sip-photo-add-tile i{font-size:1.3rem;}
+.sip-photos-empty{font-size:.78rem; color:var(--text-mute); font-style:italic; padding:8px 0 14px;}
+.sip-photo-pending{font-size:.76rem; color:var(--text-mute2); margin-bottom:8px;}
+
+/* ===== DRAFT RIGHT RAIL (Conclusions, Photos, Notes) =====
+   One shared fixed wrapper, not three independent position:fixed
+   elements - they stack with a plain flex gap so nothing has to guess a
+   safe offset (that's what caused the earlier left-gutter clash: two
+   JS-repositioned widgets there vs. a hardcoded one). The left gutter
+   stays BCI-cards + wizard-steps only, unchanged from before this rail
+   existed. right:40px clears the glass scrollbar (fixed at right:10px,
+   width:10px, i.e. occupying the last 20px of the viewport) with room to
+   spare - the previous right:23px on the notes tab alone left only ~3px.
+   Only shown while #screen-draft is the active wizard step (toggled in
+   author.js's goTo()). */
+.draft-right-rail{
+  position:fixed; right:40px; top:46%; transform:translateY(-50%); z-index:90;
+  display:none; flex-direction:column; align-items:center; gap:8px;
+}
+.draft-rail-bar{
+  background:#fff; border:1px solid var(--border2); border-radius:18px;
+  box-shadow:0 4px 20px rgba(0,0,0,.08); padding:10px 14px; width:120px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px;
+  transition:.2s; cursor:pointer;
+}
+.draft-rail-bar:hover{box-shadow:0 8px 30px rgba(0,0,0,.12); border-color:#8ab4b0;}
+.draft-rail-bar .rail-pulse{width:11px; height:11px; background:var(--amber); border-radius:50%; display:flex; align-items:center; justify-content:center;}
+.draft-rail-bar.done .rail-pulse{background:var(--ok);}
+.draft-rail-bar .rail-pulse::after{font-family:"Font Awesome 6 Free"; font-weight:900; content:""; font-size:6px; color:#fff; opacity:0;}
+.draft-rail-bar.done .rail-pulse::after{content:"\f00c"; opacity:1;}
+.rail-icon{width:34px; height:34px; border-radius:10px; background:var(--bg-mint); color:var(--teal-dark); display:flex; align-items:center; justify-content:center; font-size:1.05rem; position:relative;}
+.rail-icon-photos{background:var(--bg-mint); color:var(--teal-dark);}
+.rail-icon-notes{background:var(--ai-bg); color:var(--ai);}
+.rail-label{font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-mute); white-space:nowrap;}
+.right-rail-divider{width:60px; height:1px; background:var(--border2);}
+
+.draft-notes-tab.hide{opacity:0; pointer-events:none;}
+.notes-badge{position:absolute; top:-6px; right:-6px; min-width:17px; height:17px; padding:0 4px; border-radius:9px; background:var(--ai); color:#fff; font-size:9.5px; font-weight:800; display:flex; align-items:center; justify-content:center;}
+.notes-badge[hidden]{display:none;}
+
+.draft-notes-panel{
+  position:fixed; right:40px; top:50%; transform:translateY(-50%) translateX(440px); z-index:1002;
+  width:340px; max-height:78vh; background:#fff; border:1px solid var(--border2);
+  border-radius:24px; box-shadow:0 20px 44px rgba(0,0,0,.16); overflow:hidden;
+  display:flex; flex-direction:column; opacity:0;
+  transition:transform .24s cubic-bezier(.2,.8,.2,1), opacity .2s ease;
+}
+.draft-notes-panel.open{transform:translateY(-50%) translateX(0); opacity:1;}
+.notes-panel-hdr{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:16px 18px 14px; border-bottom:1px solid var(--border2); background:var(--bg-soft); flex-shrink:0;}
+.notes-panel-hdr-left{display:flex; align-items:center; gap:10px; overflow:hidden;}
+.notes-panel-ico{width:32px; height:32px; border-radius:10px; background:var(--ai-bg); color:var(--ai); display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0;}
+.notes-panel-title{font-size:.85rem; font-weight:700; color:var(--text);}
+.notes-panel-sub{font-size:.68rem; color:var(--text-mute); margin-top:1px;}
+.draft-notes-panel .sip-notes-list{padding:14px 16px 6px; max-height:none;}
+@media (max-width: 860px){ .draft-right-rail{right:16px;} .draft-notes-panel{right:16px;} }
+@media (max-width: 768px){ .draft-right-rail{display:none !important;} }
 
 /* ===== STEP 3: AUTHOR VIEW ===== */
 .view-toolbar{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:18px;}
@@ -672,8 +788,13 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .new-insp-row{background:#1e3a38; border-color:#3a6b62;}
 .night-mode .loaded-chip{color:#7ec9ba;}
 .night-mode .no-history-note{background:#3a3020; border-color:#5a4a2a; color:#e0b060;}
-
-.night-mode .bci-trend-label{color:#7d939b;}
+.night-mode .load-review-card{background:#1a2428; border-color:#2f3e45;}
+.night-mode .lrc-head{color:#7ec9ba;}
+.night-mode .lrc-fact span{color:#7d939b;}
+.night-mode .lrc-fact b{color:#d4dfe3;}
+.night-mode .lrc-fact b.crit{color:#e57373;}
+.night-mode .lrc-edit-btn{border-color:#3a4b53; color:#8ab4b0;}
+.night-mode .lrc-edit-btn:hover{background:#1e3a38; border-color:#3a6b62;}
 .night-mode .bci-legend-item{color:#8aa4ac;}
 .night-mode .bci-legend-item b{color:#d4dfe3;}
 .night-mode .bci-legend-item.avg i{background:#8ab4b0;}
@@ -787,12 +908,13 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .struct-info-panel{background:rgba(33,47,51,.97); border-color:#2f3e45; box-shadow:0 24px 80px rgba(0,0,0,.5);}
 .night-mode .sip-close{background:#1a2428; color:#9ab0b8;}
 .night-mode .sip-close:hover{background:#3a2323; color:#e57373;}
+.night-mode .sip-name{color:#8ab4b0;}
+.night-mode .sip-meta{color:#8aa4ac;}
+.night-mode .sip-panel-title{color:#8ab4b0;}
 .night-mode .sip-divider{border-color:#2f3e45;}
 .night-mode .sip-edit-field span{color:#7d939b;}
 .night-mode .sip-edit-field input, .night-mode .sip-edit-field select{background:#1a2428; border-color:#3a4b53; color:#d4dfe3;}
 .night-mode .sip-edit-field input:focus, .night-mode .sip-edit-field select:focus{border-color:#6e9c98;}
-.night-mode .sip-name{color:#8ab4b0;}
-.night-mode .sip-meta{color:#8aa4ac;}
 .night-mode .sip-label{color:#7d939b;}
 .night-mode .sip-desc{color:#9ab0b8;}
 .night-mode .sip-info-edit-link{color:#7d939b;}
@@ -808,6 +930,39 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .sip-bci-chip .sc-date{color:#8aa4ac;}
 .night-mode .sip-bci-chip .sc-vals{color:#d4dfe3;}
 .night-mode .sip-bci-chip .sc-vals .crit{color:#e57373;}
+.night-mode .sip-conclusions-textarea{background:#1a2428; border-color:#3a4b53; color:#d4dfe3;}
+.night-mode .sip-conclusions-textarea:focus{border-color:#6e9c98;}
+.night-mode .sip-suggest-btn{background:#2a2450; border-color:#3c3266; color:#a794f5;}
+.night-mode .sip-suggest-btn:hover{background:#352b6b;}
+.night-mode .sip-save-btn{background:#3a6b62;}
+.night-mode .sip-save-btn:hover{background:#4a8a80;}
+.night-mode .sip-note-card{background:#1a2428; border-color:#2f3e45;}
+.night-mode .sip-note-src-field{background:#3a2f1a; color:#e0b96e;}
+.night-mode .sip-note-src-core{background:#1e3a38; color:#8ab4b0;}
+.night-mode .sip-note-meta{color:#7d939b;}
+.night-mode .sip-note-text{color:#d4dfe3;}
+.night-mode .sip-note-author{color:#8aa4ac;}
+.night-mode .sip-notes-empty{color:#7d939b;}
+.night-mode .sip-notes-add textarea{background:#1a2428; border-color:#3a4b53; color:#d4dfe3;}
+.night-mode .sip-notes-add textarea:focus{border-color:#6e9c98;}
+.night-mode .sip-photo-tile{background:#1a2428; border-color:#2f3e45;}
+.night-mode .sip-photo-caption{background:#1a2428; border-color:#3a4b53; color:#9ab0b8;}
+.night-mode .sip-photo-caption:focus{border-color:#6e9c98;}
+.night-mode .sip-photo-add-tile{background:#1a2428; border-color:#3a4b53; color:#7d939b;}
+.night-mode .sip-photo-add-tile:hover{border-color:#6e9c98; color:#8ab4b0;}
+.night-mode .sip-photos-empty{color:#7d939b;}
+.night-mode .sip-photo-pending{color:#8aa4ac;}
+.night-mode .draft-rail-bar{background:#212f33; border-color:#2f3e45;}
+.night-mode .draft-rail-bar:hover{border-color:#3a6b62;}
+.night-mode .rail-icon{background:#1e3a38; color:#8ab4b0;}
+.night-mode .rail-icon-notes{background:#2a2450; color:#a794f5;}
+.night-mode .rail-label{color:#7d939b;}
+.night-mode .right-rail-divider{background:#2f3e45;}
+.night-mode .draft-notes-panel{background:#212f33; border-color:#2f3e45;}
+.night-mode .notes-panel-hdr{background:#1a2428; border-color:#2f3e45;}
+.night-mode .notes-panel-ico{background:#2a2450; color:#a794f5;}
+.night-mode .notes-panel-title{color:#d4dfe3;}
+.night-mode .notes-panel-sub{color:#8aa4ac;}
 .night-mode .dc-why{background:#2a2450; border-color:#3c3266; color:#a794f5;}
 .night-mode .btn-bulk{background:#3a6b62;}
 .night-mode .btn-bulk:hover{background:#4a8579;}
@@ -854,6 +1009,8 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
     <div class="left">
         <div class="logo">spanSense</div>
         <div class="menu">
+            <a href="../map/map.html"><i class="fas fa-map"></i>Map</a>
+            <a href="../dashboard/dashboard.html"><i class="fas fa-chart-pie"></i>Dashboard</a>
             <a href="../author/author.html" class="active"><i class="fas fa-feather-pointed"></i>Author</a>
         </div>
     </div>
@@ -1020,7 +1177,7 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
             <div class="draft-toolbar">
                 <div class="filter-pills" id="draftFilterPills"></div>
                 <div class="draft-toolbar-actions">
-                    <button class="btn-mini" id="structInfoToggle" title="Structure & Inspection Info"><i class="fas fa-circle-info"></i> Info</button>
+                    <button class="btn-mini" id="structInfoToggle" title="Structure & inspection info"><i class="fas fa-circle-info"></i> Info</button>
                     <button class="btn-mini" id="toggleCollapseAllBtn" title="Collapse all"><i class="fas fa-compress"></i> Collapse</button>
                     <button class="btn-bulk" id="markUnchangedBtn" title="Mark all unchanged as reviewed"><i class="fas fa-check-double"></i> Mark unchanged</button>
                 </div>
@@ -1031,6 +1188,57 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
             <div class="sip-overlay" id="sipOverlay">
                 <div class="struct-info-panel" id="structInfoPanel"></div>
             </div>
+
+            <!-- Right-side rail: Conclusions, General Photos, Notes - one
+                 shared fixed wrapper (not three independent position:fixed
+                 elements) so they stack with a plain flex gap instead of
+                 needing their own collision-prone offsets, clear of the
+                 glass scrollbar (right:10px, width:10px). The left gutter
+                 stays BCI-cards + wizard-steps only, unchanged. Shown only
+                 while this screen is active (see goTo() in author.js). -->
+            <div class="draft-right-rail" id="draftRightRail">
+                <div class="draft-rail-bar" id="conclusionsBar" title="Conclusions">
+                    <div class="rail-pulse" id="conclusionsPulse"></div>
+                    <div class="rail-icon"><i class="fas fa-clipboard-check"></i></div>
+                    <div class="rail-label">Conclusions</div>
+                </div>
+                <div class="draft-rail-bar" id="draftPhotosBar" title="General Photos">
+                    <div class="rail-icon rail-icon-photos"><i class="fas fa-camera"></i></div>
+                    <div class="rail-label">Photos</div>
+                </div>
+                <div class="right-rail-divider"></div>
+                <div class="draft-rail-bar draft-notes-tab" id="draftNotesTab" title="Notes">
+                    <div class="rail-icon rail-icon-notes"><i class="fas fa-note-sticky"></i><span class="notes-badge" id="draftNotesBadge" hidden>0</span></div>
+                    <div class="rail-label">Notes</div>
+                </div>
+            </div>
+            <div class="draft-notes-panel" id="draftNotesPanel">
+                <div class="notes-panel-hdr">
+                    <div class="notes-panel-hdr-left">
+                        <div class="notes-panel-ico"><i class="fas fa-note-sticky"></i></div>
+                        <div>
+                            <div class="notes-panel-title">Notes</div>
+                            <div class="notes-panel-sub" id="draftNotesSub">No notes yet</div>
+                        </div>
+                    </div>
+                    <button class="sip-close" id="draftNotesClose" title="Close">&times;</button>
+                </div>
+                <div class="sip-notes-list" id="draftNotesList" style="flex:1; overflow-y:auto; margin:0; padding:14px 16px 6px; max-height:none;"></div>
+                <div class="sip-notes-add" style="padding:0 16px 16px;">
+                    <textarea id="draftNotesInput" placeholder="Add a note…"></textarea>
+                    <div class="sip-notes-add-row">
+                        <button class="sip-save-btn" id="draftNotesAddBtn" disabled>Add note</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sip-overlay" id="conclusionsOverlay">
+                <div class="struct-info-panel" id="conclusionsPanel" style="width:520px;"></div>
+            </div>
+            <div class="sip-overlay" id="photosOverlay">
+                <div class="struct-info-panel" id="photosPanel" style="width:520px;"></div>
+            </div>
+
             <div class="bottom-nav">
                 <button class="btn-ghost" id="backToSetupBtn"><i class="fas fa-arrow-left"></i> Back</button>
                 <span class="progress-text" id="draftProgressText" style="font-size:.8rem; color:var(--text-mute2);"></span>

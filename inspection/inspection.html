@@ -563,6 +563,7 @@
         </div>
         
         <div class="right">
+            <div class="author-return-badge" id="authorReturnBadge" title="Save &amp; return to Author"><i class="fas fa-feather-pointed"></i><span>Author</span></div>
             <div class="night-mode-toggle" id="nightModeToggle"><i class="fas fa-moon"></i></div>
             <div class="account-links">
                 <a href="../accounts/accounts.html" target="_self" title="Account"><i class="fas fa-user-circle"></i></a>
@@ -570,6 +571,35 @@
             </div>
         </div>
     </div>
+
+    <!-- Only shown when arriving here from Author's "Edit defect data &
+         photos" hand-off (author/author.js's goEditInInspection()) - same
+         match-check as inspection1.html's copy of this snippet, against
+         the same sessionStorage keys that call sets, so a stale flag left
+         over from a different structure/date won't light the badge up
+         here. Purely a navigation link back into Author, no save side
+         effects of its own - see the post-save modal's "Continue
+         authoring" action (spans.js) for the actual save-then-return path. -->
+    <script>
+    (function(){
+        var raw = sessionStorage.getItem('authorReturn');
+        if (!raw) return;
+        var target;
+        try { target = JSON.parse(raw); } catch (e) { return; }
+        if (!target || String(target.structureId) !== String(sessionStorage.getItem('structureId')) || target.date !== sessionStorage.getItem('inspectionDate')) return;
+        document.addEventListener('DOMContentLoaded', function(){
+            function goBackToAuthor(e){ if (e) e.preventDefault(); window.location.href = '../author/author.html'; }
+            var badge = document.getElementById('authorReturnBadge');
+            if (badge) { badge.classList.add('visible'); badge.addEventListener('click', goBackToAuthor); }
+            // Post-save modal's "what next" moment - the actual save has
+            // already happened by the time this row can even be seen, so
+            // unlike the navbar badge above (a plain escape hatch, usable
+            // any time) this is the intended "I'm done, take me back" path.
+            var continueBtn = document.getElementById('continueAuthoringBtn');
+            if (continueBtn) { continueBtn.style.display = 'flex'; continueBtn.addEventListener('click', goBackToAuthor); }
+        });
+    })();
+    </script>
 
     <!-- 75% WRAPPER WITH SIDEBAR LAYOUT -->
     <div class="inspection-wrapper">
@@ -1270,6 +1300,15 @@
                         <span class="action-desc">Start fresh</span>
                     </a>
                 </div>
+
+                <a href="#" class="action-btn-wide" id="continueAuthoringBtn" style="display:none;">
+                    <div class="wide-icon"><i class="fas fa-feather-pointed"></i></div>
+                    <div class="wide-text">
+                        <div class="wide-label">Continue authoring</div>
+                        <div class="wide-desc">Back to Author with this saved</div>
+                    </div>
+                    <i class="fas fa-chevron-right wide-arrow"></i>
+                </a>
 
                 <a href="#" class="action-btn-wide" onclick="viewReport(event)">
                     <div class="wide-icon"><i class="fas fa-file-alt"></i></div>

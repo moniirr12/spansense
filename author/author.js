@@ -320,6 +320,7 @@ const AUTHOR = {
   structures: [],
   structureId: null, structureName: null, structureType: null, organizationId: null,
   inspectionDate: null, inspectionType: null, previousDate: null, inspectorName: null,
+  inspectionId: null, conclusions: '', generalPhotos: [], notes: [],
   diffElements: [], // [{ elementNumber, name, category, current, previous, comparison, editedNarrative? }]
   branding: { accentColor: '#5b8c8a', template: 'modern', logoUrl: null },
   maxStepReached: 0
@@ -349,8 +350,20 @@ function goTo(step){
   document.querySelectorAll('.wizard-connector').forEach((el, i) => {
     el.classList.toggle('filled', i < idx);
   });
-  if(step === 'draft') { renderDraft(); if (window.refreshBciSticky) requestAnimationFrame(window.refreshBciSticky); }
-  else { closeStructInfoModal(); if (window.refreshBciSticky) window.refreshBciSticky(); }
+  // The right rail (Conclusions/Photos/Notes) is Draft-only - Setup/Author
+  // View/Export have no use for editing raw notes/photos mid-review, so it
+  // stays out of the way (and its modals/drawer closed) everywhere else.
+  const onDraft = step === 'draft';
+  document.getElementById('draftRightRail').style.display = onDraft ? 'flex' : 'none';
+  if(step === 'draft') {
+    renderDraft();
+    refreshConclusionsRailState();
+    renderDraftNotesList();
+    if (window.refreshBciSticky) requestAnimationFrame(window.refreshBciSticky);
+  } else {
+    closeStructInfoModal(); closeConclusionsModal(); closePhotosModal(); closeDraftNotesPanel();
+    if (window.refreshBciSticky) window.refreshBciSticky();
+  }
   if(step === 'author') { renderDataPane(); renderReportPane(); }
   if(step === 'export') renderExport();
 }
@@ -531,15 +544,12 @@ function bciTrendHTML(trend, live){
   if (!scored.length) {
     if (!live) return '';
     return `<div class="bci-trend"${live ? ' id="draftBciOriginal"' : ''}>
-      <div class="bci-trend-header"><div class="bci-trend-label">This report's BCI</div>${legend}</div>
+      <div class="bci-trend-header">${legend}</div>
     </div>`;
   }
   const shown = scored.slice(-BCI_TREND_MAX_POINTS);
-  const label = scored.length > shown.length
-    ? `BCI trend — last ${shown.length} of ${scored.length} inspections`
-    : `BCI trend across ${scored.length} inspection${scored.length===1?'':'s'}`;
   return `<div class="bci-trend"${live ? ' id="draftBciOriginal"' : ''}>
-    <div class="bci-trend-header"><div class="bci-trend-label">${label}</div>${legend}</div>
+    <div class="bci-trend-header">${legend}</div>
     ${bciTrendChartHTML(shown)}
   </div>`;
 }
@@ -583,6 +593,15 @@ async function onLoad(){
     AUTHOR.structureBuiltYear = bridge.built_year || null;
     AUTHOR.structureMaterial = [bridge.primary_material, bridge.secondary_material].filter(Boolean).join(' / ') || null;
     AUTHOR.inspectorName = full.inspectorName || null;
+    // The loaded base inspection's own id/conclusions/general photos/notes -
+    // these attach to it directly (same "editing the stored record" model
+    // as structure info above), not to newInspectionDate, which only labels
+    // this report's cover page and may not be a real DB row yet.
+    AUTHOR.inspectionId = full.id || null;
+    AUTHOR.inspectionType = full.inspectionType || null;
+    AUTHOR.conclusions = full.conclusions || '';
+    AUTHOR.generalPhotos = full.generalPhotos || [];
+    AUTHOR.notes = full.notes || [];
     AUTHOR.bciTrend = twin.inspections || [];
     AUTHOR.bciAvg = full.overallBciave != null ? parseFloat(full.overallBciave) : null;
     AUTHOR.bciCrit = full.overallBcicrit != null ? parseFloat(full.overallBcicrit) : null;
@@ -612,13 +631,32 @@ async function onLoad(){
       }
     });
 
-    // Structure/date are already visible in the selects themselves, and the
-    // description + BCI trend are shown again on the Draft screen - this
-    // just needs to confirm the load succeeded, not restate everything,
-    // except the one thing that isn't otherwise visible: no previous
-    // inspection to compare against.
+    // A real review card rather than just a "Loaded" chip - a chance to
+    // double-check this is actually the right structure/date/type before
+    // committing to it, plus the hand-off point into the real capture flow
+    // (inspection1.html -> inspection.html) for fixing/adding underlying
+    // defect data or photos. That flow is the same "open in edit mode"
+    // convention already used by database.js/dashboard.js/map.js's own
+    // "Edit"/"Edit Report" links - editInspectionRow (database/database.js)
+    // is the canonical example - plus one new sessionStorage key,
+    // authorReturn, so those pages know to show a way back into Author
+    // (see the navbar badge in inspection.html/inspection1.html and the
+    // auto-resume check near loadStructures() below).
     const summary = document.getElementById('loadedSummary');
-    summary.innerHTML = `<div class="loaded-chip"><i class="fas fa-circle-check"></i> Loaded${diff.previousDate ? '' : ' — first recorded inspection, no previous data to compare against'}</div>`;
+    summary.innerHTML = `
+      <div class="load-review-card">
+        <div class="lrc-head"><i class="fas fa-circle-check"></i> Loaded${diff.previousDate ? '' : ' — first recorded inspection, no previous data to compare against'}</div>
+        <div class="lrc-facts">
+          <div class="lrc-fact"><span>Structure</span><b>${AUTHOR.structureName || '—'}</b></div>
+          <div class="lrc-fact"><span>Date</span><b>${fmtDate(AUTHOR.inspectionDate)}</b></div>
+          <div class="lrc-fact"><span>Type</span><b>${INSPECTION_TYPE_LABELS[AUTHOR.inspectionType] || AUTHOR.inspectionType || '—'}</b></div>
+          <div class="lrc-fact"><span>Inspector</span><b>${AUTHOR.inspectorName || '—'}</b></div>
+          <div class="lrc-fact"><span>BCI avg</span><b>${AUTHOR.bciAvg != null ? AUTHOR.bciAvg.toFixed(1) : '—'}</b></div>
+          <div class="lrc-fact"><span>BCI crit</span><b class="crit">${AUTHOR.bciCrit != null ? AUTHOR.bciCrit.toFixed(1) : '—'}</b></div>
+        </div>
+        <button class="lrc-edit-btn" id="editInInspectionBtn"><i class="fas fa-arrow-up-right-from-square"></i> Edit defect data &amp; photos</button>
+      </div>`;
+    document.getElementById('editInInspectionBtn').addEventListener('click', goEditInInspection);
 
     document.getElementById('leftBciCards').style.display = 'flex';
     recomputeLiveBCI();
@@ -646,7 +684,54 @@ document.getElementById('structureSelect').addEventListener('change', onStructur
 document.getElementById('loadBtn').addEventListener('click', onLoad);
 document.getElementById('newInspectionDate').addEventListener('change', function(){ AUTHOR.newInspectionDate = this.value; });
 document.getElementById('newInspectionType').addEventListener('change', function(){ AUTHOR.newInspectionType = this.value || null; });
-loadStructures();
+
+// Hands off to the real capture flow for this exact structure/date - the
+// same sessionStorage keys editInspectionRow (database/database.js) sets
+// before opening inspection1.html, plus authorReturn so that page (and
+// inspection.html after it) knows to show a way back into Author. Same
+// tab, not a new one - this is a "go there, come back" trip, not a
+// side-reference lookup like the database page's own Edit links.
+function goEditInInspection(){
+  sessionStorage.removeItem('inspectionData');
+  sessionStorage.removeItem('defects');
+  sessionStorage.removeItem('photoData');
+  sessionStorage.removeItem('selectedSpan');
+  sessionStorage.setItem('inspectionStructureNumber', AUTHOR.structureId);
+  sessionStorage.setItem('inspectionDate', AUTHOR.inspectionDate);
+  sessionStorage.setItem('inspectionMode', 'edit');
+  sessionStorage.setItem('structureId', AUTHOR.structureId);
+  sessionStorage.setItem('structureName', AUTHOR.structureName);
+  sessionStorage.setItem('authorReturn', JSON.stringify({ structureId: AUTHOR.structureId, date: AUTHOR.inspectionDate }));
+  window.location.href = '../inspection1/inspection1.html';
+}
+
+// If we're arriving back from inspection1.html/inspection.html (the badge
+// or the post-save "Continue authoring" action), auto-resume exactly
+// where the user left off instead of making them re-pick the structure
+// and date: select them, run the normal load, and jump straight to Draft.
+// Cleared as soon as it's consumed so a later plain refresh of this page
+// doesn't keep re-triggering it. Runs after loadStructures() (not instead
+// of it) - the structure picker still needs populating on every load
+// regardless of whether there's a return trip to resume.
+async function resumeAuthorReturn(){
+  const raw = sessionStorage.getItem('authorReturn');
+  if (!raw) return;
+  sessionStorage.removeItem('authorReturn');
+  let target;
+  try { target = JSON.parse(raw); } catch { return; }
+  if (!target || !target.structureId || !target.date) return;
+
+  const structureSelect = document.getElementById('structureSelect');
+  if (!structureSelect.querySelector(`option[value="${target.structureId}"]`)) return;
+  structureSelect.value = target.structureId;
+  await onStructureChange();
+  const inspectionSelect = document.getElementById('inspectionSelect');
+  if (!inspectionSelect.querySelector(`option[value="${target.date}"]`)) return;
+  inspectionSelect.value = target.date;
+  await onLoad();
+  goTo('draft');
+}
+loadStructures().then(resumeAuthorReturn);
 
 // ---- Upload a previous inspection (structure whose last inspection
 // wasn't done in spanSense) - extracts per-element narrative out of an
@@ -1424,12 +1509,21 @@ document.getElementById('toggleCollapseAllBtn').addEventListener('click', functi
 document.getElementById('toAuthorBtn').addEventListener('click', () => goTo('author'));
 document.getElementById('backToSetupBtn').addEventListener('click', () => goTo('setup'));
 
-// Structure/inspection info - a collapsible popover opened on demand from
-// its toolbar button, not rendered as part of every renderDraft() (which
-// would reset it mid-typing if it happened to be open). BCI trend and
-// description are read-only context; the fields below feed the same
-// AUTHOR.newInspectionDate/newInspectionType the Setup screen sets, plus
-// an inspector name (defaulted from the base inspection's own record).
+// ============================================================
+// STRUCTURE INFO MODAL — inspection date/type/inspector (feed the same
+// AUTHOR.newInspectionDate/newInspectionType the Setup screen sets) plus
+// the structure's own description/spans/length/built/material, via the
+// same PATCH /api/bridges/:id/info endpoint and view/edit toggle
+// inspection1.html's "Span Info" panel already uses - editing a
+// structure's core facts means the same thing (and hits the same data)
+// wherever you do it in spanSense. Available from both the "From
+// spanSense records" and "Upload a previous inspection" paths, since both
+// set AUTHOR.structureId/structureDescription/etc before this can open.
+// Conclusions/Notes/Photos used to be tabs on this same popover; they're
+// now their own always-visible right-side rail further below, so this
+// stays a single-purpose panel opened on demand from its toolbar button
+// (not rendered as part of every renderDraft(), which would reset it
+// mid-typing if it happened to be open).
 function renderStructInfoPanel(){
   const panel = document.getElementById('structInfoPanel');
   if (!AUTHOR.structureId) return;
@@ -1437,7 +1531,6 @@ function renderStructInfoPanel(){
     <button class="sip-close" id="sipClose" title="Close">&times;</button>
     <div class="sip-name">${AUTHOR.structureName || ''}</div>
     <div class="sip-meta">${AUTHOR.structureType || ''} · Base inspection ${fmtDate(AUTHOR.inspectionDate)}</div>
-    <div class="sip-label">This Report's Details</div>
     <div class="sip-edit-grp">
       <label class="sip-edit-field"><span>Inspection date</span>
         <input type="date" id="sipInspectionDate" value="${AUTHOR.newInspectionDate || ''}">
@@ -1459,8 +1552,8 @@ function renderStructInfoPanel(){
     <div class="sip-label">BCI trend</div>
     <div class="sip-bci-track">${sipBciTrendHTML()}</div>
   `;
-  renderSipInfoView();
   document.getElementById('sipClose').addEventListener('click', closeStructInfoModal);
+  renderSipInfoView();
   document.getElementById('sipInspectionDate').addEventListener('change', function(){
     AUTHOR.newInspectionDate = this.value;
     document.getElementById('newInspectionDate').value = this.value;
@@ -1484,13 +1577,6 @@ function sipEscapeHtml(str){
   });
 }
 
-// Structure Info's description/spans/length/built/material - same fields,
-// same PATCH /api/bridges/:id/info endpoint, and same view/edit toggle
-// inspection1.html's "Span Info" panel already uses, so editing a
-// structure's core facts means the same thing (and hits the same data)
-// wherever you do it in spanSense. Available from both the "From spanSense
-// records" and "Upload a previous inspection" paths, since both set
-// AUTHOR.structureId/structureDescription/etc before this panel can open.
 function renderSipInfoView(){
   const block = document.getElementById('sipInfoBlock');
   if (!block) return;
@@ -1565,17 +1651,6 @@ async function saveSipInfo(){
     saveBtn.disabled = false; saveBtn.textContent = 'Save';
   }
 }
-document.getElementById('structInfoToggle').addEventListener('click', () => {
-  renderStructInfoPanel();
-  document.getElementById('sipOverlay').classList.add('show');
-  document.body.classList.add('modal-open');
-});
-document.getElementById('sipOverlay').addEventListener('click', (e) => {
-  if (e.target.id === 'sipOverlay') closeStructInfoModal();
-});
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeStructInfoModal();
-});
 function sipBciTrendHTML(){
   const scored = (AUTHOR.bciTrend || []).filter(t => t.bciAvg != null).slice(-6);
   if (!scored.length) return '<div style="font-size:.74rem; color:var(--text-mute);">No BCI history recorded.</div>';
@@ -1584,6 +1659,347 @@ function sipBciTrendHTML(){
     <span class="sc-vals">${t.bciAvg.toFixed(1)}${t.bciCrit != null ? `<span class="crit">${t.bciCrit.toFixed(1)}</span>` : ''}</span>
   </div>`).join('');
 }
+
+// ============================================================
+// DRAFT RIGHT RAIL — Conclusions, General Photos and Notes, stacked in
+// one shared right-side rail (the same "always one click away"
+// convention inspection.html's left-floating-rail/notes-tab use),
+// instead of nesting these behind the Structure Info modal's tabs. Each
+// opens its own small modal/drawer (reusing the .sip-overlay/
+// .struct-info-panel glass-card shell Structure Info already established)
+// rather than sharing one tab-switched surface. The left gutter stays
+// BCI-cards + wizard-steps only. Shown/hidden per wizard step from goTo().
+// ============================================================
+
+// ---- Conclusions: a free-text field the base inspection never had a
+// user-editable version of in Author (only the export narrative's
+// auto-generated intro, buildConclusionsIntro() in authorNarrative.js).
+// "Suggest Draft" reuses the same /api/draft-conclusions Gemini endpoint
+// inspection.html's Conclusions modal uses (see suggestDraftConclusions()
+// in inspection/spans.js), fed from AUTHOR.diffElements instead of
+// sessionStorage. Saving goes straight to the DB via the narrow
+// PATCH /api/inspections/:id/conclusions route - unlike inspection.html's
+// version, which only lands in sessionStorage until the whole inspection
+// is (re)saved through /update-inspection, Author has no such save step
+// and isn't meant to rewrite the base inspection's spans/defects, so this
+// needed its own narrow endpoint touching just that one column.
+function renderConclusionsPanel(){
+  const panel = document.getElementById('conclusionsPanel');
+  if (!panel || !AUTHOR.structureId) return;
+  panel.innerHTML = `
+    <button class="sip-close" id="conclusionsClose" title="Close">&times;</button>
+    <div class="sip-panel-title"><i class="fas fa-clipboard-check"></i> Conclusions</div>
+    <div class="sip-meta">${AUTHOR.structureName || ''}</div>
+    <textarea class="sip-conclusions-textarea" id="draftConclusionsText" placeholder="Summarise overall structure condition.">${sipEscapeHtml(AUTHOR.conclusions || '')}</textarea>
+    <div class="sip-conclusions-actions">
+      <button class="sip-suggest-btn" id="draftSuggestBtn"><i class="fas fa-wand-magic-sparkles"></i> Suggest Draft</button>
+      <button class="sip-save-btn" id="draftSaveConclusionsBtn">Save Conclusions</button>
+    </div>
+  `;
+  document.getElementById('conclusionsClose').addEventListener('click', closeConclusionsModal);
+  document.getElementById('draftSuggestBtn').addEventListener('click', suggestAuthorConclusions);
+  document.getElementById('draftSaveConclusionsBtn').addEventListener('click', saveAuthorConclusions);
+}
+function openConclusionsModal(){
+  renderConclusionsPanel();
+  document.getElementById('conclusionsOverlay').classList.add('show');
+  document.body.classList.add('modal-open');
+}
+function closeConclusionsModal(){
+  document.getElementById('conclusionsOverlay').classList.remove('show');
+  document.body.classList.remove('modal-open');
+}
+function refreshConclusionsRailState(){
+  const bar = document.getElementById('conclusionsBar');
+  if (bar) bar.classList.toggle('done', !!(AUTHOR.conclusions && AUTHOR.conclusions.trim()));
+}
+function buildAuthorConclusionsSummary(){
+  const defects = [];
+  const collect = (name, d) => {
+    if (!d || d.status !== 'defect') return;
+    defects.push({
+      element: name,
+      code: `${d.defectType}.${d.defectNumber}`,
+      description: (typeof defectTypeLabel === 'function' && defectTypeLabel(d.defectType, d.defectNumber)) || '',
+      severity: d.severity, extent: d.extent,
+      worksRequired: d.worksRequired, comment: d.comments || ''
+    });
+  };
+  AUTHOR.diffElements.forEach(el => {
+    collect(el.name, el.current);
+    (el.extraDefects || []).forEach(d => collect(el.name, d));
+  });
+  defects.sort((a, b) => (parseInt(b.severity, 10) || 0) - (parseInt(a.severity, 10) || 0));
+  return {
+    structureType: AUTHOR.structureType || 'Bridge',
+    elementsChecked: AUTHOR.diffElements.filter(e => e.current.status !== 'na').length,
+    noDefectsCount: AUTHOR.diffElements.filter(e => e.current.status === 'good').length,
+    notInspectedCount: AUTHOR.diffElements.filter(e => e.current.status === 'ninsp').length,
+    bciAv: AUTHOR.bciAvg != null ? Number(AUTHOR.bciAvg.toFixed(2)) : 100,
+    bciCrit: AUTHOR.bciCrit != null ? Number(AUTHOR.bciCrit.toFixed(2)) : 100,
+    defects
+  };
+}
+async function suggestAuthorConclusions(){
+  const textarea = document.getElementById('draftConclusionsText');
+  if (!textarea) return;
+  if (textarea.value.trim().length > 0 && !confirm('This will replace the current text with a suggested draft. Continue?')) return;
+
+  const btn = document.getElementById('draftSuggestBtn');
+  const originalHtml = btn.innerHTML;
+  btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Drafting…';
+  try {
+    const res = await fetch(`${API_BASE}/api/draft-conclusions`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(buildAuthorConclusionsSummary())
+    });
+    const result = await res.json();
+    if (!res.ok || !result.success || !result.text) throw new Error(result.error || 'No draft returned');
+    textarea.value = result.text;
+  } catch (err) {
+    console.error('Suggest draft failed:', err);
+    alert('Could not draft conclusions right now. Please write your own, or try again shortly.');
+  } finally {
+    btn.disabled = false; btn.innerHTML = originalHtml;
+  }
+}
+async function saveAuthorConclusions(){
+  const textarea = document.getElementById('draftConclusionsText');
+  if (!textarea || !AUTHOR.inspectionId) return;
+  const btn = document.getElementById('draftSaveConclusionsBtn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const res = await fetch(`${API_BASE}/api/inspections/${AUTHOR.inspectionId}/conclusions`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ conclusions: textarea.value })
+    });
+    if (!res.ok) throw new Error('Save failed');
+    AUTHOR.conclusions = textarea.value;
+    refreshConclusionsRailState();
+    btn.textContent = 'Saved';
+    setTimeout(() => { if (btn) { btn.disabled = false; btn.textContent = 'Save Conclusions'; } }, 1200);
+  } catch (err) {
+    console.error('Save conclusions failed:', err);
+    alert('Could not save conclusions. Please try again.');
+    btn.disabled = false; btn.textContent = 'Save Conclusions';
+  }
+}
+
+// ---- Notes: a running multi-entry log (inspection_notes), separate from
+// Conclusions - same table/endpoints inspection/notesPanel.js uses, just
+// without its queued-in-sessionStorage fallback, since Author only ever
+// loads an already-recorded inspection (AUTHOR.inspectionId always exists
+// once a structure+date is loaded). A sliding drawer off the right edge,
+// same open/close mechanic as inspection.html's #notesPanel.
+function renderDraftNotesList(){
+  const list = document.getElementById('draftNotesList');
+  const sub = document.getElementById('draftNotesSub');
+  const badge = document.getElementById('draftNotesBadge');
+  if (!list) return;
+  const notes = AUTHOR.notes || [];
+  list.innerHTML = notes.length ? notes.map(sipNoteCardHTML).join('') : '<div class="sip-notes-empty">No notes yet. Add one below.</div>';
+  // Note text set via textContent here, not the innerHTML above, so a
+  // note can't inject markup into the page - same convention as
+  // inspection/notesPanel.js's noteCardHTML.
+  list.querySelectorAll('.sip-note-card .sip-note-text').forEach((el, i) => { el.textContent = notes[i].text; });
+  const fieldCount = notes.filter(n => n.source === 'field').length;
+  sub.textContent = notes.length
+    ? `${notes.length} note${notes.length === 1 ? '' : 's'}${fieldCount ? ` · ${fieldCount} from Field` : ''}`
+    : 'No notes yet';
+  if (badge) { if (notes.length) { badge.textContent = String(notes.length); badge.hidden = false; } else badge.hidden = true; }
+}
+function sipNoteCardHTML(note){
+  const src = note.source === 'field' ? 'field' : 'core';
+  const srcLabel = src === 'field' ? 'Field' : 'Core';
+  return `
+    <div class="sip-note-card">
+      <div class="sip-note-top">
+        <span class="sip-note-src sip-note-src-${src}">${srcLabel}</span>
+        <span class="sip-note-meta">${sipTimeAgo(note.created_at)}</span>
+      </div>
+      <div class="sip-note-text"></div>
+      ${note.author ? `<div class="sip-note-author">${sipEscapeHtml(note.author)}</div>` : ''}
+    </div>`;
+}
+function sipTimeAgo(iso){
+  if (!iso) return '';
+  const then = new Date(iso);
+  const diffMin = Math.round((Date.now() - then.getTime()) / 60000);
+  if (diffMin < 1) return 'Just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.round(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  return then.toLocaleDateString(undefined, { day: '2-digit', month: 'short' });
+}
+function openDraftNotesPanel(){
+  renderDraftNotesList();
+  document.getElementById('draftNotesPanel').classList.add('open');
+  document.getElementById('draftNotesTab').classList.add('hide');
+}
+function closeDraftNotesPanel(){
+  document.getElementById('draftNotesPanel').classList.remove('open');
+  document.getElementById('draftNotesTab').classList.remove('hide');
+}
+async function addAuthorNote(){
+  const input = document.getElementById('draftNotesInput');
+  const btn = document.getElementById('draftNotesAddBtn');
+  const text = input.value.trim();
+  if (!text || !AUTHOR.inspectionId) return;
+  btn.disabled = true;
+  try {
+    const res = await fetch(`${API_BASE}/api/inspections/${AUTHOR.inspectionId}/notes`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, source: 'core' })
+    });
+    const result = await res.json();
+    if (!res.ok || !result.success) throw new Error(result.error || 'Failed to add note');
+    AUTHOR.notes = [result.note, ...(AUTHOR.notes || [])];
+    input.value = '';
+    renderDraftNotesList();
+  } catch (err) {
+    console.error('Add note error:', err);
+    alert('Could not add note: ' + err.message);
+  } finally {
+    btn.disabled = input.value.trim().length === 0;
+  }
+}
+
+// ---- Photos: general/site photos not tied to any defect - same reserved
+// defectId:'general' convention and upload endpoint
+// inspection/photo.js's openGeneralPhotosModal() uses (and the same one
+// Author's own defect-photo uploads already call, see uploadPendingPhotos
+// above), and the same generic-by-id delete/caption endpoints. Uploads
+// immediately on file selection rather than staging a pending/caption-
+// first preview - matching how inspection.html's general photos already
+// behave (see the "auto-upload as soon as they're added" comment in
+// inspection/photo.js), not Author's own per-defect pending-upload flow.
+function renderPhotosPanel(){
+  const panel = document.getElementById('photosPanel');
+  if (!panel || !AUTHOR.structureId) return;
+  const photos = AUTHOR.generalPhotos || [];
+  panel.innerHTML = `
+    <button class="sip-close" id="photosClose" title="Close">&times;</button>
+    <div class="sip-panel-title"><i class="fas fa-camera"></i> General Photos</div>
+    <div class="sip-meta">${AUTHOR.structureName || ''}</div>
+    ${photos.length ? '' : '<div class="sip-photos-empty">No general photos yet. Add site or general-arrangement photos below.</div>'}
+    <div class="sip-photos-grid" id="draftPhotosGrid">
+      ${photos.map(sipPhotoTileHTML).join('')}
+      <div class="sip-photo-add-tile" id="draftPhotoAddTile"><i class="fas fa-camera"></i><span>Add photos</span></div>
+    </div>
+    <input type="file" id="draftPhotoInput" accept="image/*" multiple hidden>
+    <div class="sip-photo-pending" id="draftPhotoPending"></div>
+  `;
+  document.getElementById('photosClose').addEventListener('click', closePhotosModal);
+  document.getElementById('draftPhotoAddTile').addEventListener('click', () => document.getElementById('draftPhotoInput').click());
+  document.getElementById('draftPhotoInput').addEventListener('change', function(){
+    const files = Array.from(this.files || []);
+    if (files.length) uploadAuthorGeneralPhotos(files);
+    this.value = '';
+  });
+  panel.querySelectorAll('[data-sip-delete-photo]').forEach(btn => {
+    btn.addEventListener('click', () => deleteAuthorGeneralPhoto(btn.dataset.sipDeletePhoto));
+  });
+  panel.querySelectorAll('[data-sip-caption-photo]').forEach(input => {
+    input.addEventListener('change', () => saveAuthorPhotoCaption(input.dataset.sipCaptionPhoto, input.value));
+  });
+}
+function openPhotosModal(){
+  renderPhotosPanel();
+  document.getElementById('photosOverlay').classList.add('show');
+  document.body.classList.add('modal-open');
+}
+function closePhotosModal(){
+  document.getElementById('photosOverlay').classList.remove('show');
+  document.body.classList.remove('modal-open');
+}
+function sipPhotoTileHTML(photo){
+  return `
+    <div class="sip-photo-item">
+      <div class="sip-photo-tile">
+        <img src="${photo.url}" onclick="window.open('${photo.url}','_blank')">
+        <button class="sip-photo-del" data-sip-delete-photo="${photo.id}" title="Delete photo"><i class="fas fa-xmark"></i></button>
+      </div>
+      <input class="sip-photo-caption" data-sip-caption-photo="${photo.id}" value="${sipEscapeHtml(photo.description||'')}" placeholder="Add a caption…">
+    </div>`;
+}
+async function uploadAuthorGeneralPhotos(files){
+  const pending = document.getElementById('draftPhotoPending');
+  pending.textContent = `Uploading ${files.length} photo${files.length > 1 ? 's' : ''}…`;
+  try {
+    const formData = new FormData();
+    files.forEach(f => formData.append('photos', f));
+    files.forEach(() => formData.append('descriptions', ''));
+    formData.append('defectId', 'general');
+    formData.append('inspectionDate', AUTHOR.inspectionDate);
+    const res = await fetch(`${API_BASE}/api/bridges/${AUTHOR.structureId}/inspection-photos`, { method: 'POST', body: formData });
+    const result = await res.json();
+    if (!res.ok || !result.success) throw new Error(result.error || 'Upload failed');
+    AUTHOR.generalPhotos = AUTHOR.generalPhotos || [];
+    result.photos.forEach(p => {
+      AUTHOR.generalPhotos.push({ id: p.id, url: p.url, description: p.photo_description, displayOrder: p.display_order });
+    });
+    pending.textContent = '';
+    renderPhotosPanel();
+  } catch (err) {
+    console.error('General photo upload failed:', err);
+    pending.textContent = 'Upload failed: ' + err.message;
+  }
+}
+async function deleteAuthorGeneralPhoto(photoId){
+  if (!confirm('Delete this photo?')) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/inspection-photos/${photoId}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('Delete failed');
+    AUTHOR.generalPhotos = (AUTHOR.generalPhotos || []).filter(p => String(p.id) !== String(photoId));
+    renderPhotosPanel();
+  } catch (err) {
+    console.error('Photo delete failed:', err);
+    alert('Could not delete photo: ' + err.message);
+  }
+}
+async function saveAuthorPhotoCaption(photoId, value){
+  try {
+    const res = await fetch(`${API_BASE}/api/inspection-photos/${photoId}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ photo_description: value })
+    });
+    if (!res.ok) throw new Error('Save failed');
+    const photo = (AUTHOR.generalPhotos || []).find(p => String(p.id) === String(photoId));
+    if (photo) photo.description = value;
+  } catch (err) {
+    console.error('Caption save failed:', err);
+  }
+}
+
+document.getElementById('structInfoToggle').addEventListener('click', () => {
+  renderStructInfoPanel();
+  document.getElementById('sipOverlay').classList.add('show');
+  document.body.classList.add('modal-open');
+});
+document.getElementById('sipOverlay').addEventListener('click', (e) => {
+  if (e.target.id === 'sipOverlay') closeStructInfoModal();
+});
+document.getElementById('conclusionsBar').addEventListener('click', openConclusionsModal);
+document.getElementById('conclusionsOverlay').addEventListener('click', (e) => {
+  if (e.target.id === 'conclusionsOverlay') closeConclusionsModal();
+});
+document.getElementById('draftPhotosBar').addEventListener('click', openPhotosModal);
+document.getElementById('photosOverlay').addEventListener('click', (e) => {
+  if (e.target.id === 'photosOverlay') closePhotosModal();
+});
+document.getElementById('draftNotesTab').addEventListener('click', openDraftNotesPanel);
+document.getElementById('draftNotesClose').addEventListener('click', closeDraftNotesPanel);
+document.getElementById('draftNotesInput').addEventListener('input', function(){
+  document.getElementById('draftNotesAddBtn').disabled = this.value.trim().length === 0;
+});
+document.getElementById('draftNotesAddBtn').addEventListener('click', addAuthorNote);
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  closeStructInfoModal();
+  closeConclusionsModal();
+  closePhotosModal();
+  closeDraftNotesPanel();
+});
 
 // ============================================================
 // SCREEN 3 — AUTHOR VIEW (split / data / report)

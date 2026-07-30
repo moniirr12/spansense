@@ -22,6 +22,7 @@
             <div class="logo">spanSense</div>
         </div>
         <div class="right">
+            <div class="author-return-badge" id="authorReturnBadge" title="Save &amp; return to Author"><i class="fas fa-feather-pointed"></i><span>Author</span></div>
             <div class="night-mode-toggle" id="nightModeToggle"><i class="fas fa-moon"></i></div>
             <div class="account-links">
                 <a href="../accounts/accounts.html" title="Account"><i class="fas fa-user-circle"></i></a>
@@ -29,6 +30,28 @@
             </div>
         </div>
     </div>
+
+    <!-- Only shown when arriving here from Author's "Edit defect data &
+         photos" hand-off (author/author.js's goEditInInspection()) - the
+         same sessionStorage keys that call sets are what this compares
+         against, so a stale flag left over from a different structure/date
+         won't light the badge up here. Purely a navigation link back into
+         Author; it does not save anything on this page's behalf. -->
+    <script>
+    (function(){
+        var raw = sessionStorage.getItem('authorReturn');
+        if (!raw) return;
+        var target;
+        try { target = JSON.parse(raw); } catch (e) { return; }
+        if (!target || String(target.structureId) !== String(sessionStorage.getItem('structureId')) || target.date !== sessionStorage.getItem('inspectionDate')) return;
+        document.addEventListener('DOMContentLoaded', function(){
+            var badge = document.getElementById('authorReturnBadge');
+            if (!badge) return;
+            badge.classList.add('visible');
+            badge.addEventListener('click', function(){ window.location.href = '../author/author.html'; });
+        });
+    })();
+    </script>
 
     <!-- MAIN 75% WIDTH LAYOUT WITH SIDEBAR -->
     <div class="inspection-wrapper">
