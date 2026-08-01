@@ -666,23 +666,59 @@ function showError(message) {
 // names and BCI scores), not a raw data dump.
 const previewButton = document.getElementById('previewInspection');
 if (previewButton) {
-  previewButton.addEventListener('click', function() {
+  // Report-format preview - same visual system as Author's Report View
+  // (report-page/report-stat-grid/report-table in author/author.html),
+  // reused here as a self-contained popup document since it can't share
+  // that page's stylesheet. Grouped Span -> Category -> defect table, the
+  // same nesting map/reportFull.html.js's real "Description of Defects"
+  // section uses, rather than the old flat per-span table. Pulls the
+  // client's saved accent colour (Author's Setup screen owns that, per
+  // organization) so this reads as "how it'll look in the report", not a
+  // fixed-teal placeholder. No previous-inspection comparison here - that
+  // stays Author-only.
+  previewButton.addEventListener('click', async function() {
     const inspectionData = JSON.parse(sessionStorage.getItem('inspectionData')) || {};
-    const photoData = JSON.parse(sessionStorage.getItem('photoData')) || {};
     const allDefects = getAllDefects();
     const realDefects = allDefects.filter(isRealDefect);
     const noDefectsCount = allDefects.filter(d => d.defectId === '0.0').length;
     const notInspectedCount = allDefects.filter(d => d.defectId === '0.1').length;
     const worksRequiredCount = realDefects.filter(d => d.works === 'Y').length;
-    const photoCountByElement = {};
-    Object.values(photoData).forEach(list => {
-      (list || []).forEach(p => {
-        if (p.photo_url) photoCountByElement[p.defect_id] = (photoCountByElement[p.defect_id] || 0) + 1;
-      });
-    });
 
     const bciAv = document.getElementById('bciAvResult')?.textContent || '100.00';
     const bciCrit = document.getElementById('bciCritResult')?.textContent || '100.00';
+
+    // Open the tab synchronously, inside the click's user-gesture, so the
+    // branding/structure fetch below can't get flagged as a popup - write
+    // the real content into it once that data's back.
+    const previewWindow = window.open('', '_blank');
+    if (!previewWindow) { showToast("Popup blocked. Please allow popups for this site."); return; }
+    previewWindow.document.write('<!DOCTYPE html><title>Loading preview…</title><body style="font-family:Arial,sans-serif;padding:60px;color:#8a9ba8;">Loading report preview…</body>');
+    previewWindow.document.close();
+
+    const structureId = sessionStorage.getItem('structureId');
+    const structureType = sessionStorage.getItem('structureType') || 'Bridge';
+    let accentColor = '#5b8c8a', structureDescription = '';
+    try {
+      const bridgeRes = await fetch(`/api/bridges/${structureId}`, { cache: 'no-store' });
+      if (bridgeRes.ok) {
+        const bridge = await bridgeRes.json();
+        structureDescription = bridge.description || '';
+        if (bridge.organization_id) {
+          const brandRes = await fetch(`/api/author/branding/${bridge.organization_id}`);
+          if (brandRes.ok) {
+            const b = await brandRes.json();
+            if (b.accentColor) accentColor = b.accentColor;
+          }
+        }
+      }
+    } catch (err) { console.error('Error loading branding for preview:', err); }
+
+    const elementsDb = ELEMENTS_DB_BY_TYPE[structureType] || ELEMENTS_DB_BY_TYPE['Bridge'];
+    const categoryOrder = [];
+    Object.keys(elementsDb).forEach(no => {
+      const cat = elementsDb[no].category;
+      if (!categoryOrder.includes(cat)) categoryOrder.push(cat);
+    });
 
     const bySpan = {};
     realDefects.forEach(d => {
@@ -690,26 +726,33 @@ if (previewButton) {
     });
     const spanNumbers = Object.keys(bySpan).map(Number).sort((a, b) => a - b);
 
-    const spanSections = spanNumbers.length ? spanNumbers.map(spanNum => `
-      <h2>Span ${spanNum}</h2>
-      <table>
-        <thead>
-          <tr><th>Element</th><th>Sev</th><th>Ext</th><th>Defect</th><th>Works</th><th>Comments</th></tr>
-        </thead>
+    function defectTable(rows) {
+      return `<div class="report-table-wrap"><table class="report-table">
+        <thead><tr><th>Element</th><th>Sev</th><th>Ext</th><th>Defect</th><th>Works</th><th>Comment</th></tr></thead>
         <tbody>
-          ${bySpan[spanNum].map(d => `
+          ${rows.map(d => `
             <tr>
               <td>${escapeHtml(d.element)}</td>
-              <td>${escapeHtml(d.severity || '-')}</td>
-              <td>${escapeHtml(d.extent || '-')}</td>
+              <td><span class="rd-sev sev-${d.severity || 0}">${escapeHtml(d.severity || '-')}</span></td>
+              <td><span class="rd-ext ext-${d.extent || ''}">${escapeHtml(d.extent || '-')}</span></td>
               <td>${escapeHtml(getFullDefectDescription(d.defectType, d.defectNumber, d.defectId))}</td>
-              <td>${d.works === 'Y' ? 'Yes' : d.works === 'M' ? 'Monitor' : 'No'}</td>
+              <td class="works-${d.works || 'N'}">${d.works === 'Y' ? 'Yes' : d.works === 'M' ? 'Monitor' : 'No'}</td>
               <td>${escapeHtml(d.comment || '')}</td>
             </tr>
           `).join('')}
         </tbody>
-      </table>
-    `).join('') : '<p class="muted">No defects recorded.</p>';
+      </table></div>`;
+    }
+
+    const spanSections = spanNumbers.length ? spanNumbers.map(spanNum => {
+      let html = spanNumbers.length > 1 ? `<div class="span-label">Span ${spanNum}</div>` : '';
+      categoryOrder.forEach(cat => {
+        const rows = bySpan[spanNum].filter(d => getElementCategorySafe(d.elementNumber, structureType) === cat);
+        if (!rows.length) return;
+        html += `<div class="doc-h2">${escapeHtml(cat)}</div>${defectTable(rows)}`;
+      });
+      return html;
+    }).join('') : '<p class="doc-p na">No defects recorded.</p>';
 
     const previewContent = `
       <!DOCTYPE html>
@@ -717,69 +760,73 @@ if (previewButton) {
       <head>
         <title>Inspection Report — ${escapeHtml(inspectionData.structureName || 'Bridge')}</title>
         <style>
-          body { font-family: 'Inter', Arial, sans-serif; padding: 40px; background: #f5f7fb; color: #2c3e44; }
-          .container { max-width: 900px; margin: 0 auto; background: white; padding: 40px; border-radius: 24px; }
-          h1 { color: #2c5a57; border-bottom: 2px solid #8ab4b0; padding-bottom: 16px; margin-bottom: 4px; }
-          .subtitle { color: #8a9ba8; font-size: 0.85rem; margin-bottom: 24px; }
-          h2 { color: #2c5a57; font-size: 1.05rem; margin: 28px 0 12px; }
-          .meta { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; margin: 24px 0; }
-          .meta-item { background: #f8fafc; padding: 16px; border-radius: 14px; }
-          .meta-label { font-size: 0.7rem; color: #8a9ba8; text-transform: uppercase; font-weight: 600; }
-          .meta-label sub { text-transform: none; }
-          .meta-value { font-size: 1.2rem; font-weight: 700; color: #2c4a48; margin-top: 4px; }
-          .stats-row { display: flex; gap: 20px; flex-wrap: wrap; margin: 16px 0 8px; font-size: 0.85rem; color: #4a5b6e; }
-          .stats-row b { color: #2c4a48; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
-          th { background: #f8fafc; padding: 10px 12px; text-align: left; font-size: 0.72rem; text-transform: uppercase; color: #8a9ba8; }
-          td { padding: 10px 12px; border-bottom: 1px solid #e9edf2; font-size: 0.82rem; vertical-align: top; }
-          tr:hover td { background: #f8fafc; }
-          .conclusions-box { background: #f8fafc; border-radius: 14px; padding: 16px 20px; font-size: 0.88rem; line-height: 1.6; white-space: pre-line; }
-          .muted { color: #8a9ba8; font-size: 0.85rem; }
-          @media print { body { background: white; } .container { box-shadow: none; padding: 0; } }
+          :root{ --accent:${accentColor}; }
+          *{box-sizing:border-box;}
+          body{ font-family:'Inter','Segoe UI',Arial,sans-serif; background:#eef1f5; color:#2c3e44; margin:0; padding:40px 20px; }
+          .report-page{ max-width:820px; margin:0 auto; background:#fffdf9; border:1px solid #e9edf2; border-radius:20px; padding:32px 40px; box-shadow:0 10px 28px rgba(44,90,87,.08); }
+          .doc-cover{ text-align:center; padding:4px 0 26px; border-bottom:1px solid #e9edf2; margin-bottom:24px; }
+          .doc-cover::before{ content:''; display:block; width:52px; height:3px; margin:0 auto 18px; border-radius:3px; background:linear-gradient(90deg,var(--accent),#6c5ce7); }
+          .dc-brand{ font-size:.78rem; font-weight:800; color:var(--accent); letter-spacing:.14em; text-transform:uppercase; }
+          .dc-title{ font-family:Georgia,serif; font-size:1.5rem; font-weight:700; color:#2c4a48; margin:10px 0 4px; }
+          .dc-sub{ font-size:.8rem; color:#8a9ba8; font-style:italic; }
+          .report-stat-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin:22px 0 14px; }
+          .report-stat{ background:#fafbfc; border:1px solid #e9edf2; border-radius:14px; padding:13px 16px; }
+          .rs-label{ display:block; font-size:.66rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#8a9ba8; margin-bottom:5px; }
+          .rs-value{ font-size:1.2rem; font-weight:800; color:#2c4a48; }
+          .rs-value.accent{ color:var(--accent); }
+          .rs-value.crit{ color:#c0392b; }
+          .report-count-row{ display:flex; gap:20px; flex-wrap:wrap; margin:0 0 8px; padding-bottom:20px; border-bottom:1px solid #e9edf2; font-size:.83rem; color:#6a7c8e; }
+          .report-count-row b{ color:#2c4a48; font-weight:800; }
+          .doc-h1{ font-family:Georgia,serif; font-size:1.2rem; font-weight:700; color:#2c5a57; margin:26px 0 12px; padding-bottom:8px; border-bottom:1px solid #e9edf2; }
+          .doc-h2{ font-family:Georgia,serif; font-size:1.02rem; font-weight:600; font-style:italic; color:var(--accent); margin:20px 0 9px; }
+          .doc-p{ font-size:.9rem; line-height:1.75; color:#2c3e44; margin:0 0 12px; }
+          .doc-p.na{ color:#8a9ba8; font-style:italic; }
+          .span-label{ font-size:.7rem; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:#8a9ba8; margin:22px 0 4px; }
+          .report-table-wrap{ overflow-x:auto; margin:0 0 8px; }
+          .report-table{ width:100%; border-collapse:collapse; min-width:520px; }
+          .report-table th{ background:#fafbfc; padding:9px 12px; text-align:left; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:#8a9ba8; border-bottom:2px solid var(--accent); }
+          .report-table td{ padding:10px 12px; border-bottom:1px solid #e9edf2; font-size:.83rem; color:#2c3e44; vertical-align:top; }
+          .report-table tr:hover td{ background:#fafbfc; }
+          .report-table td:first-child{ font-weight:600; }
+          .rd-sev, .rd-ext{ font-weight:800; }
+          .rd-sev.sev-1{ color:#2d7a6e; } .rd-sev.sev-2{ color:#BA7517; } .rd-sev.sev-3{ color:#c47070; } .rd-sev.sev-4, .rd-sev.sev-5{ color:#c0392b; }
+          .rd-ext.ext-A{ color:#5b8c8a; } .rd-ext.ext-B{ color:#4a9ab0; } .rd-ext.ext-C{ color:#3a88c0; } .rd-ext.ext-D{ color:#378add; } .rd-ext.ext-E{ color:#2a6fd4; }
+          .report-table td.works-Y{ color:#c0392b; font-weight:700; }
+          .report-table td.works-M{ color:#BA7517; font-weight:700; }
+          @media print{ body{ background:#fff; padding:0; } .report-page{ box-shadow:none; border:none; } }
         </style>
       </head>
       <body>
-        <div class="container">
-          <h1>${escapeHtml(inspectionData.structureName || 'Bridge Inspection')}</h1>
-          <div class="subtitle">Structure #${escapeHtml(inspectionData.structureId || '')} &middot; ${escapeHtml(inspectionData.inspectorName || 'Unassigned inspector')}</div>
-          <div class="meta">
-            <div class="meta-item">
-              <div class="meta-label">Inspection Date</div>
-              <div class="meta-value">${inspectionData.inspectionDate ? formatDate(inspectionData.inspectionDate) : 'N/A'}</div>
-            </div>
-            <div class="meta-item">
-              <div class="meta-label">Defects Found</div>
-              <div class="meta-value">${realDefects.length}</div>
-            </div>
-            <div class="meta-item">
-              <div class="meta-label">BCI<sub>avg</sub></div>
-              <div class="meta-value" style="color:#5b8c8a;">${bciAv}</div>
-            </div>
-            <div class="meta-item">
-              <div class="meta-label">BCI<sub>crit</sub></div>
-              <div class="meta-value" style="color:#e8a87c;">${bciCrit}</div>
-            </div>
+        <div class="report-page">
+          <div class="doc-cover">
+            <div class="dc-brand">spanSense</div>
+            <div class="dc-title">${escapeHtml(inspectionData.structureName || 'Bridge Inspection')}</div>
+            <div class="dc-sub">Structure #${escapeHtml(inspectionData.structureId || '')} &middot; ${escapeHtml(inspectionData.inspectorName || 'Unassigned inspector')}</div>
           </div>
-          <div class="stats-row">
+          <div class="report-stat-grid">
+            <div class="report-stat"><span class="rs-label">Inspection Date</span><span class="rs-value">${inspectionData.inspectionDate ? formatDate(inspectionData.inspectionDate) : 'N/A'}</span></div>
+            <div class="report-stat"><span class="rs-label">Defects Found</span><span class="rs-value">${realDefects.length}</span></div>
+            <div class="report-stat"><span class="rs-label">BCI<sub>avg</sub></span><span class="rs-value accent">${bciAv}</span></div>
+            <div class="report-stat"><span class="rs-label">BCI<sub>crit</sub></span><span class="rs-value crit">${bciCrit}</span></div>
+          </div>
+          <div class="report-count-row">
             <span><b>${noDefectsCount}</b> element(s) with no defects</span>
             <span><b>${notInspectedCount}</b> element(s) not inspected</span>
             <span><b>${worksRequiredCount}</b> defect(s) requiring works</span>
           </div>
+          ${structureDescription ? `<div class="doc-h1">Structure Description</div><p class="doc-p">${escapeHtml(structureDescription)}</p>` : ''}
+          <div class="doc-h1">Description of Defects</div>
           ${spanSections}
-          <h2>Conclusions</h2>
-          <div class="conclusions-box">${escapeHtml(inspectionData.conclusions || 'No conclusions recorded yet.')}</div>
+          <div class="doc-h1">Conclusions</div>
+          <p class="doc-p">${escapeHtml(inspectionData.conclusions || 'No conclusions recorded yet.').replace(/\n/g, '<br>')}</p>
         </div>
       </body>
       </html>
     `;
 
-    const previewWindow = window.open('', '_blank');
-    if (previewWindow) {
-      previewWindow.document.write(previewContent);
-      previewWindow.document.close();
-    } else {
-      showToast("Popup blocked. Please allow popups for this site.");
-    }
+    previewWindow.document.open();
+    previewWindow.document.write(previewContent);
+    previewWindow.document.close();
   });
 }
 
@@ -886,6 +933,15 @@ function getElementDescriptionSafe(elementNumber, structureType = sessionStorage
         return `Element ${elementNumber}`;
     }
     return element.description;
+}
+
+// Same lookup as getElementDescriptionSafe, but the category half - used by
+// the Preview popup to group defects the same way the real generated report
+// does (map/reportFull.html.js's own section 3), not by span alone.
+function getElementCategorySafe(elementNumber, structureType = sessionStorage.getItem('structureType') || 'Bridge') {
+    const elementsDb = ELEMENTS_DB_BY_TYPE[structureType] || ELEMENTS_DB_BY_TYPE['Bridge'];
+    const element = elementsDb[elementNumber];
+    return element ? element.category : 'Other Elements';
 }
 
 const DEFECT_TYPE_MAP = {
