@@ -1281,7 +1281,14 @@ async function generateBCIFormForPDF(doc) {
         if (!worksResponse.ok) throw new Error('Failed to fetch works required');
         const worksRequired = await worksResponse.json();
 
-        return { structureName, structureId, bridgeData: bridge, totalSpans, spansData: allSpansWithDefects, worksRequired };
+        // Per-span geometry/deck construction detail (bridge_spans) - separate
+        // from spansData's per-inspection condition rows above. Empty array
+        // (never a thrown error) for a structure nobody's added this to yet -
+        // bciProforma.pdfmake.js already renders that exactly like today.
+        const spansRes = await fetch(`${API_BASE}/api/bridges/${structureId}/spans`);
+        const bridgeSpans = spansRes.ok ? await spansRes.json() : [];
+
+        return { structureName, structureId, bridgeData: bridge, totalSpans, spansData: allSpansWithDefects, bridgeSpans, worksRequired };
     } catch (error) {
         console.error('BCI form generation failed:', error);
         return { error: error.message };

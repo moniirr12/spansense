@@ -266,6 +266,15 @@ body {
 .stepper button:active { transform: scale(0.94); }
 .stepper span { font-size: 1rem; font-weight: 700; color: #2c4a48; min-width: 22px; text-align: center; }
 
+/* ---------- PER-SPAN BREAKDOWN ---------- */
+.span-row { border: 1px solid #eef2f6; border-radius: 16px; padding: 16px 18px; margin-bottom: 12px; }
+.span-row:last-child { margin-bottom: 0; }
+.span-row-head { font-size: 0.82rem; font-weight: 700; color: #2c645c; margin-bottom: 14px; }
+.span-row .form-row { margin-bottom: 12px; }
+.span-row .form-row:last-child { margin-bottom: 0; }
+.span-row .form-group { margin-bottom: 0; }
+.span-row .form-group label { font-size: 0.74rem; }
+
 /* ---------- ADVANCED (COLLAPSIBLE) ---------- */
 .adv-toggle {
     display: flex; align-items: center; justify-content: space-between;
@@ -420,6 +429,9 @@ body {
 .night-mode .stepper button { background: #1e2a2f; border-color: #3a4b53; color: #8ab4b0; }
 .night-mode .stepper button:hover { background: #2f4a48; border-color: #6e9c98; }
 .night-mode .stepper span { color: #d4dfe3; }
+
+.night-mode .span-row { border-color: #2f3e45; }
+.night-mode .span-row-head { color: #8ab4b0; }
 
 .night-mode .add-photo-card { background: rgba(138, 180, 176, 0.05); border-color: rgba(138, 180, 176, 0.3); }
 .night-mode .add-photo-card:hover { background: rgba(138, 180, 176, 0.1); border-color: rgba(138, 180, 176, 0.55); }
@@ -605,6 +617,13 @@ body {
             </div>
         </div>
 
+        <!-- PER-SPAN BREAKDOWN -->
+        <div class="form-section">
+            <h2><i class="fas fa-ruler-horizontal"></i> Per-span breakdown <span class="opt">(optional)</span></h2>
+            <p class="section-sub">Length, width, and BCI Pro forma deck form/material codes for each individual span — useful when spans differ (e.g. an original span next to a later widening). Leave any of this blank and the structure's own span length/width above still apply; there's no per-span requirement to fill any of it in.</p>
+            <div id="spanBreakdownList"></div>
+        </div>
+
         <!-- DESCRIPTION -->
         <div class="form-section">
             <h2><i class="fas fa-align-left"></i> Description</h2>
@@ -726,11 +745,134 @@ var spanCountEl = document.getElementById('spanCount');
 document.getElementById('spanMinus').addEventListener('click', function() {
     if (spanCount > 1) spanCount--;
     spanCountEl.textContent = spanCount;
+    renderSpanBreakdown();
 });
 document.getElementById('spanPlus').addEventListener('click', function() {
     spanCount++;
     spanCountEl.textContent = spanCount;
+    renderSpanBreakdown();
 });
+
+// ---------- Per-span breakdown (length/width + BCI Pro forma form/material
+// codes) ----------
+// Tables 2/3/4 straight from the standard's own GI codes reference -
+// primary/secondary deck form are numeric, material is a single letter
+// shared by both primary and secondary (code "P" only makes sense for
+// secondary - "no secondary element, no material" - so it's left out of
+// the primary list).
+var PRIMARY_FORM_CODES = [
+    ['00', 'Retaining Wall — All types'],
+    ['01', 'Arch — Solid spandrel'],
+    ['02', 'Arch — Open/braced spandrel'],
+    ['03', 'Arch — Tied (including hangers)'],
+    ['04', 'Beam/Girder — At/below deck surface'],
+    ['05', 'Beam/Girder — Box beams (exterior and interior)'],
+    ['06', 'Beam/Girder — Half through'],
+    ['07', 'Beam/Girder — Filler beam'],
+    ['08', 'Truss — At/below deck surface (under slung)'],
+    ['09', 'Truss — Half through'],
+    ['10', 'Truss — Full through'],
+    ['11', 'Slab — Solid'],
+    ['12', 'Slab — Voided'],
+    ['13', 'Culvert/pipe/subway — Circular/oval'],
+    ['14', 'Culvert/pipe/subway — Box'],
+    ['15', 'Culvert/pipe/subway — Portal/U-shape'],
+    ['16', 'Troughing'],
+    ['17', 'Cable stayed/suspension'],
+    ['18', 'Tunnel'],
+    ['19', 'Other'],
+    ['MC', 'Multiple Construction Type']
+];
+var SECONDARY_FORM_CODES = [
+    ['20', 'No secondary deck element — no transverse beams'],
+    ['30', 'No secondary deck element — transverse beams'],
+    ['21', 'Buckle Plates — no transverse beams'],
+    ['31', 'Buckle Plates — transverse beams'],
+    ['22', 'Flat Plate — no transverse beams'],
+    ['32', 'Flat Plate — transverse beams'],
+    ['23', 'Jack Arch — no transverse beams'],
+    ['33', 'Jack Arch — transverse beams'],
+    ['24', 'Slab — no transverse beams'],
+    ['34', 'Slab — transverse beams'],
+    ['25', 'Troughing — no transverse beams'],
+    ['35', 'Troughing — transverse beams'],
+    ['26', 'Other — no transverse beams'],
+    ['36', 'Other — transverse beams']
+];
+var MATERIAL_CODES = [
+    ['A', 'Concrete — Reinforced'],
+    ['B', 'Concrete — Plain/mass'],
+    ['C', 'Concrete — Post-tensioned'],
+    ['D', 'Concrete — Pre-tensioned'],
+    ['E', 'Metal — Steel'],
+    ['F', 'Metal — Cast iron'],
+    ['G', 'Metal — Wrought iron'],
+    ['H', 'Metal — Aluminium'],
+    ['I', 'Metal — Corrugated steel'],
+    ['J', 'Metal — Corrugated aluminium'],
+    ['K', 'Masonry — Brick'],
+    ['L', 'Masonry — Stone'],
+    ['M', 'FRP/GRP/Composite'],
+    ['N', 'Timber'],
+    ['Q', 'Other']
+];
+var SECONDARY_MATERIAL_CODES = MATERIAL_CODES.concat([['P', 'No secondary element — no material']]);
+
+function codeOptions(list, placeholder) {
+    return '<option value="">' + placeholder + '</option>' +
+        list.map(function(pair) { return '<option value="' + pair[0] + '">' + pair[0] + ' — ' + pair[1] + '</option>'; }).join('');
+}
+
+var spanDetails = [];
+var spanBreakdownList = document.getElementById('spanBreakdownList');
+
+function syncSpanDetailsFromInputs() {
+    spanBreakdownList.querySelectorAll('.span-row').forEach(function(row, idx) {
+        spanDetails[idx] = {
+            length: row.querySelector('.span-length').value,
+            width: row.querySelector('.span-width').value,
+            primaryForm: row.querySelector('.span-primary-form').value,
+            primaryMaterialCode: row.querySelector('.span-primary-material').value,
+            secondaryForm: row.querySelector('.span-secondary-form').value,
+            secondaryMaterialCode: row.querySelector('.span-secondary-material').value
+        };
+    });
+}
+
+function renderSpanBreakdown() {
+    syncSpanDetailsFromInputs();
+    while (spanDetails.length < spanCount) spanDetails.push({});
+    spanDetails.length = spanCount;
+
+    spanBreakdownList.innerHTML = spanDetails.map(function(d, idx) {
+        var n = idx + 1;
+        return '<div class="span-row" data-span="' + n + '">' +
+            '<div class="span-row-head">Span ' + n + '</div>' +
+            '<div class="form-row three">' +
+                '<div class="form-group"><label>Length (m)</label><input type="number" min="0" class="span-length" value="' + (d.length || '') + '"></div>' +
+                '<div class="form-group"><label>Width (m)</label><input type="number" min="0" step="0.1" class="span-width" value="' + (d.width || '') + '"></div>' +
+                '<div class="form-group"></div>' +
+            '</div>' +
+            '<div class="form-row">' +
+                '<div class="form-group"><label>Primary form</label><select class="span-primary-form">' + codeOptions(PRIMARY_FORM_CODES, 'Select form…') + '</select></div>' +
+                '<div class="form-group"><label>Primary material</label><select class="span-primary-material">' + codeOptions(MATERIAL_CODES, 'Select material…') + '</select></div>' +
+            '</div>' +
+            '<div class="form-row">' +
+                '<div class="form-group"><label>Secondary form <span class="opt">(optional)</span></label><select class="span-secondary-form">' + codeOptions(SECONDARY_FORM_CODES, 'None') + '</select></div>' +
+                '<div class="form-group"><label>Secondary material <span class="opt">(optional)</span></label><select class="span-secondary-material">' + codeOptions(SECONDARY_MATERIAL_CODES, 'None') + '</select></div>' +
+            '</div>' +
+        '</div>';
+    }).join('');
+
+    spanBreakdownList.querySelectorAll('.span-row').forEach(function(row, idx) {
+        var d = spanDetails[idx];
+        row.querySelector('.span-primary-form').value = d.primaryForm || '';
+        row.querySelector('.span-primary-material').value = d.primaryMaterialCode || '';
+        row.querySelector('.span-secondary-form').value = d.secondaryForm || '';
+        row.querySelector('.span-secondary-material').value = d.secondaryMaterialCode || '';
+    });
+}
+renderSpanBreakdown();
 
 // ---------- Advanced collapse ----------
 document.getElementById('advToggle').addEventListener('click', function() {
@@ -821,6 +963,7 @@ function applyExtractedInfo(info) {
     if (info.spanNumber != null && info.spanNumber > 0) {
         spanCount = info.spanNumber;
         spanCountEl.textContent = spanCount;
+        renderSpanBreakdown();
     }
     if (info.builtYear != null) document.getElementById('fBuiltYear').value = info.builtYear;
     if (info.loadCapacity != null) document.getElementById('fLoadCapacity').value = info.loadCapacity;
@@ -886,6 +1029,24 @@ document.getElementById('addStructureForm').addEventListener('submit', function(
         return;
     }
 
+    // Only sent as a real spans array when at least one row has something in
+    // it - otherwise span_number (from the plain stepper) is all the server
+    // gets, exactly like before this section existed.
+    syncSpanDetailsFromInputs();
+    var hasSpanDetail = spanDetails.some(function(d) {
+        return d.length || d.width || d.primaryForm || d.primaryMaterialCode || d.secondaryForm || d.secondaryMaterialCode;
+    });
+    var spansPayload = hasSpanDetail ? spanDetails.map(function(d) {
+        return {
+            length: d.length ? parseFloat(d.length) : null,
+            width: d.width ? parseFloat(d.width) : null,
+            primaryForm: d.primaryForm || null,
+            primaryMaterialCode: d.primaryMaterialCode || null,
+            secondaryForm: d.secondaryForm || null,
+            secondaryMaterialCode: d.secondaryMaterialCode || null
+        };
+    }) : null;
+
     var payload = {
         name: name,
         type: selectedType,
@@ -896,6 +1057,7 @@ document.getElementById('addStructureForm').addEventListener('submit', function(
         length: document.getElementById('fLength').value ? parseInt(document.getElementById('fLength').value, 10) : null,
         width: document.getElementById('fWidth').value ? parseFloat(document.getElementById('fWidth').value) : null,
         span_number: spanCount,
+        spans: spansPayload,
         built_year: document.getElementById('fBuiltYear').value ? parseInt(document.getElementById('fBuiltYear').value, 10) : null,
         load_capacity: document.getElementById('fLoadCapacity').value ? parseFloat(document.getElementById('fLoadCapacity').value) : null,
         primary_material: document.getElementById('fMaterialPrimary').value || null,

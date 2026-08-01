@@ -1695,6 +1695,11 @@
             if (!worksRes.ok) throw new Error('Failed to fetch works required');
             var worksRequired = await worksRes.json();
 
+            // Per-span geometry/deck construction detail (bridge_spans) -
+            // separate from spansData's per-inspection condition rows above.
+            var spansDetailRes = await fetch(API_BASE + '/api/bridges/' + structureId + '/spans');
+            var bridgeSpans = spansDetailRes.ok ? await spansDetailRes.json() : [];
+
             fill.style.width = '70%';
 
             // ✅ Build proper bciFormData with real data
@@ -1704,6 +1709,7 @@
                 bridgeData:     bridge,
                 totalSpans:     totalSpans,
                 spansData:      spansData,
+                bridgeSpans:    bridgeSpans,
                 worksRequired:  worksRequired
             };
 

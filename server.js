@@ -250,6 +250,35 @@ async function initDatabase() {
         await pool.query(`ALTER TABLE bridges ADD COLUMN IF NOT EXISTS width DECIMAL`);
         await pool.query(`ALTER TABLE bridges ADD COLUMN IF NOT EXISTS load_capacity DECIMAL`);
 
+        // Per-span geometry and deck construction - a structure's own
+        // span/length/width columns above are just a "typical span"
+        // shorthand (e.g. total length / span count), not real per-span
+        // detail. Deck form/material genuinely don't have a meaningful
+        // whole-bridge value the way length/width sort of do - a widened
+        // structure can easily have an original masonry span next to a
+        // later concrete one - so there's no bridges-level fallback for
+        // those two, only per-span. Codes are the real UK BCI Pro forma
+        // ones (Tables 2/3/4 of the GI codes standard): primary_form is
+        // Table 2 (2-digit, e.g. "08"), secondary_form is Table 3
+        // (2-digit), *_material_code is Table 4 (single letter, e.g. "B").
+        // Rows are optional per span - Add Structure lets any of these be
+        // left blank - and the whole table is optional per structure;
+        // nothing else in the app requires it to have rows.
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS bridge_spans (
+                id SERIAL PRIMARY KEY,
+                bridge_id INTEGER NOT NULL,
+                span_number INTEGER NOT NULL,
+                length DECIMAL,
+                width DECIMAL,
+                primary_form TEXT,
+                primary_material_code TEXT,
+                secondary_form TEXT,
+                secondary_material_code TEXT,
+                UNIQUE(bridge_id, span_number)
+            )
+        `);
+
         // Inspections table
         await pool.query(`
             CREATE TABLE IF NOT EXISTS inspections (
@@ -891,6 +920,33 @@ app.patch('/api/bridges/:id/schedule', requireAuth, requireEngineer, async (req,
     }
 });
 
+// Shared by POST /api/bridges (create) and PUT /api/bridges/:id/spans
+// (replace) below - always the full set for a structure, never a partial
+// patch, so span_number (set by the caller right after this) can never
+// drift out of sync with how many rows actually exist here.
+async function replaceBridgeSpans(bridgeId, spans) {
+    await pool.query('DELETE FROM bridge_spans WHERE bridge_id = $1', [bridgeId]);
+    if (!spans || !spans.length) return;
+    const cols = 8;
+    const values = [];
+    const rows = spans.map((s, i) => {
+        const base = i * cols;
+        values.push(
+            bridgeId, i + 1,
+            (s.length !== null && s.length !== undefined && s.length !== '') ? s.length : null,
+            (s.width !== null && s.width !== undefined && s.width !== '') ? s.width : null,
+            s.primaryForm || null, s.primaryMaterialCode || null,
+            s.secondaryForm || null, s.secondaryMaterialCode || null
+        );
+        return `($${base + 1},$${base + 2},$${base + 3},$${base + 4},$${base + 5},$${base + 6},$${base + 7},$${base + 8})`;
+    });
+    await pool.query(
+        `INSERT INTO bridge_spans (bridge_id, span_number, length, width, primary_form, primary_material_code, secondary_form, secondary_material_code)
+         VALUES ${rows.join(',')}`,
+        values
+    );
+}
+
 // Create a new structure - structure/add-structure.html's "Create Structure"
 // posts here. Engineer/admin only, same gating as schedule edits above -
 // this adds a record everyone else sees on Map/Database/Planning.
@@ -899,12 +955,18 @@ app.post('/api/bridges', requireAuth, requireEngineer, async (req, res) => {
         const {
             name, type, location, latitude, longitude, span, length, width,
             span_number, built_year, load_capacity, primary_material,
-            secondary_material, description, OSE, OSN, gi_cycle_years, pi_cycle_years
+            secondary_material, description, OSE, OSN, gi_cycle_years, pi_cycle_years, spans
         } = req.body;
 
         if (!name || !name.trim()) {
             return res.status(400).json({ error: 'name is required' });
         }
+
+        // A filled-in per-span breakdown is the more specific figure - it
+        // wins over the plain span_number stepper value when both arrive
+        // (Add Structure always sends both; span_number alone is what
+        // older/simpler callers still send).
+        const spanNumber = (Array.isArray(spans) && spans.length) ? spans.length : (span_number ?? null);
 
         const row = await dbGet(
             `INSERT INTO bridges (
@@ -916,15 +978,52 @@ app.post('/api/bridges', requireAuth, requireEngineer, async (req, res) => {
              RETURNING id`,
             [
                 name.trim(), type || null, location || null, latitude ?? null, longitude ?? null,
-                span ?? null, length ?? null, width ?? null, span_number ?? null, built_year ?? null,
+                span ?? null, length ?? null, width ?? null, spanNumber, built_year ?? null,
                 load_capacity ?? null, primary_material || null, secondary_material || null,
                 description || null, OSE || null, OSN || null, gi_cycle_years ?? null, pi_cycle_years ?? null,
                 req.session.organizationId ?? null
             ]
         );
+        if (Array.isArray(spans) && spans.length) await replaceBridgeSpans(row.id, spans);
         res.json({ success: true, id: row.id });
     } catch (err) {
         console.error('Create bridge error:', err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+// Per-span geometry and BCI Pro forma deck construction codes - see
+// bridge_spans' table comment in initDatabase() for why form/material
+// don't get a bridges-level fallback the way length/width otherwise
+// would. PUT always replaces the full set and derives span_number from
+// the array's length/order, so bridges.span_number can't drift out of
+// sync with what's actually been detailed here.
+app.get('/api/bridges/:id/spans', requireAuth, async (req, res) => {
+    try {
+        const rows = await dbAll(
+            `SELECT span_number, length, width, primary_form, primary_material_code, secondary_form, secondary_material_code
+             FROM bridge_spans WHERE bridge_id = $1 ORDER BY span_number`,
+            [req.params.id]
+        );
+        res.json(rows.map(r => ({
+            spanNumber: r.span_number, length: r.length, width: r.width,
+            primaryForm: r.primary_form, primaryMaterialCode: r.primary_material_code,
+            secondaryForm: r.secondary_form, secondaryMaterialCode: r.secondary_material_code
+        })));
+    } catch (err) {
+        console.error('Get bridge spans error:', err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+app.put('/api/bridges/:id/spans', requireAuth, requireEngineer, async (req, res) => {
+    try {
+        const spans = Array.isArray(req.body.spans) ? req.body.spans : [];
+        await replaceBridgeSpans(req.params.id, spans);
+        await pool.query('UPDATE bridges SET span_number = $1 WHERE id = $2', [spans.length, req.params.id]);
+        res.json({ success: true, spanNumber: spans.length });
+    } catch (err) {
+        console.error('Update bridge spans error:', err);
         res.status(500).json({ error: 'Database error' });
     }
 });
