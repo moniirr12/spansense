@@ -95,12 +95,92 @@ document.getElementById('sourceTabs').addEventListener('click', function(e){
   if (!isUpload && document.getElementById('structureSelect').value) onStructureChange();
 });
 
+// ---- Structure picker: searchable custom dropdown over the hidden
+// #structureSelect - same visual component as twinview's own bridge
+// selector (.selector-dropdown/.dropdown-menu/.dd-search/.dd-list,
+// twin/twin.html), ported in as-is. The hidden <select> stays the real
+// source of truth every onStructureChange()/resumeAuthorReturn() call
+// already reads and sets - picking a dd-item just sets its value and
+// fires 'change' like a native picker would; this only keeps the visible
+// trigger/list in sync with whatever that select currently holds.
+const structDropdown = document.getElementById('structDropdown');
+const structDdTrigger = document.getElementById('structDdTrigger');
+const structDdMenu = document.getElementById('structDdMenu');
+const structDdSearch = document.getElementById('structDdSearch');
+const structDdList = document.getElementById('structDdList');
+const structDdName = document.getElementById('structDdName');
+const structDdId = document.getElementById('structDdId');
+let structDdOpen = false;
+
+function setStructDdName(text, isPlaceholder){
+  structDdName.textContent = text;
+  structDdName.classList.toggle('placeholder', !!isPlaceholder);
+}
+function syncStructTrigger(){
+  const id = document.getElementById('structureSelect').value;
+  const s = AUTHOR.structures.find(b => String(b.id) === String(id));
+  if (s) { setStructDdName(s.name, false); structDdId.textContent = '#' + s.id; }
+  else { setStructDdName('Select a structure…', true); structDdId.textContent = ''; }
+}
+function renderStructDropdownList(filter){
+  const term = (filter || '').toLowerCase().trim();
+  const currentId = document.getElementById('structureSelect').value;
+  const filtered = AUTHOR.structures.filter(b =>
+    (b.name || '').toLowerCase().includes(term) || String(b.id).toLowerCase().includes(term)
+  );
+  if (!filtered.length) {
+    structDdList.innerHTML = `<div class="dd-empty"><i class="fas fa-magnifying-glass"></i>No structures found</div>`;
+    return;
+  }
+  structDdList.innerHTML = filtered.map(b => `
+    <div class="dd-item ${String(b.id) === String(currentId) ? 'selected' : ''}" data-id="${b.id}">
+      <span class="dd-icon"><i class="fas fa-bridge"></i></span>
+      <span class="dd-text">
+        <span class="dd-name">${b.name}</span>
+        <span class="dd-id">#${b.id}</span>
+      </span>
+      <i class="fas fa-check dd-check"></i>
+    </div>`).join('');
+  structDdList.querySelectorAll('.dd-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const sel = document.getElementById('structureSelect');
+      sel.value = item.dataset.id;
+      sel.dispatchEvent(new Event('change'));
+      syncStructTrigger();
+      closeStructDropdown();
+    });
+  });
+}
+function openStructDropdown(){
+  structDdOpen = true;
+  structDropdown.classList.add('active');
+  structDdMenu.classList.add('open');
+  structDdSearch.value = '';
+  renderStructDropdownList();
+  setTimeout(() => structDdSearch.focus(), 50);
+}
+function closeStructDropdown(){
+  structDdOpen = false;
+  structDropdown.classList.remove('active');
+  structDdMenu.classList.remove('open');
+}
+structDdTrigger.addEventListener('click', function(e){
+  e.stopPropagation();
+  if (structDdOpen) closeStructDropdown(); else openStructDropdown();
+});
+structDdSearch.addEventListener('input', function(e){ renderStructDropdownList(e.target.value); });
+structDdSearch.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeStructDropdown(); });
+document.addEventListener('click', function(e){
+  if (structDdOpen && !structDropdown.contains(e.target)) closeStructDropdown();
+});
+
 async function loadStructures(){
   const sel = document.getElementById('structureSelect');
   try {
     const res = await fetch(`${API_BASE}/api/bridges`);
     if (res.status === 401) {
       sel.innerHTML = '<option value="">Not logged in</option>';
+      setStructDdName('Not logged in', true);
       document.getElementById('loadedSummary').innerHTML =
         `<div class="no-history-note"><i class="fas fa-triangle-exclamation"></i> You need to be logged in to use Author. <a href="../index.html">Go to login</a></div>`;
       return;
@@ -110,8 +190,11 @@ async function loadStructures(){
     AUTHOR.structures = bridges;
     sel.innerHTML = '<option value="">Select a structure…</option>' +
       bridges.map(b => `<option value="${b.id}">${b.name} (#${b.id})</option>`).join('');
+    setStructDdName('Select a structure…', true);
+    renderStructDropdownList();
   } catch (err) {
     sel.innerHTML = '<option value="">Failed to load structures</option>';
+    setStructDdName('Failed to load structures', true);
     console.error('Error loading structures:', err);
   }
 }
@@ -274,6 +357,7 @@ async function resumeAuthorReturn(){
   const structureSelect = document.getElementById('structureSelect');
   if (!structureSelect.querySelector(`option[value="${target.structureId}"]`)) return;
   structureSelect.value = target.structureId;
+  syncStructTrigger();
   await onStructureChange();
   const inspectionSelect = document.getElementById('inspectionSelect');
   if (!inspectionSelect.querySelector(`option[value="${target.date}"]`)) return;
