@@ -81,6 +81,12 @@ document.getElementById('sourceTabs').addEventListener('click', function(e){
   // source:'field' rows in onStructureChange() - not a separate panel.
   document.getElementById('sourceRecords').style.display = isUpload ? 'none' : 'block';
   document.getElementById('sourceUpload').style.display = isUpload ? 'block' : 'none';
+  // Compare-against + Load sit next to Structure now (not nested inside
+  // #sourceRecords) since Structure itself is shared across all three
+  // tabs - only these two need hiding for Upload, which has no "compare
+  // against a base inspection" concept and its own Load button.
+  document.getElementById('compareAgainstField').style.display = isUpload ? 'none' : 'block';
+  document.getElementById('loadBtn').style.display = isUpload ? 'none' : 'flex';
   // newInspRow only exists for the upload path now (there's no real DB
   // date to stamp the report with until the record is actually saved) -
   // records/Field both hand off into inspection1.html, which already has

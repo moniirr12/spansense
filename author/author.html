@@ -339,10 +339,15 @@ body.modal-open{overflow:hidden;}
             </div>
 
             <div class="picker-row">
-                <div class="picker-field" style="max-width:480px;">
+                <div class="picker-field" style="max-width:320px;">
                     <label>Structure</label>
                     <select id="structureSelect"><option value="">Loading structures…</option></select>
                 </div>
+                <div class="picker-field" id="compareAgainstField">
+                    <label>Compare against (base inspection)</label>
+                    <select id="inspectionSelect" disabled><option value="">Select a structure first</option></select>
+                </div>
+                <button class="btn-load" id="loadBtn" disabled><i class="fas fa-arrow-right"></i> Load</button>
             </div>
 
             <div class="picker-row new-insp-row" id="newInspRow" style="display:none;">
@@ -362,13 +367,6 @@ body.modal-open{overflow:hidden;}
             </div>
 
             <div id="sourceRecords">
-                <div class="picker-row">
-                    <div class="picker-field">
-                        <label>Compare against (base inspection)</label>
-                        <select id="inspectionSelect" disabled><option value="">Select a structure first</option></select>
-                    </div>
-                    <button class="btn-load" id="loadBtn" disabled><i class="fas fa-arrow-right"></i> Load</button>
-                </div>
                 <div id="loadedSummary"></div>
             </div>
 
