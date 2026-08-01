@@ -317,13 +317,17 @@ document.getElementById('sourceTabs').addEventListener('click', function(e){
   document.querySelectorAll('.source-tab').forEach(t => t.classList.remove('active'));
   tab.classList.add('active');
   const isUpload = tab.dataset.source === 'upload';
+  // "From Field" reuses the exact same structure+date picker as "From
+  // spanSense records" - it's the same panel, just later filtered down to
+  // source:'field' rows in onStructureChange() - not a separate panel.
   document.getElementById('sourceRecords').style.display = isUpload ? 'none' : 'block';
   document.getElementById('sourceUpload').style.display = isUpload ? 'block' : 'none';
-  // newInspRow is now its own sibling card rather than nested inside
-  // sourceRecords, so it no longer hides for free when that card does -
-  // only show it back when returning to the records tab, and only if a
-  // structure has actually been loaded (matching its own onLoad() gate).
-  document.getElementById('newInspRow').style.display = (!isUpload && AUTHOR.structureId) ? 'block' : 'none';
+  // newInspRow only exists for the upload path now (there's no real DB
+  // date to stamp the report with until the record is actually saved) -
+  // records/Field both hand off into inspection1.html, which already has
+  // its own date/type editing.
+  document.getElementById('newInspRow').style.display = (isUpload && AUTHOR.loadedFromUpload) ? 'block' : 'none';
+  if (!isUpload && document.getElementById('structureSelect').value) onStructureChange();
 });
 
 async function loadStructures(){
@@ -351,19 +355,25 @@ async function onStructureChange(){
   const inspSel = document.getElementById('inspectionSelect');
   const loadBtn = document.getElementById('loadBtn');
   inspSel.disabled = true; loadBtn.disabled = true;
-  // newInspRow reflects the structure that was last actually Loaded - once
-  // the picker moves off that structure (back to the placeholder, or on to
-  // a different one), its date/type no longer apply until Load runs again.
+  // newInspRow reflects the upload flow that was last actually loaded -
+  // once the picker moves off that structure (back to the placeholder, or
+  // on to a different one), its date/type no longer apply until an
+  // extraction runs again.
   if (structureId !== AUTHOR.structureId) {
     document.getElementById('newInspRow').style.display = 'none';
   }
   if (!structureId) { inspSel.innerHTML = '<option value="">Select a structure first</option>'; return; }
   inspSel.innerHTML = '<option value="">Loading inspections…</option>';
+  // "From Field" is the same dropdown, just narrowed to source:'field' rows
+  // (inspections.source is 'field' or 'desktop', server.js:1618) - not a
+  // separate endpoint or panel.
+  const fieldOnly = document.querySelector('.source-tab.active')?.dataset.source === 'field';
   try {
     const res = await fetch(`${API_BASE}/api/inspection-dates/${structureId}`);
-    const dates = await res.json();
+    const allDates = await res.json();
+    const dates = fieldOnly ? allDates.filter(d => d.source === 'field') : allDates;
     if (!dates.length) {
-      inspSel.innerHTML = '<option value="">No inspections recorded for this structure</option>';
+      inspSel.innerHTML = `<option value="">${fieldOnly ? 'No Field-submitted inspections for this structure' : 'No inspections recorded for this structure'}</option>`;
       return;
     }
     // d.date is already a plain 'YYYY-MM-DD' string from the server - using
@@ -522,12 +532,12 @@ async function onLoad(){
     document.getElementById('leftBciCards').style.display = 'flex';
     recomputeLiveBCI();
 
-    const newInspRow = document.getElementById('newInspRow');
-    newInspRow.style.display = 'block';
-    const dateInput = document.getElementById('newInspectionDate');
-    if (!dateInput.value) dateInput.value = new Date().toISOString().slice(0,10);
-    AUTHOR.newInspectionDate = dateInput.value;
-    AUTHOR.newInspectionType = document.getElementById('newInspectionType').value || null;
+    // No date/type picker here for the records/Field path - there's a real
+    // recorded inspection to report on, so its own date/type are the
+    // report's date/type by default (still overridable via the Info modal
+    // on Report View, which reads/writes these same two fields).
+    AUTHOR.newInspectionDate = AUTHOR.inspectionDate;
+    AUTHOR.newInspectionType = AUTHOR.inspectionType;
 
     document.getElementById('setupBottomNav').style.display = 'flex';
     await loadBranding(diff.organizationId);
