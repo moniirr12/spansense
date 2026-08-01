@@ -104,7 +104,6 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .card::before{content:''; position:absolute; top:0; left:28px; right:28px; height:3px; border-radius:0 0 3px 3px; background:linear-gradient(90deg,var(--teal),var(--ai)); opacity:.55;}
 .card + .card{margin-top:20px;}
 .card-title{font-size:1.08rem; font-weight:700; color:var(--green-dark); margin:0 0 4px; display:flex; align-items:center; gap:8px;}
-.card-sub{font-size:.82rem; color:var(--text-mute); margin:0 0 20px;}
 
 /* ===== STEP 1: STRUCTURE & INSPECTION PICKER ===== */
 .source-tabs{display:flex; gap:6px; background:var(--bg-soft); border:1px solid var(--border2); border-radius:30px; padding:4px; margin-bottom:20px; width:fit-content;}
@@ -141,51 +140,52 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .lrc-fact b{font-size:.88rem; font-weight:700; color:var(--text);}
 .lrc-fact b.crit{color:var(--red);}
 
-/* Saved-for-client banner - branding is "set once, reused automatically",
-   not redone per report. */
-.saved-banner{display:flex; align-items:center; gap:10px; background:var(--ok-bg); border:1px solid var(--ok-border); border-radius:16px; padding:12px 16px; margin-top:18px; font-size:.82rem; color:var(--green-dark);}
-.saved-banner i{color:var(--ok);}
-.saved-banner b{font-weight:700;}
-.saving-note{font-size:.72rem; color:var(--text-mute); margin-top:8px; display:flex; align-items:center; gap:6px;}
+.saving-note{font-size:.72rem; color:var(--text-mute); display:flex; align-items:center; gap:6px;}
 .saving-note.show-saved{color:var(--ok);}
 
-/* ===== Branding & Template picker ===== */
-.brand-row{display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start;}
-.brand-logo-zone{flex:0 0 200px;}
-.brand-logo-zone .upload-zone{padding:22px 14px;}
-.brand-logo-zone img.logo-preview{max-width:100%; max-height:70px; display:block; margin:0 auto;}
-.brand-accent-picker{display:flex; flex-direction:column; gap:8px; flex:1; min-width:220px;}
+/* ===== Branding & Template picker - landscape modal, two columns
+   (logo+accent / template) side by side instead of stacked, so the whole
+   thing reads in one short wide panel instead of a tall scrolling one. ===== */
+.struct-info-panel.branding-panel{width:720px;}
+.branding-empty-state{text-align:center; padding:34px 10px; color:var(--text-mute);}
+.branding-empty-state i{font-size:1.3rem; color:var(--teal); display:block; margin-bottom:10px;}
+.branding-empty-state p{font-size:.85rem; margin:0;}
+.brand-landscape-grid{display:grid; grid-template-columns:220px 1fr; gap:28px; margin-top:16px;}
+.brand-col-left{display:flex; flex-direction:column;}
 .swatch-row{display:flex; gap:10px; flex-wrap:wrap;}
-.swatch{width:34px; height:34px; border-radius:50%; cursor:pointer; border:2px solid transparent; transition:.15s; position:relative;}
+.swatch{width:30px; height:30px; border-radius:50%; cursor:pointer; border:2px solid transparent; transition:.15s; position:relative;}
 .swatch:hover{transform:scale(1.08);}
 .swatch.selected{border-color:var(--text); box-shadow:0 0 0 2px #fff, 0 0 0 4px var(--text);}
-.swatch.selected::after{content:'\f00c'; font-family:"Font Awesome 6 Free"; font-weight:900; color:#fff; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:.7rem;}
+.swatch.selected::after{content:'\f00c'; font-family:"Font Awesome 6 Free"; font-weight:900; color:#fff; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:.62rem;}
 
 .upload-zone{border:2px dashed var(--border); border-radius:18px; padding:32px; text-align:center; cursor:pointer; transition:.2s; background:var(--bg-soft);}
 .upload-zone:hover{border-color:var(--teal); background:var(--bg-mint);}
 .upload-zone i{font-size:1.8rem; color:var(--teal); margin-bottom:10px;}
 .upload-zone .u-title{font-weight:700; color:var(--green-dark); font-size:.95rem; margin-bottom:4px;}
 .upload-zone .u-sub{font-size:.8rem; color:var(--text-mute);}
-.upload-zone.compact{padding:20px;}
+.upload-zone.compact{padding:18px 14px;}
+img.logo-preview{max-width:100%; max-height:56px; display:block; margin:0 auto;}
 
-.template-gallery{display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px; margin-top:16px;}
-.template-card{border:2px solid var(--border2); border-radius:16px; padding:12px; cursor:pointer; transition:.2s; background:var(--bg-soft);}
+.brand-col-right .template-gallery{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:10px;}
+.template-card{border:2px solid var(--border2); border-radius:14px; padding:9px; cursor:pointer; transition:.2s; background:var(--bg-soft);}
 .template-card:hover{border-color:var(--teal); transform:translateY(-2px);}
 .template-card.selected{border-color:var(--teal); background:var(--bg-mint); box-shadow:0 6px 18px rgba(91,140,138,.18);}
-.template-swatch{height:96px; border-radius:10px; margin-bottom:10px; padding:10px; display:flex; flex-direction:column; gap:5px; background:#fff; border:1px solid var(--border2); position:relative; overflow:hidden;}
-.template-swatch .ts-bar{height:8px; border-radius:2px;}
-.template-swatch .ts-line{height:4px; border-radius:2px; background:#e2e8f0;}
-.template-name{font-size:.82rem; font-weight:700; color:var(--green-dark); display:flex; align-items:center; justify-content:space-between;}
-.template-name .fa-circle-check{color:var(--teal); display:none;}
+.template-swatch{height:52px; border-radius:8px; margin-bottom:8px; padding:7px; display:flex; flex-direction:column; gap:4px; background:#fff; border:1px solid var(--border2); position:relative; overflow:hidden;}
+.template-swatch .ts-bar{height:6px; border-radius:2px;}
+.template-swatch .ts-line{height:3px; border-radius:2px; background:#e2e8f0;}
+.template-name{font-size:.72rem; font-weight:700; color:var(--green-dark); display:flex; align-items:center; justify-content:space-between; gap:4px;}
+.template-name .fa-circle-check{color:var(--teal); display:none; flex-shrink:0;}
 .template-card.selected .template-name .fa-circle-check{display:inline;}
-.template-desc{font-size:.72rem; color:var(--text-mute); margin-top:2px;}
 
 .tsw-classic .ts-bar{background:#8a6a3a;}
 .tsw-classic{background:#fdf9f1;}
 .tsw-modern .ts-bar{background:var(--teal);}
 .tsw-minimal .ts-bar{background:#8a9ba8; height:2px;}
 .tsw-corporate{background:#eef1f6;}
-.tsw-corporate .ts-bar{background:#1f3a5f; height:22px; margin:-10px -10px 8px;}
+.tsw-corporate .ts-bar{background:#1f3a5f; height:14px; margin:-7px -7px 6px;}
+
+.branding-footer{display:flex; align-items:center; justify-content:flex-end; gap:16px; margin-top:22px; padding-top:16px; border-top:1px solid var(--border2);}
+.branding-save-btn{padding:10px 22px; font-size:.82rem; box-shadow:none;}
 
 .mini-lbl{font-size:.62rem; font-weight:700; text-transform:uppercase; color:var(--text-mute); display:block; margin-bottom:4px;}
 
@@ -248,7 +248,6 @@ body.modal-open{overflow:hidden;}
 
 .night-mode .card{background:#212f33; border-color:#2f3e45; box-shadow:0 6px 20px rgba(0,0,0,.3);}
 .night-mode .card-title{color:#d4dfe3;}
-.night-mode .card-sub{color:#8aa4ac;}
 
 .night-mode .picker-field label{color:#7d939b;}
 .night-mode .picker-field select{background:#1e2a2f; border-color:#3a4b53; color:#c5d3d9;}
@@ -272,8 +271,6 @@ body.modal-open{overflow:hidden;}
 .night-mode .upload-zone .u-title{color:#d4dfe3;}
 .night-mode .upload-zone .u-sub{color:#8aa4ac;}
 
-.night-mode .saved-banner{background:#1e3a38; border-color:#3a6b62; color:#a0c8c4;}
-.night-mode .saved-banner i{color:#7ec9ba;}
 .night-mode .saving-note{color:#7d939b;}
 .night-mode .saving-note.show-saved{color:#7ec9ba;}
 
@@ -283,9 +280,11 @@ body.modal-open{overflow:hidden;}
 .night-mode .template-card.selected{border-color:#6e9c98; background:#1e3a38;}
 .night-mode .template-swatch{background:#232e34; border-color:#2f3e45;}
 .night-mode .template-name{color:#d4dfe3;}
-.night-mode .template-desc{color:#8aa4ac;}
 .night-mode .tsw-classic{background:#2a2620;}
 .night-mode .tsw-corporate{background:#1c2733;}
+.night-mode .branding-empty-state{color:#8aa4ac;}
+.night-mode .branding-empty-state i{color:#8ab4b0;}
+.night-mode .branding-footer{border-color:#2f3e45;}
 
 .night-mode .mini-lbl{color:#7d939b;}
 
@@ -396,7 +395,7 @@ body.modal-open{overflow:hidden;}
          live, so the bar itself says what's set without opening the
          modal - same "always one click away" rail convention Report View
          used to use for Conclusions/Photos/Notes. -->
-    <div class="branding-rail" id="brandingRail" style="display:none;">
+    <div class="branding-rail" id="brandingRail">
         <div class="branding-rail-bar" id="brandingBar" title="Branding & Template">
             <span class="branding-swatch-dot" id="brandingSwatchDot"></span>
             <div class="rail-icon"><i class="fas fa-palette"></i></div>
@@ -405,67 +404,67 @@ body.modal-open{overflow:hidden;}
     </div>
 
     <div class="sip-overlay" id="brandingOverlay">
-        <div class="struct-info-panel" id="brandingPanel" style="width:560px;">
+        <div class="struct-info-panel branding-panel" id="brandingPanel">
             <button class="sip-close" id="brandingClose" title="Close">&times;</button>
             <h2 class="card-title"><i class="fas fa-palette" style="color:var(--ai);"></i> Branding &amp; Template</h2>
-            <p class="card-sub">Choose the look reports for this client go out in. spanSense builds the document; this only changes its logo, accent colour, and overall layout. Set once, reused automatically for every future report for this client.</p>
 
-            <div class="brand-row">
-                <div class="brand-logo-zone">
-                    <div class="mini-lbl">Client logo</div>
-                    <div class="upload-zone compact" id="logoZone">
-                        <div id="logoZoneContent">
-                            <i class="fas fa-image"></i>
-                            <div class="u-title" style="font-size:.85rem;">Upload logo</div>
-                            <div class="u-sub">PNG, SVG or JPG</div>
+            <div class="branding-empty-state" id="brandingEmptyState">
+                <i class="fas fa-circle-info"></i>
+                <p>Select a structure to edit its branding.</p>
+            </div>
+
+            <div id="brandingFormBody" style="display:none;">
+                <div class="brand-landscape-grid">
+                    <div class="brand-col-left">
+                        <div class="mini-lbl">Client logo</div>
+                        <div class="upload-zone compact" id="logoZone">
+                            <div id="logoZoneContent">
+                                <i class="fas fa-image"></i>
+                                <div class="u-title" style="font-size:.85rem;">Upload logo</div>
+                                <div class="u-sub">PNG, SVG or JPG</div>
+                            </div>
+                        </div>
+                        <input type="file" id="logoInput" accept=".png,.svg,.jpg,.jpeg" hidden>
+                        <div id="logoChip"></div>
+
+                        <div class="mini-lbl" style="margin-top:16px;">Accent colour</div>
+                        <div class="swatch-row" id="swatchRow">
+                            <div class="swatch selected" data-color="#5b8c8a" style="background:#5b8c8a;" title="spanSense Teal (default)"></div>
+                            <div class="swatch" data-color="#1f3a5f" style="background:#1f3a5f;" title="Corporate Navy"></div>
+                            <div class="swatch" data-color="#8a6a3a" style="background:#8a6a3a;" title="Classic Bronze"></div>
+                            <div class="swatch" data-color="#2c4a48" style="background:#2c4a48;" title="Deep Green"></div>
+                            <div class="swatch" data-color="#6c5ce7" style="background:#6c5ce7;" title="Violet"></div>
+                            <div class="swatch" data-color="#c0392b" style="background:#c0392b;" title="Signal Red"></div>
                         </div>
                     </div>
-                    <input type="file" id="logoInput" accept=".png,.svg,.jpg,.jpeg" hidden>
-                    <div id="logoChip"></div>
-                </div>
-                <div class="brand-accent-picker">
-                    <div class="mini-lbl">Accent colour</div>
-                    <div class="swatch-row" id="swatchRow">
-                        <div class="swatch selected" data-color="#5b8c8a" style="background:#5b8c8a;" title="spanSense Teal (default)"></div>
-                        <div class="swatch" data-color="#1f3a5f" style="background:#1f3a5f;" title="Corporate Navy"></div>
-                        <div class="swatch" data-color="#8a6a3a" style="background:#8a6a3a;" title="Classic Bronze"></div>
-                        <div class="swatch" data-color="#2c4a48" style="background:#2c4a48;" title="Deep Green"></div>
-                        <div class="swatch" data-color="#6c5ce7" style="background:#6c5ce7;" title="Violet"></div>
-                        <div class="swatch" data-color="#c0392b" style="background:#c0392b;" title="Signal Red"></div>
+                    <div class="brand-col-right">
+                        <div class="mini-lbl">Document template</div>
+                        <div class="template-gallery" id="templateGallery">
+                            <div class="template-card" data-template="modern">
+                                <div class="template-swatch tsw-modern"><div class="ts-bar" style="width:60%;"></div><div class="ts-line" style="width:90%;"></div><div class="ts-line" style="width:70%;"></div></div>
+                                <div class="template-name">Modern Teal <i class="fas fa-circle-check"></i></div>
+                            </div>
+                            <div class="template-card" data-template="classic">
+                                <div class="template-swatch tsw-classic"><div class="ts-bar" style="width:50%;"></div><div class="ts-line" style="width:85%;"></div><div class="ts-line" style="width:75%;"></div></div>
+                                <div class="template-name">Classic <i class="fas fa-circle-check"></i></div>
+                            </div>
+                            <div class="template-card" data-template="minimal">
+                                <div class="template-swatch tsw-minimal"><div class="ts-bar" style="width:40%;"></div><div class="ts-line" style="width:80%;"></div><div class="ts-line" style="width:60%;"></div></div>
+                                <div class="template-name">Minimal <i class="fas fa-circle-check"></i></div>
+                            </div>
+                            <div class="template-card" data-template="corporate">
+                                <div class="template-swatch tsw-corporate"><div class="ts-line" style="width:90%;"></div><div class="ts-line" style="width:70%;"></div></div>
+                                <div class="template-name">Corporate <i class="fas fa-circle-check"></i></div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="u-sub" style="margin-top:2px;">Used for headings, section rules, and the cover page.</div>
                 </div>
-            </div>
 
-            <div class="mini-lbl" style="margin-top:22px;">Document template</div>
-            <div class="template-gallery" id="templateGallery">
-                <div class="template-card" data-template="modern">
-                    <div class="template-swatch tsw-modern"><div class="ts-bar" style="width:60%;"></div><div class="ts-line" style="width:90%;"></div><div class="ts-line" style="width:70%;"></div><div class="ts-line" style="width:80%;"></div></div>
-                    <div class="template-name">Modern Teal <i class="fas fa-circle-check"></i></div>
-                    <div class="template-desc">spanSense's default layout</div>
-                </div>
-                <div class="template-card" data-template="classic">
-                    <div class="template-swatch tsw-classic"><div class="ts-bar" style="width:50%;"></div><div class="ts-line" style="width:85%;"></div><div class="ts-line" style="width:75%;"></div><div class="ts-line" style="width:65%;"></div></div>
-                    <div class="template-name">Classic <i class="fas fa-circle-check"></i></div>
-                    <div class="template-desc">Serif headings, cream cover</div>
-                </div>
-                <div class="template-card" data-template="minimal">
-                    <div class="template-swatch tsw-minimal"><div class="ts-bar" style="width:40%;"></div><div class="ts-line" style="width:80%;"></div><div class="ts-line" style="width:60%;"></div><div class="ts-line" style="width:70%;"></div></div>
-                    <div class="template-name">Minimal <i class="fas fa-circle-check"></i></div>
-                    <div class="template-desc">Quiet greyscale, single rule</div>
-                </div>
-                <div class="template-card" data-template="corporate">
-                    <div class="template-swatch tsw-corporate"><div class="ts-line" style="width:90%;"></div><div class="ts-line" style="width:70%;"></div><div class="ts-line" style="width:80%;"></div></div>
-                    <div class="template-name">Corporate <i class="fas fa-circle-check"></i></div>
-                    <div class="template-desc">Navy header band</div>
+                <div class="branding-footer">
+                    <span class="saving-note" id="savingNote"></span>
+                    <button class="btn-primary-lg branding-save-btn" id="saveBrandingBtn"><i class="fas fa-check"></i> Save</button>
                 </div>
             </div>
-
-            <div class="saved-banner" id="savedBanner">
-                <i class="fas fa-circle-check"></i>
-                <span>This branding is saved for <b id="savedBannerOrg">this client</b> and applied automatically to every future report for them.</span>
-            </div>
-            <div class="saving-note" id="savingNote"></div>
         </div>
     </div>
 

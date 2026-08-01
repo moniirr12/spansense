@@ -214,7 +214,6 @@ async function onLoad(){
       </div>`;
 
     document.getElementById('setupBottomNav').style.display = 'flex';
-    document.getElementById('brandingRail').style.display = 'block';
     await loadBranding(AUTHOR.organizationId);
   } catch (err) {
     document.getElementById('loadedSummary').innerHTML =
@@ -338,7 +337,6 @@ async function onLoadFromUpload(){
     AUTHOR.newInspectionType = document.getElementById('newInspectionType').value || null;
 
     document.getElementById('setupBottomNav').style.display = 'flex';
-    document.getElementById('brandingRail').style.display = 'block';
     await loadBranding(extract.organizationId);
   } catch (err) {
     document.getElementById('uploadSummary').innerHTML =
@@ -362,6 +360,13 @@ function updateBrandingDot(color){
   if (dot) dot.style.background = color || 'var(--teal)';
 }
 function openBrandingModal(){
+  // The rail bar is always visible (branding lives here regardless of
+  // whether a structure's loaded yet), but there's nothing to edit until
+  // AUTHOR.organizationId exists - show a plain prompt instead of an
+  // empty/broken form in that case.
+  const hasOrg = !!AUTHOR.organizationId;
+  document.getElementById('brandingEmptyState').style.display = hasOrg ? 'none' : 'block';
+  document.getElementById('brandingFormBody').style.display = hasOrg ? 'block' : 'none';
   document.getElementById('brandingOverlay').classList.add('show');
   document.body.classList.add('modal-open');
 }
@@ -390,7 +395,6 @@ async function loadBranding(organizationId){
     } else {
       logoContent.innerHTML = `<i class="fas fa-image"></i><div class="u-title" style="font-size:.85rem;">Upload logo</div><div class="u-sub">PNG, SVG or JPG</div>`;
     }
-    document.getElementById('savedBannerOrg').textContent = `structure organization #${organizationId}`;
   } catch (err) {
     console.error('Error loading branding:', err);
   }
@@ -432,6 +436,9 @@ document.getElementById('logoInput').addEventListener('change', async function(e
     console.error('Error uploading logo:', err);
   }
 });
+// Swatch/template picks just update the staged selection (visual state +
+// the rail's live preview dot) - nothing hits the server until Save is
+// clicked, unlike the old auto-save-on-every-click version.
 document.getElementById('swatchRow').addEventListener('click', function(e){
   const sw = e.target.closest('.swatch');
   if(!sw) return;
@@ -439,7 +446,6 @@ document.getElementById('swatchRow').addEventListener('click', function(e){
   sw.classList.add('selected');
   AUTHOR.branding.accentColor = sw.dataset.color;
   updateBrandingDot(sw.dataset.color);
-  saveBranding();
 });
 document.getElementById('templateGallery').addEventListener('click', function(e){
   const card = e.target.closest('.template-card');
@@ -447,8 +453,8 @@ document.getElementById('templateGallery').addEventListener('click', function(e)
   document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
   card.classList.add('selected');
   AUTHOR.branding.template = card.dataset.template;
-  saveBranding();
 });
+document.getElementById('saveBrandingBtn').addEventListener('click', saveBranding);
 // Records/Field path hands off into the real capture flow. The upload
 // path has nowhere left to hand off to now that Report View is gone -
 // extraction + branding are already saved by the point this is clickable,
