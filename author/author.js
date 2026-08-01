@@ -214,8 +214,8 @@ async function onLoad(){
       </div>`;
 
     document.getElementById('setupBottomNav').style.display = 'flex';
+    document.getElementById('brandingRail').style.display = 'block';
     await loadBranding(AUTHOR.organizationId);
-    document.getElementById('brandingCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   } catch (err) {
     document.getElementById('loadedSummary').innerHTML =
       `<div class="no-history-note"><i class="fas fa-triangle-exclamation"></i> ${err.message}</div>`;
@@ -338,8 +338,8 @@ async function onLoadFromUpload(){
     AUTHOR.newInspectionType = document.getElementById('newInspectionType').value || null;
 
     document.getElementById('setupBottomNav').style.display = 'flex';
+    document.getElementById('brandingRail').style.display = 'block';
     await loadBranding(extract.organizationId);
-    document.getElementById('brandingCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   } catch (err) {
     document.getElementById('uploadSummary').innerHTML =
       `<div class="no-history-note"><i class="fas fa-triangle-exclamation"></i> ${err.message}</div>`;
@@ -352,6 +352,30 @@ async function onLoadFromUpload(){
 document.getElementById('loadUploadBtn').addEventListener('click', onLoadFromUpload);
 
 // ---- Branding & Template picker (real, persisted per organization) ----
+// Lives in a modal off the sticky rail bar now, not inline on Setup - it's
+// "set once, reused automatically", so it doesn't need permanent space on
+// a screen you hit every time. The swatch dot on the bar itself mirrors
+// the current accent colour so there's still a glance-able answer to
+// "what's set" without opening the modal.
+function updateBrandingDot(color){
+  const dot = document.getElementById('brandingSwatchDot');
+  if (dot) dot.style.background = color || 'var(--teal)';
+}
+function openBrandingModal(){
+  document.getElementById('brandingOverlay').classList.add('show');
+  document.body.classList.add('modal-open');
+}
+function closeBrandingModal(){
+  document.getElementById('brandingOverlay').classList.remove('show');
+  document.body.classList.remove('modal-open');
+}
+document.getElementById('brandingBar').addEventListener('click', openBrandingModal);
+document.getElementById('brandingClose').addEventListener('click', closeBrandingModal);
+document.getElementById('brandingOverlay').addEventListener('click', (e) => {
+  if (e.target.id === 'brandingOverlay') closeBrandingModal();
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeBrandingModal(); });
+
 async function loadBranding(organizationId){
   try {
     const res = await fetch(`${API_BASE}/api/author/branding/${organizationId}`);
@@ -359,6 +383,7 @@ async function loadBranding(organizationId){
     AUTHOR.branding = { accentColor: b.accentColor, template: b.template, logoUrl: b.logoUrl };
     document.querySelectorAll('.swatch').forEach(s => s.classList.toggle('selected', s.dataset.color.toLowerCase() === b.accentColor.toLowerCase()));
     document.querySelectorAll('.template-card').forEach(c => c.classList.toggle('selected', c.dataset.template === b.template));
+    updateBrandingDot(b.accentColor);
     const logoContent = document.getElementById('logoZoneContent');
     if (b.logoUrl) {
       logoContent.innerHTML = `<img class="logo-preview" src="${b.logoUrl}" alt="Client logo">`;
@@ -413,6 +438,7 @@ document.getElementById('swatchRow').addEventListener('click', function(e){
   document.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
   sw.classList.add('selected');
   AUTHOR.branding.accentColor = sw.dataset.color;
+  updateBrandingDot(sw.dataset.color);
   saveBranding();
 });
 document.getElementById('templateGallery').addEventListener('click', function(e){
