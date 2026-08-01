@@ -374,30 +374,41 @@ body.modal-open{overflow:hidden;}
 @media (max-width: 860px){ .draft-right-rail{right:16px;} .draft-notes-panel{right:16px;} }
 @media (max-width: 768px){ .draft-right-rail{display:none !important;} }
 
-/* ===== STEP 3: AUTHOR VIEW ===== */
-.view-toolbar{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:18px;}
-.view-toggle{display:flex; background:var(--bg-soft); border:1px solid var(--border2); border-radius:30px; padding:4px;}
-.vt-btn{font-size:.8rem; font-weight:700; color:var(--text-mute2); background:none; border:none; padding:8px 18px; border-radius:26px; cursor:pointer; transition:.2s; display:flex; align-items:center; gap:7px;}
-.vt-btn.active{background:var(--teal); color:#fff;}
-.author-layout{display:grid; gap:20px;}
-.author-layout.mode-data{grid-template-columns:1fr;}
-.author-layout.mode-report{grid-template-columns:1fr;}
-.author-layout.mode-split{grid-template-columns:1fr 1fr;}
-@media (max-width:900px){.author-layout.mode-split{grid-template-columns:1fr;}}
+/* ===== STEP 2: REPORT VIEW - single report-styled page. Replaces the
+   old Defect Data / Split View / Report Visual toggle (two panes to keep
+   in sync) with one real report preview, laid out like inspection.html's
+   own #previewInspection popup (stat cards, per-category defect table,
+   conclusions) rather than Author's old prose-per-element doc. --accent
+   is set from AUTHOR.branding.accentColor in renderReportPane() so the
+   on-screen preview actually matches what gets exported, not just a
+   fixed teal. ===== */
+.report-page{background:#fffdf9; border:1px solid var(--border2); border-radius:20px; padding:32px 40px; max-width:820px; margin:0 auto; box-shadow:0 10px 28px rgba(44,90,87,.06);}
+.report-stat-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin:22px 0 14px;}
+.report-stat{background:var(--bg-soft); border:1px solid var(--border2); border-radius:14px; padding:13px 16px;}
+.rs-label{display:block; font-size:.66rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-mute); margin-bottom:5px;}
+.rs-value{font-size:1.2rem; font-weight:800; color:var(--green-dark); font-variant-numeric:tabular-nums;}
+.rs-value.accent{color:var(--accent, var(--teal));}
+.rs-value.crit{color:var(--red);}
+.report-count-row{display:flex; gap:20px; flex-wrap:wrap; margin:0 0 8px; padding-bottom:20px; border-bottom:1px solid var(--border2); font-size:.83rem; color:var(--text-mute2);}
+.report-count-row b{color:var(--green-dark); font-weight:800;}
+@media (max-width:720px){ .report-stat-grid{grid-template-columns:repeat(2,1fr);} }
 
-.pane{background:#fff; border:1px solid var(--border2); border-radius:20px; padding:22px 24px; max-height:calc(100vh - 320px); min-height:360px; overflow-y:auto;}
-.pane-title{font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-mute); margin-bottom:14px; display:flex; align-items:center; gap:7px;}
+.report-table-wrap{overflow-x:auto; margin:0 0 8px;}
+.report-table{width:100%; border-collapse:collapse; min-width:520px;}
+.report-table th{background:var(--bg-soft); padding:9px 12px; text-align:left; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-mute); border-bottom:2px solid var(--accent, var(--teal));}
+.report-table td{padding:10px 12px; border-bottom:1px solid var(--border2); font-size:.83rem; color:var(--text); vertical-align:top;}
+.report-table tr:hover td{background:var(--bg-soft);}
+.report-table td:first-child{font-weight:600;}
+.report-table .cmp-chip{margin-left:8px; margin-bottom:0; vertical-align:middle;}
+.rd-sev, .rd-ext{font-weight:800; font-variant-numeric:tabular-nums;}
+.rd-sev.sev-1{color:#2d7a6e;} .rd-sev.sev-2{color:#BA7517;} .rd-sev.sev-3{color:#c47070;} .rd-sev.sev-4, .rd-sev.sev-5{color:#c0392b;}
+.rd-ext.ext-A{color:#5b8c8a;} .rd-ext.ext-B{color:#4a9ab0;} .rd-ext.ext-C{color:#3a88c0;} .rd-ext.ext-D{color:#378add;} .rd-ext.ext-E{color:#2a6fd4;}
+.report-table td.works-Y{color:var(--red); font-weight:700;}
+.report-table td.works-M{color:var(--amber); font-weight:700;}
 
-.data-row{display:flex; gap:10px; align-items:flex-start; padding:10px 8px; border-radius:12px; cursor:pointer; transition:.15s; border:1px solid transparent;}
-.data-row:hover{background:var(--bg-soft);}
-.data-row.highlight{background:var(--bg-mint); border-color:#cfe4e0;}
-.data-row .dr-name{width:150px; flex-shrink:0; font-size:.8rem; font-weight:600;}
-.data-row .dr-meta{font-size:.72rem; color:var(--text-mute2);}
-
-#reportPane{background:#fffdf9;}
 .doc-cover{text-align:center; padding:4px 0 26px; border-bottom:1px solid var(--border2); margin-bottom:24px; position:relative;}
-.doc-cover::before{content:''; display:block; width:52px; height:3px; margin:0 auto 18px; border-radius:3px; background:linear-gradient(90deg,var(--teal),var(--ai));}
-.doc-cover .dc-brand{font-size:.78rem; font-weight:800; color:var(--teal-dark); letter-spacing:.14em; text-transform:uppercase;}
+.doc-cover::before{content:''; display:block; width:52px; height:3px; margin:0 auto 18px; border-radius:3px; background:linear-gradient(90deg,var(--accent, var(--teal)),var(--ai));}
+.doc-cover .dc-brand{font-size:.78rem; font-weight:800; color:var(--accent, var(--teal-dark)); letter-spacing:.14em; text-transform:uppercase;}
 .doc-cover .dc-title{font-family:'Source Serif 4',Georgia,serif; font-size:1.5rem; font-weight:700; color:var(--green-dark); margin:10px 0 4px; letter-spacing:-.01em;}
 .doc-cover .dc-sub{font-size:.8rem; color:var(--text-mute); font-style:italic;}
 .doc-h1{font-family:'Source Serif 4',Georgia,serif; font-size:1.2rem; font-weight:700; color:var(--green-dark); margin:26px 0 12px; padding-bottom:8px; border-bottom:1px solid var(--border2);}
@@ -406,8 +417,6 @@ body.modal-open{overflow:hidden;}
 .doc-p{font-size:.9rem; line-height:1.75; color:var(--text); margin:0 0 12px;}
 .doc-p.na{color:var(--text-mute); font-style:italic;}
 .doc-p .cite{color:var(--teal-dark); font-weight:600;}
-.doc-p.linked{padding:3px 6px; margin:0 -6px 10px; border-radius:8px; transition:.3s;}
-.doc-p.linked.highlight{background:#fff6da;}
 .priority-band{margin-bottom:14px;}
 .priority-band h4{font-size:.78rem; font-weight:800; margin:0 0 6px; text-decoration:underline;}
 .priority-band h4.h{color:var(--red);}
@@ -557,18 +566,20 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .notes-panel-title{color:#d4dfe3;}
 .night-mode .notes-panel-sub{color:#8aa4ac;}
 
-.night-mode .view-toggle{background:#1a2428; border-color:#2f3e45;}
-.night-mode .vt-btn{color:#9ab0b8;}
-.night-mode .vt-btn.active{background:#3a6b62; color:#fff;}
+.night-mode .report-page{background:#1a2428;}
+.night-mode .report-stat{background:#18242a; border-color:#2f3e45;}
+.night-mode .rs-label{color:#7d939b;}
+.night-mode .rs-value{color:#d4dfe3;}
+.night-mode .rs-value.crit{color:#e57373;}
+.night-mode .report-count-row{color:#9ab0b8; border-color:#2f3e45;}
+.night-mode .report-count-row b{color:#d4dfe3;}
+.night-mode .report-table th{background:#18242a; color:#7d939b;}
+.night-mode .report-table td{border-color:#2f3e45; color:#d4dfe3;}
+.night-mode .report-table tr:hover td{background:#18242a;}
+.night-mode .rd-sev.sev-5{color:#e07070;}
+.night-mode .report-table td.works-Y{color:#e57373;}
+.night-mode .report-table td.works-M{color:#e0b060;}
 
-.night-mode .pane{background:#1a2428; border-color:#2f3e45;}
-.night-mode .pane-title{color:#7d939b;}
-.night-mode .data-row:hover{background:#232e34;}
-.night-mode .data-row.highlight{background:#1e3a38; border-color:#3a6b62;}
-.night-mode .data-row .dr-name{color:#d4dfe3;}
-.night-mode .data-row .dr-meta{color:#8aa4ac;}
-
-.night-mode #reportPane{background:#1a2428;}
 .night-mode .doc-cover{border-color:#2f3e45;}
 .night-mode .doc-cover .dc-brand{color:#8ab4b0;}
 .night-mode .doc-cover .dc-title{color:#d4dfe3;}
@@ -578,7 +589,6 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
 .night-mode .doc-h3{color:#8aa4ac;}
 .night-mode .doc-p{color:#c3d2d6;}
 .night-mode .doc-p.na{color:#7d939b;}
-.night-mode .doc-p.linked.highlight{background:#3a3020;}
 .night-mode .priority-band li{color:#c3d2d6;}
 
 .night-mode .btn-ghost{background:#232e34; border-color:#3a4b53; color:#9ab0b8;}
@@ -812,26 +822,7 @@ details.json-details pre{font-size:.72rem; line-height:1.5; overflow:auto; max-h
             <div class="struct-info-panel" id="photosPanel" style="width:520px;"></div>
         </div>
 
-        <div class="card" style="padding:20px 24px;">
-            <div class="view-toolbar">
-                <div class="view-toggle" id="viewToggle">
-                    <button class="vt-btn" data-mode="data"><i class="fas fa-table-list"></i> Defect Data</button>
-                    <button class="vt-btn active" data-mode="split"><i class="fas fa-arrows-left-right"></i> Split View</button>
-                    <button class="vt-btn" data-mode="report"><i class="fas fa-file-lines"></i> Report Visual</button>
-                </div>
-                <span style="font-size:.78rem; color:var(--text-mute);"><i class="fas fa-circle-info"></i> Click a defect to jump to its paragraph</span>
-            </div>
-            <div class="author-layout mode-split" id="authorLayout">
-                <div class="pane" id="dataPane">
-                    <div class="pane-title"><i class="fas fa-table-list"></i> Defect Data</div>
-                    <div id="dataRows"></div>
-                </div>
-                <div class="pane" id="reportPane">
-                    <div class="pane-title"><i class="fas fa-file-lines"></i> Report Preview</div>
-                    <div id="reportDoc"></div>
-                </div>
-            </div>
-        </div>
+        <div class="report-page" id="reportDoc"></div>
         <div class="bottom-nav">
             <button class="btn-ghost" id="backToSetupBtn"><i class="fas fa-arrow-left"></i> Back</button>
             <button class="btn-primary-lg" id="toExportBtn"><i class="fas fa-arrow-right"></i> Continue to Export</button>

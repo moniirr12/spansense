@@ -120,7 +120,6 @@ function goTo(step){
   if(step === 'author') {
     refreshConclusionsRailState();
     renderDraftNotesList();
-    renderDataPane();
     renderReportPane();
   } else {
     closeConclusionsModal(); closePhotosModal(); closeDraftNotesPanel();
@@ -572,6 +571,25 @@ function defectDescriptionFor(el, extraIdx){
   const defect = extraIdx != null ? el.extraDefects[extraIdx] : el.current;
   return defect.comments || statusInfo(defect.status || 'defect')[1];
 }
+// Defect type -> category name (e.g. type 6 "Foundation"), same taxonomy
+// as field/js/defectCodes.js's DEFECT_TYPE_MAP - duplicated locally since
+// Author only loads test.js (DEFECT_TYPE_LABEL, the defect *text* half of
+// this, e.g. "Settlement") and not the Field bundle. Combined the same way
+// inspection.html's own preview does (getFullDefectDescription in
+// inspection/spans.js), so the Report View table reads "Foundation -
+// Settlement" instead of just a bare defect number.
+const DEFECT_TYPE_CATEGORY = {
+  1:'Metalwork', 2:'RC & prestressed concrete', 3:'Masonry, brickwork & MC', 4:'Paintwork & coatings',
+  5:'Vegetation', 6:'Foundation', 7:'Invert, apron & riverbed', 8:'Drainage', 9:'Surfacing',
+  10:'Expansion joints', 11:'Embankments', 12:'Bearings', 13:'Impact damage', 14:'Waterproofing',
+  15:'Stone slab bridges', 16:'Timber'
+};
+function defectCodeLabel(type, number){
+  const cat = DEFECT_TYPE_CATEGORY[Number(type)];
+  const text = typeof defectTypeLabel === 'function' ? defectTypeLabel(type, number) : null;
+  if (cat && text) return `${cat} - ${text}`;
+  return cat || text || '—';
+}
 function elPhotosHTML(photos, containerCls){
   if (!photos || !photos.length) return '';
   const thumbCls = containerCls === 'doc-photos' ? 'doc-photo-thumb' : 'el-photo-thumb';
@@ -921,75 +939,80 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ============================================================
-// SCREEN 3 — AUTHOR VIEW (split / data / report)
+// SCREEN 2 — REPORT VIEW: one report-styled page, laid out like
+// inspection.html's own #previewInspection popup (stat cards, a
+// per-category defect table, conclusions) instead of Author's old
+// Defect Data / Split View / Report Visual toggle. liveDefectList()
+// is the same source of truth the PDF/Word exports already use, so
+// what's shown here always matches what Export actually produces.
 // ============================================================
-document.getElementById('viewToggle').addEventListener('click', function(e){
-  const btn = e.target.closest('.vt-btn');
-  if(!btn) return;
-  document.querySelectorAll('.vt-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  const layout = document.getElementById('authorLayout');
-  layout.className = 'author-layout mode-' + btn.dataset.mode;
-  document.getElementById('dataPane').style.display = btn.dataset.mode === 'report' ? 'none' : 'block';
-  document.getElementById('reportPane').style.display = btn.dataset.mode === 'data' ? 'none' : 'block';
-});
-
-function renderDataPane(){
-  const wrap = document.getElementById('dataRows');
-  wrap.innerHTML = AUTHOR.diffElements.map(el => `
-    <div class="data-row" data-el="${el.elementNumber}">
-      <div class="dr-name">${el.name}</div>
-      <div class="dr-meta">
-        <span class="status-pill ${statusInfo(el.current.status)[0]}" style="margin-bottom:2px;">${statusInfo(el.current.status)[1]}</span>
-        ${el.comparison ? `<span class="cmp-chip ${el.comparison}">${cmpLabel(el.comparison)}</span>` : ''}<br>
-        ${el.current.status === 'defect' ? `Sev ${el.current.severity} · Ext ${el.current.extent}${el.current.priority ? ' · Priority ' + el.current.priority : ''}` : ''}
-      </div>
-    </div>`).join('');
-  wrap.querySelectorAll('.data-row').forEach(row => {
-    row.addEventListener('click', () => highlightPair(row.dataset.el));
-  });
-}
-
 function renderReportPane(){
-  const bands = buildPriorityBands(AUTHOR);
   const order = categoryOrderFor(AUTHOR.structureType);
+  const bands = buildPriorityBands(AUTHOR);
+  const allDefects = liveDefectList();
+  const noDefectCount = AUTHOR.diffElements.filter(e => e.current.status === 'good').length;
+  const notInspectedCount = AUTHOR.diffElements.filter(e => e.current.status === 'ninsp').length;
+  const worksRequiredCount = allDefects.filter(d => d.defect.worksRequired === 'Y').length;
+  const bciAv = AUTHOR.bciAvg != null ? AUTHOR.bciAvg.toFixed(2) : '—';
+  const bciCrit = AUTHOR.bciCrit != null ? AUTHOR.bciCrit.toFixed(2) : '—';
+
+  const reportEl = document.getElementById('reportDoc');
+  reportEl.style.setProperty('--accent', AUTHOR.branding.accentColor || '#5b8c8a');
+
   let html = `
     <div class="doc-cover">
       <div class="dc-brand">spanSense</div>
-      <div class="dc-title">${AUTHOR.structureName || 'Untitled Structure'} — ${INSPECTION_TYPE_LABELS[AUTHOR.newInspectionType] || 'Inspection'}</div>
-      <div class="dc-sub">Structure ID: ${AUTHOR.structureId || '—'} · Inspected ${fmtDate(AUTHOR.newInspectionDate || AUTHOR.inspectionDate)}${AUTHOR.inspectorName ? ' · Inspector: ' + AUTHOR.inspectorName : ''}</div>
+      <div class="dc-title">${AUTHOR.structureName || 'Untitled Structure'}</div>
+      <div class="dc-sub">${INSPECTION_TYPE_LABELS[AUTHOR.newInspectionType || AUTHOR.inspectionType] || 'Inspection'} · Structure #${AUTHOR.structureId || '—'}${AUTHOR.inspectorName ? ' · ' + AUTHOR.inspectorName : ''}</div>
+    </div>
+    <div class="report-stat-grid">
+      <div class="report-stat"><span class="rs-label">Inspection Date</span><span class="rs-value">${fmtDate(AUTHOR.newInspectionDate || AUTHOR.inspectionDate)}</span></div>
+      <div class="report-stat"><span class="rs-label">Defects Found</span><span class="rs-value">${allDefects.length}</span></div>
+      <div class="report-stat"><span class="rs-label">BCI<sub>avg</sub></span><span class="rs-value accent">${bciAv}</span></div>
+      <div class="report-stat"><span class="rs-label">BCI<sub>crit</sub></span><span class="rs-value crit">${bciCrit}</span></div>
+    </div>
+    <div class="report-count-row">
+      <span><b>${noDefectCount}</b> element(s) with no defects</span>
+      <span><b>${notInspectedCount}</b> element(s) not inspected</span>
+      <span><b>${worksRequiredCount}</b> defect(s) requiring works</span>
     </div>`;
+
   if (AUTHOR.structureDescription) {
     html += `<div class="doc-h1">2. Structure Description</div><p class="doc-p">${AUTHOR.structureDescription}</p>`;
   }
+
   html += `<div class="doc-h1">3. Description of Defects</div>`;
+  let anyDefects = false;
   order.forEach((cat, ci) => {
-    const els = AUTHOR.diffElements.filter(e => e.category === cat);
-    if (!els.length) return;
-    html += `<div class="doc-h2">3.${ci+1} ${cat}</div>`;
-    els.forEach((el, ei) => {
-      html += `<div class="doc-h3">3.${ci+1}.${ei+1} ${el.name}</div>
-        <p class="doc-p linked ${el.current.status === 'na' ? 'na' : ''}" data-el="${el.elementNumber}">${defectDescriptionFor(el)}</p>
-        ${elPhotosHTML(el.photos, 'doc-photos')}`;
-    });
+    const rows = allDefects.filter(d => d.el.category === cat);
+    if (!rows.length) return;
+    anyDefects = true;
+    html += `
+      <div class="doc-h2">3.${ci+1} ${cat}</div>
+      <div class="report-table-wrap"><table class="report-table">
+        <thead><tr><th>Element</th><th>Sev</th><th>Ext</th><th>Defect</th><th>Works</th><th>Comment</th></tr></thead>
+        <tbody>${rows.map(r => `
+          <tr>
+            <td>${r.el.name}${r.el.comparison ? `<span class="cmp-chip ${r.el.comparison}">${cmpLabel(r.el.comparison)}</span>` : ''}</td>
+            <td><span class="rd-sev sev-${r.defect.severity||0}">${r.defect.severity||'-'}</span></td>
+            <td><span class="rd-ext ext-${r.defect.extent||''}">${r.defect.extent||'-'}</span></td>
+            <td>${defectCodeLabel(r.defect.defectType, r.defect.defectNumber)}</td>
+            <td class="works-${r.defect.worksRequired||'N'}">${r.defect.worksRequired === 'Y' ? 'Yes' : r.defect.worksRequired === 'M' ? 'Monitor' : 'No'}</td>
+            <td>${defectDescriptionFor(r.el, r.extraIdx)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table></div>
+      ${rows.map(r => elPhotosHTML(r.el.photos, 'doc-photos')).join('')}`;
   });
+  if (!anyDefects) html += `<p class="doc-p na">No defects were recorded for this inspection.</p>`;
+
   html += `<div class="doc-h1">4. Conclusions and Recommendations</div>
     <p class="doc-p">${buildConclusionsIntro(AUTHOR)}</p>`;
   bands.forEach(b => {
     if(!b.items.length) return;
     html += `<div class="priority-band"><h4 class="${b.cls}">${b.label}</h4><ul>${b.items.map(i=>`<li>${i}</li>`).join('')}</ul></div>`;
   });
-  document.getElementById('reportDoc').innerHTML = html;
-  document.querySelectorAll('.doc-p.linked').forEach(p => {
-    p.addEventListener('click', () => highlightPair(p.dataset.el));
-  });
-}
-
-function highlightPair(id){
-  document.querySelectorAll('.data-row').forEach(r => r.classList.toggle('highlight', r.dataset.el === id));
-  document.querySelectorAll('.doc-p.linked').forEach(p => p.classList.toggle('highlight', p.dataset.el === id));
-  const target = document.querySelector('.doc-p.linked[data-el="' + id + '"]');
-  if(target) target.scrollIntoView({ behavior:'smooth', block:'center' });
+  reportEl.innerHTML = html;
 }
 
 document.getElementById('toExportBtn').addEventListener('click', () => goTo('export'));
