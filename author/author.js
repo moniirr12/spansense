@@ -4,147 +4,13 @@
 // the full-report PDF export (generateSimplePDFReport). DEFECT_TYPE_LABEL
 // and defectTypeLabel() are also provided by test.js.
 
-// Real BCI formula, ported verbatim from inspection/bci.js (that file isn't
-// loaded on this page) so severity/extent edits here recompute a genuine
-// score instead of leaving the originally-loaded value static.
-const STRUCTURE_TYPE_CONFIG = {
-  "Bridge": {
-    importanceMapping: {1:"Very High",2:"High",3:"Very High",4:"Very High",5:"High",6:"High",7:"High",8:"High",9:"High",10:"High",11:"Very High",12:"Very High",13:"High",14:"Medium",15:"Medium",16:"Medium",17:"Medium",18:"High",19:"Medium",20:"Medium",21:"Medium",22:"Medium",23:"High",24:"Medium",25:"Low",26:"Medium",27:"Medium",28:"Medium",29:"Medium",30:"Low",31:"Medium",32:"Medium",33:"Low",34:"Medium"},
-    criticalElements: [1,2,3,4,11,12],
-    bciAvIncludedElements: Array.from({length:34},(_,i)=>i+1)
-  },
-  "Retaining wall": {
-    importanceMapping: {1:"High",2:"Very High",3:"Very High",4:"High",5:"Medium",6:"Medium",7:"Medium",8:"Medium",9:"High",10:"Low",11:"Low",12:"Low",13:"Low",14:"Low",15:"Low",16:"Medium",17:"Medium"},
-    criticalElements: [1,2,3],
-    bciAvIncludedElements: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17]
-  },
-  "Sign Gantry": {
-    importanceMapping: {1:"High",2:"Very High",3:"Very High",4:"Very High",5:"Medium",6:"Medium",7:"Low",8:"High",9:"High",10:"High",11:"Very High",12:"Very High",13:"Medium"},
-    criticalElements: [2,3,4,11,12],
-    bciAvIncludedElements: [1,2,3,4,5,6,7,8,9,10,11,12,13]
-  }
-};
-function getStructureConfig(structureType){ return STRUCTURE_TYPE_CONFIG[structureType] || STRUCTURE_TYPE_CONFIG["Bridge"]; }
-const BCI_ECS_MAPPING = {"1A":1.0,"2B":2.0,"2C":2.1,"2D":2.3,"2E":2.7,"3B":3.0,"3C":3.1,"3D":3.3,"3E":3.7,"4B":4.0,"4C":4.1,"4D":4.3,"4E":4.7,"5B":5.0,"5C":5.0,"5D":5.0,"5E":5.0};
-function calculateECS(sPlusEx){ if (sPlusEx === "00") return 0; return BCI_ECS_MAPPING[sPlusEx] || 0.0; }
-function calculateECF(importance, ecs){
-  if (importance === "Very High") return 0;
-  if (importance === "High") return 0.3 - ((ecs - 1) * (0.3 / 4));
-  if (importance === "Medium") return 0.6 - ((ecs - 1) * (0.6 / 4));
-  if (importance === "Low") return 1.2 - ((ecs - 1) * (1.2 / 4));
-  return 0;
-}
-function calculateECI(ecs, ecf){ return ecs - ecf >= 1 ? ecs - ecf : 1; }
-function calculateEIF(importance, severity){
-  if (severity === 0) return 0;
-  if (importance === "Very High") return 2;
-  if (importance === "High") return 1.5;
-  if (importance === "Medium") return 1.2;
-  if (importance === "Low") return 1;
-  return 0;
-}
-function calculateBCIAv(bcsValues, eifValues){
-  const bcsSum = bcsValues.reduce((s,v)=>s+v,0), eifSum = eifValues.reduce((s,v)=>s+v,0);
-  const bcsAvg = bcsSum / eifSum;
-  return 100 - 2 * ((bcsAvg ** 2) + (6.5 * bcsAvg) - 7.5);
-}
-function calculateBCICrit(eciValues, structureType){
-  const specificElements = getStructureConfig(structureType).criticalElements;
-  const filtered = eciValues.filter(item => specificElements.includes(item.itemno)).map(item => item.eci);
-  if (!filtered.length) return 100.00;
-  const eciMax = Math.max(...filtered);
-  return 100 - 2 * ((eciMax ** 2) + (6.5 * eciMax) - 7.5);
-}
-function calculateBCI(severityValues, extentValues, itemNumbers, structureType){
-  const config = getStructureConfig(structureType);
-  const eciValues = [], bciAvBcsValues = [], bciAvEifValues = [];
-  itemNumbers.forEach((itemno, i) => {
-    const severity = severityValues[i] || 0, extent = extentValues[i] || 0;
-    const ecs = calculateECS(`${severity}${extent}`);
-    const importance = config.importanceMapping[itemno] || "Medium";
-    const ecf = calculateECF(importance, ecs);
-    const eci = calculateECI(ecs, ecf);
-    eciValues.push({ itemno, eci });
-    const eif = calculateEIF(importance, severity);
-    const bcs = eci * eif;
-    if (config.bciAvIncludedElements.includes(itemno)) { bciAvBcsValues.push(bcs); bciAvEifValues.push(eif); }
-  });
-  return { bciAv: calculateBCIAv(bciAvBcsValues, bciAvEifValues), bciCrit: calculateBCICrit(eciValues, structureType) };
-}
-// Author's live equivalent of inspection.js's refreshBCIScores(): builds
-// the same severity/extent/itemNumber arrays from the current in-memory
-// draft (not the DOM), using each element's primary defect - 'good'
-// (explicitly inspected, no defect) counts as severity 1/extent A (best
-// score); 'ninsp' and 'na' are excluded entirely, same convention the real
-// save flow uses for the reserved marker rows.
-function recomputeLiveBCI(){
-  const severityValues = [], extentValues = [], itemNumbers = [];
-  AUTHOR.diffElements.forEach(el => {
-    if (el.current.status === 'defect') {
-      severityValues.push(parseInt(el.current.severity, 10) || 0);
-      extentValues.push(el.current.extent || 'A');
-      itemNumbers.push(el.elementNumber);
-    } else if (el.current.status === 'good') {
-      severityValues.push(1); extentValues.push('A'); itemNumbers.push(el.elementNumber);
-    }
-  });
-  const { bciAv, bciCrit } = calculateBCI(severityValues, extentValues, itemNumbers, AUTHOR.structureType);
-  AUTHOR.bciAvg = bciAv; AUTHOR.bciCrit = bciCrit;
-  animateBciValue(document.getElementById('draftBciAvgOriginal'), bciAv);
-  animateBciValue(document.getElementById('draftBciCritOriginal'), bciCrit);
-  animateBciValue(document.getElementById('leftBciAvg'), bciAv);
-  animateBciValue(document.getElementById('leftBciCrit'), bciCrit);
-}
-
 // ============================================================
-// BCI STICKY SIDEBAR — .left-bci-cards is a fixed clone of the in-flow
-// "live" trend chip (.bci-chip.live, id draftBciOriginal) that
-// renderBciHeader() creates fresh inside #draftBciTrend whenever Report
-// View (#screen-author) is entered; it fades/slides into the left gutter
-// (above the icon-only wizard rail, as its own widget) once that chip
-// scrolls out of view. Same mechanic/constants as inspection.html's
-// #bciStickySidebar (spans.js), adapted to Author's floating pill navbar.
-// #draftBciOriginal doesn't exist in the static page - it's re-created by
-// every renderBciHeader() call - so it's looked up fresh each time here
-// rather than cached once (a cached reference would go stale the moment
-// the trend row's innerHTML is replaced).
+// WIZARD RAIL — centres against .page-wrapper (the one element common to
+// every screen) so it lands in the left gutter regardless of how wide
+// that gutter is at the current viewport size. Half the gutter, minus
+// half the rail's own width.
+// ============================================================
 (function(){
-  const sidebar = document.getElementById('leftBciCards');
-  if (!sidebar) return;
-  const NAVBAR_H = 90; // Author's floating navbar sits top:20px, height:64px
-  const EXTRA_OFFSET = NAVBAR_H / 2;
-  const SPEED = 1.5;
-  let ticking = false;
-
-  // getBoundingClientRect() on an element inside a display:none ancestor
-  // (i.e. any screen other than #screen-author, since screens are toggled
-  // via a class rather than actually navigated) returns an all-zero rect -
-  // which otherwise reads as "scrolled miles past", flashing the sticky
-  // clone in on the Setup screen the moment anything scrolls (e.g. the
-  // branding card's own scrollIntoView after loading a structure).
-  function reportScreenActive(){
-    const screen = document.getElementById('screen-author');
-    return !!screen && screen.classList.contains('active');
-  }
-
-  function positionSidebar(){
-    if (!reportScreenActive()) return;
-    const wrap = document.querySelector('#screen-author > .card');
-    if (wrap) {
-      const wrapRect = wrap.getBoundingClientRect();
-      const sidebarWidth = sidebar.offsetWidth || 150;
-      const leftPos = (wrapRect.left / 2) - (sidebarWidth / 2);
-      sidebar.style.left = Math.max(8, leftPos) + 'px';
-    }
-    sidebar.style.top = `${NAVBAR_H + (NAVBAR_H / 2)}px`;
-  }
-
-  // The wizard rail shows on every screen (not just Report View), so it
-  // centres against .page-wrapper - the one element common to all of them
-  // - rather than the Report-View-specific #screen-author > .card the BCI
-  // sticky clone uses. Same formula (half the gutter, minus half the
-  // rail's own width) so both widgets land on the same vertical
-  // centreline in that gutter.
   function positionWizardRail(){
     const rail = document.getElementById('wizardSteps');
     const wrap = document.querySelector('.page-wrapper');
@@ -155,43 +21,6 @@ function recomputeLiveBCI(){
   }
   window.addEventListener('resize', positionWizardRail);
   positionWizardRail();
-
-  function handleScroll(){
-    const original = document.getElementById('draftBciOriginal');
-    if (!reportScreenActive() || !original) {
-      sidebar.style.opacity = '0';
-      sidebar.classList.remove('visible');
-      return;
-    }
-    const rect = original.getBoundingClientRect();
-    const triggerPoint = NAVBAR_H + 20;
-    const scrolledPast = triggerPoint - rect.top;
-    if (scrolledPast <= 0) {
-      sidebar.style.opacity = '0';
-      sidebar.style.transform = `translateY(${-200 - EXTRA_OFFSET}px)`;
-      sidebar.classList.remove('visible');
-      return;
-    }
-    const maxTravel = 200 + EXTRA_OFFSET;
-    const travel = Math.min(scrolledPast * SPEED, maxTravel);
-    sidebar.style.transform = `translateY(${(-200 - EXTRA_OFFSET) + travel}px)`;
-    sidebar.style.opacity = Math.min(1, scrolledPast / 90);
-    sidebar.classList.add('visible');
-  }
-
-  // Exposed so goTo() can force an immediate, correct state the instant the
-  // draft screen becomes active, rather than waiting for the user's next
-  // scroll (which might not come at all if they're already at the top).
-  window.refreshBciSticky = () => { positionSidebar(); handleScroll(); };
-
-  window.addEventListener('scroll', () => {
-    if (!ticking) {
-      requestAnimationFrame(() => { positionSidebar(); handleScroll(); ticking = false; });
-      ticking = true;
-    }
-  }, { passive: true });
-  window.addEventListener('resize', positionSidebar);
-  sidebar.style.transform = `translateY(${-200 - EXTRA_OFFSET}px)`;
 })();
 
 const INSPECTION_TYPE_LABELS = { GI: 'General Inspection (GI)', PI: 'Principal Inspection (PI)', SI: 'Safety Inspection (SI)' };
@@ -289,15 +118,12 @@ function goTo(step){
   const onAuthor = step === 'author';
   document.getElementById('draftRightRail').style.display = onAuthor ? 'flex' : 'none';
   if(step === 'author') {
-    renderBciHeader();
     refreshConclusionsRailState();
     renderDraftNotesList();
     renderDataPane();
     renderReportPane();
-    if (window.refreshBciSticky) requestAnimationFrame(window.refreshBciSticky);
   } else {
-    closeStructInfoModal(); closeConclusionsModal(); closePhotosModal(); closeDraftNotesPanel();
-    if (window.refreshBciSticky) window.refreshBciSticky();
+    closeConclusionsModal(); closePhotosModal(); closeDraftNotesPanel();
   }
   if(step === 'export') renderExport();
 }
@@ -393,45 +219,6 @@ async function onStructureChange(){
   }
 }
 
-// Same count-up tween as the main inspection editor's setBciValue
-// (inspection/bci.js) - ease-out cubic over 450ms.
-const bciTweenFrames = new WeakMap();
-function animateBciValue(el, value){
-  if (!el) return;
-  if (value == null) { el.textContent = '—'; el.classList.remove('loading'); return; }
-  const target = parseFloat(value);
-  const current = parseFloat(el.textContent);
-  el.classList.remove('loading');
-  if (isNaN(current)) { el.textContent = target.toFixed(1); return; }
-  const pending = bciTweenFrames.get(el);
-  if (pending) cancelAnimationFrame(pending);
-  const duration = 450;
-  const start = performance.now();
-  function step(now){
-    const t = Math.min(1, (now - start) / duration);
-    const eased = 1 - Math.pow(1 - t, 3);
-    el.textContent = (current + (target - current) * eased).toFixed(1);
-    if (t < 1) bciTweenFrames.set(el, requestAnimationFrame(step));
-    else bciTweenFrames.delete(el);
-  }
-  bciTweenFrames.set(el, requestAnimationFrame(step));
-}
-
-// Just the live Avg/Crit legend now - no history chart. #draftBciOriginal
-// still wraps it (rather than being removed) since the sticky BCI-cards
-// widget above still reads its position to decide when to fade its clone
-// in, regardless of what's inside it.
-function bciTrendHTML(live){
-  return `<div class="bci-trend" id="draftBciOriginal">
-    <div class="bci-trend-header">
-      <div class="bci-legend">
-        <span class="bci-legend-item avg"><i></i>Avg <b id="draftBciAvgOriginal">${live.avg != null ? live.avg.toFixed(1) : '···'}</b></span>
-        <span class="bci-legend-item crit"><i></i>Crit <b id="draftBciCritOriginal">${live.crit != null ? live.crit.toFixed(1) : '···'}</b></span>
-      </div>
-    </div>
-  </div>`;
-}
-
 async function onLoad(){
   const structureId = document.getElementById('structureSelect').value;
   const date = document.getElementById('inspectionSelect').value;
@@ -441,16 +228,14 @@ async function onLoad(){
   loadBtn.disabled = true;
   loadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading…';
   try {
-    const [diffRes, bridgeRes, twinRes, fullRes] = await Promise.all([
+    const [diffRes, bridgeRes, fullRes] = await Promise.all([
       fetch(`${API_BASE}/api/author/diff?structureId=${structureId}&date=${date}`),
       fetch(`${API_BASE}/api/bridges/${structureId}`),
-      fetch(`${API_BASE}/api/twin/${structureId}`),
       fetch(`${API_BASE}/api/inspection/full?structure_id=${structureId}&date=${date}`)
     ]);
     if (!diffRes.ok) throw new Error((await diffRes.json()).error || 'Failed to load inspection data');
     const diff = await diffRes.json();
     const bridge = await bridgeRes.json();
-    const twin = twinRes.ok ? await twinRes.json() : { inspections: [] };
     const full = fullRes.ok ? await fullRes.json() : { defects: [] };
 
     AUTHOR.loadedFromUpload = false;
@@ -482,7 +267,6 @@ async function onLoad(){
     AUTHOR.conclusions = full.conclusions || '';
     AUTHOR.generalPhotos = full.generalPhotos || [];
     AUTHOR.notes = full.notes || [];
-    AUTHOR.bciTrend = twin.inspections || [];
     AUTHOR.bciAvg = full.overallBciave != null ? parseFloat(full.overallBciave) : null;
     AUTHOR.bciCrit = full.overallBcicrit != null ? parseFloat(full.overallBcicrit) : null;
     AUTHOR.diffElements = diff.elements.map(e => ({
@@ -528,9 +312,6 @@ async function onLoad(){
           <div class="lrc-fact"><span>BCI crit</span><b class="crit">${AUTHOR.bciCrit != null ? AUTHOR.bciCrit.toFixed(1) : '—'}</b></div>
         </div>
       </div>`;
-
-    document.getElementById('leftBciCards').style.display = 'flex';
-    recomputeLiveBCI();
 
     // No date/type picker here for the records/Field path - there's a real
     // recorded inspection to report on, so its own date/type are the
@@ -608,7 +389,7 @@ loadStructures().then(resumeAuthorReturn);
 // wasn't done in spanSense) - extracts per-element narrative out of an
 // uploaded PDF/Word via /api/author/extract-previous-inspection, then
 // converges on the exact same "loaded" state onLoad() reaches, just with
-// no historical comparison (previousDate/bciTrend stay empty - the
+// no historical comparison (previousDate stays empty - the
 // extracted content IS the starting draft, not a second data source
 // diffed against something else). See extractPreviousInspection.js for
 // why severity/extent default to 1/A rather than being parsed too.
@@ -659,7 +440,6 @@ async function onLoadFromUpload(){
     AUTHOR.structureBuiltYear = bridge.built_year || null;
     AUTHOR.structureMaterial = [bridge.primary_material, bridge.secondary_material].filter(Boolean).join(' / ') || null;
     AUTHOR.inspectorName = null;
-    AUTHOR.bciTrend = [];
     AUTHOR.bciAvg = null;
     AUTHOR.bciCrit = null;
     AUTHOR.diffElements = extract.elements.map(e => ({
@@ -674,9 +454,6 @@ async function onLoadFromUpload(){
     summary.innerHTML = extract.warning
       ? `<div class="no-history-note"><i class="fas fa-triangle-exclamation"></i> ${extract.warning}</div>`
       : `<div class="loaded-chip"><i class="fas fa-circle-check"></i> Extracted — review every card, this is a best-effort read of the document, not verified data.</div>`;
-
-    document.getElementById('leftBciCards').style.display = 'flex';
-    recomputeLiveBCI();
 
     const newInspRow = document.getElementById('newInspRow');
     newInspRow.style.display = 'block';
@@ -803,165 +580,12 @@ function elPhotosHTML(photos, containerCls){
   ).join('')}</div>`;
 }
 
-// Sets the structure name + BCI trend chart at the top of Report View -
-// extracted from what used to be the (now-deleted) Draft screen's own
-// renderDraft(), since this header moved here and nothing else about it
-// changed. Called from goTo() whenever Report View is entered.
-function renderBciHeader(){
-  document.getElementById('draftStructureName').textContent = AUTHOR.structureName || '—';
-  document.getElementById('draftBciTrend').innerHTML = bciTrendHTML({ avg: AUTHOR.bciAvg, crit: AUTHOR.bciCrit });
-}
 document.getElementById('backToSetupBtn').addEventListener('click', () => goTo('setup'));
-
-// ============================================================
-// STRUCTURE INFO MODAL — inspection date/type/inspector (feed the same
-// AUTHOR.newInspectionDate/newInspectionType the Setup screen sets) plus
-// the structure's own description/spans/length/built/material, via the
-// same PATCH /api/bridges/:id/info endpoint and view/edit toggle
-// inspection1.html's "Span Info" panel already uses - editing a
-// structure's core facts means the same thing (and hits the same data)
-// wherever you do it in spanSense. Available from both the "From
-// spanSense records" and "Upload a previous inspection" paths, since both
-// set AUTHOR.structureId/structureDescription/etc before this can open.
-// Conclusions/Notes/Photos used to be tabs on this same popover; they're
-// now their own always-visible right-side rail further below, so this
-// stays a single-purpose panel opened on demand from its toolbar button
-// (not rendered as part of every renderDraft(), which would reset it
-// mid-typing if it happened to be open).
-function renderStructInfoPanel(){
-  const panel = document.getElementById('structInfoPanel');
-  if (!AUTHOR.structureId) return;
-  panel.innerHTML = `
-    <button class="sip-close" id="sipClose" title="Close">&times;</button>
-    <div class="sip-name">${AUTHOR.structureName || ''}</div>
-    <div class="sip-meta">${AUTHOR.structureType || ''} · Base inspection ${fmtDate(AUTHOR.inspectionDate)}</div>
-    <div class="sip-edit-grp">
-      <label class="sip-edit-field"><span>Inspection date</span>
-        <input type="date" id="sipInspectionDate" value="${AUTHOR.newInspectionDate || ''}">
-      </label>
-      <label class="sip-edit-field"><span>Inspection type</span>
-        <select id="sipInspectionType">
-          <option value="">Select type…</option>
-          <option value="GI" ${AUTHOR.newInspectionType==='GI'?'selected':''}>GI — General Inspection</option>
-          <option value="PI" ${AUTHOR.newInspectionType==='PI'?'selected':''}>PI — Principal Inspection</option>
-          <option value="SI" ${AUTHOR.newInspectionType==='SI'?'selected':''}>SI — Safety Inspection</option>
-        </select>
-      </label>
-      <label class="sip-edit-field"><span>Inspector name</span>
-        <input type="text" id="sipInspectorName" placeholder="Enter inspector's name" value="${(AUTHOR.inspectorName||'').replace(/"/g,'&quot;')}">
-      </label>
-    </div>
-    <div class="sip-divider"></div>
-    <div id="sipInfoBlock"></div>
-    <div class="sip-label">BCI trend</div>
-    <div class="sip-bci-track">${sipBciTrendHTML()}</div>
-  `;
-  document.getElementById('sipClose').addEventListener('click', closeStructInfoModal);
-  renderSipInfoView();
-  document.getElementById('sipInspectionDate').addEventListener('change', function(){
-    AUTHOR.newInspectionDate = this.value;
-    document.getElementById('newInspectionDate').value = this.value;
-  });
-  document.getElementById('sipInspectionType').addEventListener('change', function(){
-    AUTHOR.newInspectionType = this.value || null;
-    document.getElementById('newInspectionType').value = this.value;
-  });
-  document.getElementById('sipInspectorName').addEventListener('input', function(){
-    AUTHOR.inspectorName = this.value || null;
-  });
-}
-function closeStructInfoModal(){
-  document.getElementById('sipOverlay').classList.remove('show');
-  document.body.classList.remove('modal-open');
-}
 
 function sipEscapeHtml(str){
   return String(str == null ? '' : str).replace(/[&<>"']/g, function(c){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
   });
-}
-
-function renderSipInfoView(){
-  const block = document.getElementById('sipInfoBlock');
-  if (!block) return;
-  const hasDesc = !!AUTHOR.structureDescription;
-  block.innerHTML = `
-    <div class="sip-label-row">
-      <span class="sip-label">Structure Info</span>
-      <button class="sip-info-edit-link" id="sipInfoEditBtn">Edit</button>
-    </div>
-    <div class="sip-desc${hasDesc ? '' : ' empty'}">${hasDesc ? sipEscapeHtml(AUTHOR.structureDescription) : 'No description recorded for this structure yet.'}</div>
-    <div class="sip-info-facts">
-      <div class="sip-edit-field"><span>Spans</span><div>${AUTHOR.structureSpans || '--'}</div></div>
-      <div class="sip-edit-field"><span>Length</span><div>${AUTHOR.structureLength ? AUTHOR.structureLength + 'm' : '--'}</div></div>
-      <div class="sip-edit-field"><span>Built</span><div>${AUTHOR.structureBuiltYear || '--'}</div></div>
-      <div class="sip-edit-field"><span>Material</span><div>${AUTHOR.structureMaterial ? sipEscapeHtml(AUTHOR.structureMaterial) : '--'}</div></div>
-    </div>
-    <div class="sip-divider"></div>
-  `;
-  document.getElementById('sipInfoEditBtn').addEventListener('click', renderSipInfoEdit);
-}
-
-function renderSipInfoEdit(){
-  const block = document.getElementById('sipInfoBlock');
-  if (!block) return;
-  block.innerHTML = `
-    <div class="sip-label-row"><span class="sip-label">Structure Info</span></div>
-    <textarea class="sip-info-textarea" id="sipInfoDesc" placeholder="Add a description for this structure…">${sipEscapeHtml(AUTHOR.structureDescription || '')}</textarea>
-    <div class="sip-info-facts">
-      <label class="sip-edit-field"><span>Spans</span><input type="number" id="sipInfoSpans" min="1" value="${sipEscapeHtml(AUTHOR.structureSpans || '')}"></label>
-      <label class="sip-edit-field"><span>Length (m)</span><input type="number" id="sipInfoLength" min="0" value="${sipEscapeHtml(AUTHOR.structureLength || '')}"></label>
-      <label class="sip-edit-field"><span>Built</span><input type="number" id="sipInfoBuilt" min="1000" max="2100" value="${sipEscapeHtml(AUTHOR.structureBuiltYear || '')}"></label>
-      <label class="sip-edit-field"><span>Material</span><input type="text" id="sipInfoMaterial" value="${sipEscapeHtml(AUTHOR.structureMaterial || '')}"></label>
-    </div>
-    <div class="sip-info-actions">
-      <button class="sip-info-cancel" id="sipInfoCancel">Cancel</button>
-      <button class="sip-info-save" id="sipInfoSave">Save</button>
-    </div>
-    <div class="sip-divider"></div>
-  `;
-  document.getElementById('sipInfoCancel').addEventListener('click', renderSipInfoView);
-  document.getElementById('sipInfoSave').addEventListener('click', saveSipInfo);
-}
-
-async function saveSipInfo(){
-  const payload = {
-    description: document.getElementById('sipInfoDesc').value.trim() || null,
-    span_number: parseInt(document.getElementById('sipInfoSpans').value, 10) || null,
-    length: parseInt(document.getElementById('sipInfoLength').value, 10) || null,
-    built_year: parseInt(document.getElementById('sipInfoBuilt').value, 10) || null,
-    material: document.getElementById('sipInfoMaterial').value.trim() || null
-  };
-  const ok = confirm('Save changes to ' + (AUTHOR.structureName || 'this structure') + '\'s info? This updates the stored record and applies to every future report for it, not just this one.');
-  if (!ok) return;
-
-  const saveBtn = document.getElementById('sipInfoSave');
-  saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
-  try {
-    const res = await fetch(`${API_BASE}/api/bridges/${AUTHOR.structureId}/info`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    if (!res.ok) throw new Error('Save failed');
-    AUTHOR.structureDescription = payload.description;
-    AUTHOR.structureSpans = payload.span_number;
-    AUTHOR.structureLength = payload.length;
-    AUTHOR.structureBuiltYear = payload.built_year;
-    AUTHOR.structureMaterial = payload.material;
-    renderSipInfoView();
-  } catch (err) {
-    console.error('Error saving structure info:', err);
-    alert('Could not save these changes. Please try again.');
-    saveBtn.disabled = false; saveBtn.textContent = 'Save';
-  }
-}
-function sipBciTrendHTML(){
-  const scored = (AUTHOR.bciTrend || []).filter(t => t.bciAvg != null).slice(-6);
-  if (!scored.length) return '<div style="font-size:.74rem; color:var(--text-mute);">No BCI history recorded.</div>';
-  return scored.map((t, i) => `<div class="sip-bci-chip${i===scored.length-1?' current':''}">
-    <span class="sc-date">${t.date}</span>
-    <span class="sc-vals">${t.bciAvg.toFixed(1)}${t.bciCrit != null ? `<span class="crit">${t.bciCrit.toFixed(1)}</span>` : ''}</span>
-  </div>`).join('');
 }
 
 // ============================================================
@@ -1275,14 +899,6 @@ async function saveAuthorPhotoCaption(photoId, value){
   }
 }
 
-document.getElementById('structInfoToggle').addEventListener('click', () => {
-  renderStructInfoPanel();
-  document.getElementById('sipOverlay').classList.add('show');
-  document.body.classList.add('modal-open');
-});
-document.getElementById('sipOverlay').addEventListener('click', (e) => {
-  if (e.target.id === 'sipOverlay') closeStructInfoModal();
-});
 document.getElementById('conclusionsBar').addEventListener('click', openConclusionsModal);
 document.getElementById('conclusionsOverlay').addEventListener('click', (e) => {
   if (e.target.id === 'conclusionsOverlay') closeConclusionsModal();
@@ -1299,7 +915,6 @@ document.getElementById('draftNotesInput').addEventListener('input', function(){
 document.getElementById('draftNotesAddBtn').addEventListener('click', addAuthorNote);
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
-  closeStructInfoModal();
   closeConclusionsModal();
   closePhotosModal();
   closeDraftNotesPanel();
