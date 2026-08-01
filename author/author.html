@@ -112,6 +112,9 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .picker-row{display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;}
 .picker-field{flex:1; min-width:220px;}
 .picker-field label{font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-mute); display:block; margin-bottom:6px;}
+.picker-field label.label-with-action{display:flex; align-items:center; justify-content:space-between;}
+.add-structure-link{display:flex; align-items:center; gap:5px; border:none; background:none; color:var(--teal); font-size:.72rem; font-weight:700; text-transform:none; letter-spacing:normal; cursor:pointer; padding:0; font-family:inherit;}
+.add-structure-link:hover{color:var(--teal-dark); text-decoration:underline;}
 .picker-field select{width:100%; padding:11px 16px; border:1px solid var(--border); border-radius:40px; font-size:.86rem; font-weight:500; font-family:inherit; color:var(--text); background:var(--bg-soft); cursor:pointer; transition:all .2s ease;}
 .picker-field select:hover{border-color:#8ab4b0; background:#fff;}
 .picker-field input[type="date"]{width:100%; padding:10px 16px; border:1px solid var(--border); border-radius:40px; font-size:.86rem; font-weight:500; font-family:inherit; color:var(--text); background:var(--bg-soft); transition:all .2s ease;}
@@ -297,6 +300,8 @@ body.modal-open{overflow:hidden;}
 .night-mode .card-title{color:#d4dfe3;}
 
 .night-mode .picker-field label{color:#7d939b;}
+.night-mode .add-structure-link{color:#8ab4b0;}
+.night-mode .add-structure-link:hover{color:#a0c8c4;}
 .night-mode .picker-field select{background:#1e2a2f; border-color:#3a4b53; color:#c5d3d9;}
 .night-mode .picker-field select:hover{background:#2a3a40; border-color:#8ab4b0;}
 .night-mode .picker-field input[type="date"]{background:#1e2a2f; border-color:#3a4b53; color:#c5d3d9; color-scheme:dark;}
@@ -402,7 +407,10 @@ body.modal-open{overflow:hidden;}
 
             <div class="picker-row">
                 <div class="picker-field" style="flex-grow:1.6; max-width:560px;">
-                    <label>Structure</label>
+                    <label class="label-with-action">
+                        <span>Structure</span>
+                        <button type="button" class="add-structure-link" id="addStructureBtn"><i class="fas fa-plus"></i> Add structure</button>
+                    </label>
                     <div class="selector-dropdown" id="structDropdown">
                         <button type="button" class="dd-trigger" id="structDdTrigger">
                             <span class="dd-icon"><i class="fas fa-bridge"></i></span>

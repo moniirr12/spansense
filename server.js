@@ -528,7 +528,10 @@ app.get('/getBridgePhoto', requireAuth, async (req, res) => {
         if (!row) {
             return res.status(404).json({ error: 'Bridge not found' });
         }
-        res.json({ photo_url: row.photo_url });
+        // photo_url stores a storage path (bucket is private), not a servable
+        // URL directly - sign it fresh here, same convention as the other
+        // storage-backed photo reads (inspection-photos, branding logo).
+        res.json({ photo_url: await storage.getSignedUrl(row.photo_url) });
     } catch (err) {
         res.status(500).json({ error: 'Database error' });
     }
@@ -887,6 +890,80 @@ app.patch('/api/bridges/:id/schedule', requireAuth, requireEngineer, async (req,
         res.status(500).json({ success: false, error: err.message });
     }
 });
+
+// Create a new structure - structure/add-structure.html's "Create Structure"
+// posts here. Engineer/admin only, same gating as schedule edits above -
+// this adds a record everyone else sees on Map/Database/Planning.
+app.post('/api/bridges', requireAuth, requireEngineer, async (req, res) => {
+    try {
+        const {
+            name, type, location, latitude, longitude, span, length, width,
+            span_number, built_year, load_capacity, primary_material,
+            secondary_material, description, OSE, OSN, gi_cycle_years, pi_cycle_years
+        } = req.body;
+
+        if (!name || !name.trim()) {
+            return res.status(400).json({ error: 'name is required' });
+        }
+
+        const row = await dbGet(
+            `INSERT INTO bridges (
+                name, type, location, latitude, longitude, span, length, width,
+                span_number, built_year, load_capacity, primary_material,
+                secondary_material, description, OSE, OSN, gi_cycle_years, pi_cycle_years,
+                organization_id
+             ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+             RETURNING id`,
+            [
+                name.trim(), type || null, location || null, latitude ?? null, longitude ?? null,
+                span ?? null, length ?? null, width ?? null, span_number ?? null, built_year ?? null,
+                load_capacity ?? null, primary_material || null, secondary_material || null,
+                description || null, OSE || null, OSN || null, gi_cycle_years ?? null, pi_cycle_years ?? null,
+                req.session.organizationId ?? null
+            ]
+        );
+        res.json({ success: true, id: row.id });
+    } catch (err) {
+        console.error('Create bridge error:', err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+const uploadStructurePhoto = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 15 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) cb(null, true);
+        else cb(new Error('Only image files are allowed'), false);
+    }
+});
+
+// Cover photo for a structure - same single photo_url column map.js's
+// bridge modal already reads via GET /getBridgePhoto below. Only the first
+// photo picked in Add Structure's photo grid becomes this; there's no
+// multi-photo gallery for structures the way inspections have one.
+app.post('/api/bridges/:id/photo', requireAuth, requireEngineer,
+    (req, res, next) => {
+        uploadStructurePhoto.single('photo')(req, res, (err) => {
+            if (!err) return next();
+            if (err.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: 'Photo exceeds the 15MB limit.' });
+            return res.status(400).json({ error: err.message });
+        });
+    },
+    async (req, res) => {
+        try {
+            if (!req.file) return res.status(400).json({ error: 'No photo provided' });
+            const ext = (req.file.originalname.split('.').pop() || 'jpg').toLowerCase();
+            const storagePath = `bridges/bridge_${req.params.id}/cover_${Date.now()}.${ext}`;
+            await storage.uploadFile(storagePath, req.file.buffer, req.file.mimetype);
+            await pool.query('UPDATE bridges SET photo_url = $1 WHERE id = $2', [storagePath, req.params.id]);
+            res.json({ success: true });
+        } catch (err) {
+            console.error('Upload structure photo error:', err);
+            res.status(500).json({ error: err.message });
+        }
+    }
+);
 
 // GET RECENT ACTIVITY — latest inspections across all structures
 app.get('/api/activity', requireAuth, async (req, res) => {

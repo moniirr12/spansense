@@ -174,6 +174,28 @@ document.addEventListener('click', function(e){
   if (structDdOpen && !structDropdown.contains(e.target)) closeStructDropdown();
 });
 
+// "Add structure" next to the picker - same "go there, come back" trip as
+// goEditInInspection()/authorReturn below, just for a structure that
+// doesn't exist yet instead of an inspection that already does.
+document.getElementById('addStructureBtn').addEventListener('click', function(){
+  sessionStorage.setItem('addStructureReturnTo', window.location.href);
+  window.location.href = '../structure/add-structure.html';
+});
+
+// If we're arriving back from add-structure.html having just created a
+// structure, select it once loadStructures() has it in the list - same
+// consume-once pattern as resumeAuthorReturn() below.
+async function resumeNewStructure(){
+  const newId = sessionStorage.getItem('newStructureId');
+  if (!newId) return;
+  sessionStorage.removeItem('newStructureId');
+  const structureSelect = document.getElementById('structureSelect');
+  if (!structureSelect.querySelector(`option[value="${newId}"]`)) return;
+  structureSelect.value = newId;
+  syncStructTrigger();
+  structureSelect.dispatchEvent(new Event('change'));
+}
+
 async function loadStructures(){
   const sel = document.getElementById('structureSelect');
   try {
@@ -445,7 +467,7 @@ async function resumeAuthorReturn(){
   renderInspDropdownList();
   await onLoad();
 }
-loadStructures().then(resumeAuthorReturn);
+loadStructures().then(resumeNewStructure).then(resumeAuthorReturn);
 
 // ---- Upload a previous inspection (structure whose last inspection
 // wasn't done in spanSense) - looks up the structure/organization out of
