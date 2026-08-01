@@ -112,6 +112,88 @@ ${text}
     return { elements, warning: null };
 }
 
+// Structure identification facts (name, location, dimensions, materials,
+// built year) out of an uploaded BCI Pro forma or inspection report cover
+// sheet - for structure/add-structure.html's "Extract from document"
+// option, prefilling the form for a structure that doesn't exist in
+// spanSense yet (unlike extractElementsWithGemini above, which matches
+// against an existing structure's element list). Deliberately never asked
+// for condition scores or the numeric BCI element table - see
+// extractPreviousInspection.js's note on why that table doesn't extract
+// reliably even for an existing structure; asking for it here would be
+// worse; a wrong guess is worse than leaving a field blank for the user.
+async function extractStructureInfoWithGemini(rawText) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
+
+    const text = (rawText || '').slice(0, MAX_TEXT_CHARS);
+    const prompt = `You are extracting structure identification details from a UK bridge/structure BCI Pro forma or inspection report cover sheet. Read the document below and pull out whatever facts it states about the STRUCTURE ITSELF - not the inspection findings, condition scores, or defect table.
+
+Respond with a JSON object with these fields. Use null for anything the document doesn't clearly state - do not guess or invent a value:
+- name: the structure's name
+- type: one of "bridge", "footbridge", "culvert", "retaining_wall", "sign_gantry" - infer from context if not stated explicitly, else null
+- location: place name or address
+- span: typical/individual span length in metres (a number)
+- length: total structure length in metres (a number)
+- width: deck/carriageway width in metres (a number)
+- spanNumber: number of spans (an integer)
+- builtYear: year built (an integer)
+- loadCapacity: load rating in tonnes (a number)
+- primaryMaterial: main construction material
+- secondaryMaterial: secondary construction material, if any
+- description: a short 1-2 sentence description of the structure, only if the document actually gives one
+- ose: OS grid reference easting
+- osn: OS grid reference northing
+
+Do NOT extract condition scores, defect descriptions, or values from the numeric BCI element table - only the structure's own identifying facts, typically found on a cover sheet or header section.
+
+Document text:
+"""
+${text}
+"""`;
+
+    const body = {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+            responseMimeType: 'application/json',
+            responseSchema: {
+                type: 'object',
+                properties: {
+                    name: { type: 'string', nullable: true },
+                    type: { type: 'string', nullable: true },
+                    location: { type: 'string', nullable: true },
+                    span: { type: 'number', nullable: true },
+                    length: { type: 'number', nullable: true },
+                    width: { type: 'number', nullable: true },
+                    spanNumber: { type: 'integer', nullable: true },
+                    builtYear: { type: 'integer', nullable: true },
+                    loadCapacity: { type: 'number', nullable: true },
+                    primaryMaterial: { type: 'string', nullable: true },
+                    secondaryMaterial: { type: 'string', nullable: true },
+                    description: { type: 'string', nullable: true },
+                    ose: { type: 'string', nullable: true },
+                    osn: { type: 'string', nullable: true }
+                }
+            }
+        }
+    };
+
+    const res = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Gemini API error ${res.status}: ${errText.slice(0, 300)}`);
+    }
+    const data = await res.json();
+    const textOut = data && data.candidates && data.candidates[0] && data.candidates[0].content &&
+        data.candidates[0].content.parts && data.candidates[0].content.parts[0] && data.candidates[0].content.parts[0].text;
+    if (!textOut) throw new Error('Gemini returned no content');
+    return JSON.parse(textOut);
+}
+
 // Shared by draftConclusionsWithGemini and reviseConclusionsWithGemini below
 // so the "ask AI to adjust" follow-up is grounded in the same facts the
 // original draft was, rather than trusting whatever the text drifted to.
@@ -194,4 +276,4 @@ Rewrite the Conclusions section applying the requested change, in the same plain
     return callGemini(prompt);
 }
 
-module.exports = { extractElementsWithGemini, draftConclusionsWithGemini, reviseConclusionsWithGemini };
+module.exports = { extractElementsWithGemini, extractStructureInfoWithGemini, draftConclusionsWithGemini, reviseConclusionsWithGemini };

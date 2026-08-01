@@ -97,7 +97,7 @@ body {
 
 /* ---------- MAIN WRAPPER ---------- */
 .page-wrapper {
-    max-width: 800px;
+    max-width: 75%;
     margin: 0 auto;
     padding: 120px 0 80px 0;
 }
@@ -163,6 +163,23 @@ body {
     margin-bottom: 18px;
     line-height: 1.5;
 }
+
+/* ---------- EXTRACT FROM DOCUMENT ---------- */
+.extract-section { border-color: rgba(138, 180, 176, 0.4); background: rgba(91, 140, 138, 0.04); }
+.extract-section .section-sub { margin-bottom: 14px; }
+.extract-upload-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.btn-extract {
+    padding: 10px 22px; border: none; border-radius: 30px;
+    background: linear-gradient(135deg, #5b8c8a 0%, #7ba8a5 100%);
+    color: white; font-weight: 600; font-size: 0.82rem; cursor: pointer;
+    transition: all 0.2s; display: flex; align-items: center; gap: 8px;
+    font-family: inherit; flex-shrink: 0;
+}
+.btn-extract:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(91, 140, 138, 0.3); }
+.btn-extract:disabled { opacity: 0.65; cursor: not-allowed; transform: none; box-shadow: none; }
+.extract-status { font-size: 0.78rem; color: #8a9ba8; line-height: 1.4; }
+.extract-status.success { color: #2d7a6e; }
+.extract-status.error { color: #c47070; }
 
 /* ---------- FORM FIELDS ---------- */
 .form-group { margin-bottom: 16px; }
@@ -378,6 +395,10 @@ body {
 .night-mode .form-section { background: #232e34; border-color: #2f3e45; }
 .night-mode .form-section h2 { color: #d4dfe3; }
 .night-mode .form-section .section-sub { color: #8aa4ac; }
+.night-mode .extract-section { border-color: rgba(138, 180, 176, 0.3); background: rgba(138, 180, 176, 0.06); }
+.night-mode .extract-status { color: #8aa4ac; }
+.night-mode .extract-status.success { color: #7fc9ba; }
+.night-mode .extract-status.error { color: #e08a8a; }
 .night-mode .adv-body { border-color: #2f3e45; }
 .night-mode .adv-toggle i.chev { color: #8aa4ac; }
 
@@ -452,6 +473,16 @@ body {
     <div class="page-header">
         <h1><i class="fas fa-plus" style="font-size:0.9em;"></i> Add Structure</h1>
         <p>Create a new structure record. Everything here maps onto the same <code>bridges</code> table used by Map, Database and Planning — fill in what you know now, the rest can always be added later from the structure's own page.</p>
+    </div>
+
+    <div class="form-section extract-section">
+        <h2><i class="fas fa-wand-magic-sparkles"></i> Extract from document <span class="opt">(optional)</span></h2>
+        <p class="section-sub">Upload a BCI Pro forma or inspection report and spanSense will try to pull the structure's name, location, dimensions, materials and build year into the form below — condition scores and defects aren't read, and everything extracted is still yours to review before creating.</p>
+        <div class="extract-upload-row">
+            <button type="button" class="btn-extract" id="extractBtn"><i class="fas fa-file-arrow-up"></i> Upload document</button>
+            <input type="file" id="extractFileInput" accept=".pdf,.doc,.docx" style="display:none;">
+            <span class="extract-status" id="extractStatus"></span>
+        </div>
     </div>
 
     <form id="addStructureForm" novalidate>
@@ -750,10 +781,96 @@ function renderPhotos() {
     });
 }
 
-// ---------- Submit ----------
 var API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? 'http://localhost:3000'
     : 'https://spansense.onrender.com';
+
+// ---------- Extract from document (BCI Pro forma / inspection report) ----------
+// Prefills the form below from whatever the AI can reliably read off a
+// cover sheet - name, location, dimensions, materials, built year. Never
+// touches condition scores or the numeric BCI element table (server-side
+// extractStructureInfoWithGemini deliberately doesn't ask for those - see
+// its comment). Everything it fills in stays fully editable; nothing here
+// submits on its own.
+function setSelectByClosestMatch(selectId, value) {
+    var select = document.getElementById(selectId);
+    var val = (value || '').toLowerCase().trim();
+    if (!val) return;
+    var options = Array.prototype.slice.call(select.options);
+    var match = options.find(function(o) {
+        return o.value && (val.indexOf(o.value.toLowerCase()) !== -1 || o.value.toLowerCase().indexOf(val) !== -1);
+    });
+    if (match) select.value = match.value;
+}
+
+function applyExtractedInfo(info) {
+    if (!info) return;
+    if (info.name) document.getElementById('fName').value = info.name;
+    if (info.type) {
+        var pill = document.querySelector('.type-pill[data-type="' + info.type + '"]');
+        if (pill) {
+            document.querySelectorAll('.type-pill').forEach(function(p) { p.classList.remove('sel'); });
+            pill.classList.add('sel');
+            selectedType = info.type;
+        }
+    }
+    if (info.location) document.getElementById('fLocation').value = info.location;
+    if (info.span != null) document.getElementById('fSpan').value = info.span;
+    if (info.length != null) document.getElementById('fLength').value = info.length;
+    if (info.width != null) document.getElementById('fWidth').value = info.width;
+    if (info.spanNumber != null && info.spanNumber > 0) {
+        spanCount = info.spanNumber;
+        spanCountEl.textContent = spanCount;
+    }
+    if (info.builtYear != null) document.getElementById('fBuiltYear').value = info.builtYear;
+    if (info.loadCapacity != null) document.getElementById('fLoadCapacity').value = info.loadCapacity;
+    if (info.primaryMaterial) setSelectByClosestMatch('fMaterialPrimary', info.primaryMaterial);
+    if (info.secondaryMaterial) setSelectByClosestMatch('fMaterialSecondary', info.secondaryMaterial);
+    if (info.description) document.getElementById('fDescription').value = info.description;
+    if (info.ose) document.getElementById('fOSE').value = info.ose;
+    if (info.osn) document.getElementById('fOSN').value = info.osn;
+    if (info.ose || info.osn) document.getElementById('advSection').classList.remove('collapsed');
+}
+
+var extractBtn = document.getElementById('extractBtn');
+var extractFileInput = document.getElementById('extractFileInput');
+var extractStatus = document.getElementById('extractStatus');
+
+extractBtn.addEventListener('click', function() { extractFileInput.click(); });
+
+extractFileInput.addEventListener('change', function() {
+    var file = extractFileInput.files[0];
+    if (!file) return;
+
+    extractBtn.disabled = true;
+    extractStatus.className = 'extract-status';
+    extractStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Reading ' + file.name + '…';
+
+    var form = new FormData();
+    form.append('file', file);
+
+    fetch(API_BASE + '/api/bridges/extract-info', { method: 'POST', body: form })
+        .then(function(res) {
+            if (res.status === 401) throw new Error('You need to be logged in to use extraction.');
+            if (!res.ok) return res.json().then(function(d) { throw new Error(d.error || 'Extraction failed.'); });
+            return res.json();
+        })
+        .then(function(data) {
+            applyExtractedInfo(data.info);
+            extractStatus.className = 'extract-status success';
+            extractStatus.innerHTML = '<i class="fas fa-check"></i> Prefilled from ' + file.name + ' — review the fields below before creating.';
+        })
+        .catch(function(err) {
+            extractStatus.className = 'extract-status error';
+            extractStatus.innerHTML = '<i class="fas fa-triangle-exclamation"></i> ' + err.message;
+        })
+        .finally(function() {
+            extractBtn.disabled = false;
+            extractFileInput.value = '';
+        });
+});
+
+// ---------- Submit ----------
 
 document.getElementById('addStructureForm').addEventListener('submit', function(e) {
     e.preventDefault();

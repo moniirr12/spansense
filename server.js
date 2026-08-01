@@ -21,7 +21,7 @@ const storage = require('./supabaseStorage');
 const { PDFParse } = require('pdf-parse');
 const mammoth = require('mammoth');
 const { extractElements } = require('./extractPreviousInspection');
-const { extractElementsWithGemini, draftConclusionsWithGemini, reviseConclusionsWithGemini } = require('./geminiExtract');
+const { extractElementsWithGemini, extractStructureInfoWithGemini, draftConclusionsWithGemini, reviseConclusionsWithGemini } = require('./geminiExtract');
 
 const router = express.Router();
 const session = require('express-session');
@@ -2457,6 +2457,44 @@ app.post('/api/author/extract-previous-inspection', requireAuth, upload.single('
     } catch (err) {
         console.error('Error extracting previous inspection:', err);
         res.status(500).json({ error: err.message });
+    }
+});
+
+// structure/add-structure.html's "Extract from document" option - pulls
+// structure identification facts (name, location, dimensions, materials,
+// built year) out of an uploaded BCI Pro forma or inspection report cover
+// sheet, to prefill the Add Structure form for review rather than typing
+// it all in by hand. Same Gemini-based approach as the previous-inspection
+// extractor above, but for a structure that doesn't exist in spanSense yet
+// - there's no structureId/element list to match against here. No regex
+// fallback: unlike the "X.Y.Z" element-heading convention that fallback
+// depends on, a structure's identifying facts don't follow any fixed
+// format to pattern-match against, so if Gemini can't be reached the user
+// just fills the form in manually.
+app.post('/api/bridges/extract-info', requireAuth, upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+        let text;
+        if (req.file.mimetype === 'application/pdf') {
+            const parser = new PDFParse({ data: req.file.buffer });
+            const result = await parser.getText();
+            text = result.text;
+        } else if (
+            req.file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+            req.file.mimetype === 'application/msword'
+        ) {
+            const result = await mammoth.extractRawText({ buffer: req.file.buffer });
+            text = result.value;
+        } else {
+            return res.status(400).json({ error: 'Please upload a PDF or Word (.doc/.docx) file.' });
+        }
+
+        const info = await extractStructureInfoWithGemini(text);
+        res.json({ success: true, info });
+    } catch (err) {
+        console.error('Error extracting structure info:', err.message);
+        res.status(500).json({ error: err.message || 'Extraction failed - please fill the form in manually.' });
     }
 });
 
