@@ -127,15 +127,17 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
    existing onStructureChange()/resumeAuthorReturn() call already reads/
    sets - this is a visual layer over it, not a replacement of it. */
 .selector-dropdown{position:relative; width:100%;}
-.struct-dd-trigger{display:flex; align-items:center; gap:12px; padding:9px 16px; border-radius:40px; border:1px solid var(--border); background:var(--bg-soft); cursor:pointer; transition:.2s; width:100%; font-family:inherit;}
-.struct-dd-trigger:hover{border-color:#8ab4b0; background:#fff;}
-.struct-dd-trigger .dd-icon{width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,var(--bg-mint),#e0ecea); display:flex; align-items:center; justify-content:center; color:var(--teal); font-size:.72rem; flex-shrink:0;}
-.struct-dd-trigger .dd-text{flex:1; min-width:0; text-align:left;}
-.struct-dd-trigger .dd-name{font-size:.86rem; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-.struct-dd-trigger .dd-name.placeholder{color:var(--text-mute); font-weight:500;}
-.struct-dd-trigger .dd-id{font-size:.68rem; color:var(--text-mute); font-family:'SFMono-Regular',Consolas,monospace;}
-.struct-dd-trigger .dd-chevron{color:var(--text-mute); font-size:.75rem; transition:transform .3s cubic-bezier(.34,1.56,.64,1); flex-shrink:0;}
+.dd-trigger{display:flex; align-items:center; gap:12px; padding:9px 16px; border-radius:40px; border:1px solid var(--border); background:var(--bg-soft); cursor:pointer; transition:.2s; width:100%; font-family:inherit;}
+.dd-trigger:hover{border-color:#8ab4b0; background:#fff;}
+.dd-trigger .dd-icon{width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,var(--bg-mint),#e0ecea); display:flex; align-items:center; justify-content:center; color:var(--teal); font-size:.72rem; flex-shrink:0;}
+.dd-trigger .dd-text{flex:1; min-width:0; text-align:left;}
+.dd-trigger .dd-name{font-size:.86rem; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.dd-trigger .dd-name.placeholder{color:var(--text-mute); font-weight:500;}
+.dd-trigger .dd-id{font-size:.68rem; color:var(--text-mute); font-family:'SFMono-Regular',Consolas,monospace;}
+.dd-trigger .dd-chevron{color:var(--text-mute); font-size:.75rem; transition:transform .3s cubic-bezier(.34,1.56,.64,1); flex-shrink:0;}
 .selector-dropdown.active .dd-chevron{transform:rotate(180deg);}
+.selector-dropdown.disabled .dd-trigger{opacity:.55; cursor:not-allowed; background:var(--bg-soft);}
+.selector-dropdown.disabled .dd-trigger:hover{border-color:var(--border); background:var(--bg-soft);}
 
 .dropdown-menu{
   position:absolute; top:calc(100% + 6px); left:0; right:0; background:#fff;
@@ -301,10 +303,10 @@ body.modal-open{overflow:hidden;}
 .night-mode .picker-field input[type="date"]:hover{background:#2a3a40; border-color:#8ab4b0;}
 .night-mode .new-insp-row{background:#1e3a38; border-color:#3a6b62;}
 
-.night-mode .struct-dd-trigger{background:#1e2a2f; border-color:#3a4b53;}
-.night-mode .struct-dd-trigger:hover{background:#2a3a40; border-color:#4a5d66;}
-.night-mode .struct-dd-trigger .dd-name{color:#d4dfe3;}
-.night-mode .struct-dd-trigger .dd-icon{background:linear-gradient(135deg,#2f4a48,#1e3a38); color:#8ab4b0;}
+.night-mode .dd-trigger{background:#1e2a2f; border-color:#3a4b53;}
+.night-mode .dd-trigger:hover{background:#2a3a40; border-color:#4a5d66;}
+.night-mode .dd-trigger .dd-name{color:#d4dfe3;}
+.night-mode .dd-trigger .dd-icon{background:linear-gradient(135deg,#2f4a48,#1e3a38); color:#8ab4b0;}
 .night-mode .dd-item .dd-icon{background:linear-gradient(135deg,#2f4a48,#1e3a38); color:#8ab4b0;}
 .night-mode .dropdown-menu{background:#232e34; border-color:#3a4b53;}
 .night-mode .dd-search{border-color:#2a3a40;}
@@ -399,10 +401,10 @@ body.modal-open{overflow:hidden;}
             </div>
 
             <div class="picker-row">
-                <div class="picker-field" style="max-width:320px;">
+                <div class="picker-field" style="max-width:300px;">
                     <label>Structure</label>
                     <div class="selector-dropdown" id="structDropdown">
-                        <button type="button" class="struct-dd-trigger" id="structDdTrigger">
+                        <button type="button" class="dd-trigger" id="structDdTrigger">
                             <span class="dd-icon"><i class="fas fa-bridge"></i></span>
                             <span class="dd-text">
                                 <span class="dd-name placeholder" id="structDdName">Loading structures…</span>
@@ -420,9 +422,21 @@ body.modal-open{overflow:hidden;}
                     </div>
                     <select id="structureSelect" hidden><option value="">Loading structures…</option></select>
                 </div>
-                <div class="picker-field" id="compareAgainstField">
+                <div class="picker-field" id="compareAgainstField" style="max-width:260px;">
                     <label>Compare against (base inspection)</label>
-                    <select id="inspectionSelect" disabled><option value="">Select a structure first</option></select>
+                    <div class="selector-dropdown disabled" id="inspDropdown">
+                        <button type="button" class="dd-trigger" id="inspDdTrigger">
+                            <span class="dd-icon"><i class="fas fa-calendar-check"></i></span>
+                            <span class="dd-text">
+                                <span class="dd-name placeholder" id="inspDdName">Select a structure first</span>
+                            </span>
+                            <i class="fas fa-chevron-down dd-chevron"></i>
+                        </button>
+                        <div class="dropdown-menu" id="inspDdMenu">
+                            <div class="dd-list" id="inspDdList"></div>
+                        </div>
+                    </div>
+                    <select id="inspectionSelect" disabled hidden><option value="">Select a structure first</option></select>
                 </div>
                 <button class="btn-load" id="loadBtn" disabled><i class="fas fa-arrow-right"></i> Load</button>
             </div>

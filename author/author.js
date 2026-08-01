@@ -198,11 +198,78 @@ async function loadStructures(){
     console.error('Error loading structures:', err);
   }
 }
+// ---- Compare-against picker: same searchable-dropdown component as
+// Structure (minus the search box - a structure's own inspection history
+// is short enough not to need filtering), over the hidden
+// #inspectionSelect. Real <option>s still get populated on it too, since
+// resumeAuthorReturn() checks for one by value before resuming.
+let inspDates = [];
+const inspDropdown = document.getElementById('inspDropdown');
+const inspDdTrigger = document.getElementById('inspDdTrigger');
+const inspDdMenu = document.getElementById('inspDdMenu');
+const inspDdList = document.getElementById('inspDdList');
+const inspDdName = document.getElementById('inspDdName');
+let inspDdOpen = false;
+
+function setInspDdName(text, isPlaceholder){
+  inspDdName.textContent = text;
+  inspDdName.classList.toggle('placeholder', !!isPlaceholder);
+}
+function setInspDropdownEnabled(enabled){
+  inspDropdown.classList.toggle('disabled', !enabled);
+  if (!enabled) closeInspDropdown();
+}
+function syncInspTrigger(){
+  const date = document.getElementById('inspectionSelect').value;
+  const d = inspDates.find(x => x.date === date);
+  setInspDdName(d ? `${fmtDate(d.date)} — ${d.type}` : 'Select a structure first', !d);
+}
+function renderInspDropdownList(){
+  const currentDate = document.getElementById('inspectionSelect').value;
+  inspDdList.innerHTML = inspDates.map(d => `
+    <div class="dd-item ${d.date === currentDate ? 'selected' : ''}" data-date="${d.date}">
+      <span class="dd-icon"><i class="fas fa-calendar-check"></i></span>
+      <span class="dd-text">
+        <span class="dd-name">${fmtDate(d.date)}</span>
+        <span class="dd-id">${d.type}</span>
+      </span>
+      <i class="fas fa-check dd-check"></i>
+    </div>`).join('');
+  inspDdList.querySelectorAll('.dd-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const sel = document.getElementById('inspectionSelect');
+      sel.value = item.dataset.date;
+      sel.dispatchEvent(new Event('change'));
+      syncInspTrigger();
+      closeInspDropdown();
+    });
+  });
+}
+function openInspDropdown(){
+  if (inspDropdown.classList.contains('disabled')) return;
+  inspDdOpen = true;
+  inspDropdown.classList.add('active');
+  inspDdMenu.classList.add('open');
+}
+function closeInspDropdown(){
+  inspDdOpen = false;
+  inspDropdown.classList.remove('active');
+  inspDdMenu.classList.remove('open');
+}
+inspDdTrigger.addEventListener('click', function(e){
+  e.stopPropagation();
+  if (inspDdOpen) closeInspDropdown(); else openInspDropdown();
+});
+document.addEventListener('click', function(e){
+  if (inspDdOpen && !inspDropdown.contains(e.target)) closeInspDropdown();
+});
+
 async function onStructureChange(){
   const structureId = document.getElementById('structureSelect').value;
   const inspSel = document.getElementById('inspectionSelect');
   const loadBtn = document.getElementById('loadBtn');
   inspSel.disabled = true; loadBtn.disabled = true;
+  setInspDropdownEnabled(false);
   // newInspRow reflects the upload flow that was last actually loaded -
   // once the picker moves off that structure (back to the placeholder, or
   // on to a different one), its date/type no longer apply until an
@@ -210,8 +277,13 @@ async function onStructureChange(){
   if (structureId !== AUTHOR.structureId) {
     document.getElementById('newInspRow').style.display = 'none';
   }
-  if (!structureId) { inspSel.innerHTML = '<option value="">Select a structure first</option>'; return; }
+  if (!structureId) {
+    inspSel.innerHTML = '<option value="">Select a structure first</option>';
+    inspDates = []; setInspDdName('Select a structure first', true);
+    return;
+  }
   inspSel.innerHTML = '<option value="">Loading inspections…</option>';
+  inspDates = []; setInspDdName('Loading inspections…', true);
   // "From Field" is the same dropdown, just narrowed to source:'field' rows
   // (inspections.source is 'field' or 'desktop', server.js:1618) - not a
   // separate endpoint or panel.
@@ -221,7 +293,9 @@ async function onStructureChange(){
     const allDates = await res.json();
     const dates = fieldOnly ? allDates.filter(d => d.source === 'field') : allDates;
     if (!dates.length) {
-      inspSel.innerHTML = `<option value="">${fieldOnly ? 'No Field-submitted inspections for this structure' : 'No inspections recorded for this structure'}</option>`;
+      const msg = fieldOnly ? 'No Field-submitted inspections for this structure' : 'No inspections recorded for this structure';
+      inspSel.innerHTML = `<option value="">${msg}</option>`;
+      setInspDdName(msg, true);
       return;
     }
     // d.date is already a plain 'YYYY-MM-DD' string from the server - using
@@ -235,8 +309,13 @@ async function onStructureChange(){
     inspSel.value = dates[0].date;
     inspSel.disabled = false;
     loadBtn.disabled = false;
+    inspDates = dates;
+    renderInspDropdownList();
+    syncInspTrigger();
+    setInspDropdownEnabled(true);
   } catch (err) {
     inspSel.innerHTML = '<option value="">Failed to load inspections</option>';
+    setInspDdName('Failed to load inspections', true);
     console.error('Error loading inspection dates:', err);
   }
 }
@@ -362,6 +441,8 @@ async function resumeAuthorReturn(){
   const inspectionSelect = document.getElementById('inspectionSelect');
   if (!inspectionSelect.querySelector(`option[value="${target.date}"]`)) return;
   inspectionSelect.value = target.date;
+  syncInspTrigger();
+  renderInspDropdownList();
   await onLoad();
 }
 loadStructures().then(resumeAuthorReturn);
