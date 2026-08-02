@@ -448,7 +448,6 @@
         .vc-pill:hover { border-color: #8ab4b0; color: #5b8c8a; }
         .vc-pill.on { background: #eef4f2; border-color: #8ab4b0; color: #2c5a57; }
         .vc-pill.on .sw { background: #5b8c8a; box-shadow: 0 0 6px rgba(91,140,138,0.5); }
-        .vc-pill[data-layer="works"].on .sw { background: #c28b5a; box-shadow: 0 0 6px rgba(194,139,90,0.5); }
         .vc-pill[data-layer="defects"].on .sw { background: #c0392b; box-shadow: 0 0 6px rgba(192,57,43,0.5); }
         .vc-pill[data-layer="sensors"].on .sw { background: #4a90b8; box-shadow: 0 0 6px rgba(74,144,184,0.5); }
         .night-mode .vc-pill { background:#1e2a2f; border-color:#3a4b53; color:#9ab0b8; }
@@ -469,6 +468,29 @@
         #locate3d-canvas:active { cursor: grabbing; }
         #locate3d-canvas.armed { cursor: crosshair; }
         #locate3d-canvas.armed:active { cursor: crosshair; }
+
+        /* Bottom-of-stage yaw/tilt/zoom readout + drag hint, matching twinView's
+           .stage-readout/.stage-hint (twin.html) so the two 3D viewers feel consistent. */
+        .stage-readout {
+            position: absolute; bottom: 16px; left: 16px;
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            font-size: 11px;
+            color: rgba(44,74,72,0.55);
+            display: flex; gap: 16px;
+            pointer-events: none;
+        }
+        .stage-readout b { color: #2c5a57; font-weight: 500; }
+        .night-mode .stage-readout { color: rgba(255,255,255,0.4); }
+        .night-mode .stage-readout b { color: rgba(255,255,255,0.8); }
+        .stage-hint {
+            position: absolute; bottom: 16px; right: 16px;
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            font-size: 10.5px;
+            color: rgba(44,74,72,0.4);
+            text-align: right;
+            pointer-events: none;
+        }
+        .night-mode .stage-hint { color: rgba(255,255,255,0.3); }
 
         .defect-card-item.armed { border-color: #5b8c8a; background: #eef4f2; box-shadow: 0 0 0 2px rgba(91,140,138,0.25); }
         .night-mode .defect-card-item.armed { background: #1e3a38; border-color: #6e9c98; }
@@ -1195,12 +1217,17 @@
                         <div class="vc-pill on" data-layer="structure"><span class="sw"></span>Structure</div>
                         <div class="vc-pill on" data-layer="sensors"><span class="sw"></span>Sensors</div>
                         <div class="vc-pill on" data-layer="defects"><span class="sw"></span>Defects</div>
-                        <div class="vc-pill on" data-layer="works"><span class="sw"></span>Works Required</div>
                     </div>
                     <div class="locate3d-hint" id="locate3dHint">Select a defect on the right, then click the model to place it.</div>
                 </div>
                 <div class="locate3d-stage">
                     <canvas id="locate3d-canvas"></canvas>
+                    <div class="stage-readout">
+                        <span>YAW <b id="locate3d-yaw-readout">000.0°</b></span>
+                        <span>TILT <b id="locate3d-tilt-readout">000.0°</b></span>
+                        <span>ZOOM <b id="locate3d-zoom-readout">1.00x</b></span>
+                    </div>
+                    <div class="stage-hint">drag to orbit · scroll to zoom</div>
                 </div>
             </div>
             <div class="defects-panel-modal">
