@@ -187,8 +187,9 @@ function restoreFilterState() {
     rebuildMarkersFromFilter();
 }
 
-// Load the bridge data from the JSON file
-fetch('bridges.json')
+// Load the bridge data from the live API (not a static JSON snapshot, so
+// structures added via Add Structure show up here without a redeploy)
+fetch(`${API_BASE}/api/bridges`)
     .then(response => {
         if (!response.ok) throw new Error('Network response was not ok');
         return response.json();
@@ -245,19 +246,6 @@ fetch('bridges.json')
             if (event.target === modal) modal.style.display = 'none';
         });
 
-        // Enrich bridgeData with bci_av from the bulk API endpoint (one request, graceful fallback)
-        return fetch(`${API_BASE}/api/bridges`)
-            .then(r => r.ok ? r.json() : null)
-            .catch(() => null)
-            .then(apiRows => {
-                if (apiRows && Array.isArray(apiRows)) {
-                    const bciMap = {};
-                    apiRows.forEach(b => { if (b.bci_av != null) bciMap[b.id] = parseFloat(b.bci_av); });
-                    bridgeData.forEach(b => { if (bciMap[b.id] != null) b.bci_av = bciMap[b.id]; });
-                }
-            });
-    })
-    .then(() => {
         restoreFilterState();
     })
     .catch(error => {
