@@ -195,7 +195,11 @@ fetch(`${API_BASE}/api/bridges`)
         return response.json();
     })
     .then(data => {
-        bridgeData = data;
+        // The DB stores type as a human-readable label ("Sign Gantry",
+        // "Retaining wall"), but the filter checkboxes/icon lookups use a
+        // lowercase snake_case key ("sign_gantry") - same normalization
+        // database.js already does for the same reason.
+        bridgeData = data.map(b => ({ ...b, type: (b.type || '').toLowerCase().replace(/\s+/g, '_') }));
 
         // Setup Fuse.js for search
         fuse = new Fuse(bridgeData, {
