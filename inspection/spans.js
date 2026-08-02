@@ -662,171 +662,174 @@ function showError(message) {
     showAlertModal(message);
 }
 
-// Preview Inspection — a readable report (grouped by span, with element
-// names and BCI scores), not a raw data dump.
+// Preview Inspection — the actual full report format (pdfmake), built from
+// this page's own live/unsaved sessionStorage state instead of a saved
+// inspection_id. buildInspectionReportDocDefinition (test.js) is a pure
+// function decoupled from fetching/DOM access - normally fed by
+// generateSimplePDFReport's DB-driven wrapper (View Report on database.html),
+// here it's fed directly from what's already sitting in sessionStorage.
+// Two things make this possible before Save even runs: photos are uploaded
+// to Supabase storage the moment they're picked (see photo.js), not at
+// save time, and every span's real BCI (refreshBCIScores(), inspection.js)
+// is already written back into inspectionData.spans[].bciAv/bciCrit as the
+// user moves between spans. Appendix B (BCI Proforma) is intentionally left
+// out for now (bciFormData: null) - see buildInspectionReportDocDefinition's
+// own guard for that.
 const previewButton = document.getElementById('previewInspection');
 if (previewButton) {
-  // Report-format preview - same visual system as Author's Report View
-  // (report-page/report-stat-grid/report-table in author/author.html),
-  // reused here as a self-contained popup document since it can't share
-  // that page's stylesheet. Grouped Span -> Category -> defect table, the
-  // same nesting map/reportFull.html.js's real "Description of Defects"
-  // section uses, rather than the old flat per-span table. Pulls the
-  // client's saved accent colour (Author's Setup screen owns that, per
-  // organization) so this reads as "how it'll look in the report", not a
-  // fixed-teal placeholder. No previous-inspection comparison here - that
-  // stays Author-only.
   previewButton.addEventListener('click', async function() {
-    const inspectionData = JSON.parse(sessionStorage.getItem('inspectionData')) || {};
-    const allDefects = getAllDefects();
-    const realDefects = allDefects.filter(isRealDefect);
-    const noDefectsCount = allDefects.filter(d => d.defectId === '0.0').length;
-    const notInspectedCount = allDefects.filter(d => d.defectId === '0.1').length;
-    const worksRequiredCount = realDefects.filter(d => d.works === 'Y').length;
-
-    const bciAv = document.getElementById('bciAvResult')?.textContent || '100.00';
-    const bciCrit = document.getElementById('bciCritResult')?.textContent || '100.00';
-
     // Open the tab synchronously, inside the click's user-gesture, so the
-    // branding/structure fetch below can't get flagged as a popup - write
-    // the real content into it once that data's back.
+    // fetches/image loading below can't get flagged as a popup - pdfmake
+    // navigates this same window to the finished PDF once it's ready.
     const previewWindow = window.open('', '_blank');
     if (!previewWindow) { showToast("Popup blocked. Please allow popups for this site."); return; }
     previewWindow.document.write('<!DOCTYPE html><title>Loading preview…</title><body style="font-family:Arial,sans-serif;padding:60px;color:#8a9ba8;">Loading report preview…</body>');
     previewWindow.document.close();
 
-    const structureId = sessionStorage.getItem('structureId');
-    const structureType = sessionStorage.getItem('structureType') || 'Bridge';
-    let accentColor = '#5b8c8a', structureDescription = '';
     try {
-      const bridgeRes = await fetch(`/api/bridges/${structureId}`, { cache: 'no-store' });
-      if (bridgeRes.ok) {
-        const bridge = await bridgeRes.json();
-        structureDescription = bridge.description || '';
-        if (bridge.organization_id) {
-          const brandRes = await fetch(`/api/author/branding/${bridge.organization_id}`);
-          if (brandRes.ok) {
-            const b = await brandRes.json();
-            if (b.accentColor) accentColor = b.accentColor;
-          }
+      showToast('Generating report preview...', 'info');
+
+      const structureId = sessionStorage.getItem('structureId');
+      const inspectionData = JSON.parse(sessionStorage.getItem('inspectionData') || '{}');
+      const structureName = inspectionData.structureName || 'Bridge';
+      const inspectionDate = inspectionData.inspectionDate || new Date().toISOString().slice(0, 10);
+
+      const [bridgeData, nextDueData] = await Promise.all([
+        fetch(`/api/bridges/${structureId}`, { cache: 'no-store' }).then(r => r.ok ? r.json() : {}).catch(() => ({})),
+        fetch(`/api/inspection/next-due?structure_id=${structureId}&date=${inspectionDate}`).then(r => r.ok ? r.json() : null).catch(() => null)
+      ]);
+
+      // Same element numbering/category data the saved-inspection report
+      // uses (test.js, hoisted to file scope there for this exact reuse).
+      const allElementsList = ALL_ELEMENTS_LIST_BY_TYPE[bridgeData.type] || ALL_ELEMENTS_LIST_BY_TYPE.Bridge;
+      const elementNameMap = {};
+      allElementsList.forEach(el => { elementNameMap[el.elementNo] = el.name; });
+      const getElementDesc = (defect) => elementNameMap[defect.elementNumber] || `Element ${defect.elementNumber}`;
+
+      // Reading the raw stored array (not getAllDefects()'s renamed view) so
+      // each defect keeps its own true photo-storage key alongside its short
+      // "type.number" display code - see photo.js/inspection.js: defectId
+      // here is a temp composite string (structureId_date_span_element_code),
+      // while defectCombined is the "1.2"-style code the report expects as
+      // its own defectId field. Same two-field mixup, opposite direction.
+      const rawDefects = JSON.parse(sessionStorage.getItem('defects') || '[]');
+      const realRawDefects = rawDefects.filter(d => d.defectCombined !== '0.0' && d.defectCombined !== '0.1');
+
+      const defectsData = realRawDefects.map(d => ({
+        // spanNumber/elementNumber are DOM dataset/sessionStorage strings on
+        // the raw stored defect (mainRow.dataset.rowId, sessionStorage's
+        // selectedSpan) - the report builder's element-matching (section 3)
+        // does a strict === against allElementsList's numeric elementNo, same
+        // as the real DB-backed path where these are genuine Postgres
+        // integers. Left as strings, every defect would silently fail to
+        // match its element and vanish from the report.
+        spanNumber: parseInt(d.spanNumber, 10),
+        elementNumber: parseInt(d.elementNumber, 10),
+        defectId: d.defectCombined,
+        defectType: d.defectType,
+        defectNumber: d.defectNumber,
+        severity: d.severity,
+        extent: d.extent,
+        worksRequired: d.works,
+        remedialWorks: d.remedialWorks || '',
+        priority: d.priority,
+        cost: d.cost,
+        comments: d.comment,
+        isPrimary: d.isPrimary === true,
+        element_description: elementNameMap[d.elementNumber] || `Element ${d.elementNumber}`,
+        element_category: allElementsList.find(e => e.elementNo === parseInt(d.elementNumber, 10))?.category || 'Unknown'
+      }));
+
+      // Photos are already real, signed, directly-loadable Supabase URLs at
+      // this point (photo.js's uploadPhotoNow sets server_url as soon as an
+      // upload succeeds) - no DB round trip needed to include them here.
+      const photoData = JSON.parse(sessionStorage.getItem('photoData') || '{}');
+      const generalPhotos = (photoData['general'] || []).filter(p => p.server_url && !p.failed);
+      const photosByDefect = {};
+      realRawDefects.forEach(d => {
+        const photos = (photoData[d.defectId] || []).filter(p => p.server_url && !p.failed);
+        if (photos.length) photosByDefect[d.defectCombined] = photos;
+      });
+
+      const photosWithDataURLs = [];
+      let photoCounter = 1;
+      for (const photo of generalPhotos) {
+        photosWithDataURLs.push({
+          photo_description: photo.photo_description || 'General site photo',
+          photoNumber: photoCounter++,
+          photo_dataURL: await imageUrlToDataURL(photo.server_url)
+        });
+      }
+      for (const [defectCode, photos] of Object.entries(photosByDefect)) {
+        for (const photo of photos) {
+          photosWithDataURLs.push({
+            defectCode,
+            photo_description: photo.photo_description,
+            photoNumber: photoCounter++,
+            photo_dataURL: await imageUrlToDataURL(photo.server_url)
+          });
         }
       }
-    } catch (err) { console.error('Error loading branding for preview:', err); }
+      function getPhotoNumbersForDefect(defectCode) {
+        return photosWithDataURLs.filter(p => p.defectCode === defectCode).map(p => p.photoNumber);
+      }
 
-    const elementsDb = ELEMENTS_DB_BY_TYPE[structureType] || ELEMENTS_DB_BY_TYPE['Bridge'];
-    const categoryOrder = [];
-    Object.keys(elementsDb).forEach(no => {
-      const cat = elementsDb[no].category;
-      if (!categoryOrder.includes(cat)) categoryOrder.push(cat);
-    });
+      let bridgePhotoDataURL = null;
+      try {
+        const photoRes = await fetch(`/getBridgePhoto?bridgeId=${structureId}`);
+        if (photoRes.ok) {
+          const pd = await photoRes.json();
+          if (pd.photo_url) bridgePhotoDataURL = await imageUrlToDataURL(pd.photo_url);
+        }
+      } catch (err) { console.error('Preview: bridge photo failed to load', err); }
 
-    const bySpan = {};
-    realDefects.forEach(d => {
-      (bySpan[d.span] = bySpan[d.span] || []).push(d);
-    });
-    const spanNumbers = Object.keys(bySpan).map(Number).sort((a, b) => a - b);
+      let mapDataURL = null;
+      if (bridgeData.latitude && bridgeData.longitude) {
+        mapDataURL = await captureLocationMap(parseFloat(bridgeData.latitude), parseFloat(bridgeData.longitude), structureName);
+      }
 
-    function defectTable(rows) {
-      return `<div class="report-table-wrap"><table class="report-table">
-        <thead><tr><th>Element</th><th>Sev</th><th>Ext</th><th>Defect</th><th>Works</th><th>Comment</th></tr></thead>
-        <tbody>
-          ${rows.map(d => `
-            <tr>
-              <td>${escapeHtml(d.element)}</td>
-              <td><span class="rd-sev sev-${d.severity || 0}">${escapeHtml(d.severity || '-')}</span></td>
-              <td><span class="rd-ext ext-${d.extent || ''}">${escapeHtml(d.extent || '-')}</span></td>
-              <td>${escapeHtml(getFullDefectDescription(d.defectType, d.defectNumber, d.defectId))}</td>
-              <td class="works-${d.works || 'N'}">${d.works === 'Y' ? 'Yes' : d.works === 'M' ? 'Monitor' : 'No'}</td>
-              <td>${escapeHtml(d.comment || '')}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table></div>`;
-    }
+      // Overall BCI, averaged across spans the same way the conclusions
+      // drafter already does (buildConclusionsSummaryForGemini above) -
+      // reads the real per-span calculateBCI() results already sitting in
+      // inspectionData.spans, not test.js's cruder severity-only fallback
+      // (which only kicks in server-side when a much older saved inspection
+      // predates the overall_bciave/overall_bcicrit columns entirely).
+      const spansWithBci = (inspectionData.spans || []).filter(s => s.bciAv != null && s.bciCrit != null);
+      const bciAv = spansWithBci.length
+        ? spansWithBci.reduce((sum, s) => sum + parseFloat(s.bciAv), 0) / spansWithBci.length
+        : parseFloat(document.getElementById('bciAvResult')?.textContent) || 100;
+      const bciCrit = spansWithBci.length
+        ? spansWithBci.reduce((sum, s) => sum + parseFloat(s.bciCrit), 0) / spansWithBci.length
+        : parseFloat(document.getElementById('bciCritResult')?.textContent) || 100;
+      const bciCategory = getBCICategory(bciAv);
 
-    const spanSections = spanNumbers.length ? spanNumbers.map(spanNum => {
-      let html = spanNumbers.length > 1 ? `<div class="span-label">Span ${spanNum}</div>` : '';
-      categoryOrder.forEach(cat => {
-        const rows = bySpan[spanNum].filter(d => getElementCategorySafe(d.elementNumber, structureType) === cat);
-        if (!rows.length) return;
-        html += `<div class="doc-h2">${escapeHtml(cat)}</div>${defectTable(rows)}`;
+      const spanNumbers = [...new Set(defectsData.map(d => d.spanNumber))].sort((a, b) => a - b);
+      if (spanNumbers.length === 0) spanNumbers.push(1);
+      const defectsBySpan = {};
+      spanNumbers.forEach(span => { defectsBySpan[span] = defectsData.filter(d => d.spanNumber === span); });
+
+      const docDefinition = buildInspectionReportDocDefinition({
+        structureName, structureId, inspectionDate,
+        bridgeData, inspectionData, defectsData,
+        allElementsList, getElementDesc,
+        photosWithDataURLs, getPhotoNumbersForDefect,
+        bridgePhotoDataURL, mapDataURL,
+        bciAv: Number(bciAv.toFixed(2)), bciCrit: Number(bciCrit.toFixed(2)), bciCategory,
+        spanNumbers, defectsBySpan, nextDueData,
+        bciFormData: null
       });
-      return html;
-    }).join('') : '<p class="doc-p na">No defects recorded.</p>';
 
-    const previewContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Inspection Report — ${escapeHtml(inspectionData.structureName || 'Bridge')}</title>
-        <style>
-          :root{ --accent:${accentColor}; }
-          *{box-sizing:border-box;}
-          body{ font-family:'Inter','Segoe UI',Arial,sans-serif; background:#eef1f5; color:#2c3e44; margin:0; padding:40px 20px; }
-          .report-page{ max-width:820px; margin:0 auto; background:#fffdf9; border:1px solid #e9edf2; border-radius:20px; padding:32px 40px; box-shadow:0 10px 28px rgba(44,90,87,.08); }
-          .doc-cover{ text-align:center; padding:4px 0 26px; border-bottom:1px solid #e9edf2; margin-bottom:24px; }
-          .doc-cover::before{ content:''; display:block; width:52px; height:3px; margin:0 auto 18px; border-radius:3px; background:linear-gradient(90deg,var(--accent),#6c5ce7); }
-          .dc-brand{ font-size:.78rem; font-weight:800; color:var(--accent); letter-spacing:.14em; text-transform:uppercase; }
-          .dc-title{ font-family:Georgia,serif; font-size:1.5rem; font-weight:700; color:#2c4a48; margin:10px 0 4px; }
-          .dc-sub{ font-size:.8rem; color:#8a9ba8; font-style:italic; }
-          .report-stat-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin:22px 0 14px; }
-          .report-stat{ background:#fafbfc; border:1px solid #e9edf2; border-radius:14px; padding:13px 16px; }
-          .rs-label{ display:block; font-size:.66rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:#8a9ba8; margin-bottom:5px; }
-          .rs-value{ font-size:1.2rem; font-weight:800; color:#2c4a48; }
-          .rs-value.accent{ color:var(--accent); }
-          .rs-value.crit{ color:#c0392b; }
-          .report-count-row{ display:flex; gap:20px; flex-wrap:wrap; margin:0 0 8px; padding-bottom:20px; border-bottom:1px solid #e9edf2; font-size:.83rem; color:#6a7c8e; }
-          .report-count-row b{ color:#2c4a48; font-weight:800; }
-          .doc-h1{ font-family:Georgia,serif; font-size:1.2rem; font-weight:700; color:#2c5a57; margin:26px 0 12px; padding-bottom:8px; border-bottom:1px solid #e9edf2; }
-          .doc-h2{ font-family:Georgia,serif; font-size:1.02rem; font-weight:600; font-style:italic; color:var(--accent); margin:20px 0 9px; }
-          .doc-p{ font-size:.9rem; line-height:1.75; color:#2c3e44; margin:0 0 12px; }
-          .doc-p.na{ color:#8a9ba8; font-style:italic; }
-          .span-label{ font-size:.7rem; font-weight:800; text-transform:uppercase; letter-spacing:.08em; color:#8a9ba8; margin:22px 0 4px; }
-          .report-table-wrap{ overflow-x:auto; margin:0 0 8px; }
-          .report-table{ width:100%; border-collapse:collapse; min-width:520px; }
-          .report-table th{ background:#fafbfc; padding:9px 12px; text-align:left; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:#8a9ba8; border-bottom:2px solid var(--accent); }
-          .report-table td{ padding:10px 12px; border-bottom:1px solid #e9edf2; font-size:.83rem; color:#2c3e44; vertical-align:top; }
-          .report-table tr:hover td{ background:#fafbfc; }
-          .report-table td:first-child{ font-weight:600; }
-          .rd-sev, .rd-ext{ font-weight:800; }
-          .rd-sev.sev-1{ color:#2d7a6e; } .rd-sev.sev-2{ color:#BA7517; } .rd-sev.sev-3{ color:#c47070; } .rd-sev.sev-4, .rd-sev.sev-5{ color:#c0392b; }
-          .rd-ext.ext-A{ color:#5b8c8a; } .rd-ext.ext-B{ color:#4a9ab0; } .rd-ext.ext-C{ color:#3a88c0; } .rd-ext.ext-D{ color:#378add; } .rd-ext.ext-E{ color:#2a6fd4; }
-          .report-table td.works-Y{ color:#c0392b; font-weight:700; }
-          .report-table td.works-M{ color:#BA7517; font-weight:700; }
-          @media print{ body{ background:#fff; padding:0; } .report-page{ box-shadow:none; border:none; } }
-        </style>
-      </head>
-      <body>
-        <div class="report-page">
-          <div class="doc-cover">
-            <div class="dc-brand">spanSense</div>
-            <div class="dc-title">${escapeHtml(inspectionData.structureName || 'Bridge Inspection')}</div>
-            <div class="dc-sub">Structure #${escapeHtml(inspectionData.structureId || '')} &middot; ${escapeHtml(inspectionData.inspectorName || 'Unassigned inspector')}</div>
-          </div>
-          <div class="report-stat-grid">
-            <div class="report-stat"><span class="rs-label">Inspection Date</span><span class="rs-value">${inspectionData.inspectionDate ? formatDate(inspectionData.inspectionDate) : 'N/A'}</span></div>
-            <div class="report-stat"><span class="rs-label">Defects Found</span><span class="rs-value">${realDefects.length}</span></div>
-            <div class="report-stat"><span class="rs-label">BCI<sub>avg</sub></span><span class="rs-value accent">${bciAv}</span></div>
-            <div class="report-stat"><span class="rs-label">BCI<sub>crit</sub></span><span class="rs-value crit">${bciCrit}</span></div>
-          </div>
-          <div class="report-count-row">
-            <span><b>${noDefectsCount}</b> element(s) with no defects</span>
-            <span><b>${notInspectedCount}</b> element(s) not inspected</span>
-            <span><b>${worksRequiredCount}</b> defect(s) requiring works</span>
-          </div>
-          ${structureDescription ? `<div class="doc-h1">Structure Description</div><p class="doc-p">${escapeHtml(structureDescription)}</p>` : ''}
-          <div class="doc-h1">Description of Defects</div>
-          ${spanSections}
-          <div class="doc-h1">Conclusions</div>
-          <p class="doc-p">${escapeHtml(inspectionData.conclusions || 'No conclusions recorded yet.').replace(/\n/g, '<br>')}</p>
-        </div>
-      </body>
-      </html>
-    `;
-
-    previewWindow.document.open();
-    previewWindow.document.write(previewContent);
-    previewWindow.document.close();
+      const pdfGenerator = pdfMake.createPdf(docDefinition);
+      if (previewWindow && !previewWindow.closed) {
+        pdfGenerator.open({}, previewWindow);
+      } else {
+        pdfGenerator.open();
+      }
+    } catch (err) {
+      console.error('Preview generation failed:', err);
+      showToast(`Error generating preview: ${err.message}`, 'error');
+      if (previewWindow && !previewWindow.closed) previewWindow.close();
+    }
   });
 }
 
