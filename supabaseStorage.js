@@ -24,8 +24,13 @@ async function deleteFile(storagePath) {
 // The bucket is private, so every path needs a freshly-signed, time-limited
 // URL rather than being servable directly - callers should sign right before
 // sending a response, not store the signed URL itself.
+// Some rows (seed bridges in particular) store a plain external image URL
+// in this same column instead of a bucket key - those were never uploaded,
+// so signing them always fails with "Object not found". Pass them through
+// unchanged rather than trying to sign them.
 async function getSignedUrl(storagePath, expiresInSeconds = 3600) {
     if (!storagePath) return null;
+    if (/^https?:\/\//i.test(storagePath)) return storagePath;
     const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(storagePath, expiresInSeconds);
     if (error) {
         console.error(`Signed URL failed for ${storagePath}:`, error.message);

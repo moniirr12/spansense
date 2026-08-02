@@ -60,9 +60,8 @@ function initLocate3DEngine() {
     scene.add(rig);
     var structureGroup = new THREE.Group();
     var sensorGroup = new THREE.Group();
-    var worksGroup = new THREE.Group();
     var defectGroup = new THREE.Group();
-    rig.add(structureGroup, sensorGroup, worksGroup, defectGroup);
+    rig.add(structureGroup, sensorGroup, defectGroup);
 
     l3d = {
         canvas: canvas,
@@ -72,8 +71,10 @@ function initLocate3DEngine() {
         rig: rig,
         structureGroup: structureGroup,
         sensorGroup: sensorGroup,
-        worksGroup: worksGroup,
         defectGroup: defectGroup,
+        yawReadout: document.getElementById('locate3d-yaw-readout'),
+        tiltReadout: document.getElementById('locate3d-tilt-readout'),
+        zoomReadout: document.getElementById('locate3d-zoom-readout'),
         matSteel: new THREE.MeshStandardMaterial({ color: 0x5a6b6a, metalness: 0.6, roughness: 0.4 }),
         matDeck: new THREE.MeshStandardMaterial({ color: 0x394645, metalness: 0.25, roughness: 0.6 }),
         matPier: new THREE.MeshStandardMaterial({ color: 0x435150, metalness: 0.15, roughness: 0.7 }),
@@ -147,44 +148,15 @@ function createDefectMarker(severity) {
     return mesh;
 }
 
-// Cone marker (distinct from the defect octahedron) for the Works Required
-// layer. exact=false (no placed x/y/z yet) renders semi-transparent so it
-// reads as an estimate rather than a precise location.
-function createWorksMarker(exact) {
-    var color = 0xc28b5a;
-    var mat = new THREE.MeshStandardMaterial({
-        color: color, emissive: color, emissiveIntensity: 1.1,
-        transparent: !exact, opacity: exact ? 1 : 0.55
-    });
-    var mesh = new THREE.Mesh(new THREE.ConeGeometry(0.7, 1.6, 8), mat);
-    return mesh;
-}
-
-// Real placed position if this defect has one, otherwise a position spread
-// across its span/element so multiple unlocated works-required defects in
-// the same span don't all stack on one spot.
-function worksMarkerPosition(d, X0, SPAN_LEN, NUM_SPANS, DECK_W, deckY) {
-    if (d.x != null && d.y != null && d.z != null) {
-        return { x: d.x, y: d.y, z: d.z, exact: true };
-    }
-    var spanIdx = Math.min(Math.max((d.spanNumber || 1) - 1, 0), Math.max(NUM_SPANS - 1, 0));
-    var x = X0 + SPAN_LEN * spanIdx + SPAN_LEN / 2;
-    var seed = ((d.elementNumber || 0) * 37) % 100 / 100;
-    x += (seed - 0.5) * SPAN_LEN * 0.6;
-    var z = ((d.elementNumber || 0) % 2 === 0 ? 1 : -1) * (DECK_W * 0.25);
-    return { x: x, y: deckY + 1.6, z: z, exact: false };
-}
-
 /* ============================================================
-   MODEL BUILD (structure + sensors + works required + already-placed defects)
+   MODEL BUILD (structure + sensors + already-placed defects)
    ============================================================ */
 function rebuildLocate3DModel(bridge) {
     var structureGroup = l3d.structureGroup, sensorGroup = l3d.sensorGroup,
-        worksGroup = l3d.worksGroup, defectGroup = l3d.defectGroup, rig = l3d.rig;
+        defectGroup = l3d.defectGroup, rig = l3d.rig;
 
     while (structureGroup.children.length > 0) structureGroup.remove(structureGroup.children[0]);
     while (sensorGroup.children.length > 0) sensorGroup.remove(sensorGroup.children[0]);
-    while (worksGroup.children.length > 0) worksGroup.remove(worksGroup.children[0]);
     while (defectGroup.children.length > 0) defectGroup.remove(defectGroup.children[0]);
     if (l3d.gridHelper) rig.remove(l3d.gridHelper);
     if (l3d.glowMesh) rig.remove(l3d.glowMesh);
@@ -205,7 +177,7 @@ function rebuildLocate3DModel(bridge) {
     // Every other bridge model here is already a stylised representation,
     // not a literal scale model - use the same fixed sensible scale as
     // similarly grand bridges instead. Overridden here (not just inside the
-    // builder) so sensors/grid/works-overlay below stay in proportion too.
+    // builder) so sensors/grid below stay in proportion too.
     var kind = (bridge.model && bridge.model.kind) || 'truss';
     if (kind === 'cantilever') {
         TOTAL_LEN = (bridge.model && bridge.model.totalLen) || 220;
@@ -269,17 +241,6 @@ function rebuildLocate3DModel(bridge) {
         sensorGroup.add(ring);
     });
 
-    // Works Required markers — one per defect flagged works_required='Y',
-    // at its real placed position if it has one, otherwise an approximate
-    // spot within its span so the layer isn't empty just because most
-    // defects haven't been located on the model yet.
-    (bridge.worksRequiredDefects || []).forEach(function(d) {
-        var pos = worksMarkerPosition(d, X0, SPAN_LEN, NUM_SPANS, DECK_W, deckY);
-        var m = createWorksMarker(pos.exact);
-        m.position.set(pos.x, pos.y, pos.z);
-        worksGroup.add(m);
-    });
-
     // Defects already placed in a previous session render as markers immediately
     (bridge.defects || []).forEach(function(d) {
         var m = createDefectMarker(d.severity);
@@ -299,23 +260,19 @@ function rebuildLocate3DModel(bridge) {
     // wall of solid fog. Smaller/typical bridges are unaffected.
     l3d.scene.fog.density = 0.009 * Math.min(1, 130 / Math.max(130, l3d.camDistance));
 
-    // Center the camera's look-at target on the model's actual bounding
-    // box, computed AFTER applying the default rig rotation (rotX/rotY
-    // tilt the whole structure, which shifts its apparent center in Y and
-    // Z — a flat Y-only midpoint computed in local space doesn't account
-    // for that, so the model still hugged the bottom/sides once rotated).
-    rig.rotation.set(l3d.rotX, l3d.rotY, 0);
-    var box = new THREE.Box3().setFromObject(rig);
-    var center = box.getCenter(new THREE.Vector3());
-    l3d.lookAtX = center.x;
-    l3d.lookAtY = center.y;
-    l3d.lookAtZ = center.z;
+    // Fixed look-at target, matching twinView's camera exactly (see
+    // animate() in twin.js) rather than a per-model bounding-box center -
+    // every shape builder already frames its structure around local origin
+    // for this same fixed target, so deriving one from the box just drifted
+    // off the model's actual visual center depending on rotation/asymmetry.
+    l3d.lookAtX = 0;
+    l3d.lookAtY = 1.5;
+    l3d.lookAtZ = 0;
 
-    // Defects/sensors/works required default ON here (unlike twinView) —
-    // seeing context while placing points is the whole point of this modal.
+    // Defects/sensors default ON here (unlike twinView) — seeing context
+    // while placing points is the whole point of this modal.
     structureGroup.visible = true;
     sensorGroup.visible = true;
-    worksGroup.visible = true;
     defectGroup.visible = true;
     document.querySelectorAll('#locate3dModal .vc-pill').forEach(function(el) { el.classList.add('on'); });
 }
@@ -407,7 +364,6 @@ function bindLocate3DInteraction() {
             var on = pill.classList.contains('on');
             if (layer === 'structure') l3d.structureGroup.visible = on;
             if (layer === 'sensors') l3d.sensorGroup.visible = on;
-            if (layer === 'works') l3d.worksGroup.visible = on;
             if (layer === 'defects') l3d.defectGroup.visible = on;
         });
     });
@@ -430,7 +386,7 @@ function handleLocate3DPick(e) {
     var raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(ndc, l3d.camera);
     // Only the structure (deck/truss/piers) is a valid placement surface —
-    // sensors/works/defect markers are overlays, not something to place a defect "on".
+    // sensors/defect markers are overlays, not something to place a defect "on".
     var hits = raycaster.intersectObjects(l3d.structureGroup.children, true);
     if (!hits.length) return;
 
@@ -542,25 +498,6 @@ function getLocate3DBridgeData() {
         }
     });
 
-    // Every defect flagged works_required='Y' this session, with its real
-    // placed position (x/y/z) carried over if it's already been located on
-    // the model, or null if not - rebuildLocate3DModel() approximates a
-    // position from spanNumber/elementNumber for those. inspectionData.defects
-    // (not getAllDefects()) is the source because it's the only one carrying
-    // x/y/z, same as the `defects` array just above.
-    var worksRequiredDefects = (inspectionData.defects || [])
-        .filter(function(d) { return d.worksRequired === 'Y'; })
-        .map(function(d) {
-            return {
-                spanNumber: d.spanNumber,
-                elementNumber: d.elementNumber,
-                severity: d.severity,
-                x: d.x != null ? d.x : null,
-                y: d.y != null ? d.y : null,
-                z: d.z != null ? d.z : null
-            };
-        });
-
     return {
         spans: spans,
         spanLength: spanLength,
@@ -569,8 +506,7 @@ function getLocate3DBridgeData() {
         panelsPerSpan: model.panelsPerSpan,
         model: model,
         bciAv: bciAv,
-        defects: defects,
-        worksRequiredDefects: worksRequiredDefects
+        defects: defects
     };
 }
 
@@ -688,6 +624,14 @@ function animateLocate3D() {
         l3d.lookAtY != null ? l3d.lookAtY : 1.5,
         l3d.lookAtZ != null ? l3d.lookAtZ : 0
     );
+    // Same yaw/tilt/zoom readout as twinView's animate() (twin.js) - 58 is
+    // that same file's baseline camDistance, kept identical here for a
+    // matching "1.00x" reading at a comparable framing.
+    var yawDeg = ((l3d.rotY * 180 / Math.PI) % 360 + 360) % 360;
+    var tiltDeg = ((l3d.rotX * 180 / Math.PI) % 360 + 360) % 360;
+    if (l3d.yawReadout) l3d.yawReadout.textContent = yawDeg.toFixed(1).padStart(5, '0') + '°';
+    if (l3d.tiltReadout) l3d.tiltReadout.textContent = tiltDeg.toFixed(1).padStart(5, '0') + '°';
+    if (l3d.zoomReadout) l3d.zoomReadout.textContent = (58 / l3d.camDistance).toFixed(2) + 'x';
     l3d.renderer.render(l3d.scene, l3d.camera);
 }
 

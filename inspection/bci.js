@@ -214,6 +214,10 @@ function getStructureConfig(structureType) {
   function calculateBCIAv(bcsValues, eifValues) {
     const bcsSum = bcsValues.reduce((sum, bcs) => sum + bcs, 0); // Sum all BCS values
     const eifSum = eifValues.reduce((sum, eif) => sum + eif, 0); // Sum all EIF values
+    // No element with a real defect yet (every EIF is 0, same "nothing
+    // recorded" case calculateBCICrit already guards) - 0/0 is NaN, not a
+    // score. Perfect condition until something is actually flagged.
+    if (eifSum === 0) return 100;
     const bcsAvg = bcsSum / eifSum; // Calculate bcsAvg as bcsSum / eifSum
     return 100 - 2 * ((bcsAvg ** 2) + (6.5 * bcsAvg) - 7.5); // Calculate BCIav
   }
