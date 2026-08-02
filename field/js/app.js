@@ -178,6 +178,7 @@
     });
     if (confirmed) {
       try { await Api.logout(); } catch {}
+      clearCachedSession();
       location.reload();
     }
   });
@@ -257,6 +258,25 @@
   /* ============================================================
      AUTH / LOGIN
      ============================================================ */
+  // A last-known-good session, cached purely so boot() can let a
+  // previously-signed-in inspector back into the app shell with zero
+  // signal - it never substitutes for the real session cookie on any
+  // actual API call, so it can't be used to fetch anything the device
+  // hasn't already cached while genuinely online. Cleared on explicit
+  // sign-out and whenever a reachable checkSession() reports logged-out,
+  // so a device that's had a chance to tell the server it's signed out
+  // doesn't keep letting itself back in offline afterwards.
+  const SESSION_CACHE_KEY = 'fieldLastSession';
+  function cacheSession(session) {
+    try { localStorage.setItem(SESSION_CACHE_KEY, JSON.stringify(session || {})); } catch {}
+  }
+  function getCachedSession() {
+    try { return JSON.parse(localStorage.getItem(SESSION_CACHE_KEY)); } catch { return null; }
+  }
+  function clearCachedSession() {
+    try { localStorage.removeItem(SESSION_CACHE_KEY); } catch {}
+  }
+
   const loginForm = document.getElementById('loginForm');
   const twofaForm = document.getElementById('twofaForm');
 
@@ -306,7 +326,14 @@
   async function onAuthenticated() {
     let me = null;
     try { me = await Api.getMe(); } catch {}
-    S.session = { username: me?.username, fullName: me?.full_name || me?.username, role: me?.role };
+    if (me) {
+      S.session = { username: me.username, fullName: me.full_name || me.username, role: me.role };
+      cacheSession(S.session);
+    } else {
+      // getMe() couldn't reach the server - reuse whatever this device last
+      // knew about the signed-in user rather than showing a blank identity.
+      S.session = getCachedSession() || {};
+    }
     document.getElementById('screen-login').style.display = 'none';
     document.getElementById('appShell').hidden = false;
     ensureHistoryGuard();
@@ -319,8 +346,19 @@
       const session = await Api.checkSession();
       noteRequestSucceeded();
       if (session.loggedIn) { await onAuthenticated(); return; }
-    } catch {}
-    // not logged in (or offline on first-ever load) - show login screen
+      // Reachable and the server says logged-out - drop any cached session
+      // so a later offline boot doesn't let a signed-out device back in.
+      clearCachedSession();
+    } catch (err) {
+      // No network at all - if this device was signed in the last time it
+      // had a connection, trust that instead of bouncing to the login
+      // screen. Everything past this point (shell, cached structures/
+      // inspections, the sync queue) already works offline once inside;
+      // checkSession() runs for real again on the next successful boot.
+      if (err.offline && getCachedSession()) { await onAuthenticated(); return; }
+    }
+    // not logged in (or offline on a device that's never signed in before,
+    // so there's nothing cached to fall back to) - show the login screen
   }
   boot();
 
@@ -999,8 +1037,9 @@
     const stage = document.getElementById('twinStage');
     const popup = document.getElementById('twinPopup');
     const bc = FieldBCI.BAND_COLORS[defectRowBand(d)];
+    const defectText = window.DefectCodes.getDefectText(d.defectType, d.defectNumber);
     popup.innerHTML = `
-      <p class="p-code">${defectCombined(d)}</p>
+      <p class="p-code">${defectCombined(d)}${defectText ? ` <span class="p-code-text">${escapeHtml(defectText)}</span>` : ''}</p>
       <p class="p-title">${escapeHtml(d.elementDescription || elementDescFor(d.elementNumber))}</p>
       <div class="p-badges">
         <span style="background:${bc.bg}; color:${bc.c};">Sev ${d.severity}</span>

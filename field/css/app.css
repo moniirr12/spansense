@@ -236,7 +236,11 @@ body.night-mode .field-source-badge{ background:#1e3a3e; border-color:#3a5a56; c
   flex-shrink:0; font-family:'SFMono-Regular',Consolas,monospace;
 }
 .sev-dot{ width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#fff; flex-shrink:0; }
-.extent-pill{ font-size:10.5px; font-weight:700; color:var(--teal-500); border:1px solid var(--teal-300); border-radius:20px; padding:2px 7px; flex-shrink:0; font-family:'SFMono-Regular',Consolas,monospace; }
+.extent-pill{
+  width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-size:10.5px; font-weight:700; color:var(--teal-500); border:1px solid var(--teal-300); flex-shrink:0;
+  font-family:'SFMono-Regular',Consolas,monospace;
+}
 
 .no-defect-row{
   display:flex; align-items:center; gap:10px; margin:0 16px 10px; padding:11px 13px;
@@ -260,6 +264,20 @@ body.night-mode .no-defect-row span{ color:#8ab4b0; }
 }
 .structure-map-pin{ background:none; border:none; }
 .structure-map-pin svg{ width:30px; height:30px; display:block; filter:drop-shadow(0 2px 4px rgba(0,0,0,.35)); }
+
+/* spanSense-styled zoom control on the small location-preview map - same
+   treatment as .structures-map-view's own zoom control below, just scoped
+   to this map instead. */
+#structureMap .leaflet-control-zoom{ border:none; box-shadow:0 6px 18px rgba(0,0,0,.15); border-radius:14px; overflow:hidden; }
+#structureMap .leaflet-control-zoom a{
+  width:30px; height:30px; line-height:30px; background:var(--surface); color:var(--teal-500);
+  font-size:16px; font-weight:700; border-bottom:1px solid var(--border);
+}
+#structureMap .leaflet-control-zoom a:hover{ background:var(--good-bg); color:var(--teal-700); }
+#structureMap .leaflet-control-zoom a.leaflet-disabled{ color:var(--ink-faint); background:var(--surface); }
+#structureMap .leaflet-control-zoom-out{ border-bottom:none; }
+body.night-mode #structureMap .leaflet-control-zoom a{ background:#1e3a3e; color:#8ab4b0; border-bottom-color:#2f3e45; }
+body.night-mode #structureMap .leaflet-control-zoom a:hover{ background:#2a4a48; }
 
 /* ---------- Structures screen: Map view (List/Map toggle) ----------
    Leaflet's own controls (.leaflet-top/.leaflet-bottom, incl. the zoom
@@ -311,6 +329,18 @@ body.night-mode .map-recenter-btn:hover{ background:#2a4a48; }
 .structures-map-view .leaflet-control-zoom-out{ border-bottom:none; }
 body.night-mode .structures-map-view .leaflet-control-zoom a{ background:#1e3a3e; color:#8ab4b0; border-bottom-color:#2f3e45; }
 body.night-mode .structures-map-view .leaflet-control-zoom a:hover{ background:#2a4a48; }
+
+/* Leaflet's default attribution pill is full-size, opaque white and sits
+   in the same bottom strip as .map-legend - on a typical phone width the
+   two run right into each other. Shrinking it to a compact, translucent
+   credit line (rather than repositioning it - the tile providers' own
+   attribution wording needs to stay put and untouched) gives the legend
+   room without dropping the required OSM/CARTO credit. */
+.structures-map-view .leaflet-control-attribution{
+  background:rgba(255,255,255,.75); font-size:8.5px; line-height:1.3; padding:1px 6px; border-radius:8px 0 0 0;
+}
+body.night-mode .structures-map-view .leaflet-control-attribution{ background:rgba(30,58,62,.75); color:#7d9a9e; }
+body.night-mode .structures-map-view .leaflet-control-attribution a{ color:#8ab4b0; }
 
 /* Structure ID/name label under each pin - only shown once zoomed in (see STRUCTURES_LABEL_ZOOM_THRESHOLD in app.js) */
 .leaflet-tooltip.structures-label{
@@ -366,6 +396,7 @@ body.night-mode .layer-pill.on{ color:#8ab4b0; }
 .popup{ position:absolute; width:200px; background:var(--pop); color:#eef4f2; border-radius:16px; padding:12px 13px; z-index:20; box-shadow:0 14px 30px rgba(0,0,0,.3); display:none; }
 .popup.show{ display:block; }
 .popup .p-code{ font-family:'SFMono-Regular',Consolas,monospace; font-size:10.5px; color:#9ecac4; margin:0 0 3px; }
+.popup .p-code-text{ font-family:inherit; font-weight:600; color:#c5d8d5; }
 .popup .p-title{ font-size:13px; font-weight:700; margin:0 0 6px; line-height:1.3; }
 .popup .p-badges{ display:flex; gap:6px; margin-bottom:9px; }
 .popup .p-badges span{ font-size:10px; font-weight:700; padding:2px 7px; border-radius:20px; }
