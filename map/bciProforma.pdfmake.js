@@ -401,6 +401,16 @@ function buildBCIProformaContent(bciFormData, singleSpanIdx) {
     var spanRangeStart = singleSpanIdx != null ? singleSpanIdx : 0;
     var spanRangeEnd = singleSpanIdx != null ? singleSpanIdx + 1 : totalSpans;
     var spansData = bciFormData.spansData || [];
+    // Per-span geometry and BCI Pro forma deck construction codes
+    // (bridge_spans, fetched separately from spansData's per-inspection
+    // condition data - see the fetch alongside bridgeData/spansData/
+    // worksRequired wherever bciFormData gets built). Deliberately no
+    // bridgeData-level fallback for form/material below - see
+    // bridge_spans' table comment in server.js for why those two don't
+    // have a meaningful whole-structure value. length/width do still fall
+    // back to the structure's own span/length (the "typical span" figures)
+    // when a given span has no detail recorded.
+    var bridgeSpans = bciFormData.bridgeSpans || [];
     var proformaConfig = getBCIProformaConfig(bridgeData.type || 'Bridge');
     var BCI_ELEMENTS = proformaConfig.elements;
     var BCI_GROUPS = proformaConfig.groups;
@@ -428,12 +438,13 @@ function buildBCIProformaContent(bciFormData, singleSpanIdx) {
         var mapRef     = bridgeData.grid_reference || (bridgeData.latitude && bridgeData.longitude ? '' + Number(bridgeData.latitude).toFixed(3) + ', ' + Number(bridgeData.longitude).toFixed(3) : '');
         var osE        = bridgeData.easting  || bridgeData.ose || '';
         var osN        = bridgeData.northing || bridgeData.osn || '';
-        var primForm   = bridgeData.primary_form || bridgeData.primaryForm || '';
-        var primMat    = bridgeData.primary_material || bridgeData.primaryMaterial || '';
-        var secForm    = bridgeData.secondary_form || bridgeData.secondaryForm || '';
-        var secMat     = bridgeData.secondary_material || bridgeData.secondaryMaterial || '';
-        var spanW      = bridgeData.span_width || bridgeData.span || '';
-        var spanL      = bridgeData.span_length || bridgeData.length || '';
+        var spanDetail = bridgeSpans.find(function(s) { return Number(s.spanNumber) === spanNum; }) || {};
+        var primForm   = spanDetail.primaryForm || '';
+        var primMat    = spanDetail.primaryMaterialCode || '';
+        var secForm    = spanDetail.secondaryForm || '';
+        var secMat     = spanDetail.secondaryMaterialCode || '';
+        var spanW      = spanDetail.width  != null ? spanDetail.width  : (bridgeData.span_width  || bridgeData.span   || '');
+        var spanL      = spanDetail.length != null ? spanDetail.length : (bridgeData.span_length || bridgeData.length || '');
         var inspected  = spanData.elements_inspected !== false ? 'Yes' : 'No';
         var photos     = spanData.photographs_taken !== false ? 'Yes' : 'No';
         // Number(...).toFixed(2), not String(...) - bci_crit/bci_av often

@@ -95,12 +95,114 @@ document.getElementById('sourceTabs').addEventListener('click', function(e){
   if (!isUpload && document.getElementById('structureSelect').value) onStructureChange();
 });
 
+// ---- Structure picker: searchable custom dropdown over the hidden
+// #structureSelect - same visual component as twinview's own bridge
+// selector (.selector-dropdown/.dropdown-menu/.dd-search/.dd-list,
+// twin/twin.html), ported in as-is. The hidden <select> stays the real
+// source of truth every onStructureChange()/resumeAuthorReturn() call
+// already reads and sets - picking a dd-item just sets its value and
+// fires 'change' like a native picker would; this only keeps the visible
+// trigger/list in sync with whatever that select currently holds.
+const structDropdown = document.getElementById('structDropdown');
+const structDdTrigger = document.getElementById('structDdTrigger');
+const structDdMenu = document.getElementById('structDdMenu');
+const structDdSearch = document.getElementById('structDdSearch');
+const structDdList = document.getElementById('structDdList');
+const structDdName = document.getElementById('structDdName');
+const structDdId = document.getElementById('structDdId');
+let structDdOpen = false;
+
+function setStructDdName(text, isPlaceholder){
+  structDdName.textContent = text;
+  structDdName.classList.toggle('placeholder', !!isPlaceholder);
+}
+function syncStructTrigger(){
+  const id = document.getElementById('structureSelect').value;
+  const s = AUTHOR.structures.find(b => String(b.id) === String(id));
+  if (s) { setStructDdName(s.name, false); structDdId.textContent = '#' + s.id; }
+  else { setStructDdName('Select a structure…', true); structDdId.textContent = ''; }
+}
+function renderStructDropdownList(filter){
+  const term = (filter || '').toLowerCase().trim();
+  const currentId = document.getElementById('structureSelect').value;
+  const filtered = AUTHOR.structures.filter(b =>
+    (b.name || '').toLowerCase().includes(term) || String(b.id).toLowerCase().includes(term)
+  );
+  if (!filtered.length) {
+    structDdList.innerHTML = `<div class="dd-empty"><i class="fas fa-magnifying-glass"></i>No structures found</div>`;
+    return;
+  }
+  structDdList.innerHTML = filtered.map(b => `
+    <div class="dd-item ${String(b.id) === String(currentId) ? 'selected' : ''}" data-id="${b.id}">
+      <span class="dd-icon"><i class="fas fa-bridge"></i></span>
+      <span class="dd-text">
+        <span class="dd-name">${b.name}</span>
+        <span class="dd-id">#${b.id}</span>
+      </span>
+      <i class="fas fa-check dd-check"></i>
+    </div>`).join('');
+  structDdList.querySelectorAll('.dd-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const sel = document.getElementById('structureSelect');
+      sel.value = item.dataset.id;
+      sel.dispatchEvent(new Event('change'));
+      syncStructTrigger();
+      closeStructDropdown();
+    });
+  });
+}
+function openStructDropdown(){
+  structDdOpen = true;
+  structDropdown.classList.add('active');
+  structDdMenu.classList.add('open');
+  structDdSearch.value = '';
+  renderStructDropdownList();
+  setTimeout(() => structDdSearch.focus(), 50);
+}
+function closeStructDropdown(){
+  structDdOpen = false;
+  structDropdown.classList.remove('active');
+  structDdMenu.classList.remove('open');
+}
+structDdTrigger.addEventListener('click', function(e){
+  e.stopPropagation();
+  if (structDdOpen) closeStructDropdown(); else openStructDropdown();
+});
+structDdSearch.addEventListener('input', function(e){ renderStructDropdownList(e.target.value); });
+structDdSearch.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeStructDropdown(); });
+document.addEventListener('click', function(e){
+  if (structDdOpen && !structDropdown.contains(e.target)) closeStructDropdown();
+});
+
+// "Add structure" next to the picker - same "go there, come back" trip as
+// goEditInInspection()/authorReturn below, just for a structure that
+// doesn't exist yet instead of an inspection that already does.
+document.getElementById('addStructureBtn').addEventListener('click', function(){
+  sessionStorage.setItem('addStructureReturnTo', window.location.href);
+  window.location.href = '../structure/add-structure.html';
+});
+
+// If we're arriving back from add-structure.html having just created a
+// structure, select it once loadStructures() has it in the list - same
+// consume-once pattern as resumeAuthorReturn() below.
+async function resumeNewStructure(){
+  const newId = sessionStorage.getItem('newStructureId');
+  if (!newId) return;
+  sessionStorage.removeItem('newStructureId');
+  const structureSelect = document.getElementById('structureSelect');
+  if (!structureSelect.querySelector(`option[value="${newId}"]`)) return;
+  structureSelect.value = newId;
+  syncStructTrigger();
+  structureSelect.dispatchEvent(new Event('change'));
+}
+
 async function loadStructures(){
   const sel = document.getElementById('structureSelect');
   try {
     const res = await fetch(`${API_BASE}/api/bridges`);
     if (res.status === 401) {
       sel.innerHTML = '<option value="">Not logged in</option>';
+      setStructDdName('Not logged in', true);
       document.getElementById('loadedSummary').innerHTML =
         `<div class="no-history-note"><i class="fas fa-triangle-exclamation"></i> You need to be logged in to use Author. <a href="../index.html">Go to login</a></div>`;
       return;
@@ -110,16 +212,86 @@ async function loadStructures(){
     AUTHOR.structures = bridges;
     sel.innerHTML = '<option value="">Select a structure…</option>' +
       bridges.map(b => `<option value="${b.id}">${b.name} (#${b.id})</option>`).join('');
+    setStructDdName('Select a structure…', true);
+    renderStructDropdownList();
   } catch (err) {
     sel.innerHTML = '<option value="">Failed to load structures</option>';
+    setStructDdName('Failed to load structures', true);
     console.error('Error loading structures:', err);
   }
 }
+// ---- Compare-against picker: same searchable-dropdown component as
+// Structure (minus the search box - a structure's own inspection history
+// is short enough not to need filtering), over the hidden
+// #inspectionSelect. Real <option>s still get populated on it too, since
+// resumeAuthorReturn() checks for one by value before resuming.
+let inspDates = [];
+const inspDropdown = document.getElementById('inspDropdown');
+const inspDdTrigger = document.getElementById('inspDdTrigger');
+const inspDdMenu = document.getElementById('inspDdMenu');
+const inspDdList = document.getElementById('inspDdList');
+const inspDdName = document.getElementById('inspDdName');
+let inspDdOpen = false;
+
+function setInspDdName(text, isPlaceholder){
+  inspDdName.textContent = text;
+  inspDdName.classList.toggle('placeholder', !!isPlaceholder);
+}
+function setInspDropdownEnabled(enabled){
+  inspDropdown.classList.toggle('disabled', !enabled);
+  if (!enabled) closeInspDropdown();
+}
+function syncInspTrigger(){
+  const date = document.getElementById('inspectionSelect').value;
+  const d = inspDates.find(x => x.date === date);
+  setInspDdName(d ? `${fmtDate(d.date)} — ${d.type}` : 'Select a structure first', !d);
+}
+function renderInspDropdownList(){
+  const currentDate = document.getElementById('inspectionSelect').value;
+  inspDdList.innerHTML = inspDates.map(d => `
+    <div class="dd-item ${d.date === currentDate ? 'selected' : ''}" data-date="${d.date}">
+      <span class="dd-icon"><i class="fas fa-calendar-check"></i></span>
+      <span class="dd-text">
+        <span class="dd-name">${fmtDate(d.date)}</span>
+        <span class="dd-id">${d.type}</span>
+      </span>
+      <i class="fas fa-check dd-check"></i>
+    </div>`).join('');
+  inspDdList.querySelectorAll('.dd-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const sel = document.getElementById('inspectionSelect');
+      sel.value = item.dataset.date;
+      sel.dispatchEvent(new Event('change'));
+      syncInspTrigger();
+      closeInspDropdown();
+    });
+  });
+}
+function openInspDropdown(){
+  if (inspDropdown.classList.contains('disabled')) return;
+  inspDdOpen = true;
+  inspDropdown.classList.add('active');
+  inspDdMenu.classList.add('open');
+}
+function closeInspDropdown(){
+  inspDdOpen = false;
+  inspDropdown.classList.remove('active');
+  inspDdMenu.classList.remove('open');
+}
+inspDdTrigger.addEventListener('click', function(e){
+  e.stopPropagation();
+  if (inspDdOpen) closeInspDropdown(); else openInspDropdown();
+});
+document.addEventListener('click', function(e){
+  if (inspDdOpen && !inspDropdown.contains(e.target)) closeInspDropdown();
+});
+
 async function onStructureChange(){
   const structureId = document.getElementById('structureSelect').value;
   const inspSel = document.getElementById('inspectionSelect');
   const loadBtn = document.getElementById('loadBtn');
   inspSel.disabled = true; loadBtn.disabled = true;
+  setInspDropdownEnabled(false);
   // newInspRow reflects the upload flow that was last actually loaded -
   // once the picker moves off that structure (back to the placeholder, or
   // on to a different one), its date/type no longer apply until an
@@ -127,8 +299,13 @@ async function onStructureChange(){
   if (structureId !== AUTHOR.structureId) {
     document.getElementById('newInspRow').style.display = 'none';
   }
-  if (!structureId) { inspSel.innerHTML = '<option value="">Select a structure first</option>'; return; }
+  if (!structureId) {
+    inspSel.innerHTML = '<option value="">Select a structure first</option>';
+    inspDates = []; setInspDdName('Select a structure first', true);
+    return;
+  }
   inspSel.innerHTML = '<option value="">Loading inspections…</option>';
+  inspDates = []; setInspDdName('Loading inspections…', true);
   // "From Field" is the same dropdown, just narrowed to source:'field' rows
   // (inspections.source is 'field' or 'desktop', server.js:1618) - not a
   // separate endpoint or panel.
@@ -138,7 +315,9 @@ async function onStructureChange(){
     const allDates = await res.json();
     const dates = fieldOnly ? allDates.filter(d => d.source === 'field') : allDates;
     if (!dates.length) {
-      inspSel.innerHTML = `<option value="">${fieldOnly ? 'No Field-submitted inspections for this structure' : 'No inspections recorded for this structure'}</option>`;
+      const msg = fieldOnly ? 'No Field-submitted inspections for this structure' : 'No inspections recorded for this structure';
+      inspSel.innerHTML = `<option value="">${msg}</option>`;
+      setInspDdName(msg, true);
       return;
     }
     // d.date is already a plain 'YYYY-MM-DD' string from the server - using
@@ -152,8 +331,13 @@ async function onStructureChange(){
     inspSel.value = dates[0].date;
     inspSel.disabled = false;
     loadBtn.disabled = false;
+    inspDates = dates;
+    renderInspDropdownList();
+    syncInspTrigger();
+    setInspDropdownEnabled(true);
   } catch (err) {
     inspSel.innerHTML = '<option value="">Failed to load inspections</option>';
+    setInspDdName('Failed to load inspections', true);
     console.error('Error loading inspection dates:', err);
   }
 }
@@ -274,13 +458,16 @@ async function resumeAuthorReturn(){
   const structureSelect = document.getElementById('structureSelect');
   if (!structureSelect.querySelector(`option[value="${target.structureId}"]`)) return;
   structureSelect.value = target.structureId;
+  syncStructTrigger();
   await onStructureChange();
   const inspectionSelect = document.getElementById('inspectionSelect');
   if (!inspectionSelect.querySelector(`option[value="${target.date}"]`)) return;
   inspectionSelect.value = target.date;
+  syncInspTrigger();
+  renderInspDropdownList();
   await onLoad();
 }
-loadStructures().then(resumeAuthorReturn);
+loadStructures().then(resumeNewStructure).then(resumeAuthorReturn);
 
 // ---- Upload a previous inspection (structure whose last inspection
 // wasn't done in spanSense) - looks up the structure/organization out of

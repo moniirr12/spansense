@@ -14,9 +14,7 @@
     <base target="_self">
 <style>
 /* ============================================
-   SPANSENSE - ADD STRUCTURE (front-end prototype)
-   Not wired to the server - "Create Structure" only
-   logs the payload it would POST. See the banner.
+   SPANSENSE - ADD STRUCTURE
    ============================================ */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -28,21 +26,10 @@ body {
     overflow-x: hidden;
 }
 
-/* ---------- PROTOTYPE BANNER ---------- */
-.proto-banner {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 1200;
-    background: #8a5a1f; color: #fff7ea;
-    font-size: 0.75rem; font-weight: 600;
-    text-align: center; padding: 6px 10px;
-    letter-spacing: 0.02em;
-}
-.proto-banner i { margin-right: 6px; }
-.night-mode .proto-banner { background: #5a4a2a; }
-
 /* ---------- NAVIGATION BAR ---------- */
 .navbar {
     position: fixed;
-    top: 46px;
+    top: 20px;
     left: 50%;
     transform: translateX(-50%);
     width: 67%;
@@ -110,9 +97,9 @@ body {
 
 /* ---------- MAIN WRAPPER ---------- */
 .page-wrapper {
-    max-width: 800px;
+    max-width: 75%;
     margin: 0 auto;
-    padding: 146px 0 80px 0;
+    padding: 120px 0 80px 0;
 }
 
 /* ---------- BACK PILL ---------- */
@@ -176,6 +163,23 @@ body {
     margin-bottom: 18px;
     line-height: 1.5;
 }
+
+/* ---------- EXTRACT FROM DOCUMENT ---------- */
+.extract-section { border-color: rgba(138, 180, 176, 0.4); background: rgba(91, 140, 138, 0.04); }
+.extract-section .section-sub { margin-bottom: 14px; }
+.extract-upload-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.btn-extract {
+    padding: 10px 22px; border: none; border-radius: 30px;
+    background: linear-gradient(135deg, #5b8c8a 0%, #7ba8a5 100%);
+    color: white; font-weight: 600; font-size: 0.82rem; cursor: pointer;
+    transition: all 0.2s; display: flex; align-items: center; gap: 8px;
+    font-family: inherit; flex-shrink: 0;
+}
+.btn-extract:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(91, 140, 138, 0.3); }
+.btn-extract:disabled { opacity: 0.65; cursor: not-allowed; transform: none; box-shadow: none; }
+.extract-status { font-size: 0.78rem; color: #8a9ba8; line-height: 1.4; }
+.extract-status.success { color: #2d7a6e; }
+.extract-status.error { color: #c47070; }
 
 /* ---------- FORM FIELDS ---------- */
 .form-group { margin-bottom: 16px; }
@@ -262,6 +266,15 @@ body {
 .stepper button:active { transform: scale(0.94); }
 .stepper span { font-size: 1rem; font-weight: 700; color: #2c4a48; min-width: 22px; text-align: center; }
 
+/* ---------- PER-SPAN BREAKDOWN ---------- */
+.span-row { border: 1px solid #eef2f6; border-radius: 16px; padding: 16px 18px; margin-bottom: 12px; }
+.span-row:last-child { margin-bottom: 0; }
+.span-row-head { font-size: 0.82rem; font-weight: 700; color: #2c645c; margin-bottom: 14px; }
+.span-row .form-row { margin-bottom: 12px; }
+.span-row .form-row:last-child { margin-bottom: 0; }
+.span-row .form-group { margin-bottom: 0; }
+.span-row .form-group label { font-size: 0.74rem; }
+
 /* ---------- ADVANCED (COLLAPSIBLE) ---------- */
 .adv-toggle {
     display: flex; align-items: center; justify-content: space-between;
@@ -337,6 +350,7 @@ body {
 }
 .btn-create:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(91, 140, 138, 0.4); }
 .btn-create:active { transform: translateY(0); }
+.btn-create:disabled { opacity: 0.7; cursor: not-allowed; transform: none; box-shadow: 0 4px 14px rgba(91, 140, 138, 0.3); }
 
 /* ---------- TOAST ---------- */
 .toast-container { position: fixed; bottom: 30px; right: 30px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; }
@@ -390,6 +404,10 @@ body {
 .night-mode .form-section { background: #232e34; border-color: #2f3e45; }
 .night-mode .form-section h2 { color: #d4dfe3; }
 .night-mode .form-section .section-sub { color: #8aa4ac; }
+.night-mode .extract-section { border-color: rgba(138, 180, 176, 0.3); background: rgba(138, 180, 176, 0.06); }
+.night-mode .extract-status { color: #8aa4ac; }
+.night-mode .extract-status.success { color: #7fc9ba; }
+.night-mode .extract-status.error { color: #e08a8a; }
 .night-mode .adv-body { border-color: #2f3e45; }
 .night-mode .adv-toggle i.chev { color: #8aa4ac; }
 
@@ -412,6 +430,9 @@ body {
 .night-mode .stepper button:hover { background: #2f4a48; border-color: #6e9c98; }
 .night-mode .stepper span { color: #d4dfe3; }
 
+.night-mode .span-row { border-color: #2f3e45; }
+.night-mode .span-row-head { color: #8ab4b0; }
+
 .night-mode .add-photo-card { background: rgba(138, 180, 176, 0.05); border-color: rgba(138, 180, 176, 0.3); }
 .night-mode .add-photo-card:hover { background: rgba(138, 180, 176, 0.1); border-color: rgba(138, 180, 176, 0.55); }
 .night-mode .preview-item-photo { background: #1e2a2f; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
@@ -431,8 +452,6 @@ body {
 </head>
 <body>
 <script>if(document.documentElement.classList.contains('nm-preload'))document.body.classList.add('night-mode');</script>
-
-<div class="proto-banner"><i class="fas fa-flask"></i>Front-end prototype — "Create Structure" doesn't save anywhere yet, there's no backend endpoint for it</div>
 
 <!-- FLOATING NAVBAR -->
 <div class="navbar">
@@ -466,6 +485,16 @@ body {
     <div class="page-header">
         <h1><i class="fas fa-plus" style="font-size:0.9em;"></i> Add Structure</h1>
         <p>Create a new structure record. Everything here maps onto the same <code>bridges</code> table used by Map, Database and Planning — fill in what you know now, the rest can always be added later from the structure's own page.</p>
+    </div>
+
+    <div class="form-section extract-section">
+        <h2><i class="fas fa-wand-magic-sparkles"></i> Extract from document <span class="opt">(optional)</span></h2>
+        <p class="section-sub">Upload a BCI Pro forma or inspection report and spanSense will try to pull the structure's name, location, dimensions, materials and build year into the form below — condition scores and defects aren't read, and everything extracted is still yours to review before creating.</p>
+        <div class="extract-upload-row">
+            <button type="button" class="btn-extract" id="extractBtn"><i class="fas fa-file-arrow-up"></i> Upload document</button>
+            <input type="file" id="extractFileInput" accept=".pdf,.doc,.docx" style="display:none;">
+            <span class="extract-status" id="extractStatus"></span>
+        </div>
     </div>
 
     <form id="addStructureForm" novalidate>
@@ -586,6 +615,13 @@ body {
                     </select>
                 </div>
             </div>
+        </div>
+
+        <!-- PER-SPAN BREAKDOWN -->
+        <div class="form-section">
+            <h2><i class="fas fa-ruler-horizontal"></i> Per-span breakdown <span class="opt">(optional)</span></h2>
+            <p class="section-sub">Length, width, and BCI Pro forma deck form/material codes for each individual span — useful when spans differ (e.g. an original span next to a later widening). Leave any of this blank and the structure's own span length/width above still apply; there's no per-span requirement to fill any of it in.</p>
+            <div id="spanBreakdownList"></div>
         </div>
 
         <!-- DESCRIPTION -->
@@ -709,11 +745,134 @@ var spanCountEl = document.getElementById('spanCount');
 document.getElementById('spanMinus').addEventListener('click', function() {
     if (spanCount > 1) spanCount--;
     spanCountEl.textContent = spanCount;
+    renderSpanBreakdown();
 });
 document.getElementById('spanPlus').addEventListener('click', function() {
     spanCount++;
     spanCountEl.textContent = spanCount;
+    renderSpanBreakdown();
 });
+
+// ---------- Per-span breakdown (length/width + BCI Pro forma form/material
+// codes) ----------
+// Tables 2/3/4 straight from the standard's own GI codes reference -
+// primary/secondary deck form are numeric, material is a single letter
+// shared by both primary and secondary (code "P" only makes sense for
+// secondary - "no secondary element, no material" - so it's left out of
+// the primary list).
+var PRIMARY_FORM_CODES = [
+    ['00', 'Retaining Wall — All types'],
+    ['01', 'Arch — Solid spandrel'],
+    ['02', 'Arch — Open/braced spandrel'],
+    ['03', 'Arch — Tied (including hangers)'],
+    ['04', 'Beam/Girder — At/below deck surface'],
+    ['05', 'Beam/Girder — Box beams (exterior and interior)'],
+    ['06', 'Beam/Girder — Half through'],
+    ['07', 'Beam/Girder — Filler beam'],
+    ['08', 'Truss — At/below deck surface (under slung)'],
+    ['09', 'Truss — Half through'],
+    ['10', 'Truss — Full through'],
+    ['11', 'Slab — Solid'],
+    ['12', 'Slab — Voided'],
+    ['13', 'Culvert/pipe/subway — Circular/oval'],
+    ['14', 'Culvert/pipe/subway — Box'],
+    ['15', 'Culvert/pipe/subway — Portal/U-shape'],
+    ['16', 'Troughing'],
+    ['17', 'Cable stayed/suspension'],
+    ['18', 'Tunnel'],
+    ['19', 'Other'],
+    ['MC', 'Multiple Construction Type']
+];
+var SECONDARY_FORM_CODES = [
+    ['20', 'No secondary deck element — no transverse beams'],
+    ['30', 'No secondary deck element — transverse beams'],
+    ['21', 'Buckle Plates — no transverse beams'],
+    ['31', 'Buckle Plates — transverse beams'],
+    ['22', 'Flat Plate — no transverse beams'],
+    ['32', 'Flat Plate — transverse beams'],
+    ['23', 'Jack Arch — no transverse beams'],
+    ['33', 'Jack Arch — transverse beams'],
+    ['24', 'Slab — no transverse beams'],
+    ['34', 'Slab — transverse beams'],
+    ['25', 'Troughing — no transverse beams'],
+    ['35', 'Troughing — transverse beams'],
+    ['26', 'Other — no transverse beams'],
+    ['36', 'Other — transverse beams']
+];
+var MATERIAL_CODES = [
+    ['A', 'Concrete — Reinforced'],
+    ['B', 'Concrete — Plain/mass'],
+    ['C', 'Concrete — Post-tensioned'],
+    ['D', 'Concrete — Pre-tensioned'],
+    ['E', 'Metal — Steel'],
+    ['F', 'Metal — Cast iron'],
+    ['G', 'Metal — Wrought iron'],
+    ['H', 'Metal — Aluminium'],
+    ['I', 'Metal — Corrugated steel'],
+    ['J', 'Metal — Corrugated aluminium'],
+    ['K', 'Masonry — Brick'],
+    ['L', 'Masonry — Stone'],
+    ['M', 'FRP/GRP/Composite'],
+    ['N', 'Timber'],
+    ['Q', 'Other']
+];
+var SECONDARY_MATERIAL_CODES = MATERIAL_CODES.concat([['P', 'No secondary element — no material']]);
+
+function codeOptions(list, placeholder) {
+    return '<option value="">' + placeholder + '</option>' +
+        list.map(function(pair) { return '<option value="' + pair[0] + '">' + pair[0] + ' — ' + pair[1] + '</option>'; }).join('');
+}
+
+var spanDetails = [];
+var spanBreakdownList = document.getElementById('spanBreakdownList');
+
+function syncSpanDetailsFromInputs() {
+    spanBreakdownList.querySelectorAll('.span-row').forEach(function(row, idx) {
+        spanDetails[idx] = {
+            length: row.querySelector('.span-length').value,
+            width: row.querySelector('.span-width').value,
+            primaryForm: row.querySelector('.span-primary-form').value,
+            primaryMaterialCode: row.querySelector('.span-primary-material').value,
+            secondaryForm: row.querySelector('.span-secondary-form').value,
+            secondaryMaterialCode: row.querySelector('.span-secondary-material').value
+        };
+    });
+}
+
+function renderSpanBreakdown() {
+    syncSpanDetailsFromInputs();
+    while (spanDetails.length < spanCount) spanDetails.push({});
+    spanDetails.length = spanCount;
+
+    spanBreakdownList.innerHTML = spanDetails.map(function(d, idx) {
+        var n = idx + 1;
+        return '<div class="span-row" data-span="' + n + '">' +
+            '<div class="span-row-head">Span ' + n + '</div>' +
+            '<div class="form-row three">' +
+                '<div class="form-group"><label>Length (m)</label><input type="number" min="0" class="span-length" value="' + (d.length || '') + '"></div>' +
+                '<div class="form-group"><label>Width (m)</label><input type="number" min="0" step="0.1" class="span-width" value="' + (d.width || '') + '"></div>' +
+                '<div class="form-group"></div>' +
+            '</div>' +
+            '<div class="form-row">' +
+                '<div class="form-group"><label>Primary form</label><select class="span-primary-form">' + codeOptions(PRIMARY_FORM_CODES, 'Select form…') + '</select></div>' +
+                '<div class="form-group"><label>Primary material</label><select class="span-primary-material">' + codeOptions(MATERIAL_CODES, 'Select material…') + '</select></div>' +
+            '</div>' +
+            '<div class="form-row">' +
+                '<div class="form-group"><label>Secondary form <span class="opt">(optional)</span></label><select class="span-secondary-form">' + codeOptions(SECONDARY_FORM_CODES, 'None') + '</select></div>' +
+                '<div class="form-group"><label>Secondary material <span class="opt">(optional)</span></label><select class="span-secondary-material">' + codeOptions(SECONDARY_MATERIAL_CODES, 'None') + '</select></div>' +
+            '</div>' +
+        '</div>';
+    }).join('');
+
+    spanBreakdownList.querySelectorAll('.span-row').forEach(function(row, idx) {
+        var d = spanDetails[idx];
+        row.querySelector('.span-primary-form').value = d.primaryForm || '';
+        row.querySelector('.span-primary-material').value = d.primaryMaterialCode || '';
+        row.querySelector('.span-secondary-form').value = d.secondaryForm || '';
+        row.querySelector('.span-secondary-material').value = d.secondaryMaterialCode || '';
+    });
+}
+renderSpanBreakdown();
 
 // ---------- Advanced collapse ----------
 document.getElementById('advToggle').addEventListener('click', function() {
@@ -764,7 +923,98 @@ function renderPhotos() {
     });
 }
 
+var API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:3000'
+    : 'https://spansense.onrender.com';
+
+// ---------- Extract from document (BCI Pro forma / inspection report) ----------
+// Prefills the form below from whatever the AI can reliably read off a
+// cover sheet - name, location, dimensions, materials, built year. Never
+// touches condition scores or the numeric BCI element table (server-side
+// extractStructureInfoWithGemini deliberately doesn't ask for those - see
+// its comment). Everything it fills in stays fully editable; nothing here
+// submits on its own.
+function setSelectByClosestMatch(selectId, value) {
+    var select = document.getElementById(selectId);
+    var val = (value || '').toLowerCase().trim();
+    if (!val) return;
+    var options = Array.prototype.slice.call(select.options);
+    var match = options.find(function(o) {
+        return o.value && (val.indexOf(o.value.toLowerCase()) !== -1 || o.value.toLowerCase().indexOf(val) !== -1);
+    });
+    if (match) select.value = match.value;
+}
+
+function applyExtractedInfo(info) {
+    if (!info) return;
+    if (info.name) document.getElementById('fName').value = info.name;
+    if (info.type) {
+        var pill = document.querySelector('.type-pill[data-type="' + info.type + '"]');
+        if (pill) {
+            document.querySelectorAll('.type-pill').forEach(function(p) { p.classList.remove('sel'); });
+            pill.classList.add('sel');
+            selectedType = info.type;
+        }
+    }
+    if (info.location) document.getElementById('fLocation').value = info.location;
+    if (info.span != null) document.getElementById('fSpan').value = info.span;
+    if (info.length != null) document.getElementById('fLength').value = info.length;
+    if (info.width != null) document.getElementById('fWidth').value = info.width;
+    if (info.spanNumber != null && info.spanNumber > 0) {
+        spanCount = info.spanNumber;
+        spanCountEl.textContent = spanCount;
+        renderSpanBreakdown();
+    }
+    if (info.builtYear != null) document.getElementById('fBuiltYear').value = info.builtYear;
+    if (info.loadCapacity != null) document.getElementById('fLoadCapacity').value = info.loadCapacity;
+    if (info.primaryMaterial) setSelectByClosestMatch('fMaterialPrimary', info.primaryMaterial);
+    if (info.secondaryMaterial) setSelectByClosestMatch('fMaterialSecondary', info.secondaryMaterial);
+    if (info.description) document.getElementById('fDescription').value = info.description;
+    if (info.ose) document.getElementById('fOSE').value = info.ose;
+    if (info.osn) document.getElementById('fOSN').value = info.osn;
+    if (info.ose || info.osn) document.getElementById('advSection').classList.remove('collapsed');
+}
+
+var extractBtn = document.getElementById('extractBtn');
+var extractFileInput = document.getElementById('extractFileInput');
+var extractStatus = document.getElementById('extractStatus');
+
+extractBtn.addEventListener('click', function() { extractFileInput.click(); });
+
+extractFileInput.addEventListener('change', function() {
+    var file = extractFileInput.files[0];
+    if (!file) return;
+
+    extractBtn.disabled = true;
+    extractStatus.className = 'extract-status';
+    extractStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Reading ' + file.name + '…';
+
+    var form = new FormData();
+    form.append('file', file);
+
+    fetch(API_BASE + '/api/bridges/extract-info', { method: 'POST', body: form })
+        .then(function(res) {
+            if (res.status === 401) throw new Error('You need to be logged in to use extraction.');
+            if (!res.ok) return res.json().then(function(d) { throw new Error(d.error || 'Extraction failed.'); });
+            return res.json();
+        })
+        .then(function(data) {
+            applyExtractedInfo(data.info);
+            extractStatus.className = 'extract-status success';
+            extractStatus.innerHTML = '<i class="fas fa-check"></i> Prefilled from ' + file.name + ' — review the fields below before creating.';
+        })
+        .catch(function(err) {
+            extractStatus.className = 'extract-status error';
+            extractStatus.innerHTML = '<i class="fas fa-triangle-exclamation"></i> ' + err.message;
+        })
+        .finally(function() {
+            extractBtn.disabled = false;
+            extractFileInput.value = '';
+        });
+});
+
 // ---------- Submit ----------
+
 document.getElementById('addStructureForm').addEventListener('submit', function(e) {
     e.preventDefault();
 
@@ -779,6 +1029,24 @@ document.getElementById('addStructureForm').addEventListener('submit', function(
         return;
     }
 
+    // Only sent as a real spans array when at least one row has something in
+    // it - otherwise span_number (from the plain stepper) is all the server
+    // gets, exactly like before this section existed.
+    syncSpanDetailsFromInputs();
+    var hasSpanDetail = spanDetails.some(function(d) {
+        return d.length || d.width || d.primaryForm || d.primaryMaterialCode || d.secondaryForm || d.secondaryMaterialCode;
+    });
+    var spansPayload = hasSpanDetail ? spanDetails.map(function(d) {
+        return {
+            length: d.length ? parseFloat(d.length) : null,
+            width: d.width ? parseFloat(d.width) : null,
+            primaryForm: d.primaryForm || null,
+            primaryMaterialCode: d.primaryMaterialCode || null,
+            secondaryForm: d.secondaryForm || null,
+            secondaryMaterialCode: d.secondaryMaterialCode || null
+        };
+    }) : null;
+
     var payload = {
         name: name,
         type: selectedType,
@@ -789,6 +1057,7 @@ document.getElementById('addStructureForm').addEventListener('submit', function(
         length: document.getElementById('fLength').value ? parseInt(document.getElementById('fLength').value, 10) : null,
         width: document.getElementById('fWidth').value ? parseFloat(document.getElementById('fWidth').value) : null,
         span_number: spanCount,
+        spans: spansPayload,
         built_year: document.getElementById('fBuiltYear').value ? parseInt(document.getElementById('fBuiltYear').value, 10) : null,
         load_capacity: document.getElementById('fLoadCapacity').value ? parseFloat(document.getElementById('fLoadCapacity').value) : null,
         primary_material: document.getElementById('fMaterialPrimary').value || null,
@@ -797,15 +1066,60 @@ document.getElementById('addStructureForm').addEventListener('submit', function(
         OSE: document.getElementById('fOSE').value.trim() || null,
         OSN: document.getElementById('fOSN').value.trim() || null,
         gi_cycle_years: document.getElementById('fGiCycle').value ? parseInt(document.getElementById('fGiCycle').value, 10) : null,
-        pi_cycle_years: document.getElementById('fPiCycle').value ? parseInt(document.getElementById('fPiCycle').value, 10) : null,
-        photos: photos.map(function(p) { return { description: p.description, dataURL: p.dataURL }; })
+        pi_cycle_years: document.getElementById('fPiCycle').value ? parseInt(document.getElementById('fPiCycle').value, 10) : null
     };
 
-    // Prototype only — no POST /api/bridges endpoint exists yet.
-    // This is the exact shape the request body would take once one does.
-    console.log('Add Structure payload (would POST to /api/bridges):', payload);
+    var createBtn = document.querySelector('.btn-create');
+    createBtn.disabled = true;
+    createBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating…';
 
-    showToast('Structure created (prototype)', name + ' logged to the console — nothing saved yet, there\'s no backend endpoint for this.', 'success');
+    fetch(API_BASE + '/api/bridges', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(function(res) {
+        if (res.status === 401) throw new Error('You need to be logged in to create a structure.');
+        if (res.status === 403) throw new Error('Only engineers and admins can create structures.');
+        if (!res.ok) return res.json().then(function(d) { throw new Error(d.error || 'Server returned ' + res.status); });
+        return res.json();
+    })
+    .then(function(data) {
+        var coverPhoto = photos[0];
+        if (!coverPhoto) return data;
+        return fetch(coverPhoto.dataURL)
+            .then(function(r) { return r.blob(); })
+            .then(function(blob) {
+                var form = new FormData();
+                form.append('photo', blob, 'cover.jpg');
+                return fetch(API_BASE + '/api/bridges/' + data.id + '/photo', { method: 'POST', body: form });
+            })
+            .then(function() { return data; })
+            .catch(function(err) {
+                // Structure itself saved fine - a failed cover photo upload
+                // shouldn't block the redirect, just surface it.
+                console.error('Cover photo upload failed:', err);
+                return data;
+            });
+    })
+    .then(function(data) {
+        showToast('Structure created', name + ' has been added.', 'success');
+        var returnTo = sessionStorage.getItem('addStructureReturnTo');
+        sessionStorage.removeItem('addStructureReturnTo');
+        setTimeout(function() {
+            if (returnTo) {
+                sessionStorage.setItem('newStructureId', data.id);
+                window.location.href = returnTo;
+            } else {
+                window.location.href = '../database/database.html';
+            }
+        }, 900);
+    })
+    .catch(function(err) {
+        showToast('Could not create structure', err.message, 'error');
+        createBtn.disabled = false;
+        createBtn.innerHTML = '<i class="fas fa-check"></i> Create Structure';
+    });
 });
 </script>
 

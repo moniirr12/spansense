@@ -112,14 +112,64 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .picker-row{display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;}
 .picker-field{flex:1; min-width:220px;}
 .picker-field label{font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--text-mute); display:block; margin-bottom:6px;}
+.picker-field label.label-with-action{display:flex; align-items:center; justify-content:space-between;}
+.add-structure-link{display:flex; align-items:center; gap:5px; border:none; background:none; color:var(--teal); font-size:.72rem; font-weight:700; text-transform:none; letter-spacing:normal; cursor:pointer; padding:0; font-family:inherit;}
+.add-structure-link:hover{color:var(--teal-dark); text-decoration:underline;}
 .picker-field select{width:100%; padding:11px 16px; border:1px solid var(--border); border-radius:40px; font-size:.86rem; font-weight:500; font-family:inherit; color:var(--text); background:var(--bg-soft); cursor:pointer; transition:all .2s ease;}
 .picker-field select:hover{border-color:#8ab4b0; background:#fff;}
 .picker-field input[type="date"]{width:100%; padding:10px 16px; border:1px solid var(--border); border-radius:40px; font-size:.86rem; font-weight:500; font-family:inherit; color:var(--text); background:var(--bg-soft); transition:all .2s ease;}
 .picker-field input[type="date"]:hover{border-color:#8ab4b0; background:#fff;}
 .new-insp-row{background:var(--bg-mint); border:1px solid #cfe4e0; border-radius:14px; padding:18px 20px; margin-bottom:20px; gap:18px 14px;}
+
+/* Structure picker - searchable custom dropdown, the same component
+   twinview uses for its own bridge selector (.selector-dropdown/
+   .dropdown-menu/.dd-search/.dd-list/.dd-item, twin/twin.html), ported
+   in as-is so it reads as the one spanSense structure-picker rather than
+   a second, differently-styled one. A plain <select id="structureSelect">
+   stays in the DOM (visually hidden) as the actual form control every
+   existing onStructureChange()/resumeAuthorReturn() call already reads/
+   sets - this is a visual layer over it, not a replacement of it. */
+.selector-dropdown{position:relative; width:100%;}
+.dd-trigger{display:flex; align-items:center; gap:12px; padding:9px 16px; border-radius:40px; border:1px solid var(--border); background:var(--bg-soft); cursor:pointer; transition:.2s; width:100%; font-family:inherit;}
+.dd-trigger:hover{border-color:#8ab4b0; background:#fff;}
+.dd-trigger .dd-icon{width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,var(--bg-mint),#e0ecea); display:flex; align-items:center; justify-content:center; color:var(--teal); font-size:.72rem; flex-shrink:0;}
+.dd-trigger .dd-text{flex:1; min-width:0; text-align:left;}
+.dd-trigger .dd-name{font-size:.86rem; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.dd-trigger .dd-name.placeholder{color:var(--text-mute); font-weight:500;}
+.dd-trigger .dd-id{font-size:.68rem; color:var(--text-mute); font-family:'SFMono-Regular',Consolas,monospace;}
+.dd-trigger .dd-chevron{color:var(--text-mute); font-size:.75rem; transition:transform .3s cubic-bezier(.34,1.56,.64,1); flex-shrink:0;}
+.selector-dropdown.active .dd-chevron{transform:rotate(180deg);}
+.selector-dropdown.disabled .dd-trigger{opacity:.55; cursor:not-allowed; background:var(--bg-soft);}
+.selector-dropdown.disabled .dd-trigger:hover{border-color:var(--border); background:var(--bg-soft);}
+
+.dropdown-menu{
+  position:absolute; top:calc(100% + 6px); left:0; right:0; background:#fff;
+  border-radius:16px; border:1px solid var(--border2); box-shadow:0 12px 40px rgba(0,0,0,.1);
+  z-index:100; opacity:0; visibility:hidden; transform:translateY(-8px) scale(.98);
+  transition:all .25s cubic-bezier(.34,1.56,.64,1); overflow:hidden;
+}
+.dropdown-menu.open{opacity:1; visibility:visible; transform:translateY(0) scale(1);}
+.dd-search{padding:10px 12px; border-bottom:1px solid var(--border2); position:relative;}
+.dd-search input{width:100%; padding:8px 12px 8px 34px; border-radius:10px; border:1px solid var(--border); background:var(--bg-soft); font-family:inherit; font-size:.82rem; color:var(--text); outline:none; transition:.2s;}
+.dd-search input:focus{border-color:#8ab4b0; background:#fff; box-shadow:0 0 0 3px rgba(138,180,176,.12);}
+.dd-search .fa-magnifying-glass{position:absolute; left:22px; top:50%; transform:translateY(-50%); color:var(--text-mute); font-size:.75rem; pointer-events:none;}
+.dd-list{max-height:280px; overflow-y:auto; padding:6px;}
+.dd-list::-webkit-scrollbar{width:4px;}
+.dd-list::-webkit-scrollbar-thumb{background:var(--border); border-radius:10px;}
+.dd-item{display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px; cursor:pointer; transition:.15s;}
+.dd-item:hover{background:#f5f9f8;}
+.dd-item.selected{background:var(--bg-mint);}
+.dd-item .dd-icon{width:26px; height:26px; border-radius:6px; background:linear-gradient(135deg,var(--bg-mint),#e0ecea); display:flex; align-items:center; justify-content:center; color:var(--teal); font-size:.65rem; flex-shrink:0;}
+.dd-item .dd-text{flex:1; min-width:0;}
+.dd-item .dd-name{font-size:.82rem; font-weight:500; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.dd-item .dd-id{font-size:.65rem; color:var(--text-mute); font-family:'SFMono-Regular',Consolas,monospace;}
+.dd-item .dd-check{color:var(--teal); opacity:0; font-size:.72rem; flex-shrink:0;}
+.dd-item.selected .dd-check{opacity:1;}
+.dd-empty{padding:24px 16px; text-align:center; color:var(--text-mute); font-size:.8rem;}
+.dd-empty i{font-size:1.2rem; margin-bottom:6px; display:block; color:var(--border);}
 #sourceRecords, #sourceUpload{margin-top:18px;}
 .picker-field select:disabled{opacity:.55; cursor:not-allowed;}
-.btn-load{flex-shrink:0; padding:11px 22px; border-radius:12px; border:none; background:linear-gradient(135deg,var(--teal),var(--teal-dark)); color:#fff; font-weight:700; font-size:.85rem; cursor:pointer; display:flex; align-items:center; gap:8px; transition:.2s;}
+.btn-load{flex-shrink:0; height:48px; padding:0 22px; border-radius:12px; border:none; background:linear-gradient(135deg,var(--teal),var(--teal-dark)); color:#fff; font-weight:700; font-size:.85rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:.2s;}
 .btn-load:hover{transform:translateY(-1px);}
 .btn-load:disabled{opacity:.5; cursor:not-allowed; transform:none;}
 
@@ -250,11 +300,28 @@ body.modal-open{overflow:hidden;}
 .night-mode .card-title{color:#d4dfe3;}
 
 .night-mode .picker-field label{color:#7d939b;}
+.night-mode .add-structure-link{color:#8ab4b0;}
+.night-mode .add-structure-link:hover{color:#a0c8c4;}
 .night-mode .picker-field select{background:#1e2a2f; border-color:#3a4b53; color:#c5d3d9;}
 .night-mode .picker-field select:hover{background:#2a3a40; border-color:#8ab4b0;}
 .night-mode .picker-field input[type="date"]{background:#1e2a2f; border-color:#3a4b53; color:#c5d3d9; color-scheme:dark;}
 .night-mode .picker-field input[type="date"]:hover{background:#2a3a40; border-color:#8ab4b0;}
 .night-mode .new-insp-row{background:#1e3a38; border-color:#3a6b62;}
+
+.night-mode .dd-trigger{background:#1e2a2f; border-color:#3a4b53;}
+.night-mode .dd-trigger:hover{background:#2a3a40; border-color:#4a5d66;}
+.night-mode .dd-trigger .dd-name{color:#d4dfe3;}
+.night-mode .dd-trigger .dd-icon{background:linear-gradient(135deg,#2f4a48,#1e3a38); color:#8ab4b0;}
+.night-mode .dd-item .dd-icon{background:linear-gradient(135deg,#2f4a48,#1e3a38); color:#8ab4b0;}
+.night-mode .dropdown-menu{background:#232e34; border-color:#3a4b53;}
+.night-mode .dd-search{border-color:#2a3a40;}
+.night-mode .dd-search input{background:#1a2428; border-color:#3a4b53; color:#d4dfe3;}
+.night-mode .dd-search input:focus{border-color:#6e9c98; box-shadow:0 0 0 3px rgba(110,156,152,.15);}
+.night-mode .dd-item:hover{background:#2a3a40;}
+.night-mode .dd-item.selected{background:#2f4a48;}
+.night-mode .dd-item .dd-name{color:#d4dfe3;}
+.night-mode .dd-empty{color:#5a7a80;}
+.night-mode .dd-empty i{color:#3a5a58;}
 .night-mode .loaded-chip{color:#7ec9ba;}
 .night-mode .no-history-note{background:#3a3020; border-color:#5a4a2a; color:#e0b060;}
 .night-mode .load-review-card{background:#1a2428; border-color:#2f3e45;}
@@ -339,13 +406,45 @@ body.modal-open{overflow:hidden;}
             </div>
 
             <div class="picker-row">
-                <div class="picker-field" style="max-width:320px;">
-                    <label>Structure</label>
-                    <select id="structureSelect"><option value="">Loading structures…</option></select>
+                <div class="picker-field" style="flex-grow:1.6; max-width:560px;">
+                    <label class="label-with-action">
+                        <span>Structure</span>
+                        <button type="button" class="add-structure-link" id="addStructureBtn"><i class="fas fa-plus"></i> Add structure</button>
+                    </label>
+                    <div class="selector-dropdown" id="structDropdown">
+                        <button type="button" class="dd-trigger" id="structDdTrigger">
+                            <span class="dd-icon"><i class="fas fa-bridge"></i></span>
+                            <span class="dd-text">
+                                <span class="dd-name placeholder" id="structDdName">Loading structures…</span>
+                                <span class="dd-id" id="structDdId"></span>
+                            </span>
+                            <i class="fas fa-chevron-down dd-chevron"></i>
+                        </button>
+                        <div class="dropdown-menu" id="structDdMenu">
+                            <div class="dd-search">
+                                <i class="fas fa-magnifying-glass"></i>
+                                <input type="text" id="structDdSearch" placeholder="Search by name or ID…" autocomplete="off">
+                            </div>
+                            <div class="dd-list" id="structDdList"></div>
+                        </div>
+                    </div>
+                    <select id="structureSelect" hidden><option value="">Loading structures…</option></select>
                 </div>
-                <div class="picker-field" id="compareAgainstField">
+                <div class="picker-field" id="compareAgainstField" style="flex-grow:1; max-width:400px;">
                     <label>Compare against (base inspection)</label>
-                    <select id="inspectionSelect" disabled><option value="">Select a structure first</option></select>
+                    <div class="selector-dropdown disabled" id="inspDropdown">
+                        <button type="button" class="dd-trigger" id="inspDdTrigger">
+                            <span class="dd-icon"><i class="fas fa-calendar-check"></i></span>
+                            <span class="dd-text">
+                                <span class="dd-name placeholder" id="inspDdName">Select a structure first</span>
+                            </span>
+                            <i class="fas fa-chevron-down dd-chevron"></i>
+                        </button>
+                        <div class="dropdown-menu" id="inspDdMenu">
+                            <div class="dd-list" id="inspDdList"></div>
+                        </div>
+                    </div>
+                    <select id="inspectionSelect" disabled hidden><option value="">Select a structure first</option></select>
                 </div>
                 <button class="btn-load" id="loadBtn" disabled><i class="fas fa-arrow-right"></i> Load</button>
             </div>
