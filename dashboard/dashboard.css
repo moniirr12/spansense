@@ -85,7 +85,7 @@ body {
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer;
-    color: #8a9ba8;
+    color: #5f6b73;
     background: #f0f2f5;
     transition: all 0.2s;
 }
@@ -93,7 +93,7 @@ body {
 .navbar .account-links { display: flex; align-items: center; gap: 10px; }
 .navbar .account-links a {
     text-decoration: none;
-    color: #8a9ba8;
+    color: #5f6b73;
     font-size: 1.2rem;
     width: 36px; height: 36px;
     border-radius: 50%;
@@ -162,10 +162,11 @@ body {
 }
 
 .page-header p {
-    color: #8a9ba8;
+    color: #5f6b73;
     font-size: 0.85rem;
     padding-left: 18px;
 }
+.night-mode .page-header p { color: #a8b8bf; }
 
 /* ============================================
    METRICS CARDS
@@ -259,11 +260,12 @@ body {
 
 .metric-content p {
     font-size: 0.7rem;
-    color: #8a9ba8;
+    color: #5f6b73;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
 }
+.night-mode .metric-content p { color: #a8b8bf; }
 
 /* BCI(ave) / BCI(crit) combined card — two number+label pairs side by side
    in place of the single h3/p a normal metric card has. */
@@ -282,11 +284,12 @@ body {
 
 .metric-split-item p {
     font-size: 0.7rem;
-    color: #8a9ba8;
+    color: #5f6b73;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
 }
+.night-mode .metric-split-item p { color: #a8b8bf; }
 
 .metric-split-item p sub {
     font-size: 0.85em;
@@ -465,7 +468,7 @@ body {
     gap: 14px;
     margin-top: 14px;
     font-size: 0.75rem;
-    color: #6a7c8e;
+    color: #4d5960;
 }
 
 .bci-legend span {
@@ -573,9 +576,10 @@ body {
 .bridge-location {
     display: block;
     font-size: 0.7rem;
-    color: #8a9ba8;
+    color: #5f6b73;
     margin-top: 2px;
 }
+.night-mode .bridge-location { color: #a8b8bf; }
 
 .risk-badge {
     display: inline-block;
@@ -765,8 +769,9 @@ body {
 
 .activity-meta {
     font-size: 0.7rem;
-    color: #8a9ba8;
+    color: #5f6b73;
 }
+.night-mode .activity-meta { color: #a8b8bf; }
 
 .activity-status {
     padding: 3px 10px;
@@ -972,18 +977,18 @@ body {
 }
 
 .night-mode .bci-legend {
-    color: #8aa4ac;
+    color: #a8b8bf;
 }
 
 .night-mode .data-table.card-rows thead th {
     background: #1e2a2f;
     border-color: #2f3e45;
-    color: #6a8090;
+    color: #a8b8bf;
 }
 .night-mode .activity-list-header {
     background: #1e2a2f;
     border-color: #2f3e45;
-    color: #6a8090;
+    color: #a8b8bf;
 }
 .night-mode .data-table.card-rows tbody tr td {
     background: #232e34;
@@ -1193,7 +1198,7 @@ html.night-mode .glass-scrollbar .thumb {
     left: 12px;
     top: 50%;
     transform: translateY(-50%);
-    color: #8a9ba8;
+    color: #5f6b73;
     font-size: 0.7rem;
     pointer-events: none;
 }
@@ -1223,7 +1228,7 @@ html.night-mode .glass-scrollbar .thumb {
     border-radius: 20px;
     border: 1px solid #e2e8f0;
     background: transparent;
-    color: #8a9ba8;
+    color: #5f6b73;
     font-size: 0.68rem;
     font-weight: 600;
     font-family: inherit;
@@ -1262,8 +1267,8 @@ html.night-mode .glass-scrollbar .thumb {
 .night-mode .pending-review-filters { border-bottom-color: #2f3e45; }
 .night-mode .pr-search-wrap input { background: #1e2a2f; border-color: #3a4b53; color: #d4dfe3; }
 .night-mode .pr-search-wrap input:focus { border-color: #8ab4b0; }
-.night-mode .pr-search-wrap i { color: #6a8090; }
-.night-mode .pr-critical-toggle { border-color: #3a4b53; color: #6a8090; }
+.night-mode .pr-search-wrap i { color: #a8b8bf; }
+.night-mode .pr-critical-toggle { border-color: #3a4b53; color: #a8b8bf; }
 .night-mode .pr-critical-toggle:hover { border-color: #e57373; color: #e57373; }
 .night-mode .pr-critical-toggle.active { background: #3a2020; border-color: #e57373; color: #e8a0a0; }
 
@@ -1303,7 +1308,7 @@ html.night-mode .glass-scrollbar .thumb {
     border-radius: 8px;
     border: 1px solid #e2e8f0;
     background: white;
-    color: #6a7c8e;
+    color: #4d5960;
     font-size: 0.78rem;
     font-weight: 500;
     cursor: pointer;
@@ -1333,8 +1338,9 @@ html.night-mode .glass-scrollbar .thumb {
 
 .pagination-ellipsis {
     padding: 0 4px;
-    color: #8a9ba8;
+    color: #5f6b73;
 }
+.night-mode .pagination-ellipsis { color: #a8b8bf; }
 
 .night-mode .pagination-btn {
     background: #1e2a2f;
@@ -1402,7 +1408,7 @@ html.night-mode .glass-scrollbar .thumb {
 }
 .modal-message {
     font-size: 0.9rem;
-    color: #8a9ba8;
+    color: #5f6b73;
     line-height: 1.6;
     margin-bottom: 20px;
     text-align: left;
@@ -1437,7 +1443,7 @@ html.night-mode .glass-scrollbar .thumb {
 .modal-btn.secondary {
     background: transparent;
     border: 1px solid #e2e8f0;
-    color: #6a7c8e;
+    color: #4d5960;
 }
 .modal-btn.secondary:hover {
     background: #f1f5f4;
@@ -1500,10 +1506,10 @@ html.night-mode .glass-scrollbar .thumb {
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 24px 48px rgba(0, 0, 0, 0.15);
 }
 .night-mode .modal-title { color: #d4dfe3; }
-.night-mode .modal-message { color: #8aa4ac; }
+.night-mode .modal-message { color: #a8b8bf; }
 .night-mode .modal-btn.secondary {
     border-color: #3a4b53;
-    color: #8aa4ac;
+    color: #a8b8bf;
 }
 .night-mode .modal-btn.secondary:hover {
     background: #2f3e45;

@@ -65,7 +65,7 @@ body {
     border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer;
-    color: #8a9ba8;
+    color: #5f6b73;
     background: #f0f2f5;
     transition: all 0.2s;
 }
@@ -73,7 +73,7 @@ body {
 .navbar .account-links { display: flex; align-items: center; gap: 10px; }
 .navbar .account-links a {
     text-decoration: none;
-    color: #8a9ba8;
+    color: #5f6b73;
     font-size: 1.2rem;
     width: 36px; height: 36px;
     border-radius: 50%;
@@ -142,7 +142,7 @@ body {
     margin-bottom: 8px;
 }
 .page-header p {
-    color: #8a9ba8;
+    color: #5f6b73;
     font-size: 0.9rem;
     padding-left: 18px;
 }
@@ -202,7 +202,7 @@ body {
 }
 .export-card .card-desc {
     font-size: 0.8rem;
-    color: #8a9ba8;
+    color: #5f6b73;
     line-height: 1.5;
     margin-bottom: 16px;
 }
@@ -211,7 +211,7 @@ body {
     align-items: center;
     gap: 12px;
     font-size: 0.75rem;
-    color: #8a9ba8;
+    color: #5f6b73;
 }
 .export-card .card-meta .count {
     background: #f8fafc;
@@ -229,7 +229,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #8a9ba8;
+    color: #5f6b73;
     transition: all 0.3s;
 }
 .export-card:hover .card-arrow {
@@ -274,7 +274,7 @@ body {
     border-radius: 50%;
     border: 1px solid #e2e8f0;
     background: white;
-    color: #6a7c8e;
+    color: #4d5960;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -318,7 +318,7 @@ body {
     left: 12px;
     top: 50%;
     transform: translateY(-50%);
-    color: #8a9ba8;
+    color: #5f6b73;
     font-size: 0.7rem;
     pointer-events: none;
 }
@@ -343,7 +343,7 @@ body {
     right: 12px;
     top: 50%;
     transform: translateY(-50%);
-    color: #8a9ba8;
+    color: #5f6b73;
     font-size: 0.7rem;
     cursor: pointer;
 }
@@ -354,7 +354,7 @@ body {
     border: 1px solid #e2e8f0;
     background: #fafbfc;
     font-size: 0.8rem;
-    color: #6a7c8e;
+    color: #4d5960;
     cursor: pointer;
     transition: all 0.2s;
     display: flex;
@@ -421,7 +421,7 @@ body {
     border-radius: 50%;
     border: 1px solid #e2e8f0;
     background: white;
-    color: #8a9ba8;
+    color: #5f6b73;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -447,7 +447,7 @@ body {
     background: #eef2f6;
     border-top: 1px solid #e3e9ef;
     border-bottom: 1px solid #e3e9ef;
-    color: #6a7c8e;
+    color: #4d5960;
 }
 .data-table.card-rows thead th:first-child {
     border-left: 1px solid #e3e9ef;
@@ -476,7 +476,7 @@ body {
     border-bottom-right-radius: 30px;
 }
 .data-table.card-rows .bridge-name .meta {
-    display: block; font-size: 0.7rem; font-weight: 500; color: #8a9ba8; margin-top: 2px;
+    display: block; font-size: 0.7rem; font-weight: 500; color: #5f6b73; margin-top: 2px;
 }
 .data-table.card-rows .type-circle {
     display: inline-flex; align-items: center; justify-content: center;
@@ -501,7 +501,7 @@ body {
     transform: translate(-50%, -50%);
 }
 
-.night-mode .data-table.card-rows thead th { background: #1e2a2f; border-color: #2f3e45; color: #8aa4ac; }
+.night-mode .data-table.card-rows thead th { background: #1e2a2f; border-color: #2f3e45; color: #a8b8bf; }
 .night-mode .data-table.card-rows tbody tr td { background: #232e34; border-color: #2f3e45; }
 .night-mode .data-table.card-rows tbody tr:hover td { background: #2a3a40; border-color: #3a4b53; }
 .night-mode .data-table.card-rows .col-check input[type="checkbox"] {
@@ -543,7 +543,7 @@ body {
     background: white;
     font-size: 0.8rem;
     font-weight: 500;
-    color: #6a7c8e;
+    color: #4d5960;
     cursor: pointer;
     transition: all 0.2s;
     display: flex;
@@ -580,7 +580,7 @@ body {
     border-color: #8ab4b0;
 }
 .date-range span {
-    color: #8a9ba8;
+    color: #5f6b73;
     font-size: 0.8rem;
 }
 
@@ -594,7 +594,7 @@ body {
 }
 .export-action-bar .selection-info {
     font-size: 0.85rem;
-    color: #8a9ba8;
+    color: #5f6b73;
 }
 .export-action-bar .selection-info strong {
     color: #2c4a48;
@@ -689,11 +689,11 @@ body {
 }
 .activity-content .activity-meta {
     font-size: 0.75rem;
-    color: #8a9ba8;
+    color: #5f6b73;
 }
 .activity-time {
     font-size: 0.75rem;
-    color: #8a9ba8;
+    color: #5f6b73;
     flex-shrink: 0;
 }
 
@@ -741,14 +741,14 @@ body {
 }
 .toast-content .toast-msg {
     font-size: 0.8rem;
-    color: #8a9ba8;
+    color: #5f6b73;
 }
 .toast-close {
     width: 28px; height: 28px;
     border-radius: 50%;
     border: none;
     background: #f8fafc;
-    color: #8a9ba8;
+    color: #5f6b73;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -785,7 +785,7 @@ body {
 }
 .progress-card p {
     font-size: 0.85rem;
-    color: #8a9ba8;
+    color: #5f6b73;
     margin-bottom: 24px;
 }
 .progress-track {
@@ -925,20 +925,20 @@ body {
 .night-mode .activity-time,
 .night-mode .toast-content .toast-msg,
 .night-mode .progress-card p {
-    color: #8aa4ac;
+    color: #a8b8bf;
 }
 .night-mode .option-group { background: #1e2a2f; border-color: #2f3e45; }
 .night-mode .option-group h3 { color: #d4dfe3; }
 .night-mode .data-table thead tr { background: #1e2a2f; }
-.night-mode .data-table th { color: #8aa4ac; border-color: #2f3e45; }
+.night-mode .data-table th { color: #a8b8bf; border-color: #2f3e45; }
 .night-mode .data-table td { color: #c5d3d9; border-color: #2a3a40; }
 .night-mode .data-table tbody tr:hover td { background: #2a3a40; }
 .night-mode .filter-chip { background: #1e2a2f; border-color: #3a4b53; color: #9ab0b8; }
 .night-mode .filter-chip.active { background: #2f4a48; border-color: #6e9c98; color: white; }
 .night-mode .db-search-wrap input { background: #1e2a2f; border-color: #3a4b53; color: #d4dfe3; }
 .night-mode .db-search-wrap input:focus { border-color: #8ab4b0; }
-.night-mode .db-search-wrap > i.fa-search { color: #6a8090; }
-.night-mode .db-search-clear { color: #6a8090; }
+.night-mode .db-search-wrap > i.fa-search { color: #a8b8bf; }
+.night-mode .db-search-clear { color: #a8b8bf; }
 .night-mode .db-search-clear:hover { color: #8ab4b0; }
 .night-mode .format-btn { background: #1e2a2f; border-color: #3a4b53; color: #9ab0b8; }
 .night-mode .format-btn.active { background: #2f4a48; border-color: #6e9c98; color: white; }
@@ -951,7 +951,7 @@ body {
 .night-mode .progress-card h3 { color: #d4dfe3; }
 .night-mode .progress-percent { color: #8ab4b0; }
 .night-mode .export-action-bar { border-color: #2f3e45; }
-.night-mode .export-action-bar .selection-info { color: #8aa4ac; }
+.night-mode .export-action-bar .selection-info { color: #a8b8bf; }
 .night-mode .export-action-bar .selection-info strong { color: #d4dfe3; }
 .night-mode .export-action-bar .selection-info .selection-action { color: #8ab4b0; }
 .night-mode .panel-header { border-color: #2f3e45; }
@@ -1068,7 +1068,7 @@ html.night-mode .glass-scrollbar .thumb {
 
 .status-badge.pending {
     background: rgba(138, 155, 168, 0.15);
-    color: #8a9ba8;
+    color: #5f6b73;
     border: 1px solid rgba(138, 155, 168, 0.3);
 }
 
@@ -1110,7 +1110,7 @@ html.night-mode .glass-scrollbar .thumb {
 
 .col-chip label {
     font-size: 0.75rem;
-    color: #6a7c8e;
+    color: #4d5960;
     cursor: pointer;
     white-space: nowrap;
     overflow: hidden;
@@ -1137,7 +1137,7 @@ html.night-mode .glass-scrollbar .thumb {
 
 .col-picker-hint {
     font-size: 0.72rem;
-    color: #8a9ba8;
+    color: #5f6b73;
 }
 
 .col-picker-actions {
@@ -1181,7 +1181,7 @@ html.night-mode .glass-scrollbar .thumb {
 }
 
 .night-mode .col-picker-hint {
-    color: #6a8a92;
+    color: #a8b8bf;
 }
 
 .night-mode .col-picker-actions button {
@@ -1190,4 +1190,17 @@ html.night-mode .glass-scrollbar .thumb {
 
 .night-mode .col-picker-actions button:hover {
     color: #b8d4d0;
+}
+
+/* Muted-text selectors with no night-mode value at all previously - see
+   the same fix in map.css/dashboard.css for why. */
+.night-mode .export-card .card-meta,
+.night-mode .export-card .card-arrow,
+.night-mode .data-table .row-actions button,
+.night-mode .data-table.card-rows .bridge-name .meta,
+.night-mode .date-range span,
+.night-mode .activity-content .activity-meta,
+.night-mode .toast-close,
+.night-mode .status-badge.pending {
+    color: #a8b8bf;
 }

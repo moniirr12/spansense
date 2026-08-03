@@ -17,10 +17,11 @@
   --teal:#5b8c8a; --teal-dark:#2c5a57; --green-dark:#2c4a48;
   /* text-mute/text-mute2 were #8a9ba8/#6a7c8e - only 2.86:1 and 4.30:1
      against the white/off-white card backgrounds this labels/hints/meta
-     text sits on, both under WCAG AA's 4.5:1 for normal text. Darkened to
-     comfortably clear it (~5.2:1 / ~6.9:1) without going as dark as the
-     main --text color, so the secondary/muted hierarchy still reads. */
-  --text:#2c3e44; --text-mute:#5c6f7d; --text-mute2:#4d5c6b;
+     text sits on, both under WCAG AA's 4.5:1 for normal text. This is the
+     "neutral, no hue bias" contrast palette agreed app-wide across spanSense
+     Core (~5.5:1 / ~7.2:1 light, ~6.8:1 / ~8.1:1 dark - see the .night-mode
+     rule further down) - same two values on every Core page now. */
+  --text:#2c3e44; --text-mute:#5f6b73; --text-mute2:#4d5960;
   --border:#e2e8f0; --border2:#e9edf2;
   --bg-soft:#fafbfc; --bg-mint:#eef4f2;
   --ok:#2d7a6e; --ok-bg:#e8f5f0; --ok-border:#b8dcc8;
@@ -66,10 +67,10 @@ body.night-mode::before{
 .navbar .menu a:hover, .navbar .menu a.active { color: #5b8c8a; }
 .navbar .menu a.active { background: rgba(91, 140, 138, 0.1); padding: 6px 14px; border-radius: 20px; }
 .navbar .right { display: flex; align-items: center; gap: 10px; }
-.night-mode-toggle { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #5c6f7d; background: #f0f2f5; transition: all 0.2s; }
+.night-mode-toggle { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #5f6b73; background: #f0f2f5; transition: all 0.2s; }
 .night-mode-toggle:hover { background: #e2e8f0; color: #5b8c8a; }
 .navbar .account-links { display: flex; align-items: center; gap: 10px; }
-.navbar .account-links a { text-decoration: none; color: #5c6f7d; font-size: 1.2rem; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: color 0.2s, transform 0.15s, background 0.2s; }
+.navbar .account-links a { text-decoration: none; color: #5f6b73; font-size: 1.2rem; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: color 0.2s, transform 0.15s, background 0.2s; }
 .navbar .account-links a:hover { background: #f0f4f8; color: #5b8c8a; transform: scale(1.1); }
 
 /* ---------- MAIN WRAPPER ---------- */
@@ -79,7 +80,7 @@ body.night-mode::before{
 /* ---------- PAGE HEADER ---------- */
 .page-header { margin-bottom: 28px; }
 .page-header h1 { font-size: 1.6rem; font-weight: 600; color: #2c5a57; border-left: 4px solid #8ab4b0; padding-left: 14px; margin-bottom: 8px; }
-.page-header p { color: #5c6f7d; font-size: 0.85rem; padding-left: 18px; max-width: 640px; }
+.page-header p { color: #5f6b73; font-size: 0.85rem; padding-left: 18px; max-width: 640px; }
 
 /* ===== SPANSENSE-STYLE THIN SCROLLBAR + GLASS SCROLLBAR ===== */
 html { scrollbar-width: none; -ms-overflow-style: none; }
@@ -300,7 +301,7 @@ body.modal-open{overflow:hidden;}
    3.2-3.4:1 against these dark backgrounds. Lighter dark-mode-only values
    (~6.4-8.8:1) fix every var(--text-mute)/var(--text-mute2) usage in one
    place rather than patching each element's night-mode rule individually. */
-.night-mode { background-color: #1a2428 !important; color: #d4dfe3; --text-mute:#9fb4bf; --text-mute2:#b0c4cd; }
+.night-mode { background-color: #1a2428 !important; color: #d4dfe3; --text-mute:#a8b8bf; --text-mute2:#bcc8ce; }
 .night-mode .navbar { background: rgba(35, 46, 52, 0.95) !important; border-color: #2f3e45; }
 .night-mode .navbar .logo { background: linear-gradient(135deg, #8ab4b0 0%, #a0c8c4 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 .night-mode .navbar .menu a { color: #9ab0b8; }
@@ -310,7 +311,7 @@ body.modal-open{overflow:hidden;}
 .night-mode .night-mode-toggle { background: #2f3e45; color: #9ab0b8; }
 .night-mode .night-mode-toggle:hover { background: #3a4b53; color: #8ab4b0; }
 .night-mode .page-header h1 { color: #8ab4b0; }
-.night-mode .page-header p { color: #8aa4ac; }
+.night-mode .page-header p { color: #a8b8bf; }
 
 .night-mode .card{background:#212f33; border-color:#2f3e45; box-shadow:0 6px 20px rgba(0,0,0,.3);}
 .night-mode .card-title{color:#d4dfe3;}
@@ -359,7 +360,7 @@ body.modal-open{overflow:hidden;}
 .night-mode .upload-zone{background:#1a2428; border-color:#3a4b53;}
 .night-mode .upload-zone:hover{border-color:#6e9c98; background:#1e3a38;}
 .night-mode .upload-zone .u-title{color:#d4dfe3;}
-.night-mode .upload-zone .u-sub{color:#8aa4ac;}
+.night-mode .upload-zone .u-sub{color:#a8b8bf;}
 
 .night-mode .saving-note{color:#7d939b;}
 .night-mode .saving-note.show-saved{color:#7ec9ba;}
@@ -372,7 +373,7 @@ body.modal-open{overflow:hidden;}
 .night-mode .template-name{color:#d4dfe3;}
 .night-mode .tsw-classic{background:#2a2620;}
 .night-mode .tsw-corporate{background:#1c2733;}
-.night-mode .branding-empty-state{color:#8aa4ac;}
+.night-mode .branding-empty-state{color:#a8b8bf;}
 .night-mode .branding-empty-state i{color:#8ab4b0;}
 .night-mode .branding-footer{border-color:#2f3e45;}
 

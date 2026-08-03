@@ -99,7 +99,7 @@ body {
 }
 .navbar .account-links a {
     text-decoration: none !important;
-    color: #8a9ba8 !important;
+    color: #5f6b73 !important;
     font-size: 1.2rem !important;
     width: 36px !important;
     height: 36px !important;
@@ -229,7 +229,7 @@ body {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.12em;
-    color: #8a9ba8;
+    color: #5f6b73;
     margin: 0;
 }
 
@@ -291,7 +291,7 @@ body {
     font-size: 1.2rem;
     width: 28px;
     text-align: center;
-    color: #8a9ba8;
+    color: #5f6b73;
     transition: color 0.2s;
 }
 
@@ -509,15 +509,15 @@ body {
 }
 
 .night-mode .sidebar-header h3 {
-    color: #8aa4ac;
+    color: #a8b8bf;
 }
 
 .night-mode .sidebar-footer .version {
-    color: #6a8a94;
+    color: #a8b8bf;
 }
 
 .night-mode .sidebar .menu-chevron {
-    color: #6a8a94;
+    color: #a8b8bf;
 }
 
 /* ============================================
@@ -665,7 +665,7 @@ body {
     cursor: pointer;
     font-weight: 500;
     font-size: 0.85rem;
-    color: #6a7c8e;
+    color: #4d5960;
     transition: all 0.2s;
     margin-bottom: 24px;
     font-family: inherit;
@@ -762,7 +762,7 @@ body.modal-open {
     background: none;
     border: none;
     cursor: pointer;
-    color: #8a9ba8;
+    color: #5f6b73;
     transition: color 0.2s, background 0.2s;
     width: 36px;
     height: 36px;
@@ -823,7 +823,7 @@ body.modal-open {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.14em;
-    color: #8a9ba8;
+    color: #5f6b73;
     margin-bottom: 4px;
 }
 
@@ -840,7 +840,7 @@ body.modal-open {
     height: 36px;
     border-radius: 50%;
     background: none;
-    color: #8a9ba8;
+    color: #5f6b73;
     transition: color 0.2s, background 0.2s;
     /* .card-header aligns to flex-start (so the avatar sits at the top of a
        two-line title instead of drifting to its vertical middle) - that
@@ -938,7 +938,7 @@ body.modal-open {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.09em;
-    color: #8a9ba8;
+    color: #5f6b73;
     white-space: nowrap;
 }
 #bridgeModal .stat-label sub { text-transform: none; }
@@ -965,7 +965,7 @@ body.modal-open {
     background: rgba(248, 250, 252, 0.5);
     border-radius: 12px;
     font-size: 0.78rem;
-    color: #6a7c8e;
+    color: #4d5960;
     /* Grid tracks otherwise grow to fit each item's min-content (a long
        "184m" widens its own column at the other columns' expense, even
        though they share nothing) - min-width:0 lets a track shrink to its
@@ -1023,7 +1023,7 @@ body.modal-open {
     border-radius: 40px;
     border: 1px solid #cbd5df;
     background: rgba(248, 250, 252, 0.6);
-    color: #6a7c8e;
+    color: #4d5960;
     font-size: 0.78rem;
     font-weight: 600;
     cursor: pointer;
@@ -1084,13 +1084,13 @@ body.modal-open {
 .night-mode #bridgeModal .stat-value { color: #d4dfe3; }
 .night-mode #bridgeModal .info-item {
     background: rgba(30, 42, 47, 0.4);
-    color: #8aa4ac;
+    color: #a8b8bf;
 }
 .night-mode #bridgeModal .info-item strong { color: #c5d3d9; }
 .night-mode #bridgeModal .btn-secondary {
     background: rgba(30, 42, 47, 0.6);
     border-color: #3e525e;
-    color: #8aa4ac;
+    color: #a8b8bf;
 }
 .night-mode #bridgeModal .btn-secondary:hover {
     background: #2f3e48;
@@ -1120,7 +1120,7 @@ body.modal-open {
     background: none;
     border: none;
     cursor: pointer;
-    color: #8a9ba8;
+    color: #5f6b73;
     transition: all 0.2s;
     width: 36px;
     height: 36px;
@@ -1178,7 +1178,7 @@ body.modal-open {
     padding: 4px 10px;
     background: #f8fafc;
     border-radius: 20px;
-    color: #6a7c8e;
+    color: #4d5960;
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -1236,7 +1236,7 @@ body.modal-open {
 .stat-label {
     display: block;
     font-size: 0.65rem;
-    color: #8a9ba8;
+    color: #5f6b73;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     margin-bottom: 4px;
@@ -1289,7 +1289,7 @@ body.modal-open {
 
 .secondary-action {
     background: transparent;
-    color: #6a7c8e;
+    color: #4d5960;
     border: 1px solid #e9edf2;
 }
 
@@ -1317,7 +1317,7 @@ body.modal-open {
 .night-mode .bridge-badge span {
     background: #1e2a2f;
     border-color: #3e525e;
-    color: #a8c4cc;
+    color: #a8b8bf;
 }
 
 .night-mode .stat-card {
@@ -1336,7 +1336,7 @@ body.modal-open {
 }
 
 .night-mode .secondary-action {
-    color: #a8c4cc;
+    color: #a8b8bf;
     border-color: #3e525e;
 }
 
@@ -1433,7 +1433,7 @@ body.modal-open {
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.12em;
-    color: #8a9ba8;
+    color: #5f6b73;
     font-weight: 600;
     margin: 0;
     padding: 0;
@@ -1463,7 +1463,7 @@ body.modal-open {
     background: none;
     border: none;
     cursor: pointer;
-    color: #8a9ba8;
+    color: #5f6b73;
     transition: all 0.2s;
     width: 36px;
     height: 36px;
@@ -1523,7 +1523,7 @@ body.modal-open {
     font-size: 0.6rem;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: #8a9ba8;
+    color: #5f6b73;
     font-weight: 600;
 }
 
@@ -1557,7 +1557,7 @@ body.modal-open {
 #documentsTable th {
     text-align: left;
     padding: 14px 28px;
-    color: #8a9ba8;
+    color: #5f6b73;
     font-size: 0.65rem;
     text-transform: uppercase;
     letter-spacing: 0.1em;
@@ -1603,7 +1603,7 @@ body.modal-open {
 
 .date-relative {
     font-size: 0.75rem;
-    color: #8a9ba8;
+    color: #5f6b73;
     font-weight: 500;
 }
 
@@ -1700,7 +1700,7 @@ body.modal-open {
 
 .btn-action.btn-report {
     background: #f1f3f5;
-    color: #6a7c8e;
+    color: #4d5960;
     border: 1px solid #e9edf2;
 }
 
@@ -1712,7 +1712,7 @@ body.modal-open {
 
 .btn-action.btn-bci {
     background: transparent;
-    color: #8a9ba8;
+    color: #5f6b73;
     padding: 8px 12px;
 }
 
@@ -1733,7 +1733,7 @@ body.modal-open {
 
 .footer-note {
     font-size: 0.8rem;
-    color: #8a9ba8;
+    color: #5f6b73;
 }
 
 .btn-close-modal {
@@ -1806,7 +1806,7 @@ body.modal-open {
     background: none;
     border: none;
     cursor: pointer;
-    color: #8a9ba8;
+    color: #5f6b73;
     transition: color 0.2s, background 0.2s;
     width: 36px;
     height: 36px;
@@ -1845,7 +1845,7 @@ body.modal-open {
     align-items: center;
     gap: 8px;
     font-size: 0.82rem;
-    color: #6a7c8e;
+    color: #4d5960;
     font-family: inherit;
     font-weight: 600;
     transition: all 0.2s;
@@ -1878,7 +1878,7 @@ body.modal-open {
 .breadcrumb {
     padding: 5px 12px;
     border-radius: 20px;
-    color: #6a7c8e;
+    color: #4d5960;
     cursor: pointer;
     transition: all 0.15s;
     font-weight: 600;
@@ -1920,7 +1920,7 @@ body.modal-open {
     cursor: pointer;
     transition: all 0.15s;
     font-size: 0.9rem;
-    color: #6a7c8e;
+    color: #4d5960;
     border-radius: 14px;
     /* Always reserve the 1px .selected adds below, so selecting a row only
        changes its border's color, not its width - a border appearing out of
@@ -1992,7 +1992,7 @@ body.modal-open {
 
 #cancelFolderBtn {
     background: white;
-    color: #6a7c8e;
+    color: #4d5960;
     border: 1px solid #e9edf2;
 }
 
@@ -2383,12 +2383,12 @@ body.modal-open {
     font-size: 0.85em;
     margin: 8px 0 4px;
     font-style: italic;
-    color: #6a7c8e;
+    color: #4d5960;
 }
 
 .photo-meta {
     font-size: 0.8em;
-    color: #8a9ba8;
+    color: #5f6b73;
 }
 
 
@@ -2450,7 +2450,7 @@ body.modal-open {
 
 /* Search results */
 .night-mode .search-results div {
-    color: #a8c4cc;
+    color: #a8b8bf;
     border-bottom-color: #3e525e;
 }
 
@@ -2466,7 +2466,7 @@ body.modal-open {
 
 .night-mode .back-button {
     background: #3e525e;
-    color: #a8c4cc;
+    color: #a8b8bf;
     border-color: #4a6070;
 }
 
@@ -2504,7 +2504,7 @@ body.modal-open {
 
 .night-mode .secondary-btn {
     border-color: #4a6070;
-    color: #a8c4cc;
+    color: #a8b8bf;
 }
 
 .night-mode .secondary-btn:hover {
@@ -2520,7 +2520,7 @@ body.modal-open {
 }
 
 .night-mode #bridgeInfo p {
-    color: #a8c4cc;
+    color: #a8b8bf;
 }
 
 .night-mode #bridgeInfo strong {
@@ -2534,7 +2534,7 @@ body.modal-open {
 }
 
 .night-mode #documentsTable td {
-    color: #a8c4cc;
+    color: #a8b8bf;
     border-bottom-color: #3e525e;
 }
 
@@ -2593,7 +2593,7 @@ body.modal-open {
 .night-mode .toolbar button {
     background: #3e525e;
     border-color: #4a6070;
-    color: #a8c4cc;
+    color: #a8b8bf;
 }
 
 .night-mode .toolbar button:hover {
@@ -2603,7 +2603,7 @@ body.modal-open {
 }
 
 .night-mode .breadcrumb {
-    color: #a8c4cc;
+    color: #a8b8bf;
 }
 
 .night-mode .breadcrumb:hover {
@@ -2620,7 +2620,7 @@ body.modal-open {
 }
 
 .night-mode .file-list li {
-    color: #a8c4cc;
+    color: #a8b8bf;
 }
 
 .night-mode .file-list li:hover {
@@ -2671,7 +2671,7 @@ body.modal-open {
 
 .night-mode #cancelFolderBtn {
     background: #3e525e;
-    color: #a8c4cc;
+    color: #a8b8bf;
     border-color: #4a6070;
 }
 
@@ -2842,7 +2842,7 @@ body.modal-open {
 }
 
 .night-mode .documents-modal-header .bridge-id-line {
-    color: #8aa4ac;
+    color: #a8b8bf;
 }
 
 .night-mode .documents-modal-header .bridge-id-line span {
@@ -2875,7 +2875,7 @@ body.modal-open {
 }
 
 .night-mode .quick-stat-label {
-    color: #8aa4ac;
+    color: #a8b8bf;
 }
 
 .night-mode .quick-stat-value {
@@ -2892,7 +2892,7 @@ body.modal-open {
 
 .night-mode #documentsTable th {
     background: #1e2a2f;
-    color: #8aa4ac;
+    color: #a8b8bf;
     border-bottom-color: #2f3e45;
 }
 
@@ -2918,7 +2918,7 @@ body.modal-open {
 }
 
 .night-mode .date-relative {
-    color: #8aa4ac;
+    color: #a8b8bf;
 }
 
 .night-mode .type-gi {
@@ -2962,7 +2962,7 @@ body.modal-open {
 }
 
 .night-mode .btn-action.btn-bci {
-    color: #8aa4ac;
+    color: #a8b8bf;
 }
 
 .night-mode .btn-action.btn-bci:hover {
@@ -2976,7 +2976,7 @@ body.modal-open {
 }
 
 .night-mode .footer-note {
-    color: #8aa4ac;
+    color: #a8b8bf;
 }
 
 .night-mode .btn-close-modal {
@@ -3024,7 +3024,7 @@ body.modal-open {
 
 #documentsTable .report-button {
     background: #f1f3f5;
-    color: #6a7c8e;
+    color: #4d5960;
     border: 1px solid #e9edf2;
 }
 
@@ -3036,7 +3036,7 @@ body.modal-open {
 
 #documentsTable .bci-button {
     background: transparent;
-    color: #8a9ba8;
+    color: #5f6b73;
     padding: 8px 12px;
 }
 
@@ -3069,7 +3069,7 @@ body.modal-open {
 }
 
 .night-mode #documentsTable .bci-button {
-    color: #8aa4ac;
+    color: #a8b8bf;
 }
 
 .night-mode #documentsTable .bci-button:hover {
@@ -3312,7 +3312,7 @@ body.modal-open {
     border-radius: 24px !important;
     padding: 6px 14px !important;
     font-size: 10px !important;
-    color: #8a9ba8 !important;
+    color: #5f6b73 !important;
     margin: 12px !important;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
 }
@@ -3362,7 +3362,7 @@ body.modal-open {
 }
 
 .night-mode .leaflet-control-layers-expanded label {
-    color: #a8c4cc !important;
+    color: #a8b8bf !important;
 }
 
 .night-mode .leaflet-control-layers-expanded label:hover {
@@ -3377,7 +3377,7 @@ body.modal-open {
 .night-mode .leaflet-control-attribution {
     background: rgba(30, 40, 45, 0.85) !important;
     backdrop-filter: blur(8px) !important;
-    color: #8aa4ac !important;
+    color: #a8b8bf !important;
 }
 
 .night-mode .leaflet-control-attribution a {
@@ -3413,7 +3413,7 @@ body.modal-open {
 .bridge-metadata .bridge-subtitle {
     margin-bottom: 6px;
     font-size: 0.8rem;
-    color: #8a9ba8;
+    color: #5f6b73;
 }
 
 .bridge-metadata .bridge-subtitle:last-child {
@@ -3483,7 +3483,7 @@ body.modal-open {
 #documentsModal .documents-modal-header .bridge-info h2 {
     font-size: 0.7rem;
     margin-bottom: 2px;
-    color: #8a9ba8;
+    color: #5f6b73;
     text-transform: uppercase;
     letter-spacing: 0.08em;
 }
@@ -3551,7 +3551,7 @@ body.modal-open {
     white-space: nowrap;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: #8a9ba8;
+    color: #5f6b73;
     font-weight: 600;
 }
 
@@ -3564,7 +3564,7 @@ body.modal-open {
 
 #documentsModal .quick-stat-sub {
     font-size: 0.7rem;
-    color: #8a9ba8;
+    color: #5f6b73;
 }
 
 /* ============================================
@@ -3591,7 +3591,7 @@ body.modal-open {
     font-size: 0.65rem;
     letter-spacing: 0.06em;
     font-weight: 600;
-    color: #8a9ba8;
+    color: #5f6b73;
     text-transform: uppercase;
     border-bottom: 1px solid #e9edf2;
     text-align: left;
@@ -3714,7 +3714,7 @@ body.modal-open {
 /* Report button — secondary gray */
 #documentsModal #documentsTable td:last-child .btn-report {
     background: #f1f3f5;
-    color: #6a7c8e;
+    color: #4d5960;
     border: 1px solid #e9edf2;
 }
 
@@ -3727,7 +3727,7 @@ body.modal-open {
 /* BCI button — subtle */
 #documentsModal #documentsTable td:last-child .btn-bci {
     background: transparent;
-    color: #8a9ba8;
+    color: #5f6b73;
     padding: 6px 10px;
 }
 
@@ -3752,7 +3752,7 @@ body.modal-open {
 
 #documentsModal .footer-note {
     font-size: 0.75rem;
-    color: #8a9ba8;
+    color: #5f6b73;
     line-height: 1.3;
 }
 
@@ -3768,7 +3768,7 @@ body.modal-open {
     border-radius: 20px;
     border: 1px solid #e9edf2;
     background: transparent;
-    color: #6a7c8e;
+    color: #4d5960;
     cursor: pointer;
     font-weight: 500;
     transition: all 0.2s;
@@ -3830,7 +3830,7 @@ body.modal-open {
 }
 
 .night-mode #documentsModal #documentsTable thead th {
-    color: #6a8090;
+    color: #a8b8bf;
     border-bottom-color: #2f3e45;
 }
 
@@ -3850,7 +3850,7 @@ body.modal-open {
 }
 
 .night-mode #documentsModal .quick-stat-label {
-    color: #6a8090;
+    color: #a8b8bf;
 }
 
 .night-mode #documentsModal .quick-stat-value {
@@ -3858,11 +3858,11 @@ body.modal-open {
 }
 
 .night-mode #documentsModal .quick-stat-sub {
-    color: #8aa4ac;
+    color: #a8b8bf;
 }
 
 .night-mode #documentsModal .footer-note {
-    color: #6a8090;
+    color: #a8b8bf;
 }
 
 .night-mode #documentsModal .btn-close-modal {
@@ -3898,7 +3898,7 @@ body.modal-open {
 }
 
 .night-mode #documentsModal #documentsTable td:last-child .btn-bci {
-    color: #8aa4ac;
+    color: #a8b8bf;
 }
 
 .night-mode #documentsModal #documentsTable td:last-child .btn-bci:hover {
@@ -3995,7 +3995,7 @@ body.modal-open {
 
 .ss-hdr-label {
   font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.14em; color: #8a9ba8;
+  letter-spacing: 0.14em; color: #5f6b73;
 }
 
 .ss-hdr-title {
@@ -4003,13 +4003,13 @@ body.modal-open {
   letter-spacing: -0.02em; line-height: 1.2;
 }
 
-.ss-hdr-sub { font-size: 0.8rem; color: #8a9ba8; font-weight: 500; }
+.ss-hdr-sub { font-size: 0.8rem; color: #5f6b73; font-weight: 500; }
 .ss-hdr-sub span { color: #5b8c8a; font-weight: 600; }
 
 .ss-close-btn {
   -webkit-appearance: none; appearance: none;
   width: 36px; height: 36px; border-radius: 50%; border: none;
-  background: none; color: #8a9ba8; font-size: 1.1rem; cursor: pointer;
+  background: none; color: #5f6b73; font-size: 1.1rem; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: color 0.2s, background 0.2s; flex-shrink: 0;
 }
@@ -4041,7 +4041,7 @@ body.modal-open {
 
 .ss-stat-lbl {
   font-size: 0.6rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.1em; color: #8a9ba8;
+  letter-spacing: 0.1em; color: #5f6b73;
 }
 .ss-stat-lbl sub { text-transform: none; }
 
@@ -4059,7 +4059,7 @@ body.modal-open {
 
 .ss-chip {
   padding: 6px 14px; border-radius: 20px; border: 1px solid #e9edf2;
-  background: white; color: #6a7c8e; font-size: 0.8rem; font-weight: 500;
+  background: white; color: #4d5960; font-size: 0.8rem; font-weight: 500;
   cursor: pointer; transition: all 0.2s; font-family: inherit;
   display: inline-flex; align-items: center; gap: 6px;
 }
@@ -4086,7 +4086,7 @@ body.modal-open {
 }
 .ss-search-wrap i {
   position: absolute; left: 10px; top: 50%;
-  transform: translateY(-50%); color: #8a9ba8; font-size: 0.75rem;
+  transform: translateY(-50%); color: #5f6b73; font-size: 0.75rem;
 }
 
 /* Card list */
@@ -4125,7 +4125,7 @@ body.modal-open {
 .ss-date-block .ss-year { font-size: 1.05rem; font-weight: 700; color: #1e2a33; line-height: 1; }
 .ss-date-block .ss-mday {
   font-size: 0.6rem; font-weight: 600; text-transform: uppercase;
-  letter-spacing: 0.06em; color: #8a9ba8;
+  letter-spacing: 0.06em; color: #5f6b73;
 }
 
 .ss-card-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
@@ -4139,7 +4139,7 @@ body.modal-open {
 .ss-badge-pi { background: #f0f4ff; color: #5b7c8a; border: 1px solid #c5d0db; }
 .ss-badge-si { background: #fff8e6; color: #b8953a; border: 1px solid #e8d8a8; }
 
-.ss-inspector { font-size: 0.78rem; font-weight: 500; color: #8a9ba8; }
+.ss-inspector { font-size: 0.78rem; font-weight: 500; color: #5f6b73; }
 
 /* Score pills */
 .ss-score-pills { display: flex; gap: 6px; flex-shrink: 0; }
@@ -4150,7 +4150,7 @@ body.modal-open {
 }
 .ss-score-lbl {
   font-size: 0.5rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.1em; color: #8a9ba8;
+  letter-spacing: 0.1em; color: #5f6b73;
 }
 .ss-score-val { font-size: 0.9rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .ss-sg { color: #5b8c8a; }
@@ -4167,7 +4167,7 @@ body.modal-open {
 .ss-card-acts { display: flex; gap: 4px; flex-shrink: 0; }
 .ss-act-btn {
   width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e9edf2;
-  background: white; color: #8a9ba8; font-size: 0.8rem; cursor: pointer;
+  background: white; color: #5f6b73; font-size: 0.8rem; cursor: pointer;
   display: flex; align-items: center; justify-content: center; transition: all 0.2s;
 }
 .ss-act-btn:hover {
@@ -4192,7 +4192,7 @@ body.modal-open {
   padding: 14px 28px; background: rgba(248, 250, 252, 0.5); border-top: 1px solid #e9edf2;
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
 }
-.ss-ftr-info { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #8a9ba8; }
+.ss-ftr-info { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #5f6b73; }
 .ss-ftr-info i { color: #8ab4b0; font-size: 0.85rem; }
 .ss-ftr-acts { display: flex; gap: 8px; }
 
@@ -4200,7 +4200,7 @@ body.modal-open {
   padding: 8px 18px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;
   cursor: pointer; transition: all 0.2s; font-family: inherit; border: none;
 }
-.ss-btn-sec { background: white; color: #6a7c8e; border: 1px solid #e9edf2; }
+.ss-btn-sec { background: white; color: #4d5960; border: 1px solid #e9edf2; }
 .ss-btn-sec:hover { background: #f8fafc; border-color: #8ab4b0; color: #5b8c8a; }
 .ss-btn-pri {
   background: linear-gradient(135deg, #5b8c8a 0%, #4a706e 100%);
@@ -4210,7 +4210,7 @@ body.modal-open {
 
 .ss-empty {
   display: flex; flex-direction: column; align-items: center;
-  justify-content: center; padding: 40px 20px; color: #8a9ba8; font-size: 0.9rem; gap: 8px;
+  justify-content: center; padding: 40px 20px; color: #5f6b73; font-size: 0.9rem; gap: 8px;
 }
 .ss-empty i { font-size: 2rem; opacity: 0.4; }
 
@@ -4223,17 +4223,17 @@ body.modal-open {
 .night-mode .ss-modal-hdr { background: linear-gradient(135deg, rgba(30,42,47,0.8) 0%, rgba(35,46,52,0.6) 100%); border-bottom-color: rgba(47, 62, 69, 0.6); }
 .night-mode .ss-close-btn { color: #9ab0b8; }
 .night-mode .ss-close-btn:hover { background: rgba(196, 112, 112, 0.15); color: #e8a0a0; }
-.night-mode .ss-hdr-label { color: #6a8090; }
+.night-mode .ss-hdr-label { color: #a8b8bf; }
 .night-mode .ss-hdr-title { color: #d4dfe3; }
-.night-mode .ss-hdr-sub { color: #8aa4ac; }
+.night-mode .ss-hdr-sub { color: #a8b8bf; }
 .night-mode .ss-hdr-sub span { color: #8ab4b0; }
 .night-mode .ss-stats-bar { background: rgba(30, 42, 47, 0.6); border-bottom-color: #2f3e45; }
 .night-mode .ss-stat-pill { background: #1e2a2f; border-color: #2f3e45; }
 .night-mode .ss-stat-icon { background: #2f3e48; border-color: #3e525e; color: #8ab4b0; }
-.night-mode .ss-stat-lbl { color: #6a8090; }
+.night-mode .ss-stat-lbl { color: #a8b8bf; }
 .night-mode .ss-stat-val { color: #d4dfe3; }
 .night-mode .ss-filters { background: rgba(30, 42, 47, 0.6); border-bottom-color: #2f3e45; }
-.night-mode .ss-chip { background: #1e2a2f; border-color: #2f3e45; color: #8aa4ac; }
+.night-mode .ss-chip { background: #1e2a2f; border-color: #2f3e45; color: #a8b8bf; }
 .night-mode .ss-chip:hover { background: #2f3e48; border-color: #3e525e; }
 .night-mode .ss-chip.active { background: linear-gradient(135deg, #3a6b62 0%, #2f5a52 100%); border-color: #3a6b62; }
 .night-mode .ss-search-wrap input { background: #1e2a2f; border-color: #2f3e45; color: #d4dfe3; }
@@ -4244,15 +4244,15 @@ body.modal-open {
 .night-mode .ss-card.ss-very-poor { background: linear-gradient(135deg, #2f2a25 0%, #3a2a25 100%); border-color: #4a3a30; }
 .night-mode .ss-date-block { background: #2f3e48; border-color: #3e525e; }
 .night-mode .ss-date-block .ss-year { color: #d4dfe3; }
-.night-mode .ss-date-block .ss-mday { color: #8aa4ac; }
-.night-mode .ss-inspector { color: #6a8090; }
+.night-mode .ss-date-block .ss-mday { color: #a8b8bf; }
+.night-mode .ss-inspector { color: #a8b8bf; }
 .night-mode .ss-score-pill { background: #2f3e48; border-color: #3e525e; }
-.night-mode .ss-score-lbl { color: #6a8090; }
-.night-mode .ss-act-btn { background: #2f3e48; border-color: #3e525e; color: #8aa4ac; }
+.night-mode .ss-score-lbl { color: #a8b8bf; }
+.night-mode .ss-act-btn { background: #2f3e48; border-color: #3e525e; color: #a8b8bf; }
 .night-mode .ss-act-btn:hover { background: #3a4b53; border-color: #4a6070; color: #c5d3d9; }
 .night-mode .ss-modal-ftr { background: rgba(30, 42, 47, 0.6); border-top-color: #2f3e45; }
-.night-mode .ss-ftr-info { color: #6a8090; }
-.night-mode .ss-btn-sec { background: #2f3e48; border-color: #3e525e; color: #8aa4ac; }
+.night-mode .ss-ftr-info { color: #a8b8bf; }
+.night-mode .ss-btn-sec { background: #2f3e48; border-color: #3e525e; color: #a8b8bf; }
 .night-mode .ss-badge-gi { background: #2f4a48; color: #8ab4b0; border-color: #3a6b62; }
 .night-mode .ss-badge-pi { background: #2a3a4a; color: #7aa0b0; border-color: #3a5a6a; }
 .night-mode .ss-badge-si { background: #2f2a1a; color: #c8a84a; border-color: #4a3a20; }
@@ -4319,7 +4319,7 @@ body.modal-open {
 }
 
 .night-mode .leg-label {
-    color: #a8c4cc;
+    color: #a8b8bf;
 }
 
 /* ============================================
@@ -4400,7 +4400,7 @@ body.modal-open {
 }
 .modal-message {
     font-size: 0.9rem;
-    color: #8a9ba8;
+    color: #5f6b73;
     line-height: 1.7;
     margin-bottom: 32px;
     white-space: pre-line;
@@ -4434,7 +4434,7 @@ body.modal-open {
 .modal-btn.secondary {
     background: transparent;
     border: 1px solid #e2e8f0;
-    color: #6a7c8e;
+    color: #4d5960;
 }
 .modal-btn.secondary:hover {
     background: #f1f5f4;
@@ -4460,7 +4460,24 @@ body.modal-open {
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 24px 48px rgba(0, 0, 0, 0.15);
 }
 .night-mode .modal-title { color: #d4dfe3; }
-.night-mode .modal-message { color: #8aa4ac; }
+.night-mode .modal-message { color: #a8b8bf; }
+.night-mode .modal-btn.secondary { color: #a8b8bf; }
+
+/* Muted-text selectors that had no night-mode value at all (so they
+   inherited the light-mode grey unchanged, illegible on a dark card). */
+.night-mode #bridgeModal .header-text h2,
+.night-mode #bridgeModal .stat-label,
+.night-mode .bridge-modal .documents-modal-header .close,
+.night-mode .stat-label,
+.night-mode .photo-caption,
+.night-mode .photo-meta,
+.night-mode .bridge-metadata .bridge-subtitle,
+.night-mode #documentsModal .documents-modal-header .bridge-info h2,
+.night-mode .ss-search-wrap i,
+.night-mode .ss-empty {
+    color: #a8b8bf;
+}
+
 .night-mode .modal-icon {
     background: linear-gradient(135deg, #1e3a36 0%, #162e2a 100%);
     color: #8ab4b0;

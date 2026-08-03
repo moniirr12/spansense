@@ -79,7 +79,7 @@ body {
 .navbar .account-links { display: flex; align-items: center; gap: 10px; }
 .navbar .account-links a {
     text-decoration: none;
-    color: #8a9ba8;
+    color: #5f6b73;
     font-size: 1.2rem;
     width: 36px; height: 36px;
     border-radius: 50%;
@@ -164,11 +164,12 @@ body {
 
 .bridge-id {
     font-size: 0.7rem;
-    color: #8a9ba8;
+    color: #5f6b73;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     margin-bottom: 16px;
 }
+.night-mode .bridge-id { color: #a8b8bf; }
 
 .mock-image {
     width: 100%;
@@ -216,7 +217,7 @@ body {
 }
 
 .sidebar-stat-label {
-    color: #8a9ba8;
+    color: #5f6b73;
     display: flex;
     gap: 8px;
     align-items: center;
@@ -327,7 +328,7 @@ body {
     font-size: 0.7rem;
     font-weight: 700;
     letter-spacing: 0.08em;
-    color: #8a9ba8;
+    color: #5f6b73;
     margin-bottom: 12px;
 }
 
@@ -581,7 +582,7 @@ body {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: #8a9ba8;
+    color: #5f6b73;
     margin-bottom: 8px;
     flex-shrink: 0;
 }
@@ -625,7 +626,7 @@ body {
 }
 
 .info-panel-desc.empty {
-    color: #8a9ba8;
+    color: #5f6b73;
     font-style: italic;
 }
 
@@ -645,7 +646,7 @@ body {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #8a9ba8;
+    color: #5f6b73;
     margin-bottom: 2px;
 }
 
@@ -722,7 +723,7 @@ body {
 .info-edit-cancel {
     background: none;
     border: 1px solid #e2e8f0;
-    color: #6a7c8e;
+    color: #4d5960;
 }
 
 .info-edit-cancel:hover {
@@ -826,7 +827,7 @@ body {
     border: 1px solid #e2e8f0;
     border-radius: 30px;
     background: #fafbfc;
-    color: #6a7c8e;
+    color: #4d5960;
     cursor: pointer;
     font-weight: 500;
     font-size: 0.8rem;
@@ -1000,7 +1001,7 @@ textarea,
 }
 
 .night-mode .sidebar-stat-label {
-    color: #8aa4ac;
+    color: #a8b8bf;
 }
 
 .night-mode .sidebar-status {
@@ -1035,7 +1036,7 @@ textarea,
 }
 
 .night-mode .info-label {
-    color: #8aa4ac;
+    color: #a8b8bf;
 }
 
 .night-mode .date-value,
@@ -1105,7 +1106,7 @@ textarea,
 }
 
 .night-mode .info-panel-title {
-    color: #8aa4ac;
+    color: #a8b8bf;
 }
 
 .night-mode .info-panel-title svg {
@@ -1477,7 +1478,7 @@ html.night-mode .glass-scrollbar .thumb {
 
 .modal-message {
     font-size: 0.9rem;
-    color: #8a9ba8;
+    color: #5f6b73;
     line-height: 1.7;
     margin-bottom: 32px;
     white-space: pre-line;
@@ -1518,7 +1519,7 @@ html.night-mode .glass-scrollbar .thumb {
 .modal-btn.secondary {
     background: transparent;
     border: 1px solid #e2e8f0;
-    color: #6a7c8e;
+    color: #4d5960;
 }
 
 .modal-btn.secondary:hover {
@@ -1561,7 +1562,7 @@ html.night-mode .glass-scrollbar .thumb {
 }
 
 .night-mode .modal-message {
-    color: #8aa4ac;
+    color: #a8b8bf;
 }
 
 .night-mode .modal-icon {
@@ -1763,7 +1764,7 @@ html.night-mode .glass-scrollbar .thumb {
 }
 
 .night-mode .flatpickr-calendar .flatpickr-weekday {
-    color: #8aa4ac !important;
+    color: #a8b8bf !important;
     background: #232e34 !important;
 }
 
@@ -1828,7 +1829,7 @@ html.night-mode .glass-scrollbar .thumb {
 /* Previous/Next month days */
 .night-mode .flatpickr-calendar .flatpickr-day.prevMonthDay,
 .night-mode .flatpickr-calendar .flatpickr-day.nextMonthDay {
-    color: #6a8090 !important;
+    color: #a8b8bf !important;
     opacity: 0.5 !important;
 }
 
@@ -1881,7 +1882,7 @@ html.night-mode .glass-scrollbar .thumb {
 
 .flatpickr-calendar .flatpickr-prev-month,
 .flatpickr-calendar .flatpickr-next-month {
-    fill: #8a9ba8 !important;
+    fill: #5f6b73 !important;
 }
 
 .flatpickr-calendar .flatpickr-prev-month:hover,
