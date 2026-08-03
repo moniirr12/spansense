@@ -90,13 +90,23 @@ var TWIN_MATERIAL_CODE_LABEL = {
     K: 'Brick', L: 'Stone', M: 'FRP/GRP/Composite', N: 'Timber', P: 'No secondary element / no material', Q: 'Other'
 };
 // bridge.material is "PRIMARY / SECONDARY" (or just one code) from the server -
-// re-split it here rather than changing that API shape, and wrap each code in
-// a native title tooltip so its meaning shows on hover.
+// re-split it here rather than changing that API shape. Shows the resolved
+// material name rather than the bare GI code letter, with which one it is
+// (primary/secondary material) as a hover tooltip rather than the raw code.
+// Primary and secondary are often recorded as the same code - collapsed to
+// one label instead of "Reinforced concrete / Reinforced concrete", which
+// was both redundant and among the longest strings this field can show.
 function twinMaterialHtml(materialStr) {
     if (!materialStr) return '—';
-    return materialStr.split(' / ').map(function(code) {
-        var label = TWIN_MATERIAL_CODE_LABEL[code.trim().toUpperCase()];
-        return label ? '<span title="' + label + '">' + escapeHtmlTwin(code) + '</span>' : escapeHtmlTwin(code);
+    var codes = materialStr.split(' / ').map(function(c) { return c.trim().toUpperCase(); });
+    var positionLabels = ['Primary material', 'Secondary material'];
+    if (codes.length === 2 && codes[0] === codes[1]) {
+        var soleLabel = TWIN_MATERIAL_CODE_LABEL[codes[0]];
+        return soleLabel ? '<span title="Primary & secondary material">' + escapeHtmlTwin(soleLabel) + '</span>' : escapeHtmlTwin(codes[0]);
+    }
+    return codes.map(function(code, i) {
+        var label = TWIN_MATERIAL_CODE_LABEL[code];
+        return label ? '<span title="' + (positionLabels[i] || 'Material') + '">' + escapeHtmlTwin(label) + '</span>' : escapeHtmlTwin(code);
     }).join(' / ');
 }
 

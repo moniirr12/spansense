@@ -96,7 +96,7 @@
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             cursor: pointer;
-            color: #8a9ba8;
+            color: #5f6b73;
             background: #f0f2f5;
             transition: all 0.2s;
         }
@@ -104,7 +104,7 @@
         .navbar .account-links { display: flex; align-items: center; gap: 10px; }
         .navbar .account-links a {
             text-decoration: none;
-            color: #8a9ba8;
+            color: #5f6b73;
             font-size: 1.2rem;
             width: 36px; height: 36px;
             border-radius: 50%;
@@ -159,10 +159,11 @@
             margin-bottom: 8px;
         }
         .page-header p {
-            color: #8a9ba8;
+            color: #5f6b73;
             font-size: 0.9rem;
             padding-left: 18px;
         }
+        .night-mode .page-header p { color: #a8b8bf; }
 
         /* ---------- CONTACT PAGE LAYOUT ---------- */
         .contact-grid {
@@ -219,7 +220,7 @@
         .contact-method .details { flex: 1; }
         .contact-method .details .label {
             font-size: 0.75rem;
-            color: #8a9ba8;
+            color: #5f6b73;
             text-transform: uppercase;
             letter-spacing: 0.05em;
             margin-bottom: 4px;
@@ -231,7 +232,7 @@
         }
         .contact-method .details .sub {
             font-size: 0.8rem;
-            color: #8a9ba8;
+            color: #5f6b73;
             margin-top: 2px;
         }
 
@@ -247,7 +248,7 @@
             display: flex; align-items: center; justify-content: center;
             background: #fafbfc;
             border: 1px solid #e2e8f0;
-            color: #6a7c8e;
+            color: #4d5960;
             text-decoration: none;
             transition: all 0.2s;
             font-size: 1rem;
@@ -424,11 +425,12 @@
             transition: color 0.2s;
         }
         .faq-question:hover { color: #5b8c8a; }
-        .faq-question i { font-size: 0.75rem; color: #8a9ba8; transition: transform 0.2s; }
+        .faq-question i { font-size: 0.75rem; color: #5f6b73; transition: transform 0.2s; }
+        .night-mode .faq-question i { color: #a8b8bf; }
         .faq-item.open .faq-question i { transform: rotate(180deg); }
         .faq-answer {
             font-size: 0.85rem;
-            color: #8a9ba8;
+            color: #5f6b73;
             line-height: 1.6;
             margin-top: 8px;
             max-height: 0;
@@ -473,7 +475,8 @@
         .toast-icon.success { background: #e8f5f0; color: #2d7a6e; }
         .toast-content { flex: 1; }
         .toast-content .toast-title { font-size: 0.9rem; font-weight: 600; color: #2c4a48; margin-bottom: 2px; }
-        .toast-content .toast-msg { font-size: 0.8rem; color: #8a9ba8; }
+        .toast-content .toast-msg { font-size: 0.8rem; color: #5f6b73; }
+        .night-mode .toast-content .toast-msg { color: #a8b8bf; }
 
         /* ---------- RESPONSIVE ---------- */
         @media (max-width: 1100px) {
@@ -534,7 +537,7 @@
         .night-mode .contact-method:hover { background: #2a3a40; border-color: #3a4b53; }
         .night-mode .contact-method .details .value { color: #c5d3d9; }
         .night-mode .contact-method .details .sub,
-        .night-mode .contact-method .details .label { color: #8aa4ac; }
+        .night-mode .contact-method .details .label { color: #a8b8bf; }
         .night-mode .social-links a { background: #1e2a2f; border-color: #3a4b53; color: #9ab0b8; }
         .night-mode .social-links a:hover { background: #5b8c8a; border-color: #5b8c8a; color: white; }
         .night-mode .form-group input,
@@ -559,7 +562,7 @@
         .night-mode .faq-item { border-color: #2a3a40; }
         .night-mode .faq-question { color: #d4dfe3; }
         .night-mode .faq-question:hover { color: #8ab4b0; }
-        .night-mode .faq-answer { color: #8aa4ac; }
+        .night-mode .faq-answer { color: #a8b8bf; }
 
         /* ========== HIDE NATIVE SCROLLBAR ========== */
         html { scrollbar-width: none; -ms-overflow-style: none; }

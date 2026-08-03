@@ -26,8 +26,14 @@ const { extractElementsWithGemini, extractStructureInfoWithGemini, draftConclusi
 const router = express.Router();
 const session = require('express-session');
 const pgSession = require('connect-pg-simple')(session);
+const rateLimit = require('express-rate-limit');
 
 const app = express();
+// Render terminates TLS at its own proxy and forwards plain HTTP internally -
+// without this, Express sees every request as non-secure (req.secure is
+// always false), which would make the session cookie's secure flag below
+// never actually get set on the response.
+app.set('trust proxy', 1);
 
 // PostgreSQL connection - created before the session middleware below since
 // that needs a pool to persist sessions against. rejectUnauthorized was
@@ -85,7 +91,10 @@ app.use(session({
     cookie: {
         maxAge: 24 * 60 * 60 * 1000,
         httpOnly: true,
-        secure: false,
+        // Was hardcoded false, so the session ID was sendable over plain
+        // HTTP even in production. localhost/127.0.0.1 are treated as secure
+        // contexts by browsers regardless, so this doesn't affect local dev.
+        secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax'
     }
 }));
@@ -183,7 +192,7 @@ async function initDatabase() {
         // Insert default admin user if table is empty
         const userCount = await dbGet("SELECT COUNT(*) as count FROM users");
         if (parseInt(userCount.count) === 0) {
-            const defaultHash = await bcrypt.hash('admin123', 10);
+            const defaultHash = await bcrypt.hash('admin123', 12);
             await pool.query(
                 `INSERT INTO users (username, password, full_name, role)
                  VALUES ($1, $2, $3, $4)`,
@@ -198,7 +207,7 @@ async function initDatabase() {
         const existingUsers = await dbAll('SELECT id, password FROM users');
         for (const u of existingUsers) {
             if (!/^\$2[aby]\$/.test(u.password)) {
-                const hashed = await bcrypt.hash(u.password, 10);
+                const hashed = await bcrypt.hash(u.password, 12);
                 await pool.query('UPDATE users SET password = $1 WHERE id = $2', [hashed, u.id]);
                 console.log('Migrated plaintext password for user id', u.id);
             }
@@ -3099,8 +3108,21 @@ function requireAdmin(req, res, next) {
     }
 }
 
+// Unlike the 2FA code-verify step just below (which already caps attempts
+// per pending login at 5), the password step itself had no limit at all -
+// unbounded brute-force guessing against any account. Keyed by IP only
+// (not IP+username) to avoid the extra complexity/edge cases of a compound
+// key; 10 attempts/15min is generous for a real user, tight for a guesser.
+const loginRateLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, message: 'Too many login attempts. Please try again in a few minutes.' }
+});
+
 // LOGIN ENDPOINT
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', loginRateLimiter, async (req, res) => {
     try {
         const { username, password } = req.body;
 
@@ -3399,7 +3421,7 @@ app.post('/api/me/password', requireAuth, async (req, res) => {
             return res.status(400).json({ error: 'New password must be different from your current password' });
         }
 
-        const newHash = await bcrypt.hash(newPassword, 10);
+        const newHash = await bcrypt.hash(newPassword, 12);
         await dbRun(
             'UPDATE users SET password = $1, password_changed_at = CURRENT_TIMESTAMP WHERE id = $2',
             [newHash, req.session.userId]
