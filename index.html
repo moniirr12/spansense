@@ -1338,7 +1338,7 @@ body.night-mode .glass-scrollbar .thumb {
     <div class="right">
         <div class="night-mode-toggle" id="nightModeToggle"><i class="fas fa-moon"></i></div>
         <div class="account-links">
-            <a href="#authCard" title="Engineer Access" onclick="scrollToAuth(); return false;"><i class="fas fa-user-circle"></i></a>
+            <a href="#authCard" title="Portal Access" onclick="scrollToAuth(); return false;"><i class="fas fa-user-circle"></i></a>
             <a href="contacts/contacts.html" title="Contact Us"><i class="fas fa-envelope"></i></a>
         </div>
     </div>
@@ -1390,13 +1390,13 @@ body.night-mode .glass-scrollbar .thumb {
     <!-- AUTH CARD -->
     <div class="auth-card reveal" id="authCard">
         <div class="auth-header">
-            <h2>Engineer Access</h2>
-            <p>Sign in to your inspection workspace</p>
+            <h2>Portal Access</h2>
+            <p>Sign in to your asset management workspace</p>
         </div>
         <form id="loginForm" onsubmit="return false;">
             <div id="loginStep1">
                 <div class="input-group">
-                    <label>Engineer ID</label>
+                    <label>User ID</label>
                     <input type="text" id="engineerId" placeholder="e.g. john.doe@agency.gov" autocomplete="username">
                     <div class="input-hint">
                         <span class="input-hint-icon">i</span>
@@ -1750,7 +1750,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const password = document.getElementById('secureKey').value;
             
             if (!username || !password) {
-                showAlertModal('Please enter both Engineer ID and Secure Key', 'warning', 'Missing Details');
+                showAlertModal('Please enter both User ID and Secure Key', 'warning', 'Missing Details');
                 return false;
             }
             

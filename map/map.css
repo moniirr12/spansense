@@ -867,7 +867,11 @@ body.modal-open {
     height: auto;
     aspect-ratio: 4 / 3;
     object-fit: cover;
-    object-position: center 75%;
+    /* Many of the seed/placeholder photos are wide, sky-heavy shots (skylines,
+       landscape stock photos) with the actual structure sitting low in the
+       frame - anchoring near the bottom keeps that visible instead of mostly
+       cropping to blank sky. */
+    object-position: center 90%;
     display: block;
     transition: transform 0.4s ease;
 }
@@ -1186,51 +1190,6 @@ body.modal-open {
     color: #8ab4b0;
 }
 
-/* Photo Wrapper */
-.photo-wrapper {
-    position: relative;
-    margin: 20px 24px;
-    border-radius: 20px;
-    overflow: hidden;
-    background: #f8fafc;
-    border: 1px solid #e9edf2;
-}
-
-.bridge-img {
-    width: 100%;
-    height: 200px;
-    object-fit: cover;
-    object-position: center 75%;
-    display: block;
-    transition: transform 0.3s ease;
-}
-
-.photo-wrapper:hover .bridge-img {
-    transform: scale(1.02);
-}
-
-.photo-overlay {
-    position: absolute;
-    bottom: 12px;
-    right: 12px;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 0.8rem;
-    opacity: 0;
-    transition: opacity 0.2s;
-}
-
-.photo-wrapper:hover .photo-overlay {
-    opacity: 1;
-}
-
 /* Bridge Stats Cards */
 .bridge-stats {
     display: flex;
@@ -1384,11 +1343,6 @@ body.modal-open {
 .night-mode .secondary-action:hover {
     background: #2f4a48;
     color: #8ab4b0;
-}
-
-.night-mode .photo-wrapper {
-    background: #1e2a2f;
-    border-color: #3e525e;
 }
 
 /* Responsive */

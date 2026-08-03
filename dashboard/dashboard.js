@@ -832,7 +832,7 @@ function applyPendingReviewFilters() {
 
     const filtered = pendingReviewData.filter(item => {
         if (type !== 'all' && item.inspection_type !== type) return false;
-        if (criticalOnly && !(item.overall_bcicrit !== null && item.overall_bcicrit < 50)) return false;
+        if (criticalOnly && !(item.overall_bciave !== null && item.overall_bciave < 55)) return false;
         if (fieldOnly && item.source !== 'field') return false;
         if (search) {
             const haystack = ((item.structure_name || '') + ' ' + (item.inspector_name || '') + ' ' + item.structure_id).toLowerCase();

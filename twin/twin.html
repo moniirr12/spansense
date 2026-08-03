@@ -538,9 +538,9 @@ body {
     border-bottom: 1px solid #eef2f6;
 }
 .fact-row:last-child { border-bottom: none; padding-bottom: 0; }
-.fact-row .fk { color: #8a9ba8; display: flex; align-items: center; gap: 8px; }
+.fact-row .fk { color: #8a9ba8; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .fact-row .fk i { color: #8ab4b0; width: 14px; text-align: center; }
-.fact-row .fv { color: #2c4a48; font-weight: 600; }
+.fact-row .fv { color: #2c4a48; font-weight: 600; text-align: right; min-width: 0; }
 
 /* inspection status badges */
 .status-stack { display: flex; flex-direction: column; gap: 10px; }
@@ -1165,10 +1165,10 @@ body.night-mode .glass-scrollbar .thumb {
             <div class="info-card">
                 <div class="ic-eyebrow">Structure info</div>
                 <div class="fact-list">
-                    <div class="fact-row"><div class="fk"><i class="fa-solid fa-ruler-horizontal"></i>Span length</div><div class="fv" id="factSpan">—</div></div>
+                    <div class="fact-row"><div class="fk"><i class="fa-solid fa-ruler-horizontal"></i>Total length</div><div class="fv" id="factSpan">—</div></div>
                     <div class="fact-row"><div class="fk"><i class="fa-solid fa-layer-group"></i>Spans</div><div class="fv" id="factSpans">—</div></div>
-                    <div class="fact-row"><div class="fk"><i class="fa-solid fa-trowel"></i>Material</div><div class="fv" id="factMaterial">—</div></div>
                     <div class="fact-row"><div class="fk"><i class="fa-solid fa-calendar"></i>Year built</div><div class="fv" id="factYear">—</div></div>
+                    <div class="fact-row"><div class="fk"><i class="fa-solid fa-trowel"></i>Material</div><div class="fv" id="factMaterial">—</div></div>
                 </div>
             </div>
 
