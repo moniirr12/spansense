@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>spanSense · Accessibility Statement</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    color: #2c3e44;
+    font-size: 13px;
+    line-height: 1.55;
+    background: #dfe6e6;
+  }
+  @page { size: A4; margin: 0; }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    padding: 20mm 22mm;
+    background: white;
+    position: relative;
+    page-break-after: always;
+    break-after: page;
+  }
+  .page:last-child { page-break-after: auto; break-after: auto; }
+
+  /* ===== COVER ===== */
+  .cover {
+    background: linear-gradient(150deg, #101f1c 0%, #1e3432 45%, #2c4a48 75%, #3d6462 100%);
+    color: white;
+    display: flex;
+    flex-direction: column;
+  }
+  .cover .brand { font-size: 12px; font-weight: 700; letter-spacing: 0.14em; color: #8ab4b0; margin-bottom: 26px; }
+  .cover h1 { font-size: 38px; font-weight: 800; line-height: 1.18; letter-spacing: -0.02em; margin-bottom: 20px; max-width: 480px; }
+  .cover .desc { font-size: 14.5px; color: rgba(255,255,255,0.68); line-height: 1.7; max-width: 430px; margin-bottom: 40px; }
+  .cover .meta { margin-top: auto; padding-top: 60px; display: flex; gap: 28px; font-size: 11.5px; color: rgba(255,255,255,0.5); }
+  .cover .meta strong { color: rgba(255,255,255,0.8); }
+
+  /* ===== SECTION HEADER ===== */
+  .sec-head { margin-bottom: 16px; }
+  .sec-head h2 { font-size: 17px; font-weight: 800; color: #1e3432; border-left: 4px solid #5b8c8a; padding-left: 12px; line-height: 1.3; }
+
+  .footer-bar { position: absolute; left: 22mm; right: 22mm; bottom: 12mm; display: flex; justify-content: space-between; font-size: 10px; color: #a0aeb5; border-top: 1px solid #eef2f6; padding-top: 8px; }
+
+  h3.subhead { font-size: 13px; font-weight: 700; color: #1e3432; margin: 14px 0 6px; }
+  p.clause { position: relative; padding-left: 34px; color: #3d4a4f; font-size: 12px; line-height: 1.55; margin-bottom: 7px; }
+  p.clause .n { position: absolute; left: 0; top: 0; color: #5b8c8a; font-weight: 700; }
+  p.clause strong { color: #1e3432; }
+  ul.sub-list { list-style: none; margin: 2px 0 8px 38px; }
+  ul.sub-list li { font-size: 12px; color: #3d4a4f; padding: 3px 0 3px 14px; position: relative; line-height: 1.5; }
+  ul.sub-list li::before { content: '–'; position: absolute; left: 0; color: #8a9ba8; }
+
+  table.data-tbl { width: 100%; border-collapse: collapse; margin: 8px 0 10px; }
+  table.data-tbl th { text-align: left; font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #6b8685; background: #f2f6f5; padding: 6px 10px; }
+  table.data-tbl td { padding: 7px 10px; font-size: 11.5px; color: #3d4a4f; border-bottom: 1px solid #eef2f6; vertical-align: top; }
+  table.data-tbl td strong { color: #1e3432; }
+  table.data-tbl tr:last-child td { border-bottom: none; }
+
+  .callout { background: #fbf3e7; border-left: 4px solid #c2914a; border-radius: 0 10px 10px 0; padding: 10px 16px; font-size: 11.5px; color: #5c4526; line-height: 1.5; margin: 10px 0; }
+  .callout strong { color: #8a5d1f; }
+  .callout.good { background: #eef4f2; border-left-color: #5b8c8a; color: #2c4a48; }
+  .callout.good strong { color: #2c4a48; }
+
+  .placeholder { background: #fdf2f2; color: #a8524f; padding: 1px 6px; border-radius: 4px; font-weight: 700; font-size: 11.5px; }
+
+  @media print {
+    body { background: white; }
+    .page { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= COVER ================= -->
+<div class="page cover">
+  <div class="brand">SPANSENSE</div>
+  <h1>Accessibility Statement</h1>
+  <p class="desc">This statement explains how accessible the spanSense platform and the spanSense Field companion app are, any known limitations, and how to get in touch if you have difficulty using them.</p>
+  <div class="meta">
+    <span><strong>Document</strong><br>Accessibility Statement</span>
+    <span><strong>Last updated</strong><br>3 August 2026</span>
+    <span><strong>Target standard</strong><br>WCAG 2.1 AA</span>
+  </div>
+</div>
+
+<!-- ================= INTRO / SCOPE ================= -->
+<div class="page">
+  <div class="sec-head"><h2>1. Our Commitment</h2></div>
+  <p class="clause"><span class="n">1.1</span>spanSense Ltd is committed to making the spanSense web application and the spanSense Field companion app (together, the "<strong>Service</strong>") accessible to as many people as possible, including people who use assistive technology such as screen readers, screen magnification, speech recognition, or keyboard-only navigation.</p>
+  <p class="clause"><span class="n">1.2</span>We aim to meet the Web Content Accessibility Guidelines (WCAG) 2.1 at Level AA. This statement sets out where we currently meet that aim, where we do not yet, and what we are doing about it.</p>
+
+  <div class="sec-head" style="margin-top:22px;"><h2>2. Scope</h2></div>
+  <p class="clause"><span class="n">2.1</span>This statement covers the spanSense web application (used by inspectors, engineers and asset managers to record, review and report on structure inspections) and the spanSense Field companion app (used on site during inspections).</p>
+  <p class="clause"><span class="n">2.2</span>Some content is supplied by Customers themselves — for example, uploaded photographs, free-text inspection notes, and attached documents — and is outside our direct control. We nonetheless design the Service so that this content can be accessed and reviewed using assistive technology.</p>
+
+  <div class="footer-bar"><span>spanSense · Accessibility Statement</span><span>Page 2</span></div>
+</div>
+
+<!-- ================= HOW ACCESSIBLE / KNOWN ISSUES ================= -->
+<div class="page">
+  <div class="sec-head"><h2>3. How Accessible This Service Is</h2></div>
+  <div class="callout good"><strong>What already works well:</strong> the Service is built with semantic HTML and is navigable by keyboard for its core workflows; text and interface colours are checked for contrast in both light and night (dark) modes; the interface is responsive and usable at different zoom levels and screen sizes; and condition/severity information is never conveyed by colour alone — it is always paired with a text label or code (for example, a BCI score or condition grade).</div>
+
+  <div class="sec-head" style="margin-top:22px;"><h2>4. Known Limitations</h2></div>
+  <p class="clause"><span class="n">4.1</span>We have not yet completed a formal, independent WCAG audit of the Service. Based on our own internal review, the known limitations at the time of writing are:</p>
+  <table class="data-tbl">
+    <tr><th>Area</th><th>Limitation</th></tr>
+    <tr><td><strong>Inspection photo thumbnails</strong></td><td>Photos attached to an inspection are displayed as thumbnails without descriptive alternative text, so a screen reader will not describe their content beyond identifying them as images.</td></tr>
+    <tr><td><strong>Custom interactive controls</strong></td><td>Some custom dropdowns, modals and toggles do not yet have complete ARIA labelling, so their state (open/closed, selected value) may not always be announced correctly by a screen reader.</td></tr>
+    <tr><td><strong>Complex data views</strong></td><td>Some data-dense views (for example, structure and inspection tables) have not been separately tested with screen readers for logical reading order.</td></tr>
+  </table>
+  <p class="clause"><span class="n">4.2</span>These are genuine, currently-known gaps rather than an exhaustive list. We expect to identify further issues as testing continues.</p>
+
+  <div class="footer-bar"><span>spanSense · Accessibility Statement</span><span>Page 3</span></div>
+</div>
+
+<!-- ================= WHAT WE'RE DOING / TECHNICAL INFO ================= -->
+<div class="page">
+  <div class="sec-head"><h2>5. What We're Doing to Improve Accessibility</h2></div>
+  <p class="clause"><span class="n">5.1</span>We are addressing the limitations listed in Section 4 as part of our ongoing development, prioritising fixes that affect core inspection and reporting workflows.</p>
+  <p class="clause"><span class="n">5.2</span>We intend to carry out a fuller accessibility audit against WCAG 2.1 AA and will update this statement with the results once complete.</p>
+
+  <div class="sec-head" style="margin-top:22px;"><h2>6. Technical Information</h2></div>
+  <p class="clause"><span class="n">6.1</span>spanSense is partially conformant with WCAG 2.1 AA. "Partially conformant" means some parts of the Service do not yet fully conform to the standard, as described in Section 4.</p>
+  <p class="clause"><span class="n">6.2</span>The Service is tested using current versions of major desktop and mobile browsers (Chrome, Edge, Safari, Firefox). Assistive technology compatibility has been checked informally rather than via a formal audit.</p>
+
+  <div class="footer-bar"><span>spanSense · Accessibility Statement</span><span>Page 4</span></div>
+</div>
+
+<!-- ================= FEEDBACK / ENFORCEMENT / PREPARATION ================= -->
+<div class="page">
+  <div class="sec-head"><h2>7. Feedback and Contact Information</h2></div>
+  <p class="clause"><span class="n">7.1</span>If you find any part of the Service that you cannot access, or if you need information in a different format, contact us at <strong>support@spansense.io</strong>. Please describe what you were trying to do and which page or screen you were using, so we can investigate.</p>
+  <p class="clause"><span class="n">7.2</span>We aim to acknowledge accessibility feedback within 5 working days.</p>
+
+  <div class="sec-head" style="margin-top:22px;"><h2>8. Enforcement</h2></div>
+  <p class="clause"><span class="n">8.1</span>Where the Service is used by a public sector body in the course of its own public-facing duties, that organisation remains responsible for its own compliance with the Public Sector Bodies (Websites and Mobile Applications) (No. 2) Accessibility Regulations 2018. This statement is provided to support that organisation's own assessment and, where relevant, its own accessibility statement.</p>
+  <p class="clause"><span class="n">8.2</span>If you are not satisfied with our response to an accessibility concern, individuals may be able to contact the Equality Advisory and Support Service (EASS) for advice, or the relevant body's own complaints process where applicable.</p>
+
+  <div class="sec-head" style="margin-top:22px;"><h2>9. Preparation of This Statement</h2></div>
+  <p class="clause"><span class="n">9.1</span>This statement was prepared on 3 August 2026, based on an internal review of the Service rather than a formal external audit.</p>
+  <p class="clause"><span class="n">9.2</span>We will review and update this statement at least annually, or sooner if a formal audit is completed or significant changes are made to the Service.</p>
+
+  <div class="footer-bar"><span>spanSense · Accessibility Statement</span><span>Page 5</span></div>
+</div>
+
+</body>
+</html>
