@@ -139,7 +139,12 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .dd-trigger .dd-id{font-size:.68rem; color:var(--text-mute); font-family:'SFMono-Regular',Consolas,monospace;}
 .dd-trigger .dd-chevron{color:var(--text-mute); font-size:.75rem; transition:transform .3s cubic-bezier(.34,1.56,.64,1); flex-shrink:0;}
 .selector-dropdown.active .dd-chevron{transform:rotate(180deg);}
-.selector-dropdown.disabled .dd-trigger{opacity:.55; cursor:not-allowed; background:var(--bg-soft);}
+/* No opacity fade here (there used to be one) - it dimmed the background
+   AND the already-muted placeholder text together, so contrast dropped low
+   enough to be hard to read in both light and dark mode. cursor:not-allowed
+   plus the existing .dd-name.placeholder color already read as "inactive"
+   on their own. */
+.selector-dropdown.disabled .dd-trigger{cursor:not-allowed; background:var(--bg-soft);}
 .selector-dropdown.disabled .dd-trigger:hover{border-color:var(--border); background:var(--bg-soft);}
 
 .dropdown-menu{
@@ -310,6 +315,13 @@ body.modal-open{overflow:hidden;}
 
 .night-mode .dd-trigger{background:#1e2a2f; border-color:#3a4b53;}
 .night-mode .dd-trigger:hover{background:#2a3a40; border-color:#4a5d66;}
+/* .selector-dropdown.disabled .dd-trigger (light mode, above) hardcodes
+   var(--bg-soft) - a light-only variable with no night-mode redefinition -
+   for its background, and that 3-class selector otherwise beats the plain
+   .night-mode .dd-trigger rule above on specificity, so the disabled
+   "Compare against" dropdown stayed near-white even in night mode. */
+.night-mode .selector-dropdown.disabled .dd-trigger{background:#1e2a2f; border-color:#3a4b53;}
+.night-mode .selector-dropdown.disabled .dd-trigger:hover{background:#1e2a2f; border-color:#3a4b53;}
 .night-mode .dd-trigger .dd-name{color:#d4dfe3;}
 .night-mode .dd-trigger .dd-icon{background:linear-gradient(135deg,#2f4a48,#1e3a38); color:#8ab4b0;}
 .night-mode .dd-item .dd-icon{background:linear-gradient(135deg,#2f4a48,#1e3a38); color:#8ab4b0;}
