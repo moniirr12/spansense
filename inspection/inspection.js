@@ -745,7 +745,7 @@ window.saveChanges = saveChanges;
 // ALL_ELEMENTS_LIST_BY_TYPE / Author's authorElements.js, duplicated here
 // per this codebase's established per-file convention (category grouping
 // only exists in frontend lookups, not the `elements` table).
-const ALL_ELEMENTS_LIST_BY_TYPE = {
+var ALL_ELEMENTS_LIST_BY_TYPE = {
   Bridge: [
     { category: "Deck Elements", elementNo: 1 }, { category: "Deck Elements", elementNo: 2 },
     { category: "Deck Elements", elementNo: 3 }, { category: "Deck Elements", elementNo: 4 },
