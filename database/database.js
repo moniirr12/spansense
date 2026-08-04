@@ -307,6 +307,21 @@
     var yearRange = { from: null, to: null };
     var reportDateRange = { from: null, to: null };
 
+    // Custom stepper replacing the native number-input spin arrows (see
+    // .year-stepper in database.css) - defaults to the current year when
+    // the field is empty, same as clicking a native spinner from blank.
+    window.stepYearInput = function(id, delta) {
+        var el = document.getElementById(id);
+        var val = parseInt(el.value, 10);
+        if (isNaN(val)) val = new Date().getFullYear();
+        el.value = val + delta;
+    };
+
+    // spanSense-styled calendar (matches the theme used in inspection1.js/
+    // planning.html) instead of the browser-native <input type="date"> popup.
+    var reportDateFromPicker = flatpickr('#reportDateFrom', { dateFormat: 'Y-m-d', allowInput: true });
+    var reportDateToPicker = flatpickr('#reportDateTo', { dateFormat: 'Y-m-d', allowInput: true });
+
     window.applyYearRange = function() {
         var f = document.getElementById('yearFrom').value;
         var t = document.getElementById('yearTo').value;
@@ -332,8 +347,8 @@
     };
 
     window.clearReportDateRange = function() {
-        document.getElementById('reportDateFrom').value = '';
-        document.getElementById('reportDateTo').value = '';
+        reportDateFromPicker.clear();
+        reportDateToPicker.clear();
         reportDateRange = { from: null, to: null };
         currentPage = 1;
         rebuildReportsTable();
@@ -1168,8 +1183,8 @@
         reportDateRange = { from: null, to: null };
         document.getElementById('yearFrom').value = '';
         document.getElementById('yearTo').value = '';
-        document.getElementById('reportDateFrom').value = '';
-        document.getElementById('reportDateTo').value = '';
+        reportDateFromPicker.clear();
+        reportDateToPicker.clear();
 
         if (cat === 'inspections') {
             rightTitle.innerHTML = '<i class="fas fa-columns"></i> Column Visibility';
