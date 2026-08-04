@@ -652,6 +652,11 @@ body {
     font-weight: 700 !important;
     color: #5b8c8a !important;
 }
+/* today AND selected needs to win over the plain .today rule above - same
+   specificity, so make it explicit rather than relying on source order. */
+.flatpickr-calendar .flatpickr-day.today.selected {
+    color: white !important;
+}
 .flatpickr-calendar .flatpickr-day:hover:not(.flatpickr-disabled):not(.notAllowed):not(.selected) {
     background: #eef4f2 !important;
     border-radius: 8px !important;
@@ -1060,6 +1065,7 @@ body {
 .night-mode .flatpickr-calendar .flatpickr-day.startRange,
 .night-mode .flatpickr-calendar .flatpickr-day.endRange { background: #5b8c8a !important; color: white !important; }
 .night-mode .flatpickr-calendar .flatpickr-day.today { color: #8ab4b0 !important; font-weight: 700 !important; }
+.night-mode .flatpickr-calendar .flatpickr-day.today.selected { color: white !important; }
 .night-mode .flatpickr-calendar .flatpickr-day:hover:not(.flatpickr-disabled):not(.notAllowed):not(.selected) { background: #2f4a48 !important; color: white !important; }
 .night-mode .flatpickr-calendar .flatpickr-day.prevMonthDay,
 .night-mode .flatpickr-calendar .flatpickr-day.nextMonthDay { color: #a8b8bf !important; opacity: 0.5 !important; }
