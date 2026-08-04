@@ -39,9 +39,9 @@ async function updateBridgeModalData(structureId) {
                 const normalizedType = (bridge.type || '').toLowerCase().replace(/\s+/g, '_');
                 const noVehicleLoad = normalizedType === 'sign_gantry' || normalizedType === 'footbridge' ||
                     bridge.name === 'Forth Bridge' || bridge.name === 'Iron Bridge';
-                loadCapacityElement.textContent = noVehicleLoad
-                    ? 'N/A'
-                    : (bridge.load_capacity ? `${bridge.load_capacity}t` : '--');
+                loadCapacityElement.textContent = (!noVehicleLoad && bridge.load_capacity)
+                    ? `${bridge.load_capacity}t`
+                    : 'N/A';
             }
             if (builtElement) builtElement.textContent = bridge.built_year || '--';
             if (typeElement) typeElement.textContent = bridge.type || '--';
