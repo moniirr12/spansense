@@ -19,7 +19,7 @@ function formatDate(dateString) {
 // report's "4.1.1"-style section numbering (see buildInspectionReportDocDefinition
 // below) and is shared with inspection.html's pre-save Preview so both reports
 // number and categorize elements identically.
-var ALL_ELEMENTS_LIST_BY_TYPE = {
+const ALL_ELEMENTS_LIST_BY_TYPE = {
     Bridge: [
         { category: "Deck Elements", mainNumber: "4.1", subNumber: "4.1.1", name: "Primary deck element", elementNo: 1 },
         { category: "Deck Elements", mainNumber: "4.1", subNumber: "4.1.2", name: "Transverse beams", elementNo: 2 },

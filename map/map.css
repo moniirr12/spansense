@@ -4495,24 +4495,3 @@ body.modal-open {
     background: linear-gradient(135deg, #3a2020 0%, #2a1818 100%);
     color: #c07070;
 }
-
-.map-login-note {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: linear-gradient(135deg, #fef9e8 0%, #fdf2d0 100%);
-    border: 1px solid #f0dca0;
-    border-radius: 16px;
-    padding: 14px 18px;
-    font-size: 0.85rem;
-    color: #8a5c15;
-}
-.map-login-note i { color: #c9a227; }
-.map-login-note a { color: #8a5c15; font-weight: 600; text-decoration: underline; }
-.night-mode .map-login-note {
-    background: linear-gradient(135deg, #3a2f1a 0%, #2a2515 100%);
-    border-color: #5a4a2a;
-    color: #d4b86a;
-}
-.night-mode .map-login-note i { color: #d4b86a; }
-.night-mode .map-login-note a { color: #d4b86a; }

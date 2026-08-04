@@ -191,11 +191,6 @@ function restoreFilterState() {
 // structures added via Add Structure show up here without a redeploy)
 fetch(`${API_BASE}/api/bridges`)
     .then(response => {
-        if (response.status === 401) {
-            document.getElementById('map').innerHTML =
-                '<div class="map-login-note" style="margin:24px;"><i class="fas fa-triangle-exclamation"></i> You need to be logged in to view the map. <a href="../index.html">Go to login</a></div>';
-            throw new Error('Not logged in');
-        }
         if (!response.ok) throw new Error('Network response was not ok');
         return response.json();
     })
@@ -259,9 +254,7 @@ fetch(`${API_BASE}/api/bridges`)
     })
     .catch(error => {
         console.error('Error loading bridge data:', error);
-        if (error.message !== 'Not logged in') {
-            alert('Failed to load bridge data. Check the console for details.');
-        }
+        alert('Failed to load bridge data. Check the console for details.');
     });
 
 // updateModalTitle is defined in bcirep.js (loaded after this script), which
