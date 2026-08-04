@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <script src="/fetch-credentials.js"></script>
+    <script src="/hoverTip.js"></script>
     <script src="/roleBadge.js"></script>
     <script src="/userGreeting.js"></script>
     <script>(function(){var nm=localStorage.getItem('nightMode');var dark=nm==='on'||(nm===null&&!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches));if(dark)document.documentElement.classList.add('nm-preload');})();</script>
@@ -39,8 +40,8 @@
             <i class="fas fa-moon"></i>
         </div>
         <div class="account-links">
-            <a href="../accounts/accounts.html" title="Account"><i class="fas fa-user-circle"></i></a>
-            <a href="../contacts/contacts.html" title="Contact Us"><i class="fas fa-envelope"></i></a>
+            <a href="../accounts/accounts.html" data-tip="Account"><i class="fas fa-user-circle"></i></a>
+            <a href="../contacts/contacts.html" data-tip="Contact Us"><i class="fas fa-envelope"></i></a>
         </div>
     </div>
 </div>
@@ -228,7 +229,7 @@
                 <div class="info-item"><i class="fas fa-ruler-horizontal"></i> Width <strong id="modalWidth">--</strong></div>
                 <div class="info-item"><i class="fas fa-weight-hanging"></i> Load Capacity <strong id="modalLoadCapacity">--</strong></div>
                 <div class="info-item"><i class="fas fa-calendar-alt"></i> Built <strong id="modalBuilt">--</strong></div>
-                <div class="info-item" title="Inspection Cycle"><i class="fas fa-calendar-check"></i> Cycle <strong id="modalCycle">--</strong></div>
+                <div class="info-item" data-tip="Inspection Cycle"><i class="fas fa-calendar-check"></i> Cycle <strong id="modalCycle">--</strong></div>
             </div>
 
             <!-- Action Buttons -->

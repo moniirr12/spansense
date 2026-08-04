@@ -1133,22 +1133,35 @@ app.get('/api/bridges/:id', requireAuth, async (req, res) => {
     }
 });
 
-// Updates the handful of structure facts inspection1.html's "Span Info"
-// panel lets an inspector correct inline (description, span count, length,
-// built year, material) - deliberately not the bridge's identity/location
-// fields, which stay Database-page-only. Material is edited as one combined
-// string rather than the two separate primary/secondary columns the rest of
-// the app reads it from (see the getStructureIcon-style join elsewhere) -
-// simplest to edit, and secondary_material is cleared here since whatever
-// the inspector typed is now the full picture, not an addition to it.
+// Updates the structure facts inspection1.html's "Span Info" panel lets an
+// inspector correct inline - the same fields Add Structure captures at
+// creation (minus per-span breakdown, photos, OS grid and GI/PI cycle,
+// which stay Database/Planning-page-only), reusing its type values and
+// material option list. Primary/secondary material are separate columns
+// here (unlike the old combined-string version of this endpoint), so
+// neither gets silently cleared by editing the other.
 app.patch('/api/bridges/:id/info', requireAuth, async (req, res) => {
     try {
-        const { description, span_number, length, built_year, material } = req.body;
+        const {
+            name, type, location, latitude, longitude, description,
+            span_number, length, width, built_year, load_capacity,
+            primary_material, secondary_material
+        } = req.body;
+        if (!name || !String(name).trim()) {
+            return res.status(400).json({ error: 'name is required' });
+        }
         await pool.query(
-            `UPDATE bridges SET description = $1, span_number = $2, length = $3, built_year = $4,
-                                 primary_material = $5, secondary_material = NULL
-             WHERE id = $6`,
-            [description || null, span_number || null, length || null, built_year || null, material || null, req.params.id]
+            `UPDATE bridges SET name = $1, type = $2, location = $3, latitude = $4, longitude = $5,
+                                 description = $6, span_number = $7, length = $8, width = $9,
+                                 built_year = $10, load_capacity = $11, primary_material = $12,
+                                 secondary_material = $13
+             WHERE id = $14`,
+            [
+                name.trim(), type || null, location || null, latitude ?? null, longitude ?? null,
+                description || null, span_number || null, length || null, width ?? null,
+                built_year || null, load_capacity ?? null, primary_material || null,
+                secondary_material || null, req.params.id
+            ]
         );
         res.json({ success: true });
     } catch (err) {

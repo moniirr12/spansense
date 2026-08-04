@@ -885,13 +885,13 @@ function populateDocumentsQuickStats(documents) {
             </div>
           </div>
           <div class="ss-card-acts">
-            <button class="ss-act-btn" title="Edit Inspection"
+            <button class="ss-act-btn" data-tip="Edit Inspection"
               data-action="edit" data-date="${doc.date}"><i class="fas fa-pen"></i></button>
-            <button class="ss-act-btn" title="Download BCI proforma"
+            <button class="ss-act-btn" data-tip="Download BCI proforma"
               data-action="bci" data-date="${doc.date}"><i class="fas fa-file-invoice"></i></button>
-            <button class="ss-act-btn" title="Download report"
+            <button class="ss-act-btn" data-tip="Download report"
               data-action="report" data-date="${doc.date}"><i class="fas fa-file-pdf"></i></button>
-            <button class="ss-act-btn ss-act-danger" title="Delete Inspection"
+            <button class="ss-act-btn ss-act-danger" data-tip="Delete Inspection"
               data-action="delete" data-id="${doc.id}" data-date="${doc.date}"><i class="fas fa-trash"></i></button>
           </div>
         </div>`;

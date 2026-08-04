@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <script src="/fetch-credentials.js"></script>
     <script src="/roleBadge.js"></script>
+    <script src="/hoverTip.js"></script>
     <script>(function(){var nm=localStorage.getItem('nightMode');var dark=nm==='on'||(nm===null&&!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches));if(dark)document.documentElement.classList.add('nm-preload');})();</script>
     <style>html.nm-preload,html.nm-preload body{background-color:#1a2428!important;}</style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1104,8 +1105,8 @@
         <div class="right">
             <div class="night-mode-toggle" id="nightModeToggle"><i class="fas fa-moon"></i></div>
             <div class="account-links">
-                <a href="../accounts/accounts.html" title="Account"><i class="fas fa-user-circle"></i></a>
-                <a href="../contacts/contacts.html" class="active" title="Contact Us"><i class="fas fa-envelope"></i></a>
+                <a href="../accounts/accounts.html" data-tip="Account"><i class="fas fa-user-circle"></i></a>
+                <a href="../contacts/contacts.html" class="active" data-tip="Contact Us"><i class="fas fa-envelope"></i></a>
             </div>
         </div>
     </div>
@@ -1194,7 +1195,7 @@
                         <i class="fas fa-search"></i>
                         <input type="text" id="ganttSearchInput" placeholder="Search bridge..." oninput="onGanttSearchInput(this.value)">
                     </div>
-                    <button class="gantt-icon-btn" id="exportGanttBtn" title="Export PDF"><i class="fas fa-download"></i></button>
+                    <button class="gantt-icon-btn" id="exportGanttBtn" data-tip="Export PDF"><i class="fas fa-download"></i></button>
                 </div>
             </div>
             <div class="gantt-body" id="ganttBody"></div>
@@ -1606,7 +1607,7 @@
                             <div class="bridge-meta">${bridge.inspections.length} inspection${bridge.inspections.length !== 1 ? 's' : ''} due</div>
                         </div>
                         <span class="bridge-status ${hasOverdue ? 'poor' : 'good'}"></span>
-                        <button class="schedule-edit-btn" onclick="openScheduleModal(${bridge.id})" title="Edit inspection schedule">
+                        <button class="schedule-edit-btn" onclick="openScheduleModal(${bridge.id})" data-tip="Edit inspection schedule">
                             <i class="fas fa-pen"></i>
                         </button>
                     </div>`;

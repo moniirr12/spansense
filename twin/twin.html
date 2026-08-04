@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script src="/fetch-credentials.js"></script>
 <script src="/roleBadge.js"></script>
+<script src="/hoverTip.js"></script>
 <script>(function(){var nm=localStorage.getItem('nightMode');var dark=nm==='on'||(nm===null&&!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches));if(dark)document.documentElement.classList.add('nm-preload');})();</script>
 <style>html.nm-preload,html.nm-preload body{background-color:#1a2428!important;}</style>
 <title>spanSense · twinView</title>
@@ -488,6 +489,8 @@ body {
 }
 .night-mode .chart-tooltip { background: #0f1619; }
 .chart-tooltip b { display: block; font-size: 0.76rem; }
+/* .hover-tip (shared dark-card tooltip for data-tip="..." elements) now
+   lives in /hoverTip.js, injected there so every page can share it. */
 .trend-crosshair { stroke: #d3dde0; stroke-width: 1; opacity: 0; transition: opacity 0.1s; }
 .night-mode .trend-crosshair { stroke: #3a4b53; }
 .trend-ref-line { stroke: #eef2f6; stroke-width: 1; stroke-dasharray: 2,3; }
@@ -1214,8 +1217,8 @@ body.night-mode .glass-scrollbar .thumb {
     <div class="right">
         <div class="night-mode-toggle" id="nightToggle"><i class="fas fa-moon"></i></div>
         <div class="account-links">
-            <a href="../accounts/accounts.html" title="Account"><i class="fas fa-user-circle"></i></a>
-            <a href="../contacts/contacts.html" title="Contact Us"><i class="fas fa-envelope"></i></a>
+            <a href="../accounts/accounts.html" data-tip="Account"><i class="fas fa-user-circle"></i></a>
+            <a href="../contacts/contacts.html" data-tip="Contact Us"><i class="fas fa-envelope"></i></a>
         </div>
     </div>
 </nav>
@@ -1340,9 +1343,9 @@ body.night-mode .glass-scrollbar .thumb {
                         </div>
                     </div>
                     <div class="vc-layer-toggles">
-                        <div class="vc-pill on" data-layer="structure" title="Structure"><i class="fa-solid fa-cube"></i></div>
-                        <div class="vc-pill on" data-layer="sensors" title="Sensors"><i class="fa-solid fa-satellite-dish"></i></div>
-                        <div class="vc-pill on" data-layer="defects" title="Defects"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                        <div class="vc-pill on" data-layer="structure" data-tip="Structure"><i class="fa-solid fa-cube"></i></div>
+                        <div class="vc-pill on" data-layer="sensors" data-tip="Sensors"><i class="fa-solid fa-satellite-dish"></i></div>
+                        <div class="vc-pill on" data-layer="defects" data-tip="Defects"><i class="fa-solid fa-triangle-exclamation"></i></div>
                     </div>
                 </div>
 

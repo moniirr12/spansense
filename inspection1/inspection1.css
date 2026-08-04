@@ -562,13 +562,13 @@ body {
 }
 
 .bridge-info-panel.open {
-    width: 320px;
+    width: 380px;
     opacity: 1;
     padding: 20px;
 }
 
 .bridge-info-panel-inner {
-    width: 280px;
+    width: 340px;
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -683,7 +683,8 @@ body {
     margin-bottom: 4px;
 }
 
-.info-fact input {
+.info-fact input,
+.info-fact select {
     width: 100%;
     padding: 6px 9px;
     border-radius: 8px;
@@ -695,11 +696,52 @@ body {
     color: #2c3e44;
 }
 
-.info-fact input:focus {
+.info-fact select {
+    appearance: none; -webkit-appearance: none; -moz-appearance: none;
+    cursor: pointer; padding-right: 26px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235f6b73' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 8px center; background-size: 12px;
+}
+
+.info-fact input:focus,
+.info-fact select:focus {
     outline: none;
     border-color: #8ab4b0;
     background: white;
 }
+
+/* Fields that need the full panel width instead of sharing the 2-col grid
+   (name, location, type) - same .info-panel-facts grid, just spanned. */
+.info-fact.full { grid-column: 1 / -1; }
+
+.info-type-pills { display: flex; flex-wrap: wrap; gap: 5px; }
+.info-type-pill {
+    flex: 1 1 auto;
+    min-width: 74px;
+    border: 1px solid #e2e8f0;
+    background: #fafbfc;
+    color: #4d5960;
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 6px 8px;
+    border-radius: 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    font-family: inherit;
+}
+.info-type-pill i { font-size: 0.72rem; }
+.info-type-pill:hover { border-color: #8ab4b0; color: #5b8c8a; }
+.info-type-pill.sel { color: white; border-color: transparent; }
+.info-type-pill[data-type="bridge"].sel { background: #2c645c; }
+.info-type-pill[data-type="footbridge"].sel { background: #4f9088; }
+.info-type-pill[data-type="culvert"].sel { background: #c79a4b; }
+.info-type-pill[data-type="retaining_wall"].sel { background: #9b4f4f; }
+.info-type-pill[data-type="sign_gantry"].sel { background: #7a6fb0; }
 
 .info-edit-actions {
     display: flex;
@@ -1143,17 +1185,26 @@ textarea,
 }
 
 .night-mode .info-edit-textarea,
-.night-mode .info-fact input {
-    background: #1e2a2f;
+.night-mode .info-fact input,
+.night-mode .info-fact select {
+    background-color: #1e2a2f;
     border-color: #3a4b53;
     color: #c5d3d9;
 }
 
+.night-mode .info-fact select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238ab4b0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+}
+
 .night-mode .info-edit-textarea:focus,
-.night-mode .info-fact input:focus {
+.night-mode .info-fact input:focus,
+.night-mode .info-fact select:focus {
     background: #2a3a40;
     border-color: #8ab4b0;
 }
+
+.night-mode .info-type-pill { background: #1e2a2f; border-color: #3a4b53; color: #9ab0b8; }
+.night-mode .info-type-pill:hover { border-color: #6e9c98; color: #8ab4b0; }
 
 .night-mode .info-edit-cancel {
     background: none;

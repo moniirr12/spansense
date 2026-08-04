@@ -777,7 +777,7 @@ function updateTableVisibility() {
     const icon = document.getElementById('rowFilterIcon');
     if (button) {
         button.classList.toggle('active', showOnlyNonEmptyRows);
-        button.title = showOnlyNonEmptyRows ? 'Show all rows' : 'Hide empty rows';
+        button.setAttribute('data-tip', showOnlyNonEmptyRows ? 'Show all rows' : 'Hide empty rows');
         if (icon) icon.className = showOnlyNonEmptyRows ? 'fas fa-filter-circle-xmark' : 'fas fa-filter';
     } else {
         console.warn('Row filter toggle button not found');

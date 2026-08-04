@@ -101,7 +101,7 @@
         const icon = document.getElementById('prevCollapseIcon');
         if (icon) icon.className = 'fas fa-chevron-right';
         const btn0 = document.getElementById('prevCollapseBtn');
-        if (btn0) btn0.title = 'Expand';
+        if (btn0) btn0.setAttribute('data-tip', 'Expand');
 
         // Update chip header
         document.getElementById('prevChipNum').textContent = elementNo;
@@ -198,7 +198,7 @@
             p.classList.toggle('prev-collapsed', _collapsed);
             const icon = document.getElementById('prevCollapseIcon');
             if (icon) icon.className = _collapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-left';
-            document.getElementById('prevCollapseBtn').title = _collapsed ? 'Expand' : 'Collapse';
+            document.getElementById('prevCollapseBtn').setAttribute('data-tip', _collapsed ? 'Expand' : 'Collapse');
         });
 
         // Click anywhere on the collapsed panel to expand it
@@ -210,7 +210,7 @@
             const icon = document.getElementById('prevCollapseIcon');
             if (icon) icon.className = 'fas fa-chevron-left';
             const btn = document.getElementById('prevCollapseBtn');
-            if (btn) btn.title = 'Collapse';
+            if (btn) btn.setAttribute('data-tip', 'Collapse');
         });
 
         // Load more

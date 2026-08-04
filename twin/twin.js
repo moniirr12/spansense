@@ -23,6 +23,10 @@ var API_BASE = window.location.hostname === 'localhost'
     ? 'http://localhost:3000'
     : 'https://spansense.onrender.com';
 
+// Shared spanSense-styled hover tooltip for data-tip="..." elements now
+// lives in /hoverTip.js (see the <script> include in twin.html), so every
+// page can share one implementation instead of each duplicating it.
+
 /* ============================================================
    DEFECT INFO LOOKUP (element names + defect type labels) - same
    per-structure-type element lists and defect-type/number -> label
@@ -102,11 +106,11 @@ function twinMaterialHtml(materialStr) {
     var positionLabels = ['Primary material', 'Secondary material'];
     if (codes.length === 2 && codes[0] === codes[1]) {
         var soleLabel = TWIN_MATERIAL_CODE_LABEL[codes[0]];
-        return soleLabel ? '<span title="Primary & secondary material">' + escapeHtmlTwin(soleLabel) + '</span>' : escapeHtmlTwin(codes[0]);
+        return soleLabel ? '<span data-tip="Primary & secondary material">' + escapeHtmlTwin(soleLabel) + '</span>' : escapeHtmlTwin(codes[0]);
     }
     return codes.map(function(code, i) {
         var label = TWIN_MATERIAL_CODE_LABEL[code];
-        return label ? '<span title="' + (positionLabels[i] || 'Material') + '">' + escapeHtmlTwin(label) + '</span>' : escapeHtmlTwin(code);
+        return label ? '<span data-tip="' + (positionLabels[i] || 'Material') + '">' + escapeHtmlTwin(label) + '</span>' : escapeHtmlTwin(code);
     }).join(' / ');
 }
 
@@ -625,7 +629,7 @@ function renderTimeline(inspections, selectedId, bridgeId) {
         var label = '<div class="tl-label" style="left:' + left.toFixed(1) + '%">' + insp.date + '</div>';
         var isSelected = selectedId != null && String(insp.id) === String(selectedId);
         return '<div class="tl-node' + (isSelected ? ' selected' : '') + '" data-type="' + insp.type + '" ' +
-            'data-id="' + insp.id + '" title="View ' + insp.type + ' · ' + insp.date + '" style="' + style + '"></div>' + label;
+            'data-id="' + insp.id + '" data-tip="View ' + insp.type + ' · ' + insp.date + '" style="' + style + '"></div>' + label;
     }).join('');
 
     track.querySelectorAll('.tl-node').forEach(function(node) {
@@ -743,8 +747,8 @@ function renderMaintenanceList() {
                 (m.description ? '<div class="maint-item-desc">' + maintEscapeHtml(m.description) + '</div>' : '') +
             '</div>' +
             '<div class="maint-item-actions">' +
-                '<button class="maint-icon-btn" data-action="edit" title="Edit"><i class="fa-solid fa-pen"></i></button>' +
-                '<button class="maint-icon-btn danger" data-action="delete" title="Delete"><i class="fa-solid fa-trash"></i></button>' +
+                '<button class="maint-icon-btn" data-action="edit" data-tip="Edit"><i class="fa-solid fa-pen"></i></button>' +
+                '<button class="maint-icon-btn danger" data-action="delete" data-tip="Delete"><i class="fa-solid fa-trash"></i></button>' +
             '</div>' +
         '</div>';
     }).join('');
