@@ -761,15 +761,22 @@
             '<i class="fas fa-angle-double-right"></i>' +
         '</button>';
         
-        // Rows per page selector
+        // Rows per page selector - custom dropdown (see .rows-pp-dd below);
+        // a plain <select>'s open option list can't be restyled in Chrome,
+        // same reasoning as twinView's maint-cat-dd category picker.
         paginationHtml += '<div class="pagination-rows-selector">' +
             '<span>Rows per page:</span>' +
-            '<select onchange="changeRowsPerPage(this.value)">' +
-                '<option value="10" ' + (rowsPerPage === 10 ? 'selected' : '') + '>10</option>' +
-                '<option value="20" ' + (rowsPerPage === 20 ? 'selected' : '') + '>20</option>' +
-                '<option value="50" ' + (rowsPerPage === 50 ? 'selected' : '') + '>50</option>' +
-                '<option value="100" ' + (rowsPerPage === 100 ? 'selected' : '') + '>100</option>' +
-            '</select>' +
+            '<div class="rows-pp-dd" id="rowsPerPageDD">' +
+                '<button type="button" class="rows-pp-trigger" onclick="toggleRowsPerPageDD(event)">' +
+                    '<span>' + rowsPerPage + '</span><i class="fas fa-chevron-down"></i>' +
+                '</button>' +
+                '<div class="rows-pp-list">' +
+                    '<button type="button" class="rows-pp-item' + (rowsPerPage === 10 ? ' selected' : '') + '" onclick="changeRowsPerPage(10)">10</button>' +
+                    '<button type="button" class="rows-pp-item' + (rowsPerPage === 20 ? ' selected' : '') + '" onclick="changeRowsPerPage(20)">20</button>' +
+                    '<button type="button" class="rows-pp-item' + (rowsPerPage === 50 ? ' selected' : '') + '" onclick="changeRowsPerPage(50)">50</button>' +
+                    '<button type="button" class="rows-pp-item' + (rowsPerPage === 100 ? ' selected' : '') + '" onclick="changeRowsPerPage(100)">100</button>' +
+                '</div>' +
+            '</div>' +
         '</div>';
         
         paginationHtml += '</div></div>';
@@ -801,7 +808,28 @@
         } else if (currentCategory === 'reports') {
             rebuildReportsTable();
         }
+        // addPaginationControls() above rebuilds #rowsPerPageDD fresh (closed,
+        // with the new value selected), so there's nothing left to close here.
     };
+
+    window.toggleRowsPerPageDD = function(e) {
+        e.stopPropagation();
+        var dd = document.getElementById('rowsPerPageDD');
+        if (dd) dd.classList.toggle('open');
+    };
+
+    // Registered once (not per-render, since #rowsPerPageDD is destroyed and
+    // recreated on every pagination rebuild) - looks the element up fresh by
+    // id each time so it keeps working across those rebuilds.
+    document.addEventListener('click', function(e) {
+        var dd = document.getElementById('rowsPerPageDD');
+        if (dd && !dd.contains(e.target)) dd.classList.remove('open');
+    });
+    document.addEventListener('keydown', function(e) {
+        if (e.key !== 'Escape') return;
+        var dd = document.getElementById('rowsPerPageDD');
+        if (dd) dd.classList.remove('open');
+    });
 
     // ============================================
     // Reset pagination when filter changes
@@ -995,17 +1023,36 @@
             color: #8a9ba8;
         }
         
-        .pagination-rows-selector select {
-            padding: 6px 10px;
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-            background: white;
-            font-size: 0.75rem;
-            font-family: inherit;
-            color: #2c4a48;
-            cursor: pointer;
+        /* Rows-per-page custom dropdown - replaces the native <select> whose
+           open option list can't be restyled in Chrome (same reasoning as
+           twinView's maint-cat-dd category picker). */
+        .rows-pp-dd { position: relative; }
+        .rows-pp-trigger {
+            display: flex; align-items: center; gap: 8px;
+            padding: 6px 10px; border-radius: 8px; border: 1px solid #e2e8f0;
+            background: white; font-size: 0.75rem; font-family: inherit;
+            color: #2c4a48; cursor: pointer;
         }
-        
+        .rows-pp-trigger:focus { outline: none; border-color: #8ab4b0; }
+        .rows-pp-trigger i { font-size: 0.65rem; color: #8a9ba8; transition: transform .15s; }
+        .rows-pp-dd.open .rows-pp-trigger i { transform: rotate(180deg); }
+        .rows-pp-list {
+            display: none;
+            position: absolute; bottom: calc(100% + 6px); left: 0; z-index: 20;
+            min-width: 100%;
+            background: white; border: 1px solid #e2e8f0; border-radius: 10px;
+            box-shadow: 0 10px 28px rgba(0,0,0,0.12); padding: 4px;
+        }
+        .rows-pp-dd.open .rows-pp-list { display: block; }
+        .rows-pp-item {
+            display: block; width: 100%; text-align: left;
+            padding: 6px 10px; border: none; border-radius: 6px;
+            background: none; font-size: 0.75rem; font-family: inherit;
+            color: #2c4a48; cursor: pointer;
+        }
+        .rows-pp-item:hover, .rows-pp-item:focus { background: #f5f9f8; outline: none; }
+        .rows-pp-item.selected { background: #eef4f2; color: #2c4a48; font-weight: 600; }
+
         /* Night mode pagination */
         .night-mode .pagination-container {
             border-top-color: #2f3e45;
@@ -1041,11 +1088,13 @@
             border-left-color: #2f3e45;
         }
         
-        .night-mode .pagination-rows-selector select {
-            background: #1e2a2f;
-            border-color: #3a4b53;
-            color: #c5d3d9;
-        }
+        .night-mode .rows-pp-trigger { background: #1e2a2f; border-color: #3a4b53; color: #c5d3d9; }
+        .night-mode .rows-pp-trigger:focus { border-color: #6e9c98; }
+        .night-mode .rows-pp-trigger i { color: #7f959c; }
+        .night-mode .rows-pp-list { background: #232e34; border-color: #3a4b53; box-shadow: 0 10px 28px rgba(0,0,0,0.4); }
+        .night-mode .rows-pp-item { color: #d4dfe3; }
+        .night-mode .rows-pp-item:hover, .night-mode .rows-pp-item:focus { background: #2a3a40; }
+        .night-mode .rows-pp-item.selected { background: #1e3a38; color: #8ab4b0; }
         
         @media (max-width: 768px) {
             .pagination-container {
