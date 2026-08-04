@@ -23,44 +23,9 @@ var API_BASE = window.location.hostname === 'localhost'
     ? 'http://localhost:3000'
     : 'https://spansense.onrender.com';
 
-// Shared spanSense-styled hover tooltip (dark card, matches .chart-tooltip/
-// .defect-popup) for any element with data-tip="...". Replaces plain
-// title="..." attributes where the hint is genuinely informational, rather
-// than the OS's native tooltip whose look depends on the visitor's own
-// system theme instead of the app's.
-(function() {
-    var tip = document.createElement('div');
-    tip.className = 'hover-tip';
-    document.body.appendChild(tip);
-
-    function show(target) {
-        var text = target.getAttribute('data-tip');
-        if (!text) return;
-        tip.textContent = text;
-        var r = target.getBoundingClientRect();
-        tip.style.left = (r.left + r.width / 2) + 'px';
-        tip.style.top = (r.top - 8) + 'px';
-        tip.classList.add('show');
-    }
-    function hide() { tip.classList.remove('show'); }
-
-    document.addEventListener('mouseover', function(e) {
-        var target = e.target.closest('[data-tip]');
-        if (target) show(target);
-    });
-    document.addEventListener('mouseout', function(e) {
-        var target = e.target.closest('[data-tip]');
-        if (target) hide();
-    });
-    document.addEventListener('focusin', function(e) {
-        var target = e.target.closest('[data-tip]');
-        if (target) show(target);
-    });
-    document.addEventListener('focusout', function(e) {
-        var target = e.target.closest('[data-tip]');
-        if (target) hide();
-    });
-})();
+// Shared spanSense-styled hover tooltip for data-tip="..." elements now
+// lives in /hoverTip.js (see the <script> include in twin.html), so every
+// page can share one implementation instead of each duplicating it.
 
 /* ============================================================
    DEFECT INFO LOOKUP (element names + defect type labels) - same
