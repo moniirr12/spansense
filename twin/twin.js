@@ -23,6 +23,45 @@ var API_BASE = window.location.hostname === 'localhost'
     ? 'http://localhost:3000'
     : 'https://spansense.onrender.com';
 
+// Shared spanSense-styled hover tooltip (dark card, matches .chart-tooltip/
+// .defect-popup) for any element with data-tip="...". Replaces plain
+// title="..." attributes where the hint is genuinely informational, rather
+// than the OS's native tooltip whose look depends on the visitor's own
+// system theme instead of the app's.
+(function() {
+    var tip = document.createElement('div');
+    tip.className = 'hover-tip';
+    document.body.appendChild(tip);
+
+    function show(target) {
+        var text = target.getAttribute('data-tip');
+        if (!text) return;
+        tip.textContent = text;
+        var r = target.getBoundingClientRect();
+        tip.style.left = (r.left + r.width / 2) + 'px';
+        tip.style.top = (r.top - 8) + 'px';
+        tip.classList.add('show');
+    }
+    function hide() { tip.classList.remove('show'); }
+
+    document.addEventListener('mouseover', function(e) {
+        var target = e.target.closest('[data-tip]');
+        if (target) show(target);
+    });
+    document.addEventListener('mouseout', function(e) {
+        var target = e.target.closest('[data-tip]');
+        if (target) hide();
+    });
+    document.addEventListener('focusin', function(e) {
+        var target = e.target.closest('[data-tip]');
+        if (target) show(target);
+    });
+    document.addEventListener('focusout', function(e) {
+        var target = e.target.closest('[data-tip]');
+        if (target) hide();
+    });
+})();
+
 /* ============================================================
    DEFECT INFO LOOKUP (element names + defect type labels) - same
    per-structure-type element lists and defect-type/number -> label
@@ -102,11 +141,11 @@ function twinMaterialHtml(materialStr) {
     var positionLabels = ['Primary material', 'Secondary material'];
     if (codes.length === 2 && codes[0] === codes[1]) {
         var soleLabel = TWIN_MATERIAL_CODE_LABEL[codes[0]];
-        return soleLabel ? '<span title="Primary & secondary material">' + escapeHtmlTwin(soleLabel) + '</span>' : escapeHtmlTwin(codes[0]);
+        return soleLabel ? '<span data-tip="Primary & secondary material">' + escapeHtmlTwin(soleLabel) + '</span>' : escapeHtmlTwin(codes[0]);
     }
     return codes.map(function(code, i) {
         var label = TWIN_MATERIAL_CODE_LABEL[code];
-        return label ? '<span title="' + (positionLabels[i] || 'Material') + '">' + escapeHtmlTwin(label) + '</span>' : escapeHtmlTwin(code);
+        return label ? '<span data-tip="' + (positionLabels[i] || 'Material') + '">' + escapeHtmlTwin(label) + '</span>' : escapeHtmlTwin(code);
     }).join(' / ');
 }
 
@@ -625,7 +664,7 @@ function renderTimeline(inspections, selectedId, bridgeId) {
         var label = '<div class="tl-label" style="left:' + left.toFixed(1) + '%">' + insp.date + '</div>';
         var isSelected = selectedId != null && String(insp.id) === String(selectedId);
         return '<div class="tl-node' + (isSelected ? ' selected' : '') + '" data-type="' + insp.type + '" ' +
-            'data-id="' + insp.id + '" title="View ' + insp.type + ' · ' + insp.date + '" style="' + style + '"></div>' + label;
+            'data-id="' + insp.id + '" data-tip="View ' + insp.type + ' · ' + insp.date + '" style="' + style + '"></div>' + label;
     }).join('');
 
     track.querySelectorAll('.tl-node').forEach(function(node) {
