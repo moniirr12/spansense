@@ -861,13 +861,37 @@ body {
 .maint-field span { font-size:0.64rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:#5f6b73; }
 .maint-field input, .maint-field select, .maint-field textarea { border:1px solid #e2e8f0; border-radius:9px; padding:8px 10px; font-family:inherit; font-size:0.82rem; color:#2c3e44; background:white; }
 .maint-field input:focus, .maint-field select:focus, .maint-field textarea:focus { outline:none; border-color:#8ab4b0; }
-.maint-field select {
-    appearance:none; -webkit-appearance:none; -moz-appearance:none;
-    cursor:pointer; padding-right:32px;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235f6b73' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-    background-repeat:no-repeat; background-position:right 10px center; background-size:14px;
-}
 .maint-field textarea { min-height:56px; resize:vertical; }
+
+/* Custom category dropdown - replaces the native <select> whose open option
+   list can't be restyled cross-browser (Chrome ignores custom colors/hover
+   states on <option>), same reasoning as the .dd-item bridge picker above. */
+.maint-cat-dd { position:relative; }
+.maint-cat-trigger {
+    width:100%; display:flex; align-items:center; justify-content:space-between; gap:8px;
+    border:1px solid #e2e8f0; border-radius:9px; padding:8px 10px;
+    font-family:inherit; font-size:0.82rem; color:#2c3e44; background:white;
+    cursor:pointer; text-align:left;
+}
+.maint-cat-trigger:focus { outline:none; border-color:#8ab4b0; }
+.mcd-chevron { font-size:0.7rem; color:#8a9ba8; transition:transform .15s; flex-shrink:0; }
+.maint-cat-dd.open .mcd-chevron { transform:rotate(180deg); }
+.maint-cat-list {
+    display:none;
+    position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:20;
+    background:white; border:1px solid #e2e8f0; border-radius:12px;
+    box-shadow:0 10px 28px rgba(0,0,0,0.12); padding:6px;
+}
+.maint-cat-dd.open .maint-cat-list { display:block; }
+.maint-cat-item {
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    padding:8px 10px; border-radius:8px; font-size:0.82rem; color:#2c3e44;
+    cursor:pointer; transition:background .15s;
+}
+.maint-cat-item:hover, .maint-cat-item:focus { background:#f5f9f8; outline:none; }
+.maint-cat-item.selected { background:#eef4f2; color:#2c4a48; font-weight:600; }
+.maint-cat-item i { font-size:0.75rem; color:#5b8c8a; opacity:0; }
+.maint-cat-item.selected i { opacity:1; }
 .maint-form-actions { display:flex; justify-content:flex-end; gap:8px; }
 .maint-form-cancel, .maint-form-save { padding:7px 16px; border-radius:20px; font-size:0.76rem; font-weight:700; cursor:pointer; font-family:inherit; }
 .maint-form-cancel { background:none; border:1px solid #e2e8f0; color:#4d5960; }
@@ -903,9 +927,14 @@ body {
 .night-mode .maint-field span { color:#7d939b; }
 .night-mode .maint-field input, .night-mode .maint-field select, .night-mode .maint-field textarea { background-color:#212f33; border-color:#3a4b53; color:#d4dfe3; }
 .night-mode .maint-field input:focus, .night-mode .maint-field select:focus, .night-mode .maint-field textarea:focus { border-color:#6e9c98; }
-.night-mode .maint-field select {
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238ab4b0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-}
+.night-mode .maint-cat-trigger { background-color:#212f33; border-color:#3a4b53; color:#d4dfe3; }
+.night-mode .maint-cat-trigger:focus { border-color:#6e9c98; }
+.night-mode .mcd-chevron { color:#7f959c; }
+.night-mode .maint-cat-list { background:#232e34; border-color:#3a4b53; box-shadow:0 10px 28px rgba(0,0,0,0.4); }
+.night-mode .maint-cat-item { color:#d4dfe3; }
+.night-mode .maint-cat-item:hover, .night-mode .maint-cat-item:focus { background:#2a3a40; }
+.night-mode .maint-cat-item.selected { background:#1e3a38; color:#8ab4b0; }
+.night-mode .maint-cat-item i { color:#8ab4b0; }
 .night-mode .maint-form-cancel { border-color:#3a4b53; color:#9ab0b8; }
 .night-mode .maint-form-cancel:hover { background:#1a2428; }
 .night-mode .maint-form-save { background:#3a6b62; }
@@ -1130,7 +1159,11 @@ body.night-mode .glass-scrollbar .thumb {
     background: rgba(91, 140, 138, 0.1) !important;
     border-radius: 50% !important;
 }
-.night-mode .flatpickr-calendar { background: #232e34 !important; border-color: #2f3e45 !important; box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3) !important; }
+.night-mode .flatpickr-calendar {
+    background: #232e34 !important;
+    border: 1px solid #3a4b53 !important;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(138, 180, 176, 0.08) !important;
+}
 .night-mode .flatpickr-calendar .flatpickr-months { background: #1e2a2f !important; border-bottom: 1px solid #2f3e45 !important; border-radius: 8px 8px 0 0 !important; }
 .night-mode .flatpickr-calendar .flatpickr-month,
 .night-mode .flatpickr-calendar .flatpickr-current-month { background: #1e2a2f !important; color: #d4dfe3 !important; }
@@ -1351,14 +1384,22 @@ body.night-mode .glass-scrollbar .thumb {
                 <div class="maint-form" id="maintForm" style="display:none;">
                     <div class="maint-form-row">
                         <label class="maint-field"><span>Date</span><input type="text" id="maintDate" placeholder="Select a date" autocomplete="off"></label>
-                        <label class="maint-field"><span>Category</span>
-                            <select id="maintCategory">
-                                <option value="repair">Repair</option>
-                                <option value="routine">Routine maintenance</option>
-                                <option value="emergency">Emergency works</option>
-                                <option value="other" selected>Other</option>
-                            </select>
-                        </label>
+                        <div class="maint-field">
+                            <span>Category</span>
+                            <div class="maint-cat-dd" id="maintCategoryDD">
+                                <div class="maint-cat-trigger" id="maintCategoryTrigger" tabindex="0" role="button" aria-haspopup="listbox">
+                                    <div id="maintCategoryTriggerText">Other</div>
+                                    <i class="fa-solid fa-chevron-down mcd-chevron"></i>
+                                </div>
+                                <div class="maint-cat-list" id="maintCategoryListEl" role="listbox">
+                                    <div class="maint-cat-item" data-value="repair" role="option" tabindex="0"><div>Repair</div><i class="fa-solid fa-check"></i></div>
+                                    <div class="maint-cat-item" data-value="routine" role="option" tabindex="0"><div>Routine maintenance</div><i class="fa-solid fa-check"></i></div>
+                                    <div class="maint-cat-item" data-value="emergency" role="option" tabindex="0"><div>Emergency works</div><i class="fa-solid fa-check"></i></div>
+                                    <div class="maint-cat-item selected" data-value="other" role="option" tabindex="0"><div>Other</div><i class="fa-solid fa-check"></i></div>
+                                </div>
+                            </div>
+                            <input type="hidden" id="maintCategory" value="other">
+                        </div>
                     </div>
                     <label class="maint-field"><span>Title</span><input type="text" id="maintTitle" placeholder="e.g. Repainted parapet railings"></label>
                     <label class="maint-field"><span>Notes</span><textarea id="maintDescription" placeholder="Optional details…"></textarea></label>

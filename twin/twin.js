@@ -651,6 +651,56 @@ var maintCategoryLabels = { repair: 'Repair', routine: 'Routine maintenance', em
 // planning.html/database.js) instead of the browser-native <input type="date"> popup.
 var maintDatePicker = flatpickr('#maintDate', { dateFormat: 'Y-m-d', allowInput: true });
 
+// Custom category dropdown - a plain <select>'s open option list can't be
+// restyled in Chrome, so this mirrors the .dd-item bridge picker pattern
+// instead. #maintCategory stays a real (hidden) input so the rest of this
+// file can keep reading/writing its .value exactly like a native select.
+var maintCategoryDD = document.getElementById('maintCategoryDD');
+var maintCategoryList = document.getElementById('maintCategoryListEl');
+
+function setMaintCategory(cat) {
+    if (!maintCategoryLabels[cat]) cat = 'other';
+    document.getElementById('maintCategory').value = cat;
+    document.getElementById('maintCategoryTriggerText').textContent = maintCategoryLabels[cat];
+    maintCategoryList.querySelectorAll('.maint-cat-item').forEach(function(item) {
+        item.classList.toggle('selected', item.getAttribute('data-value') === cat);
+    });
+}
+
+function closeMaintCategoryDD() { maintCategoryDD.classList.remove('open'); }
+
+var maintCategoryTriggerEl = document.getElementById('maintCategoryTrigger');
+maintCategoryTriggerEl.addEventListener('click', function(e) {
+    e.stopPropagation();
+    maintCategoryDD.classList.toggle('open');
+});
+maintCategoryTriggerEl.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        maintCategoryDD.classList.toggle('open');
+    }
+});
+maintCategoryList.querySelectorAll('.maint-cat-item').forEach(function(item) {
+    item.addEventListener('click', function() {
+        setMaintCategory(item.getAttribute('data-value'));
+        closeMaintCategoryDD();
+    });
+    item.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setMaintCategory(item.getAttribute('data-value'));
+            closeMaintCategoryDD();
+            maintCategoryTriggerEl.focus();
+        }
+    });
+});
+document.addEventListener('click', function(e) {
+    if (!maintCategoryDD.contains(e.target)) closeMaintCategoryDD();
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeMaintCategoryDD();
+});
+
 function maintEscapeHtml(str) {
     return String(str == null ? '' : str).replace(/[&<>"']/g, function(c) {
         return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
@@ -713,19 +763,25 @@ function openMaintForm(editId) {
         var m = maintData.find(function(x) { return String(x.id) === String(editId); });
         if (!m) return;
         maintDatePicker.setDate(m.date, true);
-        document.getElementById('maintCategory').value = maintCategoryLabels[m.category] ? m.category : 'other';
+        setMaintCategory(m.category);
         document.getElementById('maintTitle').value = m.title;
         document.getElementById('maintDescription').value = m.description || '';
         document.getElementById('maintSaveBtn').textContent = 'Save changes';
     } else {
         maintDatePicker.setDate(new Date(), true);
-        document.getElementById('maintCategory').value = 'other';
+        setMaintCategory('other');
         document.getElementById('maintTitle').value = '';
         document.getElementById('maintDescription').value = '';
         document.getElementById('maintSaveBtn').textContent = 'Save';
     }
     form.style.display = '';
-    document.getElementById('maintTitle').focus();
+    // Scroll the form fully into view so the date field has room below it -
+    // otherwise flatpickr flips its calendar above the field and it ends up
+    // overlapping the Inspection history panel above instead.
+    form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // preventScroll - otherwise focusing the field re-triggers the browser's
+    // own scroll-into-view for just this input, undoing the centering above.
+    document.getElementById('maintTitle').focus({ preventScroll: true });
 }
 
 function closeMaintForm() {
