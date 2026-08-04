@@ -12,6 +12,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <style>
 /* ============================================
    SPANSENSE - TWINVIEW PAGE
@@ -860,6 +861,12 @@ body {
 .maint-field span { font-size:0.64rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:#5f6b73; }
 .maint-field input, .maint-field select, .maint-field textarea { border:1px solid #e2e8f0; border-radius:9px; padding:8px 10px; font-family:inherit; font-size:0.82rem; color:#2c3e44; background:white; }
 .maint-field input:focus, .maint-field select:focus, .maint-field textarea:focus { outline:none; border-color:#8ab4b0; }
+.maint-field select {
+    appearance:none; -webkit-appearance:none; -moz-appearance:none;
+    cursor:pointer; padding-right:32px;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235f6b73' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 10px center; background-size:14px;
+}
 .maint-field textarea { min-height:56px; resize:vertical; }
 .maint-form-actions { display:flex; justify-content:flex-end; gap:8px; }
 .maint-form-cancel, .maint-form-save { padding:7px 16px; border-radius:20px; font-size:0.76rem; font-weight:700; cursor:pointer; font-family:inherit; }
@@ -894,8 +901,11 @@ body {
 .night-mode .maint-add-btn:hover { background:#3a6b62; color:white; }
 .night-mode .maint-form { background:#1a2428; border-color:#2f3e45; }
 .night-mode .maint-field span { color:#7d939b; }
-.night-mode .maint-field input, .night-mode .maint-field select, .night-mode .maint-field textarea { background:#212f33; border-color:#3a4b53; color:#d4dfe3; }
+.night-mode .maint-field input, .night-mode .maint-field select, .night-mode .maint-field textarea { background-color:#212f33; border-color:#3a4b53; color:#d4dfe3; }
 .night-mode .maint-field input:focus, .night-mode .maint-field select:focus, .night-mode .maint-field textarea:focus { border-color:#6e9c98; }
+.night-mode .maint-field select {
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238ab4b0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+}
 .night-mode .maint-form-cancel { border-color:#3a4b53; color:#9ab0b8; }
 .night-mode .maint-form-cancel:hover { background:#1a2428; }
 .night-mode .maint-form-save { background:#3a6b62; }
@@ -1073,6 +1083,77 @@ body.night-mode .glass-scrollbar .thumb {
 .night-mode .status-line .sl-label {
     color: #a8b8bf;
 }
+
+/* Maintenance date - spanSense-styled flatpickr calendar (matches the theme
+   used in inspection1.js/planning.html/database.js) instead of the
+   browser-native <input type="date"> popup. */
+.flatpickr-calendar .flatpickr-day {
+    border: none !important;
+    border-radius: 8px !important;
+    background: transparent !important;
+}
+.flatpickr-calendar .flatpickr-day.selected,
+.flatpickr-calendar .flatpickr-day.startRange,
+.flatpickr-calendar .flatpickr-day.endRange {
+    background: #5b8c8a !important;
+    color: white !important;
+    border-radius: 8px !important;
+}
+.flatpickr-calendar .flatpickr-day.today {
+    font-weight: 700 !important;
+    color: #5b8c8a !important;
+}
+.flatpickr-calendar .flatpickr-day:hover:not(.flatpickr-disabled):not(.notAllowed):not(.selected) {
+    background: #eef4f2 !important;
+    border-radius: 8px !important;
+    color: #2c5a57 !important;
+}
+.flatpickr-calendar .flatpickr-day.prevMonthDay,
+.flatpickr-calendar .flatpickr-day.nextMonthDay {
+    color: #b0c0c8 !important;
+    opacity: 0.6 !important;
+}
+.flatpickr-calendar .flatpickr-months,
+.flatpickr-calendar .flatpickr-month,
+.flatpickr-calendar .flatpickr-current-month {
+    background: #f8fafc !important;
+    color: #2c4a48 !important;
+}
+.flatpickr-calendar .flatpickr-months { border-bottom: 1px solid #e9edf2 !important; }
+.flatpickr-calendar .flatpickr-prev-month,
+.flatpickr-calendar .flatpickr-next-month {
+    fill: #5f6b73 !important;
+}
+.flatpickr-calendar .flatpickr-prev-month:hover,
+.flatpickr-calendar .flatpickr-next-month:hover {
+    fill: #5b8c8a !important;
+    background: rgba(91, 140, 138, 0.1) !important;
+    border-radius: 50% !important;
+}
+.night-mode .flatpickr-calendar { background: #232e34 !important; border-color: #2f3e45 !important; box-shadow: 0 8px 28px rgba(0, 0, 0, 0.3) !important; }
+.night-mode .flatpickr-calendar .flatpickr-months { background: #1e2a2f !important; border-bottom: 1px solid #2f3e45 !important; border-radius: 8px 8px 0 0 !important; }
+.night-mode .flatpickr-calendar .flatpickr-month,
+.night-mode .flatpickr-calendar .flatpickr-current-month { background: #1e2a2f !important; color: #d4dfe3 !important; }
+.night-mode .flatpickr-calendar .flatpickr-current-month .flatpickr-monthDropdown-months,
+.night-mode .flatpickr-calendar .flatpickr-current-month input.cur-year { background: #1e2a2f !important; color: #d4dfe3 !important; }
+.night-mode .flatpickr-monthDropdown-months .flatpickr-monthDropdown-month { background: #232e34 !important; color: #c5d3d9 !important; }
+.night-mode .flatpickr-monthDropdown-months .flatpickr-monthDropdown-month:hover { background: #2f4a48 !important; color: white !important; }
+.night-mode .flatpickr-calendar .flatpickr-prev-month,
+.night-mode .flatpickr-calendar .flatpickr-next-month { fill: #8ab4b0 !important; }
+.night-mode .flatpickr-calendar .flatpickr-prev-month:hover,
+.night-mode .flatpickr-calendar .flatpickr-next-month:hover { fill: #a0c8c4 !important; background: rgba(138, 180, 176, 0.1) !important; border-radius: 50% !important; }
+.night-mode .flatpickr-calendar .flatpickr-weekdays,
+.night-mode .flatpickr-calendar .flatpickr-weekday { background: #232e34 !important; color: #a8b8bf !important; }
+.night-mode .flatpickr-calendar .flatpickr-day { color: #c5d3d9 !important; background: transparent !important; border: none !important; border-radius: 8px !important; box-shadow: none !important; }
+.night-mode .flatpickr-calendar .flatpickr-day.selected,
+.night-mode .flatpickr-calendar .flatpickr-day.startRange,
+.night-mode .flatpickr-calendar .flatpickr-day.endRange { background: #5b8c8a !important; color: white !important; }
+.night-mode .flatpickr-calendar .flatpickr-day.today { color: #8ab4b0 !important; font-weight: 700 !important; }
+.night-mode .flatpickr-calendar .flatpickr-day:hover:not(.flatpickr-disabled):not(.notAllowed):not(.selected) { background: #2f4a48 !important; color: white !important; }
+.night-mode .flatpickr-calendar .flatpickr-day.prevMonthDay,
+.night-mode .flatpickr-calendar .flatpickr-day.nextMonthDay { color: #a8b8bf !important; opacity: 0.5 !important; }
+.night-mode .flatpickr-input,
+.night-mode input.flatpickr-input { background: #212f33 !important; border-color: #3a4b53 !important; color: #d4dfe3 !important; }
 </style>
 </head>
 <body>
@@ -1269,7 +1350,7 @@ body.night-mode .glass-scrollbar .thumb {
                 </div>
                 <div class="maint-form" id="maintForm" style="display:none;">
                     <div class="maint-form-row">
-                        <label class="maint-field"><span>Date</span><input type="date" id="maintDate"></label>
+                        <label class="maint-field"><span>Date</span><input type="text" id="maintDate" placeholder="Select a date" autocomplete="off"></label>
                         <label class="maint-field"><span>Category</span>
                             <select id="maintCategory">
                                 <option value="repair">Repair</option>
@@ -1301,6 +1382,7 @@ body.night-mode .glass-scrollbar .thumb {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="bridgeModels.js"></script>
 <script src="shapeBuilders.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="twin.js"></script>
 </body>
 </html>

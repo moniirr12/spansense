@@ -647,6 +647,10 @@ var maintEditingId = null;
 
 var maintCategoryLabels = { repair: 'Repair', routine: 'Routine maintenance', emergency: 'Emergency works', other: 'Other' };
 
+// spanSense-styled calendar (matches the theme used in inspection1.js/
+// planning.html/database.js) instead of the browser-native <input type="date"> popup.
+var maintDatePicker = flatpickr('#maintDate', { dateFormat: 'Y-m-d', allowInput: true });
+
 function maintEscapeHtml(str) {
     return String(str == null ? '' : str).replace(/[&<>"']/g, function(c) {
         return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
@@ -708,13 +712,13 @@ function openMaintForm(editId) {
     if (editId) {
         var m = maintData.find(function(x) { return String(x.id) === String(editId); });
         if (!m) return;
-        document.getElementById('maintDate').value = m.date;
+        maintDatePicker.setDate(m.date, true);
         document.getElementById('maintCategory').value = maintCategoryLabels[m.category] ? m.category : 'other';
         document.getElementById('maintTitle').value = m.title;
         document.getElementById('maintDescription').value = m.description || '';
         document.getElementById('maintSaveBtn').textContent = 'Save changes';
     } else {
-        document.getElementById('maintDate').value = new Date().toISOString().slice(0, 10);
+        maintDatePicker.setDate(new Date(), true);
         document.getElementById('maintCategory').value = 'other';
         document.getElementById('maintTitle').value = '';
         document.getElementById('maintDescription').value = '';
