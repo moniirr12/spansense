@@ -632,7 +632,7 @@ function renderPhotos(container, allPhotos) {
         photos.forEach(photo => {
             section.innerHTML += `
                 <div class="preview-item-photo">
-                    <img src="${photo.preview_url}" loading="lazy">
+                    <img src="${photo.preview_url}" alt="${escapeHtml(photo.photo_description || 'Inspection photo')}" loading="lazy">
                     <div class="photo-info">
                         <div class="photo-description">${escapeHtml(photo.photo_description || 'No description')}</div>
                         <div class="photo-meta ${photo.source}-photo">
@@ -697,7 +697,7 @@ function renderDefectPhotos(container, photos, defectId) {
         const photoElement = document.createElement('div');
         photoElement.className = 'preview-item-photo';
         photoElement.innerHTML = `
-            <img src="${photo.preview_url}" loading="lazy">
+            <img src="${photo.preview_url}" alt="${escapeHtml(photo.photo_description || 'Inspection photo')}" loading="lazy">
             <div class="photo-info">
                 <div class="photo-description">${escapeHtml(photo.photo_description || 'No description')}</div>
                 <div class="photo-meta ${photo.source}-photo">
