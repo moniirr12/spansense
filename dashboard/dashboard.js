@@ -926,7 +926,7 @@ function renderPendingReview(data) {
         const inspector = item.inspector_name || 'Unknown';
 
         const fieldBadge = item.source === 'field'
-            ? '<span class="pr-field-badge" title="Saved from spanSense Field"><i class="fas fa-mobile-screen-button"></i> Field</span>'
+            ? '<span class="pr-field-badge" data-tip="Saved from spanSense Field"><i class="fas fa-mobile-screen-button"></i> Field</span>'
             : '';
         return `
             <tr>

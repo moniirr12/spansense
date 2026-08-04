@@ -396,7 +396,7 @@ async function fetchLatestInspectionDate(bridgeId) {
                 const isCurrentDate = latestDate === currentInspectionDate;
                 const dateDisplay = formatDate(latestDate);
                 lastInspEl.innerHTML = isCurrentDate
-                    ? `${dateDisplay} <i class="fas fa-circle-check current-insp-icon" title="This is the inspection you're currently editing"></i>`
+                    ? `${dateDisplay} <i class="fas fa-circle-check current-insp-icon" data-tip="This is the inspection you're currently editing"></i>`
                     : dateDisplay;
             }
 

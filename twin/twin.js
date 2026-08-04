@@ -747,8 +747,8 @@ function renderMaintenanceList() {
                 (m.description ? '<div class="maint-item-desc">' + maintEscapeHtml(m.description) + '</div>' : '') +
             '</div>' +
             '<div class="maint-item-actions">' +
-                '<button class="maint-icon-btn" data-action="edit" title="Edit"><i class="fa-solid fa-pen"></i></button>' +
-                '<button class="maint-icon-btn danger" data-action="delete" title="Delete"><i class="fa-solid fa-trash"></i></button>' +
+                '<button class="maint-icon-btn" data-action="edit" data-tip="Edit"><i class="fa-solid fa-pen"></i></button>' +
+                '<button class="maint-icon-btn danger" data-action="delete" data-tip="Delete"><i class="fa-solid fa-trash"></i></button>' +
             '</div>' +
         '</div>';
     }).join('');

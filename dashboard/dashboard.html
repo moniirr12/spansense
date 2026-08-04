@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <script src="/fetch-credentials.js"></script>
+    <script src="/hoverTip.js"></script>
     <script src="/roleBadge.js"></script>
     <script>(function(){var nm=localStorage.getItem('nightMode');var dark=nm==='on'||(nm===null&&!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches));if(dark)document.documentElement.classList.add('nm-preload');})();</script>
     <style>html.nm-preload,html.nm-preload body{background-color:#1a2428!important;}</style>
@@ -33,8 +34,8 @@
         <div class="right">
             <div class="night-mode-toggle" id="nightModeToggle"><i class="fas fa-moon"></i></div>
             <div class="account-links">
-                <a href="../accounts/accounts.html" title="Account"><i class="fas fa-user-circle"></i></a>
-                <a href="../contacts/contacts.html" class="active" title="Contact Us"><i class="fas fa-envelope"></i></a>
+                <a href="../accounts/accounts.html" data-tip="Account"><i class="fas fa-user-circle"></i></a>
+                <a href="../contacts/contacts.html" class="active" data-tip="Contact Us"><i class="fas fa-envelope"></i></a>
             </div>
         </div>
     </div>

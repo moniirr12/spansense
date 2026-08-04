@@ -564,7 +564,7 @@
                     '<td>' + (row.total_spans || '0') + '</td>' +
                     '<td>' + sourceBadge + '</td>' +
                     '<td><div class="row-actions">' +
-                        '<button title="Edit inspection" onclick="editInspectionRow(' + row.id + ')" class="btn-report"><i class="fas fa-pen"></i></button>' +
+                        '<button data-tip="Edit inspection" onclick="editInspectionRow(' + row.id + ')" class="btn-report"><i class="fas fa-pen"></i></button>' +
                     '</div></td>' +
                 '</tr>';
             });
@@ -687,9 +687,9 @@
                     '<td>' + formatDate(row.generated) + '</td>' +
                     '<td>' + (row.defect_count != null ? row.defect_count : '--') + '</td>' +
                     '<td><div class="row-actions">' +
-                        '<button title="Generate BCI Proforma" onclick="generateReport(' + row.inspection_id + ')" class="btn-report"><i class="fas fa-file-invoice"></i></button>' +
-                        '<button title="Download Report (Word)" onclick="generateReportDocx(' + row.inspection_id + ')"><i class="fas fa-file-word"></i></button>' +
-                        '<button title="Download Report" onclick="downloadReport(' + row.inspection_id + ')"><i class="fas fa-file-pdf"></i></button>' +
+                        '<button data-tip="Generate BCI Proforma" onclick="generateReport(' + row.inspection_id + ')" class="btn-report"><i class="fas fa-file-invoice"></i></button>' +
+                        '<button data-tip="Download Report (Word)" onclick="generateReportDocx(' + row.inspection_id + ')"><i class="fas fa-file-word"></i></button>' +
+                        '<button data-tip="Download Report" onclick="downloadReport(' + row.inspection_id + ')"><i class="fas fa-file-pdf"></i></button>' +
                     '</div></td>' +
                 '</tr>';
             });
@@ -1860,7 +1860,7 @@
     };
 
     window.refreshData = function() {
-        var btn = document.querySelector('.btn-icon[title="Refresh"] i');
+        var btn = document.querySelector('.btn-icon[data-tip="Refresh"] i');
         if (btn) btn.classList.add('fa-spin');
         var done = function() { if (btn) btn.classList.remove('fa-spin'); };
         if (currentCategory === 'bridges') fetchBridges().then(done);

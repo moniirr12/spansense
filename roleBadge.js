@@ -70,7 +70,7 @@
             // Instant, no transition — the common case for every load after
             // the first, with zero perceptible delay.
             icon.className = 'fas ' + ROLE_META[cached.role].icon;
-            accountLink.title = 'Account · ' + ROLE_META[cached.role].label;
+            accountLink.setAttribute('data-tip', 'Account · ' + ROLE_META[cached.role].label);
         }
 
         try {
@@ -85,7 +85,7 @@
                 // First load on this browser, or the role actually changed —
                 // ease into the new icon rather than popping straight to it.
                 morphIcon(icon, meta);
-                accountLink.title = 'Account · ' + meta.label;
+                accountLink.setAttribute('data-tip', 'Account · ' + meta.label);
             }
             writeCache(data.username, data.role);
         } catch (e) {

@@ -345,7 +345,7 @@ function updateMainRow(potentialRow) {
       // never mistaken for one.
       mainCells[2].textContent = "";
       mainCells[3].textContent = "";
-      mainCells[4].innerHTML = '<i class="fas fa-history retrieved-indicator" title="From a previous inspection — not part of this inspection\'s score"></i>';
+      mainCells[4].innerHTML = '<i class="fas fa-history retrieved-indicator" data-tip="From a previous inspection — not part of this inspection\'s score"></i>';
     } else {
       const severityValue = firstDefect.querySelector(".addSeverity")?.textContent || "";
       if (severityValue) {
@@ -1731,9 +1731,9 @@ document.addEventListener("DOMContentLoaded", function () {
   document.getElementById('inspectionElementsTable').addEventListener('click', function (event) {
       const target = event.target;
       const onExpandableRow = target.closest("tr.expandable-row");
-      const isExcluded = target.closest("button[title='View']") ||
-                         target.closest("button[title='Delete']") ||
-                         target.closest("button[title='Copy']");
+      const isExcluded = target.closest("button[data-tip='View']") ||
+                         target.closest("button[data-tip='Delete']") ||
+                         target.closest("button[data-tip='Copy']");
       if (onExpandableRow && !isExcluded) {
           openDefectEditModal(onExpandableRow);
       }
@@ -1777,7 +1777,7 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
   document.getElementById("inspectionElementsTable").addEventListener("click", async function (event) {
-    if (event.target.closest("button[title='Delete']")) {
+    if (event.target.closest("button[data-tip='Delete']")) {
       const confirmed = await showConfirmModal({
         title: 'Delete Defect?',
         message: 'Are you sure you want to delete this defect?',
@@ -1839,7 +1839,7 @@ document.addEventListener("DOMContentLoaded", function () {
   });
   document.getElementById("inspectionElementsTable").addEventListener("click", function(event) {
     const target = event.target;
-    if (target.closest("button[title='Copy']")) {
+    if (target.closest("button[data-tip='Copy']")) {
       const expandableRow = target.closest("tr.expandable-row");
       if (expandableRow && expandableRow.classList.contains("retrieved-defect")) {
         const addDefectEl = expandableRow.querySelector(".addDefect");
@@ -2257,12 +2257,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (saved === 'contracted') {
             document.body.classList.add('contracted-rows');
-            if (btn) { btn.classList.add('active'); btn.title = 'Switch to expanded rows'; }
+            if (btn) { btn.classList.add('active'); btn.setAttribute('data-tip', 'Switch to expanded rows'); }
             if (icon) icon.className = 'fas fa-expand-alt';
         } else {
             // Default: bulky mode
             document.body.classList.remove('contracted-rows');
-            if (btn) { btn.classList.remove('active'); btn.title = 'Switch to compact rows'; }
+            if (btn) { btn.classList.remove('active'); btn.setAttribute('data-tip', 'Switch to compact rows'); }
             if (icon) icon.className = 'fas fa-compress-alt';
         }
     }
@@ -2275,10 +2275,10 @@ document.addEventListener('DOMContentLoaded', function() {
         localStorage.setItem(ROW_DENSITY_KEY, isContracted ? 'contracted' : 'bulky');
 
         if (isContracted) {
-            if (btn) { btn.classList.add('active'); btn.title = 'Switch to expanded rows'; }
+            if (btn) { btn.classList.add('active'); btn.setAttribute('data-tip', 'Switch to expanded rows'); }
             if (icon) icon.className = 'fas fa-expand-alt';
         } else {
-            if (btn) { btn.classList.remove('active'); btn.title = 'Switch to compact rows'; }
+            if (btn) { btn.classList.remove('active'); btn.setAttribute('data-tip', 'Switch to compact rows'); }
             if (icon) icon.className = 'fas fa-compress-alt';
         }
     };

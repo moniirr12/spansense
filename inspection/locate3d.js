@@ -551,7 +551,7 @@ function renderLocate3DDefectsList() {
             '<div class="defect-description" style="font-size: 0.75rem;">' + (def.severity || 'N/A') + (def.extent || 'N/A') + '. (' + escapeHtml(combinedDefect) + ') ' + escapeHtml(fullDefectDescription) + '</div>' +
             (located
                 ? '<div class="defect-located-tag"><i class="fas fa-check-circle"></i> Located (' + raw.x.toFixed(2) + ', ' + raw.y.toFixed(2) + ', ' + raw.z.toFixed(2) + ')' +
-                  '<button type="button" class="defect-remove-btn" title="Remove from model" onclick="event.stopPropagation(); removeDefectPoint(' + i + ')"><i class="fas fa-times"></i></button></div>'
+                  '<button type="button" class="defect-remove-btn" data-tip="Remove from model" onclick="event.stopPropagation(); removeDefectPoint(' + i + ')"><i class="fas fa-times"></i></button></div>'
                 : '') +
             '</div>';
     });

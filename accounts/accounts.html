@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <script src="/fetch-credentials.js"></script>
+    <script src="/hoverTip.js"></script>
     <script src="/roleBadge.js"></script>
     <script>(function(){var nm=localStorage.getItem('nightMode');var dark=nm==='on'||(nm===null&&!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches));if(dark)document.documentElement.classList.add('nm-preload');})();</script>
     <style>html.nm-preload,html.nm-preload body{background-color:#1a2428!important;}</style>
@@ -814,8 +815,8 @@
         <div class="right">
             <div class="night-mode-toggle" id="nightModeToggle"><i class="fas fa-moon"></i></div>
             <div class="account-links">
-                <a href="#" class="active" title="Account"><i class="fas fa-user-circle"></i></a>
-                <a href="../contacts/contacts.html" title="Contact Us"><i class="fas fa-envelope"></i></a>
+                <a href="#" class="active" data-tip="Account"><i class="fas fa-user-circle"></i></a>
+                <a href="../contacts/contacts.html" data-tip="Contact Us"><i class="fas fa-envelope"></i></a>
             </div>
         </div>
     </div>
@@ -839,7 +840,7 @@
         <div class="profile-hero">
             <div class="profile-avatar">
                 <span id="profileAvatarInitials">··</span>
-                <div class="edit-avatar" title="Change photo"><i class="fas fa-camera"></i></div>
+                <div class="edit-avatar" data-tip="Change photo"><i class="fas fa-camera"></i></div>
             </div>
             <div class="profile-info">
                 <div class="name" id="profileName">Loading...</div>
