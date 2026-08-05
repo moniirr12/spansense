@@ -999,8 +999,101 @@ async function navigateToNextPage() {
         if (!proceed) return;
     }
 
+    await carryForwardPreviousDefects();
+
     sessionStorage.setItem('inspectionData', JSON.stringify(inspectionData));
     window.location.href = "../inspection/inspection.html";
+}
+
+// ============================================
+// CARRY DEFECTS FORWARD FROM THE LAST INSPECTION
+// ============================================
+// Most defects are still there next time round - only asking the inspector
+// to re-place a 3D marker for something that hasn't moved wastes their
+// time. Pre-fills this brand-new inspection's defect list (spanSense's
+// own defects/inspectionData.defects sessionStorage pair, same shape
+// inspection.js builds when a defect is added by hand - see
+// addDefectListener around line 602) from the structure's most recent
+// inspection, coordinates included via /api/latest-defects. Nothing here
+// is a save - the inspector reviews each row on inspection.html and
+// deletes whichever ones don't apply (e.g. repaired since), exactly like
+// deleting any other defect row. Skipped entirely in edit mode, where the
+// inspection being edited already owns its own defects.
+async function carryForwardPreviousDefects() {
+    const isEditMode = sessionStorage.getItem('inspectionMode') === 'edit';
+    const structureId = inspectionData.structureId || sessionStorage.getItem('structureId');
+    if (isEditMode || !structureId) return;
+
+    // Defensive: only ever seed an empty draft, never append onto one that
+    // already has entries (e.g. this function somehow running twice).
+    const existing = JSON.parse(sessionStorage.getItem('defects') || '[]');
+    if (existing.length > 0) return;
+
+    let previous;
+    try {
+        const res = await fetch(`${API_BASE}/api/latest-defects?structureId=${encodeURIComponent(structureId)}`);
+        previous = res.ok ? await res.json() : null;
+    } catch (e) {
+        console.warn('Could not fetch previous defects to carry forward:', e);
+        return;
+    }
+    if (!previous || !Array.isArray(previous.defects) || previous.defects.length === 0) return;
+
+    const defects = [];
+    const inspectionDefects = [];
+    const baseTime = Date.now();
+
+    previous.defects.forEach((d, i) => {
+        const timestamp = new Date(baseTime + i).toISOString();
+        const defectCombined = `${d.defect_type}.${d.defect_number}`;
+        const worksRequired = d.works_required === 'Y' ? 'Y' : 'N';
+
+        defects.push({
+            defectCombined,
+            defectType: String(d.defect_type),
+            defectNumber: String(d.defect_number),
+            severity: String(d.severity || 1),
+            extent: d.extent || 'A',
+            works: worksRequired,
+            priority: worksRequired === 'Y' ? (d.priority || '') : '',
+            cost: worksRequired === 'Y' ? (d.cost || '') : '',
+            remedialWorks: d.remedial_works || '',
+            comment: d.comments || '',
+            spanNumber: d.span_number,
+            elementNumber: d.element_no,
+            timestamp,
+            defectId: `${structureId}_${inspectionData.inspectionDate}_${d.span_number}_${d.element_no}_${defectCombined}`,
+            isPrimary: d.is_primary === true,
+            carriedForward: true,
+            carriedFromDate: previous.inspectionDate
+        });
+
+        const inspectionDefect = {
+            defectDbId: null,
+            spanNumber: parseInt(d.span_number),
+            elementNumber: parseInt(d.element_no),
+            elementDescription: d.element_description || null,
+            defectId: defectCombined,
+            severity: d.severity ? parseInt(d.severity) : null,
+            extent: d.extent || 'A',
+            worksRequired,
+            remedialWorks: d.remedial_works || '',
+            priority: worksRequired === 'Y' ? (d.priority || null) : null,
+            cost: worksRequired === 'Y' ? (parseFloat(d.cost) || 0) : null,
+            comments: d.comments || '',
+            timestamp,
+            photos: []
+        };
+        if (d.pos_x != null && d.pos_y != null && d.pos_z != null) {
+            inspectionDefect.x = parseFloat(d.pos_x);
+            inspectionDefect.y = parseFloat(d.pos_y);
+            inspectionDefect.z = parseFloat(d.pos_z);
+        }
+        inspectionDefects.push(inspectionDefect);
+    });
+
+    sessionStorage.setItem('defects', JSON.stringify(defects));
+    inspectionData.defects = inspectionDefects;
 }
 
 // ============================================

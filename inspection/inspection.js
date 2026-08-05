@@ -1614,6 +1614,21 @@ function addDefectToTable(mainRow, defectData, isRetrieved, isEditable = false) 
   const addDefectEl = expandableRow.querySelector('.addDefect');
   if (addDefectEl) addDefectEl.dataset.code = defectData.defectCombined || '';
   if (isRetrieved) expandableRow.classList.add("retrieved-defect");
+  // Pre-filled from the structure's last inspection (see inspection1.js's
+  // carryForwardPreviousDefects) - unlike a .retrieved-defect row this one
+  // is a normal, fully editable/deletable defect for THIS inspection; the
+  // ribbon just tells the inspector where it came from so they know to
+  // review it rather than assume it was logged today.
+  if (defectData.carriedForward) {
+    expandableRow.classList.add("carried-forward-row");
+    const ribbon = expandableRow.querySelector('.retrieved-ribbon');
+    if (ribbon) {
+      const dateLabel = defectData.carriedFromDate
+        ? new Date(defectData.carriedFromDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+        : 'previous inspection';
+      ribbon.innerHTML = `<i class="fas fa-clock-rotate-left"></i> Carried forward · ${dateLabel}`;
+    }
+  }
   expandableRow.classList.toggle("editable", isEditable);
   // The primary defect always sits right under the main row; later
   // non-primary defects are appended after it (but still before any
@@ -1641,7 +1656,7 @@ function addDefectToTable(mainRow, defectData, isRetrieved, isEditable = false) 
     console.error("Insertion failed:", e);
     return null;
   }
-  if (!isRetrieved) {
+  if (!isRetrieved && !defectData.carriedForward) {
       const ribbon = expandableRow.querySelector('.retrieved-ribbon');
       if (ribbon) ribbon.remove();
   }
