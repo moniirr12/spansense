@@ -978,6 +978,21 @@ body {
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(91, 140, 138, 0.3);
 }
+/* Once a retrieved defect has been copied this session (see
+   markDefectAsCopied in inspection.js), its Copy button is disabled so it
+   can't be copied again into a duplicate row. */
+#inspectionElementsTable tr.expandable-row .grid-buttons .btn-edit:disabled {
+    background: #c9d3d6;
+    color: #eef2f2;
+    box-shadow: none;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+#inspectionElementsTable tr.expandable-row .grid-buttons .btn-edit:disabled:hover {
+    background: #c9d3d6;
+    transform: none;
+    box-shadow: none;
+}
 #inspectionElementsTable tr.expandable-row .grid-buttons .btn-delete {
     background: rgba(196, 112, 112, 0.08);
     color: #c47070;
@@ -1024,6 +1039,42 @@ body {
     line-height: 1;
 }
 #inspectionElementsTable tr.retrieved-defect .retrieved-ribbon i {
+    font-size: 0.55rem;
+}
+
+/* Carried-forward ribbon - same ribbon element and layout fix as the
+   retrieved-defect one above (position:absolute takes it out of
+   .aligned-grid's column flow), but deliberately NOT scoped through
+   .retrieved-defect: these rows stay fully editable/deletable and count
+   toward BCI, unlike a read-only historical comparison row. Teal instead
+   of the retrieved ribbon's sage-green so the two aren't mistaken for each
+   other. Not redefined under .night-mode - it's an opaque chip on its own
+   gradient, same as the CTA/dark-accent elements elsewhere in the app. */
+#inspectionElementsTable tr.carried-forward-row .aligned-grid {
+    position: relative;
+    overflow: hidden;
+    padding-top: 30px;
+}
+#inspectionElementsTable tr.carried-forward-row .retrieved-ribbon {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: linear-gradient(135deg, #5b8c8a, #4a706e);
+    color: white;
+    padding: 5px 14px 5px 10px;
+    border-radius: 20px 0 12px 0;
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    box-shadow: 0 2px 8px rgba(91, 140, 138, 0.3);
+    z-index: 2;
+    line-height: 1;
+}
+#inspectionElementsTable tr.carried-forward-row .retrieved-ribbon i {
     font-size: 0.55rem;
 }
 
@@ -1298,6 +1349,14 @@ body {
 }
 .night-mode #inspectionElementsTable tr.expandable-row .grid-buttons .btn-edit:hover {
     background: #4a8b82;
+}
+.night-mode #inspectionElementsTable tr.expandable-row .grid-buttons .btn-edit:disabled,
+.night-mode #inspectionElementsTable tr.expandable-row .grid-buttons .btn-edit:disabled:hover {
+    background: #2f3e45;
+    color: #6e838c;
+    box-shadow: none;
+    cursor: not-allowed;
+    opacity: 0.7;
 }
 .night-mode #inspectionElementsTable tr.expandable-row .grid-buttons .btn-delete {
     background: rgba(196, 112, 112, 0.12);
@@ -4247,6 +4306,16 @@ body.contracted-rows #inspectionElementsTable tr.retrieved-defect .aligned-grid 
 }
 
 body.contracted-rows #inspectionElementsTable tr.retrieved-defect .retrieved-ribbon {
+    padding: 3px 10px 3px 7px;
+    font-size: 0.5rem;
+    border-radius: 16px 0 10px 0;
+}
+
+body.contracted-rows #inspectionElementsTable tr.carried-forward-row .aligned-grid {
+    padding-top: 26px;
+}
+
+body.contracted-rows #inspectionElementsTable tr.carried-forward-row .retrieved-ribbon {
     padding: 3px 10px 3px 7px;
     font-size: 0.5rem;
     border-radius: 16px 0 10px 0;

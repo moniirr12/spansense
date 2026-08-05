@@ -454,6 +454,7 @@ if (addInspectionBtn) {
         sessionStorage.removeItem('defects');
         sessionStorage.removeItem('photoData');
         sessionStorage.removeItem('selectedSpan');
+        sessionStorage.removeItem('copiedDefectIds');
         window.location.href = "../inspection1/inspection1.html";
     });
 }
@@ -930,6 +931,7 @@ function populateDocumentsQuickStats(documents) {
           sessionStorage.removeItem('defects');
           sessionStorage.removeItem('photoData');
           sessionStorage.removeItem('selectedSpan');
+          sessionStorage.removeItem('copiedDefectIds');
           sessionStorage.setItem('inspectionMode', 'edit');
           sessionStorage.setItem('inspectionDate', date);
           sessionStorage.setItem('inspectionStructureNumber', structureId);
@@ -1097,6 +1099,7 @@ function populateDocumentsQuickStats(documents) {
         sessionStorage.removeItem('defects');
         sessionStorage.removeItem('photoData');
         sessionStorage.removeItem('selectedSpan');
+        sessionStorage.removeItem('copiedDefectIds');
         window.location.href = '../inspection1/inspection1.html';
       });
     }

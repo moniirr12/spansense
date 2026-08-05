@@ -1614,6 +1614,21 @@ function addDefectToTable(mainRow, defectData, isRetrieved, isEditable = false) 
   const addDefectEl = expandableRow.querySelector('.addDefect');
   if (addDefectEl) addDefectEl.dataset.code = defectData.defectCombined || '';
   if (isRetrieved) expandableRow.classList.add("retrieved-defect");
+  // Pre-filled from the structure's last inspection (see inspection1.js's
+  // carryForwardPreviousDefects) - unlike a .retrieved-defect row this one
+  // is a normal, fully editable/deletable defect for THIS inspection; the
+  // ribbon just tells the inspector where it came from so they know to
+  // review it rather than assume it was logged today.
+  if (defectData.carriedForward) {
+    expandableRow.classList.add("carried-forward-row");
+    const ribbon = expandableRow.querySelector('.retrieved-ribbon');
+    if (ribbon) {
+      const dateLabel = defectData.carriedFromDate
+        ? new Date(defectData.carriedFromDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+        : 'previous inspection';
+      ribbon.innerHTML = `<i class="fas fa-clock-rotate-left"></i> Carried forward · ${dateLabel}`;
+    }
+  }
   expandableRow.classList.toggle("editable", isEditable);
   // The primary defect always sits right under the main row; later
   // non-primary defects are appended after it (but still before any
@@ -1641,7 +1656,7 @@ function addDefectToTable(mainRow, defectData, isRetrieved, isEditable = false) 
     console.error("Insertion failed:", e);
     return null;
   }
-  if (!isRetrieved) {
+  if (!isRetrieved && !defectData.carriedForward) {
       const ribbon = expandableRow.querySelector('.retrieved-ribbon');
       if (ribbon) ribbon.remove();
   }
@@ -1840,8 +1855,14 @@ document.addEventListener("DOMContentLoaded", function () {
   document.getElementById("inspectionElementsTable").addEventListener("click", function(event) {
     const target = event.target;
     if (target.closest("button[data-tip='Copy']")) {
+      const copyBtn = target.closest("button[data-tip='Copy']");
       const expandableRow = target.closest("tr.expandable-row");
       if (expandableRow && expandableRow.classList.contains("retrieved-defect")) {
+        const retrievedDbId = expandableRow.querySelector(".defectId")?.textContent?.trim();
+        // Already copied this session - the button should already be
+        // disabled (see markDefectAsCopied/disableCopyButton below), but
+        // guard the action itself too rather than trust only the UI state.
+        if (retrievedDbId && isDefectAlreadyCopied(retrievedDbId)) return;
         const addDefectEl = expandableRow.querySelector(".addDefect");
         const defectCombined = addDefectEl.dataset.code || addDefectEl.textContent;
         const [defectType, defectNumber] = defectCombined.split('.');
@@ -1896,13 +1917,67 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         updateMainRow(mainRow);
         refreshBCIScores();
-        showAlertModal("Defect copied successfully. You can now edit the new defect.", 'success');
+        if (retrievedDbId) markDefectAsCopied(retrievedDbId, copyBtn);
+        maybeShowDefectCopiedNotice();
       } else {
         showAlertModal("Copying is only allowed for retrieved defects.");
       }
     }
   });
 });
+
+// ============================================
+// COPY-ONCE TRACKING (Copy button on retrieved/comparison rows)
+// ============================================
+// Copying a retrieved defect twice would just create two identical new
+// rows, so each retrieved defect (identified by its real DB id) can only
+// be copied once per inspection draft. Tracked in sessionStorage rather
+// than just a DOM class, since inspectionA.js's date-dropdown rebuilds
+// retrieved rows from scratch every time the date changes - a class alone
+// wouldn't survive that.
+function getCopiedDefectIds() {
+  try {
+    return new Set(JSON.parse(sessionStorage.getItem('copiedDefectIds') || '[]'));
+  } catch (e) {
+    return new Set();
+  }
+}
+function isDefectAlreadyCopied(defectDbId) {
+  return getCopiedDefectIds().has(String(defectDbId));
+}
+function disableCopyButton(copyBtn) {
+  if (!copyBtn) return;
+  copyBtn.disabled = true;
+  copyBtn.dataset.tip = 'Already copied';
+}
+function markDefectAsCopied(defectDbId, copyBtn) {
+  const ids = getCopiedDefectIds();
+  ids.add(String(defectDbId));
+  sessionStorage.setItem('copiedDefectIds', JSON.stringify(Array.from(ids)));
+  disableCopyButton(copyBtn);
+}
+
+// ============================================
+// "DEFECT COPIED" SUCCESS NOTICE - dismissible for the rest of the session
+// ============================================
+// Same #confirmModalOverlay component every other alert/confirm on this
+// page uses (see showAlertModal/showConfirmModal in photo.js) - repurposing
+// its existing cancel-button slot as "Don't show again" rather than adding
+// a checkbox to the shared modal, which every other caller's plain-text
+// message would then need to account for.
+function maybeShowDefectCopiedNotice() {
+  if (sessionStorage.getItem('hideDefectCopiedNotice') === 'true') return;
+  showConfirmModal({
+    title: 'Success',
+    message: 'Defect copied successfully. You can now edit the new defect.',
+    type: 'success',
+    confirmText: 'OK',
+    cancelText: "Don't show again",
+    showCancel: true
+  }).then(function(keepShowing) {
+    if (keepShowing === false) sessionStorage.setItem('hideDefectCopiedNotice', 'true');
+  });
+}
 
 // Guarded the same way as the DOMContentLoaded block above - this script
 // also loads on map.html, which has no 'works' field.

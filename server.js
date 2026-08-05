@@ -1112,6 +1112,37 @@ app.get('/api/previous-defects', requireAuth, async (req, res) => {
     }
 });
 
+// GET every defect from a structure's most recent inspection, in one call
+// (all elements, not just one) - used by inspection1.js to carry defects
+// forward into a brand new inspection, coordinates included, so the
+// inspector isn't re-placing 3D markers for defects that haven't moved
+// since last time.
+app.get('/api/latest-defects', requireAuth, async (req, res) => {
+    try {
+        const { structureId } = req.query;
+        if (!structureId) return res.status(400).json({ error: 'structureId required' });
+
+        const latest = await dbGet(
+            `SELECT id, inspection_date FROM inspections
+             WHERE structure_id = $1 ORDER BY inspection_date DESC, id DESC LIMIT 1`,
+            [structureId]
+        );
+        if (!latest) return res.json({ inspectionDate: null, defects: [] });
+
+        const rows = await dbAll(
+            `SELECT span_number, element_no, element_description, defect_type, defect_number,
+                    severity, extent, works_required, priority, cost, comments, remedial_works,
+                    pos_x, pos_y, pos_z, is_primary
+             FROM defects WHERE inspection_id = $1
+             ORDER BY span_number, element_no`,
+            [latest.id]
+        );
+        res.json({ inspectionDate: latest.inspection_date, defects: rows });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Get complete bridge data (PostgreSQL version)
 app.get('/api/bridges/:id', requireAuth, async (req, res) => {
     try {
