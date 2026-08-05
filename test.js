@@ -163,7 +163,37 @@ async function captureLocationMap(lat, lng, locationName) {
             resolve(result);
         }
 
+        // html2canvas's useCORS makes it re-fetch every cross-origin image
+        // itself (a second network request per tile, separate from the one
+        // that already loaded them into the live DOM) to read pixel data
+        // safely - that second fetch is a much likelier target for an ad
+        // blocker/privacy extension to silently drop than the original
+        // passive <img> load, which would explain tiles rendering fine on
+        // the page but coming out grey in the capture with no error
+        // anywhere. Converting each already-loaded tile to a same-origin
+        // data: URL first means there's no cross-origin fetch left for
+        // html2canvas to make at all - it's reading pixels the browser
+        // already decoded, not requesting anything new.
+        function inlineLoadedTilesAsDataURLs() {
+            const tiles = document.querySelectorAll('#tempMap img.leaflet-tile-loaded');
+            let inlined = 0, failed = 0;
+            tiles.forEach((tile) => {
+                try {
+                    const c = document.createElement('canvas');
+                    c.width = tile.naturalWidth || tile.width;
+                    c.height = tile.naturalHeight || tile.height;
+                    c.getContext('2d').drawImage(tile, 0, 0);
+                    tile.src = c.toDataURL('image/png');
+                    inlined++;
+                } catch (e) {
+                    failed++;
+                }
+            });
+            if (failed) console.warn(`Location map: ${failed}/${tiles.length} tiles couldn't be inlined as data URLs (kept their original cross-origin src) - ${inlined} were.`);
+        }
+
         function capture() {
+            inlineLoadedTilesAsDataURLs();
             const mapElement = document.getElementById('tempMap');
             html2canvas(mapElement, {
                 scale: 2,
@@ -233,19 +263,61 @@ async function captureLocationMap(lat, lng, locationName) {
 
             map.addControl(new NorthControl());
 
-            // Capture once the tile layer actually reports every visible tile
-            // loaded, instead of a blind fixed delay - on a slower connection
-            // the old 1500ms wait could fire before OSM's tiles finished
-            // painting, silently baking a blank grey map into the report. A
-            // safety-net timeout still covers the case where 'load' never
-            // fires (e.g. the tile server is unreachable).
+            // Capture once every visible tile has actually painted, instead
+            // of a blind fixed delay or trusting the tile layer's own 'load'
+            // event alone - that event can fire (and did, in practice) before
+            // every tile image has finished loading on a slower connection,
+            // baking Leaflet's plain grey .leaflet-container background into
+            // the report instead of the map. A tile only gets Leaflet's
+            // 'leaflet-tile-loaded' class once it's genuinely finished
+            // loading (GridLayer._tileOnLoad), so checking for that class on
+            // every tile <img> is a direct, DOM-verified signal rather than
+            // trusting the layer's own aggregate bookkeeping. Polled instead
+            // of only listening for 'load', since tiles can keep finishing
+            // after that event already fired. A safety-net timeout still
+            // covers the case where a tile never loads at all (server
+            // unreachable) - 8s instead of the old 4s, since a correct map
+            // is worth more than a couple of extra seconds on a report that
+            // isn't time-critical.
             let captured = false;
-            tileLayer.on('load', () => {
-                if (captured) return;
-                captured = true;
-                setTimeout(capture, 200); // let the paint settle
+            let erroredTiles = 0;
+            // If a tile request is actively blocked (ad blocker/privacy
+            // extension/corporate proxy targeting the tile CDN, not just a
+            // slow connection), it never gets 'leaflet-tile-loaded' and
+            // never will - counting errors separately means the 8s
+            // safety-net capture below can at least log what actually
+            // happened instead of leaving a silent grey image with no clue
+            // why.
+            tileLayer.on('tileerror', (e) => {
+                erroredTiles++;
+                console.warn('Location map tile failed to load:', e && e.tile && e.tile.src);
             });
-            setTimeout(() => { if (!captured) { captured = true; capture(); } }, 4000);
+            function allTilesPainted() {
+                const tiles = document.querySelectorAll('#tempMap img.leaflet-tile');
+                if (!tiles.length) return false;
+                for (const tile of tiles) {
+                    if (!tile.classList.contains('leaflet-tile-loaded')) return false;
+                }
+                return true;
+            }
+            function attemptCapture() {
+                if (captured || !allTilesPainted()) return;
+                captured = true;
+                clearInterval(pollId);
+                setTimeout(capture, 150); // let the paint settle
+            }
+            tileLayer.on('load', attemptCapture);
+            const pollId = setInterval(attemptCapture, 200);
+            setTimeout(() => {
+                clearInterval(pollId);
+                if (!captured) {
+                    captured = true;
+                    const tiles = document.querySelectorAll('#tempMap img.leaflet-tile');
+                    const loaded = document.querySelectorAll('#tempMap img.leaflet-tile-loaded').length;
+                    console.warn(`Location map capture timed out after 8s - ${loaded}/${tiles.length} tiles loaded, ${erroredTiles} errored. Capturing whatever's there.`);
+                    capture();
+                }
+            }, 8000);
         } catch (err) {
             console.warn('Could not set up location map:', err);
             finish(null);
@@ -874,7 +946,11 @@ function buildInspectionReportDocDefinition(ctx) {
     const statusMeta = {
         approved: { label: 'Approved', bg: RC.priLBg, textColor: '#1e5c34', accent: RC.priL },
         rejected: { label: 'Rejected', bg: RC.priHBg, textColor: '#7a1f1f', accent: RC.priH },
-        submitted: { label: 'Submitted — Pending Review', bg: RC.accentTint, textColor: '#2c4a48', accent: RC.accent }
+        submitted: { label: 'Submitted — Pending Review', bg: RC.accentTint, textColor: '#2c4a48', accent: RC.accent },
+        // inspection.html's pre-save Preview (spans.js) - nothing has
+        // actually been submitted yet, so reusing the 'submitted' label
+        // here would be a false claim, not just a missing one.
+        preview: { label: 'Preview', bg: RC.accentTint, textColor: '#2c4a48', accent: RC.accent }
     }[inspectionData.status] || { label: 'Submitted — Pending Review', bg: RC.accentTint, textColor: '#2c4a48', accent: RC.accent };
     const statusBannerText = inspectionData.reviewedBy
         ? `${statusMeta.label} — reviewed ${inspectionData.reviewedAt ? formatDate(inspectionData.reviewedAt) : ''} by ${inspectionData.reviewedBy}`

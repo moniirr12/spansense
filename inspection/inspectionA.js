@@ -669,6 +669,16 @@ if (inspectionDatesElement) {
                         expandableRow.dataset.timestamp = defect.timestamp;
                     }
 
+                    // Stash the source defect's 3D location (if it has one) so
+                    // the Copy button (inspection.js) can carry it across too -
+                    // there's no visible table cell for position to read it
+                    // back from otherwise.
+                    if (defect.pos_x != null && defect.pos_y != null && defect.pos_z != null) {
+                        expandableRow.dataset.posX = defect.pos_x;
+                        expandableRow.dataset.posY = defect.pos_y;
+                        expandableRow.dataset.posZ = defect.pos_z;
+                    }
+
                     // Copy is one-shot per session (see markDefectAsCopied in
                     // inspection.js) - this row gets rebuilt from scratch every
                     // time the date dropdown changes, so re-apply the disabled

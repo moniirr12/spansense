@@ -53,6 +53,13 @@ document.getElementById('confirmModalOverlay')?.addEventListener('click', (e) =>
     if (e.target.id === 'confirmModalOverlay') e.target.classList.remove('active');
 });
 
+// Click the backdrop (not the card itself) to close, same as every other
+// modal on this page - this one was missing it, so the only way out was
+// the X/DONE buttons.
+document.getElementById('uploadModal-photo')?.addEventListener('click', (e) => {
+    if (e.target.id === 'uploadModal-photo') closePhotoModal();
+});
+
 // Styled stand-in for native alert() — single OK button, no cancel.
 function showAlertModal(message, type, title) {
     const defaultTitles = { error: 'Error', warning: 'Warning', success: 'Success' };
