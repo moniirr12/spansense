@@ -1909,6 +1909,43 @@ document.addEventListener("DOMContentLoaded", function () {
         };
         defects.push(defectData);
         sessionStorage.setItem('defects', JSON.stringify(defects));
+
+        // Keep inspectionData.defects[] in lockstep with defects[] (same
+        // index, same order) - locate3d.js's placement/list code assumes
+        // inspectionData.defects[i] matches getAllDefects()[i], and without
+        // a matching push here that pairing breaks: the copied defect shows
+        // in the list with no "Located" status, and placeDefectPoint()
+        // silently no-ops (inspectionData.defects[index] doesn't exist) even
+        // though nothing here would ever tell the inspector why. If the
+        // source retrieved defect already had a 3D location, carry it over
+        // too (stashed on the row as dataset.posX/Y/Z - see inspectionA.js).
+        let inspectionData = JSON.parse(sessionStorage.getItem('inspectionData') || '{}');
+        if (!inspectionData.defects) inspectionData.defects = [];
+        const inspectionDefect = {
+          defectDbId: null,
+          spanNumber: parseInt(selectedSpan),
+          elementNumber: parseInt(elementNumber),
+          elementDescription: null,
+          defectId: defectCombined,
+          severity: severity ? parseInt(severity) : null,
+          extent: extent,
+          worksRequired: works,
+          remedialWorks: remedialWorks,
+          priority: works === 'Y' ? (priority || null) : null,
+          cost: works === 'Y' ? (parseFloat(cost) || 0) : null,
+          comments: comment,
+          timestamp: defectData.timestamp,
+          photos: []
+        };
+        const posX = expandableRow.dataset.posX, posY = expandableRow.dataset.posY, posZ = expandableRow.dataset.posZ;
+        if (posX !== undefined && posY !== undefined && posZ !== undefined) {
+          inspectionDefect.x = parseFloat(posX);
+          inspectionDefect.y = parseFloat(posY);
+          inspectionDefect.z = parseFloat(posZ);
+        }
+        inspectionData.defects.push(inspectionDefect);
+        sessionStorage.setItem('inspectionData', JSON.stringify(inspectionData));
+
         const newRow = addDefectToTable(mainRow, defectData, false, true);
         if (newRow && !mainRow.classList.contains("expanded")) {
           toggleButtonRow(mainRow);

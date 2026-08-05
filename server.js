@@ -626,6 +626,7 @@ app.get("/api/defects-by-date", requireAuth, async (req, res) => {
                 d.cost,
                 d.comments,
                 d.timestamp,
+                d.pos_x, d.pos_y, d.pos_z,
                 s.bci_crit,
                 s.bci_av
             FROM defects d
@@ -650,7 +651,13 @@ app.get("/api/defects-by-date", requireAuth, async (req, res) => {
             comments_remarks: row.comments,
             bci_crit: row.bci_crit,
             bci_av: row.bci_av,
-            timestamp: row.timestamp
+            timestamp: row.timestamp,
+            // 3D twinView placement (see inspection/locate3d.js) - copying this
+            // defect into a new inspection (see .btn-edit's "Copy" handler in
+            // inspection.js) carries the location across too, when it has one.
+            pos_x: row.pos_x !== null ? parseFloat(row.pos_x) : null,
+            pos_y: row.pos_y !== null ? parseFloat(row.pos_y) : null,
+            pos_z: row.pos_z !== null ? parseFloat(row.pos_z) : null
         }));
 
         res.json(transformed);
