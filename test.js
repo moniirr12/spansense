@@ -163,7 +163,37 @@ async function captureLocationMap(lat, lng, locationName) {
             resolve(result);
         }
 
+        // html2canvas's useCORS makes it re-fetch every cross-origin image
+        // itself (a second network request per tile, separate from the one
+        // that already loaded them into the live DOM) to read pixel data
+        // safely - that second fetch is a much likelier target for an ad
+        // blocker/privacy extension to silently drop than the original
+        // passive <img> load, which would explain tiles rendering fine on
+        // the page but coming out grey in the capture with no error
+        // anywhere. Converting each already-loaded tile to a same-origin
+        // data: URL first means there's no cross-origin fetch left for
+        // html2canvas to make at all - it's reading pixels the browser
+        // already decoded, not requesting anything new.
+        function inlineLoadedTilesAsDataURLs() {
+            const tiles = document.querySelectorAll('#tempMap img.leaflet-tile-loaded');
+            let inlined = 0, failed = 0;
+            tiles.forEach((tile) => {
+                try {
+                    const c = document.createElement('canvas');
+                    c.width = tile.naturalWidth || tile.width;
+                    c.height = tile.naturalHeight || tile.height;
+                    c.getContext('2d').drawImage(tile, 0, 0);
+                    tile.src = c.toDataURL('image/png');
+                    inlined++;
+                } catch (e) {
+                    failed++;
+                }
+            });
+            if (failed) console.warn(`Location map: ${failed}/${tiles.length} tiles couldn't be inlined as data URLs (kept their original cross-origin src) - ${inlined} were.`);
+        }
+
         function capture() {
+            inlineLoadedTilesAsDataURLs();
             const mapElement = document.getElementById('tempMap');
             html2canvas(mapElement, {
                 scale: 2,
@@ -250,6 +280,18 @@ async function captureLocationMap(lat, lng, locationName) {
             // is worth more than a couple of extra seconds on a report that
             // isn't time-critical.
             let captured = false;
+            let erroredTiles = 0;
+            // If a tile request is actively blocked (ad blocker/privacy
+            // extension/corporate proxy targeting the tile CDN, not just a
+            // slow connection), it never gets 'leaflet-tile-loaded' and
+            // never will - counting errors separately means the 8s
+            // safety-net capture below can at least log what actually
+            // happened instead of leaving a silent grey image with no clue
+            // why.
+            tileLayer.on('tileerror', (e) => {
+                erroredTiles++;
+                console.warn('Location map tile failed to load:', e && e.tile && e.tile.src);
+            });
             function allTilesPainted() {
                 const tiles = document.querySelectorAll('#tempMap img.leaflet-tile');
                 if (!tiles.length) return false;
@@ -268,7 +310,13 @@ async function captureLocationMap(lat, lng, locationName) {
             const pollId = setInterval(attemptCapture, 200);
             setTimeout(() => {
                 clearInterval(pollId);
-                if (!captured) { captured = true; capture(); }
+                if (!captured) {
+                    captured = true;
+                    const tiles = document.querySelectorAll('#tempMap img.leaflet-tile');
+                    const loaded = document.querySelectorAll('#tempMap img.leaflet-tile-loaded').length;
+                    console.warn(`Location map capture timed out after 8s - ${loaded}/${tiles.length} tiles loaded, ${erroredTiles} errored. Capturing whatever's there.`);
+                    capture();
+                }
             }, 8000);
         } catch (err) {
             console.warn('Could not set up location map:', err);
@@ -902,7 +950,7 @@ function buildInspectionReportDocDefinition(ctx) {
         // inspection.html's pre-save Preview (spans.js) - nothing has
         // actually been submitted yet, so reusing the 'submitted' label
         // here would be a false claim, not just a missing one.
-        preview: { label: 'Preview — Not Yet Submitted', bg: RC.accentTint, textColor: '#2c4a48', accent: RC.accent }
+        preview: { label: 'Preview', bg: RC.accentTint, textColor: '#2c4a48', accent: RC.accent }
     }[inspectionData.status] || { label: 'Submitted — Pending Review', bg: RC.accentTint, textColor: '#2c4a48', accent: RC.accent };
     const statusBannerText = inspectionData.reviewedBy
         ? `${statusMeta.label} — reviewed ${inspectionData.reviewedAt ? formatDate(inspectionData.reviewedAt) : ''} by ${inspectionData.reviewedBy}`
