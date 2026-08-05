@@ -233,19 +233,43 @@ async function captureLocationMap(lat, lng, locationName) {
 
             map.addControl(new NorthControl());
 
-            // Capture once the tile layer actually reports every visible tile
-            // loaded, instead of a blind fixed delay - on a slower connection
-            // the old 1500ms wait could fire before OSM's tiles finished
-            // painting, silently baking a blank grey map into the report. A
-            // safety-net timeout still covers the case where 'load' never
-            // fires (e.g. the tile server is unreachable).
+            // Capture once every visible tile has actually painted, instead
+            // of a blind fixed delay or trusting the tile layer's own 'load'
+            // event alone - that event can fire (and did, in practice) before
+            // every tile image has finished loading on a slower connection,
+            // baking Leaflet's plain grey .leaflet-container background into
+            // the report instead of the map. A tile only gets Leaflet's
+            // 'leaflet-tile-loaded' class once it's genuinely finished
+            // loading (GridLayer._tileOnLoad), so checking for that class on
+            // every tile <img> is a direct, DOM-verified signal rather than
+            // trusting the layer's own aggregate bookkeeping. Polled instead
+            // of only listening for 'load', since tiles can keep finishing
+            // after that event already fired. A safety-net timeout still
+            // covers the case where a tile never loads at all (server
+            // unreachable) - 8s instead of the old 4s, since a correct map
+            // is worth more than a couple of extra seconds on a report that
+            // isn't time-critical.
             let captured = false;
-            tileLayer.on('load', () => {
-                if (captured) return;
+            function allTilesPainted() {
+                const tiles = document.querySelectorAll('#tempMap img.leaflet-tile');
+                if (!tiles.length) return false;
+                for (const tile of tiles) {
+                    if (!tile.classList.contains('leaflet-tile-loaded')) return false;
+                }
+                return true;
+            }
+            function attemptCapture() {
+                if (captured || !allTilesPainted()) return;
                 captured = true;
-                setTimeout(capture, 200); // let the paint settle
-            });
-            setTimeout(() => { if (!captured) { captured = true; capture(); } }, 4000);
+                clearInterval(pollId);
+                setTimeout(capture, 150); // let the paint settle
+            }
+            tileLayer.on('load', attemptCapture);
+            const pollId = setInterval(attemptCapture, 200);
+            setTimeout(() => {
+                clearInterval(pollId);
+                if (!captured) { captured = true; capture(); }
+            }, 8000);
         } catch (err) {
             console.warn('Could not set up location map:', err);
             finish(null);
@@ -874,7 +898,11 @@ function buildInspectionReportDocDefinition(ctx) {
     const statusMeta = {
         approved: { label: 'Approved', bg: RC.priLBg, textColor: '#1e5c34', accent: RC.priL },
         rejected: { label: 'Rejected', bg: RC.priHBg, textColor: '#7a1f1f', accent: RC.priH },
-        submitted: { label: 'Submitted — Pending Review', bg: RC.accentTint, textColor: '#2c4a48', accent: RC.accent }
+        submitted: { label: 'Submitted — Pending Review', bg: RC.accentTint, textColor: '#2c4a48', accent: RC.accent },
+        // inspection.html's pre-save Preview (spans.js) - nothing has
+        // actually been submitted yet, so reusing the 'submitted' label
+        // here would be a false claim, not just a missing one.
+        preview: { label: 'Preview — Not Yet Submitted', bg: RC.accentTint, textColor: '#2c4a48', accent: RC.accent }
     }[inspectionData.status] || { label: 'Submitted — Pending Review', bg: RC.accentTint, textColor: '#2c4a48', accent: RC.accent };
     const statusBannerText = inspectionData.reviewedBy
         ? `${statusMeta.label} — reviewed ${inspectionData.reviewedAt ? formatDate(inspectionData.reviewedAt) : ''} by ${inspectionData.reviewedBy}`

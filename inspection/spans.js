@@ -699,6 +699,19 @@ if (previewButton) {
       const structureName = inspectionData.structureName || 'Bridge';
       const inspectionDate = inspectionData.inspectionDate || new Date().toISOString().slice(0, 10);
 
+      // This local inspectionData is a fresh parse (not a live reference to
+      // what's in sessionStorage), so tagging it here is safe - it can't
+      // leak into anything that later gets saved. Drives the Document
+      // Status banner (test.js) - without this it defaults to "Submitted —
+      // Pending Review", which isn't true yet for a draft that's still
+      // being edited.
+      inspectionData.status = 'preview';
+      // Don't carry over real review metadata (if editing a previously-
+      // reviewed inspection) - "Preview — Not Yet Submitted — reviewed by
+      // X" would contradict itself.
+      inspectionData.reviewedBy = null;
+      inspectionData.reviewedAt = null;
+
       const [bridgeData, nextDueData, bridgeSpansData] = await Promise.all([
         fetch(`/api/bridges/${structureId}`, { cache: 'no-store' }).then(r => r.ok ? r.json() : {}).catch(() => ({})),
         fetch(`/api/inspection/next-due?structure_id=${structureId}&date=${inspectionDate}`).then(r => r.ok ? r.json() : null).catch(() => null),
