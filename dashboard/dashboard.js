@@ -976,6 +976,7 @@ window.openReviewModal = function openReviewModal(inspectionId) {
         sessionStorage.removeItem('defects');
         sessionStorage.removeItem('photoData');
         sessionStorage.removeItem('selectedSpan');
+        sessionStorage.removeItem('copiedDefectIds');
         sessionStorage.setItem('inspectionStructureNumber', item.structure_id);
         sessionStorage.setItem('inspectionDate', dateOnly);
         sessionStorage.setItem('inspectionMode', 'edit');

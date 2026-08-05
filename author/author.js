@@ -430,6 +430,7 @@ function goEditInInspection(){
   sessionStorage.removeItem('defects');
   sessionStorage.removeItem('photoData');
   sessionStorage.removeItem('selectedSpan');
+  sessionStorage.removeItem('copiedDefectIds');
   sessionStorage.setItem('inspectionStructureNumber', AUTHOR.structureId);
   sessionStorage.setItem('inspectionDate', AUTHOR.inspectionDate);
   sessionStorage.setItem('inspectionMode', 'edit');

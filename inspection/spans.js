@@ -52,6 +52,9 @@ function newInspection(e) {
     sessionStorage.removeItem('photoData');
     sessionStorage.removeItem('selectedSpan');
     sessionStorage.removeItem('inspectionMode');
+    // Copy-once tracking (see markDefectAsCopied in inspection.js) is scoped
+    // to one inspection draft, not the whole browser session.
+    sessionStorage.removeItem('copiedDefectIds');
     window.location.href = '../inspection1/inspection1.html';
 }
 

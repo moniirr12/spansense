@@ -669,6 +669,16 @@ if (inspectionDatesElement) {
                         expandableRow.dataset.timestamp = defect.timestamp;
                     }
 
+                    // Copy is one-shot per session (see markDefectAsCopied in
+                    // inspection.js) - this row gets rebuilt from scratch every
+                    // time the date dropdown changes, so re-apply the disabled
+                    // state on render rather than relying on it surviving in the DOM.
+                    if (defect.defectDbId != null && typeof isDefectAlreadyCopied === 'function'
+                        && isDefectAlreadyCopied(defect.defectDbId)) {
+                        const copyBtn = expandableRow.querySelector("button[data-tip='Copy']");
+                        if (copyBtn && typeof disableCopyButton === 'function') disableCopyButton(copyBtn);
+                    }
+
                     // Insert historical defects AFTER existing expandable rows
                     let insertAfter = mainRow;
                     let sibling = mainRow.nextElementSibling;
