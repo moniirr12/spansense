@@ -675,9 +675,11 @@ function showError(message) {
 // to Supabase storage the moment they're picked (see photo.js), not at
 // save time, and every span's real BCI (refreshBCIScores(), inspection.js)
 // is already written back into inspectionData.spans[].bciAv/bciCrit as the
-// user moves between spans. Appendix B (BCI Proforma) is intentionally left
-// out for now (bciFormData: null) - see buildInspectionReportDocDefinition's
-// own guard for that.
+// user moves between spans. Appendix B (BCI Proforma) is built the same
+// way - see the bciFormData construction below, which mirrors test.js's
+// generateBCIFormForPDF but from this sessionStorage draft instead of the
+// DB-backed /api/defectsbci + /api/worksrequired (nothing's saved yet for
+// those to return).
 const previewButton = document.getElementById('previewInspection');
 if (previewButton) {
   previewButton.addEventListener('click', async function() {
@@ -697,9 +699,13 @@ if (previewButton) {
       const structureName = inspectionData.structureName || 'Bridge';
       const inspectionDate = inspectionData.inspectionDate || new Date().toISOString().slice(0, 10);
 
-      const [bridgeData, nextDueData] = await Promise.all([
+      const [bridgeData, nextDueData, bridgeSpansData] = await Promise.all([
         fetch(`/api/bridges/${structureId}`, { cache: 'no-store' }).then(r => r.ok ? r.json() : {}).catch(() => ({})),
-        fetch(`/api/inspection/next-due?structure_id=${structureId}&date=${inspectionDate}`).then(r => r.ok ? r.json() : null).catch(() => null)
+        fetch(`/api/inspection/next-due?structure_id=${structureId}&date=${inspectionDate}`).then(r => r.ok ? r.json() : null).catch(() => null),
+        // Per-span geometry/construction detail for the BCI Proforma (Appendix
+        // B below) - structural, not tied to a saved inspection date, so this
+        // is safe to fetch even for a draft that hasn't been saved yet.
+        fetch(`/api/bridges/${structureId}/spans`).then(r => r.ok ? r.json() : []).catch(() => [])
       ]);
 
       // Same element numbering/category data the saved-inspection report
@@ -811,6 +817,64 @@ if (previewButton) {
       const defectsBySpan = {};
       spanNumbers.forEach(span => { defectsBySpan[span] = defectsData.filter(d => d.spanNumber === span); });
 
+      // Appendix B (BCI Proforma) - reuses the exact same generator the
+      // saved-inspection report does (buildBCIProformaFullContent, map/
+      // bciProforma.pdfmake.js), fed from this live sessionStorage draft
+      // instead of the DB-backed /api/defectsbci + /api/worksrequired this
+      // generator normally reads (those only have rows once an inspection
+      // is actually saved - nothing exists there yet for a draft).
+      const nextInspectionLabel = (nextDueData && nextDueData.date)
+        ? new Date(nextDueData.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) + ' ' + nextDueData.type
+        : null;
+      const proformaSpans = (inspectionData.spans && inspectionData.spans.length) ? inspectionData.spans : [{ spanNumber: 1 }];
+      const spansDataForProforma = proformaSpans.map(span => ({
+        span_number: span.spanNumber,
+        defects: (defectsBySpan[span.spanNumber] || []).map(d => ({
+          element_no: d.elementNumber,
+          element_description: d.element_description,
+          s: d.severity,
+          ex: d.extent,
+          def: d.defectType,
+          defn: d.defectNumber,
+          w: d.worksRequired,
+          p: d.priority,
+          cost: d.cost,
+          comments_remarks: d.comments,
+          is_primary: d.isPrimary === true
+        })),
+        inspector_name: inspectionData.inspectorName || '',
+        inspection_date: inspectionDate,
+        next_inspection: nextInspectionLabel,
+        elements_inspected: span.elementsInspected !== false,
+        photographs_taken: span.photographsTaken !== false,
+        bci_crit: span.bciCrit,
+        bci_av: span.bciAv,
+        inspection_type: inspectionData.inspectionType || '',
+        comments: span.comments || '',
+        // Not reviewed yet - this is a draft, nothing's been signed off.
+        reviewed_by: null, reviewed_at: null, engineer_comments: null
+      }));
+      const worksRequiredList = defectsData
+        .filter(d => d.worksRequired === 'Y')
+        .map(d => ({
+          spanNumber: d.spanNumber,
+          elementNumber: d.elementNumber,
+          elementDescription: d.element_description,
+          defectNumber: d.defectNumber,
+          worksRequired: d.worksRequired,
+          priority: d.priority,
+          cost: d.cost ? `£${Number(d.cost).toFixed(2)}` : 'Not specified',
+          remedialWorks: d.remedialWorks || '',
+          comments: d.comments || ''
+        }));
+      const bciFormData = {
+        structureName, structureId, bridgeData,
+        totalSpans: bridgeData.span_number || inspectionData.totalSpans || proformaSpans.length,
+        spansData: spansDataForProforma,
+        bridgeSpans: bridgeSpansData || [],
+        worksRequired: { inspection: { structureId, structureName, date: inspectionDate }, worksRequired: worksRequiredList, count: worksRequiredList.length }
+      };
+
       const docDefinition = buildInspectionReportDocDefinition({
         structureName, structureId, inspectionDate,
         bridgeData, inspectionData, defectsData,
@@ -819,7 +883,7 @@ if (previewButton) {
         bridgePhotoDataURL, mapDataURL,
         bciAv: Number(bciAv.toFixed(2)), bciCrit: Number(bciCrit.toFixed(2)), bciCategory,
         spanNumbers, defectsBySpan, nextDueData,
-        bciFormData: null
+        bciFormData
       });
 
       const pdfGenerator = pdfMake.createPdf(docDefinition);

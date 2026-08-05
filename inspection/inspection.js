@@ -745,7 +745,15 @@ window.saveChanges = saveChanges;
 // ALL_ELEMENTS_LIST_BY_TYPE / Author's authorElements.js, duplicated here
 // per this codebase's established per-file convention (category grouping
 // only exists in frontend lookups, not the `elements` table).
-const ALL_ELEMENTS_LIST_BY_TYPE = {
+// Named differently from test.js's own ALL_ELEMENTS_LIST_BY_TYPE - both
+// files load together on inspection.html, and two top-level `const`s with
+// the same name in the same scope throws on whichever loads second (test.js
+// here), silently killing everything test.js defines after that point,
+// including captureLocationMap - which is exactly what broke the pre-save
+// Preview button. This one's also missing test.js's mainNumber/subNumber/
+// name fields (categoryForElement below only ever needed the category),
+// so it was never a safe direct swap for test.js's copy either.
+const INSPECTION_ELEMENT_CATEGORIES_BY_TYPE = {
   Bridge: [
     { category: "Deck Elements", elementNo: 1 }, { category: "Deck Elements", elementNo: 2 },
     { category: "Deck Elements", elementNo: 3 }, { category: "Deck Elements", elementNo: 4 },
@@ -796,7 +804,7 @@ const ALL_ELEMENTS_LIST_BY_TYPE = {
   ]
 };
 function categoryForElement(structureType, elementNo){
-  const list = ALL_ELEMENTS_LIST_BY_TYPE[structureType] || ALL_ELEMENTS_LIST_BY_TYPE.Bridge;
+  const list = INSPECTION_ELEMENT_CATEGORIES_BY_TYPE[structureType] || INSPECTION_ELEMENT_CATEGORIES_BY_TYPE.Bridge;
   const found = list.find(e => e.elementNo === elementNo);
   return found ? found.category : null;
 }

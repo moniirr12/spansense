@@ -15,6 +15,15 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="inspection.css">
     <link rel="stylesheet" href="saveSequence.css">
+    <!-- Leaflet + html2canvas - needed by test.js's captureLocationMap for
+         the pre-save Preview's location map (same versions as database.html,
+         which uses captureLocationMap for its own View Report). Without
+         these, captureLocationMap fails silently (L/html2canvas undefined,
+         caught and resolved to null) rather than throwing, so the location
+         map just quietly never appeared. -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/pdfmake@0.2.10/build/pdfmake.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pdfmake@0.2.10/build/vfs_fonts.js"></script>
