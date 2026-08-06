@@ -863,17 +863,17 @@ body.modal-open {
     border: 1px solid rgba(233, 237, 242, 0.8);
     /* .bridge-card is a flex column with max-height:90% + overflow:hidden
        (see .modal-content / .bridge-modal .modal-content) - on shorter
-       viewports (laptops) that combo lets flexbox shrink its children to
-       fit, which was crushing this section well below its aspect-ratio
-       height and leaving only a sliver of the photo visible. Pinning it
-       keeps the photo at its intended size; the rest of the card scrolls
-       instead (see overflow-y: auto below). */
+       viewports (laptops) that combo let flexbox shrink its children to
+       fit, crushing this section well below its aspect-ratio height.
+       Pinning it keeps the photo at its intended (16:9) size; that ratio
+       is short enough that the whole card fits within max-height without
+       needing to scroll. */
     flex-shrink: 0;
 }
 #bridgeModal .photo-section .bridge-img {
     width: 100%;
     height: auto;
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 16 / 9;
     object-fit: cover;
     /* Centered rather than anchored toward the bottom - keeps the crop
        predictable across the mix of seed/placeholder photo framing instead
@@ -1115,13 +1115,7 @@ body.modal-open {
     backdrop-filter: blur(20px);
     border-radius: 28px;
     padding: 0;
-    overflow-x: hidden;
-    /* Was overflow:hidden - with max-height:90% (from .modal-content) and
-       the .bridge-card flex column, that left no way for the card to yield
-       when its content didn't fit a shorter viewport, so flexbox shrank
-       the children instead (see .photo-section flex-shrink:0 above). Now
-       the card scrolls internally when it runs out of room. */
-    overflow-y: auto;
+    overflow: hidden;
     max-width: 448px;
     width: 90%;
     animation: modalSlideIn 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1);
