@@ -188,6 +188,7 @@ async function initDatabase() {
         await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret TEXT`);
         await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN DEFAULT false`);
         await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS password_changed_at TIMESTAMP`);
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_path TEXT`);
 
         // Insert default admin user if table is empty
         const userCount = await dbGet("SELECT COUNT(*) as count FROM users");
@@ -3329,11 +3330,12 @@ app.get('/api/check-session', (req, res) => {
 app.get('/api/me', requireAuth, async (req, res) => {
     try {
         const user = await dbGet(
-            'SELECT username, full_name, role, created_at, email, phone, last_login, totp_enabled, password_changed_at FROM users WHERE id = $1',
+            'SELECT username, full_name, role, created_at, email, phone, last_login, totp_enabled, password_changed_at, avatar_path FROM users WHERE id = $1',
             [req.session.userId]
         );
         if (!user) return res.status(404).json({ error: 'User not found' });
-        res.json(user);
+        const { avatar_path, ...rest } = user;
+        res.json({ ...rest, avatarUrl: avatar_path ? await storage.getSignedUrl(avatar_path) : null });
     } catch (err) {
         console.error('Fetch /api/me error:', err);
         res.status(500).json({ error: err.message });
@@ -3365,15 +3367,52 @@ app.put('/api/me', requireAuth, async (req, res) => {
         );
 
         const user = await dbGet(
-            'SELECT username, full_name, role, created_at, email, phone, last_login, totp_enabled, password_changed_at FROM users WHERE id = $1',
+            'SELECT username, full_name, role, created_at, email, phone, last_login, totp_enabled, password_changed_at, avatar_path FROM users WHERE id = $1',
             [req.session.userId]
         );
-        res.json(user);
+        const { avatar_path, ...rest } = user;
+        res.json({ ...rest, avatarUrl: avatar_path ? await storage.getSignedUrl(avatar_path) : null });
     } catch (err) {
         console.error('Update /api/me error:', err);
         res.status(500).json({ error: err.message });
     }
 });
+
+const uploadAvatar = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) cb(null, true);
+        else cb(new Error('Only image files are allowed'), false);
+    }
+});
+
+// Profile photo - same replace-on-upload pattern as the Author branding logo
+// above (uploadFile the new one, delete the old object, store the new path).
+app.post('/api/me/avatar', requireAuth,
+    (req, res, next) => {
+        uploadAvatar.single('avatar')(req, res, (err) => {
+            if (!err) return next();
+            if (err.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: 'Photo exceeds the 5MB limit.' });
+            return res.status(400).json({ error: err.message });
+        });
+    },
+    async (req, res) => {
+        try {
+            if (!req.file) return res.status(400).json({ error: 'No photo provided' });
+            const existing = await dbGet('SELECT avatar_path FROM users WHERE id = $1', [req.session.userId]);
+            const ext = (req.file.originalname.split('.').pop() || 'jpg').toLowerCase();
+            const avatarPath = `avatars/user_${req.session.userId}/avatar_${Date.now()}.${ext}`;
+            await storage.uploadFile(avatarPath, req.file.buffer, req.file.mimetype);
+            if (existing && existing.avatar_path) await storage.deleteFile(existing.avatar_path);
+            await dbRun('UPDATE users SET avatar_path = $1 WHERE id = $2', [avatarPath, req.session.userId]);
+            res.json({ success: true, avatarUrl: await storage.getSignedUrl(avatarPath) });
+        } catch (err) {
+            console.error('Upload avatar error:', err);
+            res.status(500).json({ error: err.message });
+        }
+    }
+);
 
 // ============================================
 // TWO-FACTOR AUTHENTICATION (TOTP - Google/Microsoft Authenticator compatible)
