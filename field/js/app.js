@@ -1283,6 +1283,7 @@
     setStepperValue('priorityStepper', d ? (d.priority || 'M') : 'M');
     document.getElementById('defCost').value = d ? d.cost : '';
     document.getElementById('worksDetailGroup').hidden = isPh ? true : !(d ? d.worksRequired === 'Y' : false);
+    document.getElementById('remedialGroup').hidden = isPh ? true : !(d ? d.worksRequired === 'Y' : false);
     document.getElementById('defComments').value = d ? d.comments : '';
     document.getElementById('defRemedial').value = d ? d.remedial_works : '';
     document.getElementById('sevExtWarning').hidden = true;
@@ -1343,6 +1344,7 @@
       setStepperValue(stepper.id, btn.dataset.v);
       if (stepper.id === 'worksStepper') {
         document.getElementById('worksDetailGroup').hidden = btn.dataset.v !== 'Y';
+        document.getElementById('remedialGroup').hidden = btn.dataset.v !== 'Y';
       }
       if (stepper.id === 'sevStepper' || stepper.id === 'extStepper') {
         document.getElementById('sevExtWarning').hidden = true;
@@ -1539,7 +1541,7 @@
     d.priority = d.worksRequired === 'Y' ? getStepperValue('priorityStepper') : '';
     d.cost = d.worksRequired === 'Y' ? (document.getElementById('defCost').value || '') : '';
     d.comments = document.getElementById('defComments').value;
-    d.remedial_works = document.getElementById('defRemedial').value;
+    d.remedial_works = d.worksRequired === 'Y' ? document.getElementById('defRemedial').value : '';
     d.timestamp = new Date().toISOString();
     back();
     refreshViewerContent();
