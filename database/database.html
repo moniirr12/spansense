@@ -52,15 +52,15 @@
         <!-- PAGE HEADER -->
         <div class="page-header">
             <h1><i class="fas fa-database"></i> Database Export</h1>
-            <p>Export bridge inspection data and reports in multiple formats</p>
+            <p>Export structure inspection data and reports in multiple formats</p>
         </div>
 
         <!-- EXPORT CATEGORY CARDS -->
         <div class="export-grid">
             <div class="export-card bridges active" data-category="bridges" onclick="selectCategory('bridges')">
                 <div class="card-icon"><svg viewBox="0 0 20 20" width="1em" height="1em" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-width="1.9"><line x1="2" y1="6" x2="18" y2="6"/><line x1="5" y1="6" x2="5" y2="13"/><line x1="10" y1="6" x2="10" y2="13"/><line x1="15" y1="6" x2="15" y2="13"/><path d="M1 16 Q5 13.5 9 16 T17 16"/></svg></div>
-                <div class="card-title">Bridges</div>
-                <div class="card-desc">Export all bridge records including structure details, location, and metadata</div>
+                <div class="card-title">Structures</div>
+                <div class="card-desc">Export all structure records, including location and metadata</div>
                 <div class="card-meta">
                     <span class="count" id="bridges-count">Loading...</span>
                     <span><i class="fas fa-file-csv"></i> CSV, JSON, XML</span>
@@ -92,7 +92,7 @@
         <!-- EXPORT PANEL -->
         <div class="export-panel">
             <div class="panel-header">
-                <h2 id="panelTitle"><i class="fas fa-list-check"></i> Bridge Records</h2>
+                <h2 id="panelTitle"><i class="fas fa-list-check"></i> Structure Records</h2>
                 <div class="panel-actions">
                     <button class="btn-icon" data-tip="Refresh" onclick="refreshData()"><i class="fas fa-sync-alt"></i></button>
                 </div>
@@ -110,7 +110,7 @@
                 </div>
                 <div class="db-search-wrap">
                     <i class="fas fa-search"></i>
-                    <input type="text" id="dbSearchInput" placeholder="Search bridge ID or name..." oninput="onDbSearchInput(this.value)">
+                    <input type="text" id="dbSearchInput" placeholder="Search structure ID or name..." oninput="onDbSearchInput(this.value)">
                     <i class="fas fa-times db-search-clear" id="dbSearchClear" onclick="clearDbSearch()" style="display:none;"></i>
                 </div>
             </div>
@@ -121,7 +121,7 @@
                     <thead id="tableHead">
                         <tr>
                             <th class="col-check"><input type="checkbox" id="selectAll"></th>
-                            <th>Bridge ID</th>
+                            <th>Structure ID</th>
                             <th>Structure Name</th>
                             <th>Location</th>
                             <th>Type</th>
@@ -135,7 +135,7 @@
                         <tr>
                             <td colspan="8" style="text-align:center;padding:40px;color:#8a9ba8;">
                                 <i class="fas fa-spinner fa-spin" style="font-size:2rem;margin-bottom:12px;display:block;"></i>
-                                Loading bridges...
+                                Loading structures...
                             </td>
                         </tr>
                     </tbody>
