@@ -491,6 +491,103 @@ body {
 }
 
 /* ============================================
+   DETERIORATION FORECAST
+   ============================================ */
+
+.forecast-section {
+    margin-bottom: 24px;
+}
+
+.fc-view { display: none; }
+.fc-view.active { display: block; }
+
+.fc-status {
+    font-size: 0.78rem;
+    color: #8a9aa0;
+    font-style: italic;
+}
+.night-mode .fc-status { color: #7f9490; }
+
+.fc-status-crit {
+    color: #c0392b;
+    font-style: normal;
+    font-weight: 600;
+}
+.night-mode .fc-status-crit { color: #e8a0a0; }
+
+.fc-when .date {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #2c4a48;
+}
+.night-mode .fc-when .date { color: #d4dfe3; }
+
+.fc-when .rel {
+    font-size: 0.7rem;
+    color: #5f6b73;
+    margin-top: 1px;
+}
+.night-mode .fc-when .rel { color: #a8b8bf; }
+
+.fc-when.fc-soon .date { color: #c0392b; }
+.night-mode .fc-when.fc-soon .date { color: #e8a0a0; }
+
+/* Whole-stock view: one blended figure rather than a one-row table. */
+.fc-hero {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: white;
+    border: 1px solid #cbd5df;
+    border-radius: 20px;
+    padding: 18px 22px;
+}
+.night-mode .fc-hero { background: #232e34; border-color: #2f3e45; }
+
+.fc-hero-mid { flex: 1; min-width: 0; }
+.fc-hero-mid .h-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #5f6b73;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+.night-mode .fc-hero-mid .h-label { color: #a8b8bf; }
+
+.fc-hero-mid .h-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #2c4a48;
+}
+.night-mode .fc-hero-mid .h-value { color: #d4dfe3; }
+
+.fc-hero-mid .h-value span {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #5f6b73;
+}
+.night-mode .fc-hero-mid .h-value span { color: #a8b8bf; }
+
+.fc-hero-end { text-align: right; flex-shrink: 0; }
+.fc-hero-end .date {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #c0392b;
+}
+.night-mode .fc-hero-end .date { color: #e8a0a0; }
+
+.fc-hero-end.fc-hero-ok .date { color: #5b8c8a; }
+.night-mode .fc-hero-end.fc-hero-ok .date { color: #8ab4b0; }
+
+.fc-hero-end .rel {
+    font-size: 0.75rem;
+    color: #5f6b73;
+    margin-top: 2px;
+}
+.night-mode .fc-hero-end .rel { color: #a8b8bf; }
+
+/* ============================================
    BOTTOM ROW: CRITICAL + ACTIVITY
    ============================================ */
 
