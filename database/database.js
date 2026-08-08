@@ -37,7 +37,7 @@
     // ============================================
     var COLUMN_DEFS = {
         bridges: [
-            { id: 'id',       label: 'Bridge ID',       key: 'id',             checked: true },
+            { id: 'id',       label: 'Structure ID',    key: 'id',             checked: true },
             { id: 'name',     label: 'Structure name',  key: 'name',           checked: true },
             { id: 'coords',   label: 'Coordinates',     key: '_coords',        checked: true },
             { id: 'type',     label: 'Type',            key: 'type',           checked: true },
@@ -48,7 +48,7 @@
         inspections: [
             { id: 'id',       label: 'Insp. ID',        key: 'id',             checked: true },
             { id: 'sid',      label: 'Structure ID',    key: 'structure_id',   checked: true },
-            { id: 'name',     label: 'Bridge',          key: 'structure_name', checked: true },
+            { id: 'name',     label: 'Structure',       key: 'structure_name', checked: true },
             { id: 'inspector',label: 'Inspector',       key: 'inspector_name', checked: true },
             { id: 'date',     label: 'Date',            key: 'inspection_date',checked: true },
             { id: 'bciav',    label: 'BCI<sub>avg</sub>',  key: 'overall_bciave', checked: true },
@@ -60,7 +60,7 @@
         reports: [
             { id: 'id',       label: 'Report ID',       key: 'id',             checked: true },
             { id: 'sid',      label: 'Structure ID',    key: 'structure_id',   checked: true },
-            { id: 'bridge',   label: 'Bridge',          key: 'bridge',         checked: true },
+            { id: 'bridge',   label: 'Structure',       key: 'bridge',         checked: true },
             { id: 'type',     label: 'Type',            key: 'type',           checked: true },
             { id: 'generated',label: 'Generated',       key: 'generated',      checked: true },
             { id: 'defects',  label: 'Defects',         key: 'defect_count',   checked: true },
@@ -260,7 +260,7 @@
         if (totalRecords === 0) {
             rowsHtml = '<tr><td colspan="7" style="text-align:center;padding:40px;color:#8a9ba8;">' +
                 '<i class="fas fa-database" style="font-size:2rem;margin-bottom:12px;display:block;"></i>' +
-                'No bridges found</td></tr>';
+                'No structures found</td></tr>';
         } else {
             displayData.forEach(function(row) {
                 var lat = row.latitude ? parseFloat(row.latitude).toFixed(6) : '--';
@@ -367,7 +367,7 @@
         var thead = document.getElementById('tableHead');
         var columns = {
             bridges: [
-                { label: 'Bridge ID', sortable: true, key: 'id' },
+                { label: 'Structure ID', sortable: true, key: 'id' },
                 { label: 'Structure Name', sortable: true, key: 'name' },
                 { label: 'Type', sortable: false },
                 { label: 'Year Built', sortable: false },
@@ -377,7 +377,7 @@
             inspections: [
                 { label: 'Inspection ID', sortable: true, key: 'id' },
                 { label: 'Structure ID', sortable: true, key: 'structure_id' },
-                { label: 'Bridge', sortable: true, key: 'structure_name' },
+                { label: 'Structure', sortable: true, key: 'structure_name' },
                 { label: 'Inspector', sortable: false },
                 { label: 'Date', sortable: false },
                 { label: 'BCI<sub>avg</sub>', sortable: true, key: 'overall_bciave' },
@@ -389,7 +389,7 @@
             reports: [
                 { label: 'Report ID', sortable: true, key: 'id' },
                 { label: 'Structure ID', sortable: true, key: 'structure_id' },
-                { label: 'Bridge', sortable: true, key: 'bridge' },
+                { label: 'Structure', sortable: true, key: 'bridge' },
                 { label: 'Type', sortable: false },
                 { label: 'Generated', sortable: false },
                 { label: 'Defects', sortable: true, key: 'defect_count' }
@@ -859,7 +859,7 @@
         var activeCard = document.querySelector('.export-card[data-category="' + cat + '"]');
         if (activeCard) activeCard.classList.add('active');
 
-        var titles = { bridges: 'Bridge Records', inspections: 'Inspection Records', reports: 'Report Files' };
+        var titles = { bridges: 'Structure Records', inspections: 'Inspection Records', reports: 'Report Files' };
         document.getElementById('panelTitle').innerHTML = '<i class="fas fa-list-check"></i> ' + titles[cat];
 
         // Switch active column definitions
@@ -1128,7 +1128,7 @@
             updateCardCount('bridges', bridgesData.length);
             if (currentCategory === 'bridges') { rebuildBridgesTable(); updateTableColumns('bridges'); }
         } catch (err) {
-            showToast('Error loading bridges: ' + err.message, 'error');
+            showToast('Error loading structures: ' + err.message, 'error');
         } finally {
             showLoading(false);
         }
@@ -1199,9 +1199,9 @@
         if (searchInput) {
             searchInput.value = '';
             var searchPlaceholders = {
-                bridges: 'Search bridge ID or name...',
-                inspections: 'Search bridge, structure #, or inspector...',
-                reports: 'Search bridge or structure #...'
+                bridges: 'Search structure ID or name...',
+                inspections: 'Search by structure name, ID, or inspector...',
+                reports: 'Search by structure name or ID...'
             };
             searchInput.placeholder = searchPlaceholders[cat] || searchPlaceholders.bridges;
         }
@@ -1212,7 +1212,7 @@
         var activeCard = document.querySelector('.export-card[data-category="' + cat + '"]');
         if (activeCard) activeCard.classList.add('active');
 
-        var titles = { bridges: 'Bridge Records', inspections: 'Inspection Records', reports: 'Report Files' };
+        var titles = { bridges: 'Structure Records', inspections: 'Inspection Records', reports: 'Report Files' };
         document.getElementById('panelTitle').innerHTML = '<i class="fas fa-list-check"></i> ' + titles[cat];
 
         // Switch active column definitions (still drives which fields get
@@ -1679,7 +1679,7 @@
         var list = document.getElementById('activityList');
         var item = document.createElement('div');
         item.className = 'activity-item';
-        var catTitle = currentCategory === 'bridges' ? 'Bridge Records' :
+        var catTitle = currentCategory === 'bridges' ? 'Structure Records' :
                        currentCategory === 'inspections' ? 'Inspection Records' : 'Report Files';
         item.innerHTML =
             '<div class="activity-icon success"><i class="fas fa-check"></i></div>' +
