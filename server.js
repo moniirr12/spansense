@@ -329,6 +329,21 @@ async function initDatabase() {
         // `version` column on bridges.
         await pool.query(`ALTER TABLE inspections ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 1`);
 
+        // Idempotency key for /save-inspection - Field generates one per
+        // save attempt and resends the same one on every retry of that
+        // attempt (see doSave/submitJob in field/js/app.js). On a flaky
+        // connection the request can succeed on the server while the
+        // response never reaches the client, which looks identical to a
+        // failure - without this, the client's retry would create a second,
+        // fully-duplicate inspection. A partial unique index (only enforced
+        // when a key is actually present) leaves desktop saves, which never
+        // send one, unaffected.
+        await pool.query(`ALTER TABLE inspections ADD COLUMN IF NOT EXISTS client_submission_id TEXT`);
+        await pool.query(`
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_inspections_client_submission_id
+            ON inspections (client_submission_id) WHERE client_submission_id IS NOT NULL
+        `);
+
         // Tags which client saved this inspection - 'desktop' (the existing
         // full inspection1.html flow) or 'field' (spanSense Field's phone
         // capture flow). Lets reviewers tell a quick on-site draft apart
@@ -1883,6 +1898,18 @@ app.get('/api/debug/count-test', requireAuth, async (req, res) => {
 app.post('/save-inspection', requireAuth, async (req, res) => {
     const { inspection, defects, photoData = {}, notes = [] } = req.body;
 
+    // Idempotent retry short-circuit - see the client_submission_id column
+    // migration above for why this exists. Checked before opening a
+    // transaction so a repeat retry doesn't pay for the full insert work.
+    if (inspection.client_submission_id) {
+        const already = await pool.query(
+            'SELECT id FROM inspections WHERE client_submission_id = $1',
+            [inspection.client_submission_id]
+        );
+        if (already.rows.length > 0) {
+            return res.json({ success: true, inspectionId: already.rows[0].id, message: 'Inspection already saved' });
+        }
+    }
 
     const client = await pool.connect();
 
@@ -1904,8 +1931,8 @@ app.post('/save-inspection', requireAuth, async (req, res) => {
             `INSERT INTO inspections (
                 structure_id, structure_name, inspection_date,
                 inspection_type, inspector_name, total_spans, conclusions,
-                overall_bcicrit, overall_bciave, source
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
+                overall_bcicrit, overall_bciave, source, client_submission_id
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
             [
                 inspection.structure_id,
                 inspection.structure_name,
@@ -1916,7 +1943,8 @@ app.post('/save-inspection', requireAuth, async (req, res) => {
                 inspection.conclusions || '',
                 overallBciCrit,
                 overallBciAve,
-                source
+                source,
+                inspection.client_submission_id || null
             ]
         );
 
@@ -2066,10 +2094,24 @@ app.post('/save-inspection', requireAuth, async (req, res) => {
 
     } catch (err) {
         await client.query('ROLLBACK');
+        // 23505 = unique_violation. Only realistically hit here on
+        // client_submission_id (the only unique constraint this insert can
+        // trip) if two retries of the same job raced past the pre-check
+        // above - treat it the same as a normal idempotent retry rather
+        // than surfacing a false failure.
+        if (err.code === '23505' && inspection.client_submission_id) {
+            const already = await pool.query(
+                'SELECT id FROM inspections WHERE client_submission_id = $1',
+                [inspection.client_submission_id]
+            );
+            if (already.rows.length > 0) {
+                return res.json({ success: true, inspectionId: already.rows[0].id, message: 'Inspection already saved' });
+            }
+        }
         console.error('[ERROR] Transaction failed:', err);
-        res.status(500).json({ 
-            success: false, 
-            message: err.message 
+        res.status(500).json({
+            success: false,
+            message: err.message
         });
     } finally {
         client.release();
