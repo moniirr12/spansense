@@ -643,7 +643,11 @@ async function onSaveSpanInfo() {
         built_year: parseInt(document.getElementById('infoEditBuilt').value, 10) || null,
         load_capacity: parseFloat(document.getElementById('infoEditLoadCapacity').value) || null,
         primary_material: document.getElementById('infoEditMaterialPrimary').value || null,
-        secondary_material: document.getElementById('infoEditMaterialSecondary').value || null
+        secondary_material: document.getElementById('infoEditMaterialSecondary').value || null,
+        // Echoed back so the server can tell whether someone else saved this
+        // structure since it was loaded, instead of silently overwriting
+        // their changes (see PATCH /api/bridges/:id/info).
+        version: currentBridgeInfo.version
     };
     if (isNaN(payload.latitude)) payload.latitude = null;
     if (isNaN(payload.longitude)) payload.longitude = null;
@@ -667,9 +671,21 @@ async function onSaveSpanInfo() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
+        if (res.status === 409) {
+            const conflict = await res.json().catch(() => ({}));
+            await showModal({
+                title: 'Someone else edited this structure',
+                message: conflict.message || 'This structure was edited by someone else since you opened it. Reload the page to see their changes, then reapply yours.',
+                type: 'error'
+            });
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save';
+            return;
+        }
         if (!res.ok) throw new Error('Save failed');
+        const result = await res.json();
 
-        currentBridgeInfo = Object.assign({}, currentBridgeInfo, payload);
+        currentBridgeInfo = Object.assign({}, currentBridgeInfo, payload, { version: result.version });
         renderSpanInfoView(currentBridgeInfo);
 
         // The sidebar-card (Spans/Length/Built Year/Name) is a separate

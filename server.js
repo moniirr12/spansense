@@ -260,6 +260,12 @@ async function initDatabase() {
         await pool.query(`ALTER TABLE bridges ADD COLUMN IF NOT EXISTS width DECIMAL`);
         await pool.query(`ALTER TABLE bridges ADD COLUMN IF NOT EXISTS load_capacity DECIMAL`);
 
+        // Optimistic-concurrency counter for PATCH /api/bridges/:id/info - lets
+        // that endpoint detect two people editing the same structure's info
+        // panel at once instead of whoever saves last silently overwriting the
+        // other's fields. See the matching `version` column on inspections.
+        await pool.query(`ALTER TABLE bridges ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 1`);
+
         // Per-span geometry and deck construction - a structure's own
         // span/length/width columns above are just a "typical span"
         // shorthand (e.g. total length / span count), not real per-span
@@ -314,6 +320,14 @@ async function initDatabase() {
         await pool.query(`ALTER TABLE inspections ADD COLUMN IF NOT EXISTS reviewed_by TEXT`);
         await pool.query(`ALTER TABLE inspections ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMP`);
         await pool.query(`ALTER TABLE inspections ADD COLUMN IF NOT EXISTS engineer_comments TEXT`);
+
+        // Optimistic-concurrency counter for PUT /update-inspection - every
+        // save there deletes and reinserts every span/defect row from the
+        // client's in-memory copy, so without this, two people editing the
+        // same inspection at once means whoever saves second silently wipes
+        // out whatever the first person just added. See the matching
+        // `version` column on bridges.
+        await pool.query(`ALTER TABLE inspections ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 1`);
 
         // Tags which client saved this inspection - 'desktop' (the existing
         // full inspection1.html flow) or 'field' (spanSense Field's phone
@@ -1184,25 +1198,39 @@ app.patch('/api/bridges/:id/info', requireAuth, async (req, res) => {
         const {
             name, type, location, latitude, longitude, description,
             span_number, length, width, built_year, load_capacity,
-            primary_material, secondary_material
+            primary_material, secondary_material, version
         } = req.body;
         if (!name || !String(name).trim()) {
             return res.status(400).json({ error: 'name is required' });
         }
-        await pool.query(
+        // Optimistic concurrency: the client echoes back the version it
+        // loaded, and the WHERE clause only matches if nobody else has saved
+        // since. A missing/non-integer version fails closed (treated as a
+        // conflict) rather than silently applying the overwrite.
+        const clientVersion = Number.isInteger(version) ? version : -1;
+        const result = await pool.query(
             `UPDATE bridges SET name = $1, type = $2, location = $3, latitude = $4, longitude = $5,
                                  description = $6, span_number = $7, length = $8, width = $9,
                                  built_year = $10, load_capacity = $11, primary_material = $12,
-                                 secondary_material = $13
-             WHERE id = $14`,
+                                 secondary_material = $13, version = version + 1
+             WHERE id = $14 AND version = $15
+             RETURNING version`,
             [
                 name.trim(), type || null, location || null, latitude ?? null, longitude ?? null,
                 description || null, span_number || null, length || null, width ?? null,
                 built_year || null, load_capacity ?? null, primary_material || null,
-                secondary_material || null, req.params.id
+                secondary_material || null, req.params.id, clientVersion
             ]
         );
-        res.json({ success: true });
+        if (result.rowCount === 0) {
+            const exists = await pool.query('SELECT id FROM bridges WHERE id = $1', [req.params.id]);
+            if (exists.rowCount === 0) return res.status(404).json({ error: 'Structure not found' });
+            return res.status(409).json({
+                error: 'conflict',
+                message: 'This structure was edited by someone else since you opened it. Reload the page to see their changes, then reapply yours.'
+            });
+        }
+        res.json({ success: true, version: result.rows[0].version });
     } catch (err) {
         console.error('Update bridge info error:', err);
         res.status(500).json({ error: 'Database error' });
@@ -2056,7 +2084,7 @@ app.put('/update-inspection', requireAuth, async (req, res) => {
     // POST /api/inspections/:id/notes instead of batching them here. Only a
     // brand-new inspection (still going through /save-inspection, no id
     // yet) needs notes queued into the save payload itself.
-    const { inspection, defects, inspectionId } = req.body;
+    const { inspection, defects, inspectionId, version } = req.body;
 
     const client = await pool.connect();
 
@@ -2086,7 +2114,18 @@ app.put('/update-inspection', requireAuth, async (req, res) => {
         // CASE expressions read the pre-update row, so this correctly
         // resets status and clears the now-stale decision in one statement,
         // and is a no-op for an inspection still 'submitted'.
-        await client.query(
+        //
+        // Optimistic concurrency: below this point every span/defect row for
+        // the inspection gets deleted and reinserted from the client's
+        // in-memory copy (see step 3), so two people editing the same
+        // inspection at once would otherwise mean whoever saves second wipes
+        // out whatever the first person just added, with no warning. The
+        // `AND version = $11` only lets this through if nobody else has
+        // saved since this client loaded the inspection; a missing/
+        // non-integer version fails closed (treated as a conflict) rather
+        // than silently applying the overwrite.
+        const clientVersion = Number.isInteger(version) ? version : -1;
+        const updateResult = await client.query(
             `UPDATE inspections SET
                 structure_id = $1,
                 structure_name = $2,
@@ -2101,8 +2140,10 @@ app.put('/update-inspection', requireAuth, async (req, res) => {
                 reviewed_by = CASE WHEN status IN ('approved','rejected') THEN NULL ELSE reviewed_by END,
                 reviewed_at = CASE WHEN status IN ('approved','rejected') THEN NULL ELSE reviewed_at END,
                 engineer_comments = CASE WHEN status IN ('approved','rejected') THEN NULL ELSE engineer_comments END,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id = $10`,
+                updated_at = CURRENT_TIMESTAMP,
+                version = version + 1
+            WHERE id = $10 AND version = $11
+            RETURNING version`,
             [
                 inspection.structure_id,
                 inspection.structure_name,
@@ -2113,9 +2154,20 @@ app.put('/update-inspection', requireAuth, async (req, res) => {
                 inspection.conclusions || '',
                 overallBciCrit,
                 overallBciAve,
-                inspectionId
+                inspectionId,
+                clientVersion
             ]
         );
+
+        if (updateResult.rowCount === 0) {
+            await client.query('ROLLBACK');
+            return res.status(409).json({
+                success: false,
+                error: 'conflict',
+                message: 'This inspection was edited by someone else since you opened it. Reload the page to see their changes, then reapply yours.'
+            });
+        }
+        const newVersion = updateResult.rows[0].version;
 
         // 3. Delete existing spans and defects
         //
@@ -2236,7 +2288,7 @@ app.put('/update-inspection', requireAuth, async (req, res) => {
         }
 
         await client.query('COMMIT');
-        res.json({ success: true, inspectionId });
+        res.json({ success: true, inspectionId, version: newVersion });
 
     } catch (error) {
         await client.query('ROLLBACK');
@@ -2287,7 +2339,7 @@ app.get('/api/inspection/full', requireAuth, async (req, res) => {
             SELECT id, structure_id, structure_name, inspection_date,
                    inspection_type, inspector_name, total_spans, conclusions,
                    overall_bcicrit, overall_bciave, source,
-                   status, reviewed_by, reviewed_at, engineer_comments
+                   status, reviewed_by, reviewed_at, engineer_comments, version
             FROM inspections
             WHERE structure_id = $1 AND inspection_date = $2
         `, [structure_id, date]);
@@ -2405,6 +2457,7 @@ app.get('/api/inspection/full', requireAuth, async (req, res) => {
             reviewedBy: inspection.reviewed_by,
             reviewedAt: inspection.reviewed_at,
             engineerComments: inspection.engineer_comments,
+            version: inspection.version,
 
             spans: spans.map(span => ({
                 spanNumber: span.span_number,
