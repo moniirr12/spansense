@@ -890,7 +890,7 @@ if (previewButton) {
 
       const docDefinition = buildInspectionReportDocDefinition({
         structureName, structureId, inspectionDate,
-        bridgeData, inspectionData, defectsData,
+        bridgeData, inspectionData, defectsData, bridgeSpans: bridgeSpansData || [],
         allElementsList, getElementDesc,
         photosWithDataURLs, getPhotoNumbersForDefect,
         bridgePhotoDataURL, mapDataURL,

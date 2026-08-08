@@ -443,8 +443,14 @@ function buildBCIProformaContent(bciFormData, singleSpanIdx) {
         var primMat    = spanDetail.primaryMaterialCode || '';
         var secForm    = spanDetail.secondaryForm || '';
         var secMat     = spanDetail.secondaryMaterialCode || '';
-        var spanW      = spanDetail.width  != null ? spanDetail.width  : (bridgeData.span_width  || bridgeData.span   || '');
-        var spanL      = spanDetail.length != null ? spanDetail.length : (bridgeData.span_length || bridgeData.length || '');
+        // bridgeData never actually has span_width/span_length fields (the
+        // API doesn't return them under those names) - that half of this
+        // fallback was dead. Every structure now has a real bridge_spans row
+        // per span (see scripts/backfill-bridge-spans.js), so spanDetail
+        // should always be found; bridgeData.span/length is a last-resort
+        // guard for a structure that somehow predates that, not the normal path.
+        var spanW      = spanDetail.width  != null ? spanDetail.width  : (bridgeData.span   || '');
+        var spanL      = spanDetail.length != null ? spanDetail.length : (bridgeData.length || '');
         var inspected  = spanData.elements_inspected !== false ? 'Yes' : 'No';
         var photos     = spanData.photographs_taken !== false ? 'Yes' : 'No';
         // Number(...).toFixed(2), not String(...) - bci_crit/bci_av often

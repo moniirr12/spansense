@@ -231,6 +231,46 @@ function imageParagraph(d, dataUrl, maxWidthPx) {
     });
 }
 
+// BCI Pro forma Table 4 material codes, decoded for a narrative report
+// reader - mirrors test.js's REPORT_MATERIAL_LABEL (kept as its own copy;
+// this file is a separate script, loaded independently of test.js, with no
+// shared-module system to pull a single copy from).
+var DOCX_MATERIAL_LABEL = {
+    A: 'Reinforced concrete', B: 'Plain/mass concrete', C: 'Post-tensioned concrete', D: 'Pre-tensioned concrete',
+    E: 'Steel', F: 'Cast iron', G: 'Wrought iron', H: 'Aluminium', I: 'Corrugated steel', J: 'Corrugated aluminium',
+    K: 'Brick', L: 'Stone', M: 'FRP/GRP/Composite', N: 'Timber', P: 'No secondary element', Q: 'Other'
+};
+function docxMaterialLabel(code) {
+    if (!code) return null;
+    return DOCX_MATERIAL_LABEL[String(code).toUpperCase()] || code;
+}
+
+// Per-span geometry/material table (1.3) - only for multi-span structures;
+// a single span is already covered by the Primary/Secondary material rows
+// added to the main 1. Structure Details table (see scripts/backfill-bridge-spans.js
+// for why every structure now has real bridge_spans rows to draw this from).
+function spanDetailDocxTable(d, spans) {
+    var headerCell = function(text) {
+        return new d.TableCell({ shading: { fill: 'F2F2F2' }, children: [new d.Paragraph({ children: [new d.TextRun({ text: text, bold: true, size: 16 })] })] });
+    };
+    var cell = function(text) {
+        return new d.TableCell({ children: [new d.Paragraph({ children: [new d.TextRun({ text: text, size: 18 })] })] });
+    };
+    var rows = [new d.TableRow({ tableHeader: true, children: [
+        headerCell('Span'), headerCell('Length'), headerCell('Width'), headerCell('Primary material'), headerCell('Secondary material')
+    ] })];
+    spans.forEach(function(s) {
+        rows.push(new d.TableRow({ children: [
+            cell(String(s.spanNumber)),
+            cell(s.length != null ? Number(s.length).toFixed(1) + ' m' : '—'),
+            cell(s.width != null ? Number(s.width).toFixed(1) + ' m' : '—'),
+            cell(docxMaterialLabel(s.primaryMaterialCode) || '—'),
+            cell(docxMaterialLabel(s.secondaryMaterialCode) || '—')
+        ] }));
+    });
+    return new d.Table({ width: { size: 100, type: d.WidthType.PERCENTAGE }, rows: rows });
+}
+
 function priorityTable(d, defects, getElementDesc) {
     var rows = [new d.TableRow({
         tableHeader: true,
@@ -267,6 +307,11 @@ async function buildFullInspectionReportDocx(doc) {
         .then(function(r) { return r.ok ? r.json() : { success: false, photos: [] }; }).catch(function() { return { success: false, photos: [] }; });
     var nextDueData = await fetch(API_BASE + '/api/inspection/next-due?structure_id=' + structureId + '&date=' + inspectionDate)
         .then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; });
+    // Per-span geometry/material (see scripts/backfill-bridge-spans.js) -
+    // empty array, never a thrown error, for a structure nobody's added
+    // this to yet.
+    var bridgeSpans = await fetch(API_BASE + '/api/bridges/' + structureId + '/spans')
+        .then(function(r) { return r.ok ? r.json() : []; }).catch(function() { return []; });
 
     var defectsData = inspectionData.defects || [];
     var allPhotos = photosResponse.success ? photosResponse.photos : [];
@@ -369,11 +414,22 @@ async function buildFullInspectionReportDocx(doc) {
     // updates it, so it reads as "missing" until then; this is always visible.)
     children.push(new d.Paragraph({ children: [], pageBreakBefore: true }));
     children.push(new d.Paragraph({ heading: d.HeadingLevel.HEADING_1, spacing: { after: 200 }, children: [new d.TextRun({ text: 'Table of Contents' })] }));
+    // 1.3/1.4 are both conditional (span table only for multi-span, map only
+    // when captured) and independent of each other, so the numbering has to
+    // be computed rather than hardcoded - reused below for the actual
+    // section body so the two never drift apart.
+    var spanCount = bridgeData.span_number || bridgeSpans.length || 1;
+    var showSpanTable = spanCount > 1 && bridgeSpans.length > 0;
+    var section1SubNum = 2;
+    var spanSectionNum = showSpanTable ? ++section1SubNum : null;
+    var mapSectionNum = mapDataURL ? ++section1SubNum : null;
+
     children.push(tocEntry(d, 'Document Status', 'docStatus'));
     children.push(tocEntry(d, '1. Structure Details', 'section1'));
     children.push(tocEntry(d, '1.1 Structure Description', 'section1_1', 360));
     children.push(tocEntry(d, '1.2 Coordinates', 'section1_2', 360));
-    if (mapDataURL) children.push(tocEntry(d, '1.3 Location Map', 'section1_3', 360));
+    if (showSpanTable) children.push(tocEntry(d, '1.' + spanSectionNum + ' Span Detail', 'section1_span', 360));
+    if (mapDataURL) children.push(tocEntry(d, '1.' + mapSectionNum + ' Location Map', 'section1_3', 360));
     children.push(tocEntry(d, '2. Inspection Details', 'section2'));
     children.push(tocEntry(d, '2.1 Span Details & BCI Scores', 'section2_1', 360));
     children.push(tocEntry(d, '3. Description of Defects', 'section3'));
@@ -434,6 +490,13 @@ async function buildFullInspectionReportDocx(doc) {
     // ── SECTION 1: STRUCTURE DETAILS ──
     children.push(new d.Paragraph({ children: [], pageBreakBefore: true }));
     children.push(bookmarkedHeading(d, '1. Structure Details', d.HeadingLevel.HEADING_1, 'section1'));
+    // Single-span structures don't get the 1.x span table below - the one
+    // span IS the structure, so its material belongs in this main table
+    // instead. Falls back to the structure-level fields directly (raw code)
+    // for the rare structure that somehow predates the backfill migration.
+    var firstSpan = bridgeSpans[0] || {};
+    var primaryMaterial = docxMaterialLabel(firstSpan.primaryMaterialCode || bridgeData.primary_material);
+    var secondaryMaterial = docxMaterialLabel(firstSpan.secondaryMaterialCode || bridgeData.secondary_material);
     children.push(kvTable(d, [
         ['Structure Name:', structureName],
         ['Structure Number:', structureId],
@@ -441,7 +504,10 @@ async function buildFullInspectionReportDocx(doc) {
         ['Crosses:', bridgeData.crosses || 'Not specified'],
         ['Carries:', bridgeData.carries || 'Not specified'],
         ['Location:', bridgeData.location || 'Not specified'],
-    ]));
+    ].concat(spanCount === 1 ? [
+        ['Primary Material:', primaryMaterial || 'Not specified'],
+        ['Secondary Material:', secondaryMaterial || 'Not specified']
+    ] : [])));
 
     children.push(bookmarkedHeading(d, '1.1 Structure Description', d.HeadingLevel.HEADING_2, 'section1_1'));
     children.push(reportPara(d, bridgeData.description || 'No structural description available for this bridge.'));
@@ -454,8 +520,13 @@ async function buildFullInspectionReportDocx(doc) {
         ['Longitude:', bridgeData.longitude ? Number(bridgeData.longitude).toFixed(6) : 'N/A'],
     ]));
 
+    if (showSpanTable) {
+        children.push(bookmarkedHeading(d, '1.' + spanSectionNum + ' Span Detail', d.HeadingLevel.HEADING_2, 'section1_span'));
+        children.push(spanDetailDocxTable(d, bridgeSpans));
+    }
+
     if (mapDataURL) {
-        children.push(bookmarkedHeading(d, '1.3 Location Map', d.HeadingLevel.HEADING_2, 'section1_3'));
+        children.push(bookmarkedHeading(d, '1.' + mapSectionNum + ' Location Map', d.HeadingLevel.HEADING_2, 'section1_3'));
         var mapImg = imageParagraph(d, mapDataURL, 400);
         if (mapImg) children.push(mapImg);
     }

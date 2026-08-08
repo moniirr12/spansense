@@ -444,6 +444,59 @@ function narrKvTable(pairs) {
     };
 }
 
+// BCI Pro forma Table 4 material codes, decoded for a narrative report
+// reader rather than left as the bare letter the Pro forma appendix shows -
+// mirrors twin/twin.js's TWIN_MATERIAL_CODE_LABEL (kept as a separate copy
+// since that file is browser-only and this one also runs outside the
+// browser - see buildInspectionReportDocDefinition's own comment above it).
+const REPORT_MATERIAL_LABEL = {
+    A: 'Reinforced concrete', B: 'Plain/mass concrete', C: 'Post-tensioned concrete', D: 'Pre-tensioned concrete',
+    E: 'Steel', F: 'Cast iron', G: 'Wrought iron', H: 'Aluminium', I: 'Corrugated steel', J: 'Corrugated aluminium',
+    K: 'Brick', L: 'Stone', M: 'FRP/GRP/Composite', N: 'Timber', P: 'No secondary element', Q: 'Other'
+};
+function reportMaterialLabel(code) {
+    if (!code) return null;
+    return REPORT_MATERIAL_LABEL[String(code).toUpperCase()] || code;
+}
+
+// Per-span geometry/material table (1.3) - only shown for multi-span
+// structures, where each span can genuinely differ; a single-span structure
+// already has this covered by the "Span / length" and "Primary material"
+// rows in the main table above (see scripts/backfill-bridge-spans.js for
+// why every structure has real bridge_spans rows now, not just a length/
+// span-count guess).
+function spanDetailTable(bridgeSpans) {
+    const header = [
+        { text: 'Span', fontSize: 8.5, bold: true, color: NARR_COLORS.muted },
+        { text: 'Length', fontSize: 8.5, bold: true, color: NARR_COLORS.muted },
+        { text: 'Width', fontSize: 8.5, bold: true, color: NARR_COLORS.muted },
+        { text: 'Primary material', fontSize: 8.5, bold: true, color: NARR_COLORS.muted },
+        { text: 'Secondary material', fontSize: 8.5, bold: true, color: NARR_COLORS.muted }
+    ];
+    const rows = bridgeSpans.map(function (s) {
+        return [
+            { text: String(s.spanNumber), fontSize: 9.5, color: NARR_COLORS.ink },
+            { text: s.length != null ? Number(s.length).toFixed(1) + ' m' : '—', fontSize: 9.5, color: NARR_COLORS.ink },
+            { text: s.width != null ? Number(s.width).toFixed(1) + ' m' : '—', fontSize: 9.5, color: NARR_COLORS.ink },
+            { text: reportMaterialLabel(s.primaryMaterialCode) || '—', fontSize: 9.5, color: NARR_COLORS.ink },
+            { text: reportMaterialLabel(s.secondaryMaterialCode) || '—', fontSize: 9.5, color: NARR_COLORS.ink }
+        ];
+    });
+    return {
+        table: { widths: [30, 55, 50, '*', '*'], body: [header].concat(rows) },
+        layout: {
+            hLineWidth: function (i, node) { return (i === 0 || i === 1 || i === node.table.body.length) ? 0.5 : 0.5; },
+            vLineWidth: function () { return 0; },
+            hLineColor: function () { return NARR_COLORS.hairline; },
+            paddingLeft: function () { return 4; },
+            paddingRight: function () { return 4; },
+            paddingTop: function () { return 6; },
+            paddingBottom: function () { return 6; }
+        },
+        margin: [0, 0, 0, 13]
+    };
+}
+
 // Section heading ("3   Description of Defects") - registers itself with
 // pdfmake's built-in toc feature (tocItem/tocStyle) so the Contents page
 // gets real, always-correct page numbers instead of the old report's
@@ -849,6 +902,10 @@ async function generateSimplePDFReport(doc, mode = 'download', targetWindow = nu
         const docDefinition = buildInspectionReportDocDefinition({
             structureName, structureId, inspectionDate,
             bridgeData, inspectionData, defectsData,
+            // Already fetched for the Proforma appendix below - reused here
+            // so Section 1 can show the real per-span breakdown instead of
+            // just the structure-level totals (see scripts/backfill-bridge-spans.js).
+            bridgeSpans: bciFormData.bridgeSpans || [],
             allElementsList, elementNameMap, getElementDesc,
             photosByDefect, photosWithDataURLs, getPhotoNumbersForDefect,
             bridgePhotoDataURL, mapDataURL,
@@ -899,7 +956,7 @@ async function generateSimplePDFReport(doc, mode = 'download', targetWindow = nu
 function buildInspectionReportDocDefinition(ctx) {
     const {
         structureName, structureId, inspectionDate,
-        bridgeData, inspectionData, defectsData,
+        bridgeData, inspectionData, defectsData, bridgeSpans,
         allElementsList, getElementDesc,
         photosWithDataURLs, getPhotoNumbersForDefect,
         bridgePhotoDataURL, mapDataURL,
@@ -994,7 +1051,15 @@ function buildInspectionReportDocDefinition(ctx) {
     ];
 
     // ---------- SECTION 1: STRUCTURE DETAILS ----------
-    const spanCount = bridgeData.span_number || 1;
+    const spans = bridgeSpans || [];
+    const spanCount = bridgeData.span_number || spans.length || 1;
+    // Single-span structures don't need the 1.3 table below - the one span
+    // IS the structure, so its material/form belongs in the main summary
+    // instead. Falls back to the structure-level fields directly (raw code)
+    // for the rare structure that somehow predates the backfill migration.
+    const firstSpan = spans[0] || {};
+    const primaryMaterial = reportMaterialLabel(firstSpan.primaryMaterialCode || bridgeData.primary_material);
+    const secondaryMaterial = reportMaterialLabel(firstSpan.secondaryMaterialCode || bridgeData.secondary_material);
     const section1 = [
         { text: '', pageBreak: 'before' },
         sectionHeading('1', 'Structure Details', 'section1'),
@@ -1004,7 +1069,11 @@ function buildInspectionReportDocDefinition(ctx) {
             ['Type', bridgeData.type || 'Bridge'],
             ['Location', bridgeData.location || 'Not specified'],
             ['Date of construction', bridgeData.built_year || 'Unknown'],
-            ['Span / length', spanCount + (spanCount > 1 ? ' spans' : ' span') + (bridgeData.length ? `   ·   ${bridgeData.length} m` : '')]
+            ['Span / length', spanCount + (spanCount > 1 ? ' spans' : ' span') + (bridgeData.length ? `   ·   ${bridgeData.length} m` : '')],
+            ...(spanCount === 1 ? [
+                ['Primary material', primaryMaterial],
+                ['Secondary material', secondaryMaterial]
+            ] : [])
         ]),
         subhead('1.1 Description', 'section1_1'),
         { text: bridgeData.description || 'No structural description available for this bridge.', fontSize: 9.5, lineHeight: 1.4, color: RC.body, margin: [0, 0, 0, 13] },
@@ -1013,6 +1082,10 @@ function buildInspectionReportDocDefinition(ctx) {
             ['Latitude / Longitude', (bridgeData.latitude && bridgeData.longitude) ? `${Number(bridgeData.latitude).toFixed(6)}, ${Number(bridgeData.longitude).toFixed(6)}` : 'N/A'],
             ['Easting / Northing', `${bridgeData.easting || bridgeData.ose || 'N/A'} / ${bridgeData.northing || bridgeData.osn || 'N/A'}`]
         ]),
+        ...(spanCount > 1 && spans.length ? [
+            subhead('1.3 Span Detail', 'section1_3'),
+            spanDetailTable(spans)
+        ] : []),
         ...(mapDataURL ? [
             { image: mapDataURL, width: 475, alignment: 'center', margin: [0, 4, 0, 5] },
             { text: 'Structure location map', italics: true, fontSize: 9.5, color: RC.muted, alignment: 'center', margin: [0, 0, 0, 10] }

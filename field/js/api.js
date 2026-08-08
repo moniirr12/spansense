@@ -43,6 +43,7 @@
     // --- structures ---
     getBridges: () => request('/api/bridges'),
     getBridge: (id) => request(`/api/bridges/${id}`),
+    getBridgeSpans: (id) => request(`/api/bridges/${id}/spans`),
 
     // --- inspections ---
     getInspectionDates: (structureId) => request(`/api/inspection-dates/${structureId}`),
