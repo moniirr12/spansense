@@ -8,6 +8,7 @@
     session: null,
     structures: [],
     currentStructure: null,   // full row from Api.getBridge
+    currentStructureSpans: [], // per-span geometry from Api.getBridgeSpans, for renderTwin3D()
     inspectionDates: [],
     elements: [],             // [{no, description, category}]
     draft: null,
@@ -561,12 +562,14 @@
     document.getElementById('inspTitle').textContent = '…';
     document.getElementById('inspectionRows').innerHTML = '<div class="empty-state">Loading…</div>';
     try {
-      const [structure, dates] = await Promise.all([
+      const [structure, dates, spans] = await Promise.all([
         Api.getBridge(structureId),
-        Api.getInspectionDates(structureId)
+        Api.getInspectionDates(structureId),
+        Api.getBridgeSpans(structureId).catch(() => [])
       ]);
       noteRequestSucceeded();
       S.currentStructure = structure;
+      S.currentStructureSpans = spans || [];
       S.inspectionDates = dates;
       document.getElementById('inspTitle').textContent = structure.name;
       document.getElementById('inspSubtitle').textContent = `${structure.id} · ${structure.type || 'Bridge'}`;
@@ -1022,7 +1025,18 @@
       .filter((d) => !isPlaceholder(d) && d.origX != null && d.origY != null && d.origZ != null)
       .map((d) => Object.assign({}, d, { x: d.origX, y: d.origY, z: d.origZ }));
     const totalSpans = S.draft.totalSpans || S.draft.spans.length || 1;
-    const structureLength = S.currentStructure ? parseFloat(S.currentStructure.length) : null;
+    // Real per-span lengths (see scripts/backfill-bridge-spans.js) when
+    // available, same as twin/twin.js's own fix - sum of the actual spans
+    // instead of re-deriving from the structure's raw length field, so an
+    // edited span is reflected here too. The 3D model itself still renders
+    // a uniform average span (see twin.js), this just sources that average
+    // from the right place.
+    const spanRowTotal = (S.currentStructureSpans || []).reduce(
+      (sum, s) => (s.length != null ? sum + parseFloat(s.length) : sum), 0
+    );
+    const structureLength = spanRowTotal > 0
+      ? spanRowTotal
+      : (S.currentStructure ? parseFloat(S.currentStructure.length) : null);
     const spanLength = structureLength && totalSpans ? structureLength / totalSpans : undefined;
     Twin3D.render({ id: S.draft.structureId, type: S.draft.structureType, spans: totalSpans, spanLength, defects: markerDefects });
     Twin3D.setDefectsVisible(defectsLayerOn);

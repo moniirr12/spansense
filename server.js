@@ -1299,6 +1299,18 @@ app.get('/api/twin/:structureId', requireAuth, async (req, res) => {
             return res.status(404).json({ error: 'Bridge not found' });
         }
 
+        // Real per-span geometry (see scripts/backfill-bridge-spans.js) - the
+        // 3D model itself stays a uniform-span stylised representation (see
+        // rebuildModel()'s cantilever-bridge comment in twin.js for why it
+        // deliberately isn't a literal scale model), but the total/average
+        // length it's built from should come from the actual span rows
+        // rather than re-deriving bridge.length / span_number here, so an
+        // edited span is reflected instead of silently ignored.
+        const bridgeSpanRows = await dbAll(
+            'SELECT length FROM bridge_spans WHERE bridge_id = $1 ORDER BY span_number',
+            [structureId]
+        );
+
         const allInspections = await dbAll(
             `SELECT id, inspection_date, inspection_type, overall_bciave, overall_bcicrit
              FROM inspections WHERE structure_id = $1 ORDER BY inspection_date ASC`,
@@ -1409,8 +1421,15 @@ app.get('/api/twin/:structureId', requireAuth, async (req, res) => {
             bciCrit: i.overall_bcicrit != null ? parseFloat(i.overall_bcicrit) : null
         }));
 
-        const spanNumber = bridge.span_number || spans.length || 1;
+        const spanNumber = bridge.span_number || spans.length || bridgeSpanRows.length || 1;
         const material = [bridge.primary_material, bridge.secondary_material].filter(Boolean).join(' / ') || null;
+
+        // Sum of real per-span lengths when bridge_spans has been populated
+        // for this structure; falls back to the old length/span_number
+        // division only for a structure that somehow predates the backfill.
+        const spanRowTotal = bridgeSpanRows.reduce((sum, s) => s.length != null ? sum + parseFloat(s.length) : sum, 0);
+        const totalLength = bridgeSpanRows.length && spanRowTotal > 0 ? spanRowTotal : bridge.length;
+        const avgSpanLength = totalLength ? totalLength / spanNumber : null;
 
         res.json({
             id: bridge.id,
@@ -1418,7 +1437,7 @@ app.get('/api/twin/:structureId', requireAuth, async (req, res) => {
             location: bridge.location,
             type: bridge.type,
             spans: spanNumber,
-            spanLength: bridge.length ? bridge.length / spanNumber : null,
+            spanLength: avgSpanLength,
             material,
             yearBuilt: bridge.built_year,
             bciAvg,
