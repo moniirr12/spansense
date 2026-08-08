@@ -1593,6 +1593,17 @@
                 return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
             }
 
+            // structure_name/inspector_name/inspection_type are free text any
+            // authenticated account can set via /save-inspection, and this
+            // feed (GET /api/activity) shows every user's recent inspections
+            // to every other logged-in user - escape before interpolating
+            // into innerHTML below.
+            function escapeHtml(str) {
+                return String(str == null ? '' : str).replace(/[&<>"']/g, function (c) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+                });
+            }
+
             const list = document.getElementById('activityList');
 
             fetch(`${API_BASE}/api/activity?limit=5`)
@@ -1605,12 +1616,14 @@
                     list.innerHTML = rows.map(row => {
                         const cfg = typeConfig[row.inspection_type] || { label: row.inspection_type || 'Inspection', icon: 'fa-clipboard-check', cls: 'edit' };
                         const bciPart = row.bci_av != null ? ` · BCI<sub>avg</sub> ${Math.round(parseFloat(row.bci_av))}` : '';
-                        const inspector = row.inspector_name ? row.inspector_name : 'Unknown inspector';
+                        const inspector = escapeHtml(row.inspector_name ? row.inspector_name : 'Unknown inspector');
+                        const label = escapeHtml(cfg.label);
+                        const structureName = escapeHtml(row.structure_name || 'Unknown structure');
                         return `
                         <div class="activity-row">
                             <div class="act-icon ${cfg.cls}"><i class="fas ${cfg.icon}"></i></div>
                             <div class="act-details">
-                                <div class="act-title">${cfg.label} · ${row.structure_name || 'Unknown structure'}</div>
+                                <div class="act-title">${label} · ${structureName}</div>
                                 <div class="act-meta">${inspector} · ${formatDate(row.inspection_date)}${bciPart}</div>
                             </div>
                             <div class="act-time">${relativeTime(row.inspection_date)}</div>

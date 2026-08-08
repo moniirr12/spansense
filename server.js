@@ -165,6 +165,21 @@ function dbRun(query, params = []) {
     });
 }
 
+// Defense-in-depth for /save-inspection and /update-inspection: the real
+// XSS fix is escaping on render (every consumer of structure_name/
+// inspector_name/conclusions must do that regardless), but these short
+// label fields never legitimately contain angle brackets, so stripping them
+// on write closes the door even if some future render path forgets to
+// escape. Not applied to conclusions - that's freeform inspection text that
+// can legitimately contain "<"/">" (e.g. "crack width < 2mm"), so mangling
+// it here would corrupt real engineering notes; it's capped for length
+// instead and relies on render-time escaping like everything else does.
+function stripAngleBrackets(str, maxLength) {
+    if (str == null) return str;
+    const cleaned = String(str).replace(/[<>]/g, '');
+    return maxLength ? cleaned.slice(0, maxLength) : cleaned;
+}
+
 // Initialize database tables
 async function initDatabase() {
     try {
@@ -1897,6 +1912,11 @@ app.get('/api/debug/count-test', requireAuth, async (req, res) => {
 // SAVE INSPECTION DATA TO DATABASE
 app.post('/save-inspection', requireAuth, async (req, res) => {
     const { inspection, defects, photoData = {}, notes = [] } = req.body;
+    if (inspection) {
+        inspection.structure_name = stripAngleBrackets(inspection.structure_name, 200);
+        inspection.inspector_name = stripAngleBrackets(inspection.inspector_name, 200);
+        if (typeof inspection.conclusions === 'string') inspection.conclusions = inspection.conclusions.slice(0, 10000);
+    }
 
     // Idempotent retry short-circuit - see the client_submission_id column
     // migration above for why this exists. Checked before opening a
@@ -2127,6 +2147,11 @@ app.put('/update-inspection', requireAuth, async (req, res) => {
     // brand-new inspection (still going through /save-inspection, no id
     // yet) needs notes queued into the save payload itself.
     const { inspection, defects, inspectionId, version } = req.body;
+    if (inspection) {
+        inspection.structure_name = stripAngleBrackets(inspection.structure_name, 200);
+        inspection.inspector_name = stripAngleBrackets(inspection.inspector_name, 200);
+        if (typeof inspection.conclusions === 'string') inspection.conclusions = inspection.conclusions.slice(0, 10000);
+    }
 
     const client = await pool.connect();
 

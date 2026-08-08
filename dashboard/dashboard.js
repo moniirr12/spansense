@@ -907,6 +907,17 @@ window.goToPendingReviewPage = function goToPendingReviewPage(page) {
     renderPendingReviewPage();
 };
 
+// structure_name/inspector_name/conclusions are free text any authenticated
+// account can set via /save-inspection or /update-inspection - escaping is
+// required wherever they're interpolated into innerHTML below, not just
+// obviously-raw fields (getInitials() slices raw characters out of
+// inspector_name too, so it needs the same treatment).
+function escapeHtml(str) {
+    return String(str == null ? '' : str).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+}
+
 function renderPendingReview(data) {
     const list = document.getElementById('pending-review-list');
 
@@ -922,8 +933,9 @@ function renderPendingReview(data) {
     list.innerHTML = data.map(item => {
         const bci = item.overall_bciave !== null ? Math.round(item.overall_bciave) : '—';
         const tier = bciTier(item.overall_bciave);
-        const initials = getInitials(item.inspector_name);
-        const inspector = item.inspector_name || 'Unknown';
+        const initials = escapeHtml(getInitials(item.inspector_name));
+        const inspector = escapeHtml(item.inspector_name || 'Unknown');
+        const structureName = escapeHtml(item.structure_name || 'Structure ' + item.structure_id);
 
         const fieldBadge = item.source === 'field'
             ? '<span class="pr-field-badge" data-tip="Saved from spanSense Field"><i class="fas fa-mobile-screen-button"></i> Field</span>'
@@ -934,7 +946,7 @@ function renderPendingReview(data) {
                     <div class="pr-structure-cell">
                         <div class="activity-avatar activity-avatar-${tier.avatarColor}">${initials}</div>
                         <div class="activity-content">
-                            <div class="activity-title">${item.structure_name || 'Structure ' + item.structure_id} ${fieldBadge}</div>
+                            <div class="activity-title">${structureName} ${fieldBadge}</div>
                         </div>
                     </div>
                 </td>
@@ -957,9 +969,9 @@ window.openReviewModal = function openReviewModal(inspectionId) {
     document.getElementById('reviewModalTitle').textContent =
         (item.structure_name || 'Structure ' + item.structure_id) + ' · STR #' + item.structure_id;
     document.getElementById('reviewModalSummary').innerHTML =
-        `Inspected by ${item.inspector_name || 'Unknown'} on ${formatDate(item.inspection_date)} &nbsp;·&nbsp; ` +
+        `Inspected by ${escapeHtml(item.inspector_name || 'Unknown')} on ${formatDate(item.inspection_date)} &nbsp;·&nbsp; ` +
         `BCI<sub>avg</sub> ${bciAv} / BCI<sub>crit</sub> ${bciCrit}` +
-        (item.conclusions ? `<br><br>"${item.conclusions}"` : '');
+        (item.conclusions ? `<br><br>"${escapeHtml(item.conclusions)}"` : '');
     document.getElementById('reviewCommentsInput').value = '';
 
     // Same deep-link the existing "Edit Report" buttons use elsewhere (see
