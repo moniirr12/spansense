@@ -175,18 +175,22 @@
             </div>
 
             <div class="fc-view active" id="fcView-structures">
+                <div class="pr-search-wrap fc-search-wrap">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="fcStructureSearch" placeholder="Search structures...">
+                </div>
                 <table class="data-table card-rows">
-                    <thead><tr><th>Structure</th><th>BCI Avg</th><th>Projected crossing</th></tr></thead>
+                    <thead><tr><th>Structure</th><th>History</th><th>BCI Avg</th><th>Projected crossing</th></tr></thead>
                     <tbody id="fc-structures-body">
-                        <tr><td colspan="3" style="color: var(--text-muted); font-size: 0.85rem;">Loading...</td></tr>
+                        <tr><td colspan="4" style="color: var(--text-muted); font-size: 0.85rem;">Loading...</td></tr>
                     </tbody>
                 </table>
             </div>
             <div class="fc-view" id="fcView-category">
                 <table class="data-table card-rows">
-                    <thead><tr><th>Category</th><th>Structures</th><th>Avg BCI Avg</th><th>Projected crossing</th></tr></thead>
+                    <thead><tr><th>Category</th><th>History</th><th>Structures</th><th>Avg BCI Avg</th><th>Projected crossing</th></tr></thead>
                     <tbody id="fc-category-body">
-                        <tr><td colspan="4" style="color: var(--text-muted); font-size: 0.85rem;">Loading...</td></tr>
+                        <tr><td colspan="5" style="color: var(--text-muted); font-size: 0.85rem;">Loading...</td></tr>
                     </tbody>
                 </table>
             </div>

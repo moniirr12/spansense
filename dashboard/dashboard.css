@@ -587,6 +587,21 @@ body {
 }
 .night-mode .fc-hero-end .rel { color: #a8b8bf; }
 
+.fc-hero-spark { flex-shrink: 0; }
+
+/* History sparkline (per-row in Structures/By category) - solid line
+   through real readings, dashed continuation for whatever's projected
+   past the last one. Vertically centered against the row's other cells. */
+.fc-spark { vertical-align: middle; }
+
+/* Search box above the Structures view - reuses .pr-search-wrap's look
+   (Pending Review's search field) rather than a new input style, just
+   sized for its own block instead of a filter row's flex:1. */
+.fc-search-wrap {
+    max-width: 320px;
+    margin: 0 0 14px;
+}
+
 /* ============================================
    BOTTOM ROW: CRITICAL + ACTIVITY
    ============================================ */

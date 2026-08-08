@@ -3919,20 +3919,35 @@ function buildForecastStatus(currentAvg, series) {
         return { status: 'insufficient_history' };
     }
     const fit = forecastLinearFit(series);
-    if (!fit || fit.slope >= 0) {
+    if (!fit) {
         return { status: 'no_decline' };
+    }
+    // BCI points per year - lets the client extend a dashed line past the
+    // last real reading on the history sparkline, not just used for the
+    // crossing-date maths below.
+    const slopePerYear = Math.round(fit.slope * FORECAST_YEAR_MS * 100) / 100;
+    if (fit.slope >= 0) {
+        return { status: 'no_decline', slopePerYear };
     }
     const now = Date.now();
     const tCross = (FORECAST_THRESHOLD_BCIAVE - fit.intercept) / fit.slope;
     const yearsToThreshold = Math.max(0, (tCross - now) / FORECAST_YEAR_MS);
     if (yearsToThreshold > FORECAST_HORIZON_YEARS) {
-        return { status: 'beyond_horizon' };
+        return { status: 'beyond_horizon', slopePerYear };
     }
     return {
         status: 'projected',
         projectedCrossingDate: new Date(Math.max(tCross, now)).toISOString().slice(0, 7),
-        yearsToThreshold: Math.round(yearsToThreshold * 10) / 10
+        yearsToThreshold: Math.round(yearsToThreshold * 10) / 10,
+        slopePerYear
     };
+}
+
+// Trims a {t (epoch ms), v}[] series down to what a sparkline actually
+// needs on the wire - ISO date + one decimal place, not the full float and
+// millisecond timestamp precision the fit itself used.
+function seriesForClient(series) {
+    return series.map(p => ({ t: new Date(p.t).toISOString().slice(0, 10), v: Math.round(p.v * 10) / 10 }));
 }
 
 app.get('/api/dashboard/deterioration-forecast', requireAuth, async (req, res) => {
@@ -3973,7 +3988,7 @@ app.get('/api/dashboard/deterioration-forecast', requireAuth, async (req, res) =
                 rows.push({
                     structureId: g.structureId, structureName: g.structureName, type: g.type,
                     currentBciAve: Math.round(last.v * 10) / 10, dataPoints: g.series.length,
-                    historySince: g.historySince, ...forecast
+                    historySince: g.historySince, series: seriesForClient(g.series), ...forecast
                 });
             });
             rows.sort((a, b) => (a.yearsToThreshold ?? 999) - (b.yearsToThreshold ?? 999));
@@ -4026,7 +4041,7 @@ app.get('/api/dashboard/deterioration-forecast', requireAuth, async (req, res) =
             rows.push({
                 type: g.type, structureCount: g.structureCount,
                 avgBciAve: currentAvg != null ? Math.round(currentAvg * 10) / 10 : null,
-                dataPoints: g.series.length, ...forecast
+                dataPoints: g.series.length, series: seriesForClient(g.series), ...forecast
             });
         });
         rows.sort((a, b) => (a.yearsToThreshold ?? 999) - (b.yearsToThreshold ?? 999));

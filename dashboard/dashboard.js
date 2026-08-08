@@ -653,12 +653,14 @@ function renderCriticalBridges(data) {
    portfolio is small enough that this is cheaper than a round-trip per
    toggle click) and fcSwitch just flips which pre-rendered view is shown.
    ============================================================ */
+let fcStructureRows = []; // full unfiltered list, so search can re-render instantly with no round trip
+
 async function fetchDeteriorationForecast() {
     const fail = () => {
         document.getElementById('fc-structures-body').innerHTML =
-            `<tr><td colspan="3" style="color: var(--text-muted); font-size: 0.8rem;">Could not load data.</td></tr>`;
-        document.getElementById('fc-category-body').innerHTML =
             `<tr><td colspan="4" style="color: var(--text-muted); font-size: 0.8rem;">Could not load data.</td></tr>`;
+        document.getElementById('fc-category-body').innerHTML =
+            `<tr><td colspan="5" style="color: var(--text-muted); font-size: 0.8rem;">Could not load data.</td></tr>`;
         document.getElementById('fc-portfolio-body').textContent = 'Could not load data.';
     };
     try {
@@ -667,7 +669,8 @@ async function fetchDeteriorationForecast() {
             fetch(API_BASE + '/api/dashboard/deterioration-forecast?granularity=category', { credentials: 'include' }).then(r => r.json()),
             fetch(API_BASE + '/api/dashboard/deterioration-forecast?granularity=portfolio', { credentials: 'include' }).then(r => r.json())
         ]);
-        renderForecastStructures(structures.rows || []);
+        fcStructureRows = structures.rows || [];
+        renderForecastStructures(fcStructureRows);
         renderForecastCategory(category.rows || []);
         renderForecastPortfolio((portfolio.rows || [])[0] || null, portfolio.withinYears);
     } catch (error) {
@@ -675,6 +678,12 @@ async function fetchDeteriorationForecast() {
         fail();
     }
 }
+
+document.getElementById('fcStructureSearch')?.addEventListener('input', function () {
+    const term = this.value.trim().toLowerCase();
+    const filtered = term ? fcStructureRows.filter(r => r.structureName.toLowerCase().includes(term)) : fcStructureRows;
+    renderForecastStructures(filtered);
+});
 
 function formatForecastMonth(yyyymm) {
     if (!yyyymm) return '—';
@@ -700,10 +709,55 @@ function fcStatusCell(row) {
     return `<span class="${cls}">${labels[row.status] || row.status}</span>`;
 }
 
+// Solid line through the row's real BCI-avg readings; a dashed continuation
+// past the last one for anything with a fitted decline (projected/beyond
+// horizon) - to the actual crossing point for 'projected', or a flat +5y
+// extrapolation for 'beyond_horizon' so there's still something to see even
+// though it doesn't reach the threshold. No dashed segment otherwise -
+// 'no_decline' has nothing to extrapolate toward.
+function renderSparkline(series, row, width, height) {
+    width = width || 72; height = height || 26;
+    if (!series || series.length < 2) return '';
+    const padX = 3, padY = 3;
+    const YEAR_MS = 365.25 * 24 * 60 * 60 * 1000;
+    const pts = series.map(p => ({ t: new Date(p.t).getTime(), v: p.v }));
+    const last = pts[pts.length - 1];
+
+    let extra = null;
+    if (row.slopePerYear != null && (row.status === 'projected' || row.status === 'beyond_horizon')) {
+        if (row.status === 'projected' && row.projectedCrossingDate) {
+            extra = { t: new Date(row.projectedCrossingDate + '-01').getTime(), v: 40 };
+        } else {
+            extra = { t: last.t + 5 * YEAR_MS, v: last.v + row.slopePerYear * 5 };
+        }
+    }
+
+    let minV = Math.min(...pts.map(p => p.v), extra ? extra.v : Infinity);
+    let maxV = Math.max(...pts.map(p => p.v), extra ? extra.v : -Infinity);
+    minV = Math.max(0, minV - 3); maxV = Math.min(100, maxV + 3);
+    if (maxV - minV < 6) { minV = Math.max(0, minV - 3); maxV = Math.min(100, maxV + 3); }
+
+    const minT = pts[0].t, maxT = extra ? extra.t : last.t;
+    const spanT = Math.max(1, maxT - minT);
+    const x = t => padX + ((t - minT) / spanT) * (width - padX * 2);
+    const y = v => height - padY - ((Math.max(minV, Math.min(maxV, v)) - minV) / (maxV - minV)) * (height - padY * 2);
+
+    let svg = `<svg class="fc-spark" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
+    svg += `<polyline points="${pts.map(p => `${x(p.t).toFixed(1)},${y(p.v).toFixed(1)}`).join(' ')}" fill="none" stroke="#5b8c8a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+    if (extra) {
+        const dashColor = row.status === 'projected' ? '#c0392b' : '#c28b5a';
+        svg += `<polyline points="${x(last.t).toFixed(1)},${y(last.v).toFixed(1)} ${x(extra.t).toFixed(1)},${y(extra.v).toFixed(1)}" fill="none" stroke="${dashColor}" stroke-width="2" stroke-linecap="round" stroke-dasharray="3 3"/>`;
+        svg += `<circle cx="${x(extra.t).toFixed(1)}" cy="${y(extra.v).toFixed(1)}" r="2.6" fill="none" stroke="${dashColor}" stroke-width="1.6"/>`;
+    }
+    svg += `<circle cx="${x(last.t).toFixed(1)}" cy="${y(last.v).toFixed(1)}" r="2.4" fill="#5b8c8a"/>`;
+    svg += '</svg>';
+    return svg;
+}
+
 function renderForecastStructures(rows) {
     const tbody = document.getElementById('fc-structures-body');
     if (!rows.length) {
-        tbody.innerHTML = `<tr><td colspan="3" style="color: var(--text-muted); font-size: 0.8rem;">Nothing trending toward Very Poor right now.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" style="color: var(--text-muted); font-size: 0.8rem;">Nothing trending toward Very Poor right now.</td></tr>`;
         return;
     }
     tbody.innerHTML = rows.map(r => `
@@ -712,6 +766,7 @@ function renderForecastStructures(rows) {
                 <span class="bridge-name">${r.structureName}</span>
                 <span class="bridge-location">${r.type} · ${r.dataPoints} inspections since ${r.historySince}</span>
             </td>
+            <td>${renderSparkline(r.series, r)}</td>
             <td class="bridge-id">${r.currentBciAve}</td>
             <td>${fcStatusCell(r)}</td>
         </tr>`).join('');
@@ -720,12 +775,13 @@ function renderForecastStructures(rows) {
 function renderForecastCategory(rows) {
     const tbody = document.getElementById('fc-category-body');
     if (!rows.length) {
-        tbody.innerHTML = `<tr><td colspan="4" style="color: var(--text-muted); font-size: 0.8rem;">Not enough history yet.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" style="color: var(--text-muted); font-size: 0.8rem;">Not enough history yet.</td></tr>`;
         return;
     }
     tbody.innerHTML = rows.map(r => `
         <tr>
             <td><span class="bridge-name">${r.type}</span></td>
+            <td>${renderSparkline(r.series, r)}</td>
             <td class="bridge-id">${r.structureCount}</td>
             <td class="bridge-id">${r.avgBciAve ?? '—'}</td>
             <td>${fcStatusCell(r)}</td>
@@ -738,9 +794,11 @@ function renderForecastPortfolio(row, withinYears) {
         el.textContent = 'Not enough history yet.';
         return;
     }
+    const spark = renderSparkline(row.series, row, 140, 46).replace('class="fc-spark"', 'class="fc-spark fc-hero-spark"');
     if (row.status === 'projected') {
         el.innerHTML = `
             <div class="fc-hero">
+                ${spark}
                 <div class="fc-hero-mid">
                     <div class="h-label">All ${row.structureCount} structures · portfolio-wide BCI avg</div>
                     <div class="h-value">${row.avgBciAve} <span>now</span></div>
@@ -760,6 +818,7 @@ function renderForecastPortfolio(row, withinYears) {
     };
     el.innerHTML = `
         <div class="fc-hero">
+            ${spark}
             <div class="fc-hero-mid">
                 <div class="h-label">All ${row.structureCount} structures · portfolio-wide BCI avg</div>
                 <div class="h-value">${row.avgBciAve ?? '—'} <span>now</span></div>
