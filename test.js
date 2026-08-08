@@ -328,7 +328,7 @@ async function captureLocationMap(lat, lng, locationName) {
 // ─── Report design tokens ──────────────────────────────────────────────────
 // Same spanSense brand palette as bciProforma.pdfmake.js / reportFull.docx.js
 // (accent teal #5b8c8a, ink #1e3432) plus the cover gradient and priority
-// colours from the spansenseUserGuideFull.html design this report follows.
+// colours from the docs/spansenseUserGuideFull.html design this report follows.
 const NARR_COLORS = {
     ink: '#1e3432',
     body: '#3d4a4f',
