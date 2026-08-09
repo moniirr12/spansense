@@ -106,8 +106,8 @@ function createStructureMarker(bridge) {
     marker.bindPopup(`
         <b>${bridge.name}</b><br>
         Location: ${bridge.location}<br>
-        Span: ${bridge.span} meters<br>
-        Length: ${bridge.length} meters<br>
+        Span: ${bridge.span} metres<br>
+        Length: ${bridge.length} metres<br>
         Built: ${bridge.built_year}
     `, { closeButton: false });
 
