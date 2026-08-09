@@ -807,7 +807,7 @@ function renderForecastStructures(rows) {
     const tbody = document.getElementById('fc-structures-body');
     const moreWrap = document.getElementById('fc-structures-more');
     if (!rows.length) {
-        tbody.innerHTML = `<tr><td colspan="4" style="color: var(--text-muted); font-size: 0.8rem;">Nothing trending toward Poor right now.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" style="color: var(--text-muted); font-size: 0.8rem;">Nothing trending towards Poor right now.</td></tr>`;
         if (moreWrap) moreWrap.innerHTML = '';
         return;
     }
