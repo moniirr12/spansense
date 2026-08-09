@@ -623,9 +623,10 @@ function renderCriticalBridges(data) {
         return;
     }
 
-    // Every row here is already BCI avg < 40, i.e. the Very Poor band on its
-    // own (see the BCI Score Distribution legend) - no Poor/Very Poor split
-    // to make here now that the list itself is scoped to just that band.
+    // Every row here is already BCI avg < 40 (the Very Poor band per the
+    // BCI Score Distribution legend), displayed here as "Poor" - a
+    // deliberately shorter/less alarming label for this section, distinct
+    // from the legend's own canonical band name.
     tbody.innerHTML = data.map(bridge => {
         const bci = bridge.overall_bciave !== null ? Math.round(bridge.overall_bciave) : '—';
 
@@ -635,7 +636,7 @@ function renderCriticalBridges(data) {
                     <span class="bridge-id">${bridge.structure_id}</span>
                     <span class="bridge-location">${bridge.structure_name}</span>
                 </td>
-                <td><span class="risk-badge risk-critical">Very Poor · ${bci}</span></td>
+                <td><span class="risk-badge risk-critical">Poor · ${bci}</span></td>
                 <td>${formatDate(bridge.inspection_date)}</td>
                 <td>
                     <button class="action-btn download-btn" onclick="downloadReport('${bridge.structure_id}', '${bridge.structure_name.replace(/'/g, "\\'")}', '${bridge.inspection_date}')">
@@ -648,8 +649,9 @@ function renderCriticalBridges(data) {
 
 /* ============================================================
    DETERIORATION FORECAST — "Heading Toward Very Poor"
-   Same BCI-avg/40 threshold as the Very Poor list above, just
-   forward-looking: fetches all three granularities up front (the
+   Same BCI-avg/40 threshold as the Poor list above (displayed there as
+   "Poor," the same underlying Very Poor band), just forward-looking:
+   fetches all three granularities up front (the
    portfolio is small enough that this is cheaper than a round-trip per
    toggle click) and fcSwitch just flips which pre-rendered view is shown.
    ============================================================ */

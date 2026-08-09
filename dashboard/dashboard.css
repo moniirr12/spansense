@@ -604,11 +604,13 @@ body {
 
 .fc-threshold-line { stroke: #c28b5a; stroke-width: 1; stroke-dasharray: 3 4; opacity: 0.6; }
 .night-mode .fc-threshold-line { stroke: #d4a84a; }
+/* No font-family override, deliberately - same as twin.js's own trend
+   chart labels (trend-axis-label/trend-date-label): SVG's own default
+   sans renders noticeably tighter at this size than pulling in 'Inter',
+   which was reading as too wide/spaced-out for a 9-10px label. */
 .fc-threshold-label, .fc-year-label {
-    font-size: 10.5px;
-    font-weight: 600;
+    font-size: 9.5px;
     fill: #5f6b73;
-    font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 .night-mode .fc-threshold-label, .night-mode .fc-year-label { fill: #a8b8bf; }
 
