@@ -166,15 +166,15 @@
                 <h2><i class="fas fa-arrow-trend-down"></i> Heading Toward Very Poor</h2>
                 <div style="display:flex; align-items:center; gap:10px;">
                     <div class="chart-toggle" role="tablist" aria-label="Forecast granularity">
-                        <button type="button" class="chart-toggle-btn active" data-fc-view="structures" onclick="fcSwitch('structures', this)">Structures</button>
+                        <button type="button" class="chart-toggle-btn" data-fc-view="structures" onclick="fcSwitch('structures', this)">Structures</button>
                         <button type="button" class="chart-toggle-btn" data-fc-view="category" onclick="fcSwitch('category', this)">By category</button>
-                        <button type="button" class="chart-toggle-btn" data-fc-view="portfolio" onclick="fcSwitch('portfolio', this)">Whole stock</button>
+                        <button type="button" class="chart-toggle-btn active" data-fc-view="portfolio" onclick="fcSwitch('portfolio', this)">Whole stock</button>
                     </div>
                     <span class="section-badge">next 5 yrs · BCI avg &lt; 40</span>
                 </div>
             </div>
 
-            <div class="fc-view active" id="fcView-structures">
+            <div class="fc-view" id="fcView-structures">
                 <div class="pr-search-wrap fc-search-wrap">
                     <i class="fas fa-search"></i>
                     <input type="text" id="fcStructureSearch" placeholder="Search structures...">
@@ -195,7 +195,7 @@
                     </tbody>
                 </table>
             </div>
-            <div class="fc-view" id="fcView-portfolio">
+            <div class="fc-view active" id="fcView-portfolio">
                 <div id="fc-portfolio-body" style="color: var(--text-muted); font-size: 0.85rem;">Loading...</div>
             </div>
         </div>

@@ -657,6 +657,17 @@ let fcStructureRows = []; // full unfiltered list, so search can re-render insta
 const FC_PAGE_SIZE = 5;
 let fcVisibleCount = FC_PAGE_SIZE;
 
+// Same 5 colours/cutoffs as the BCI Score Distribution legend above this
+// widget (dashboard.html's .bci-legend) - one definition of the bands
+// instead of a second copy that could quietly drift from the first.
+const FC_BCI_BANDS = [
+    { from: 90, to: 100, color: '#22c55e' }, // Very Good
+    { from: 80, to: 90, color: '#84cc16' },  // Good
+    { from: 65, to: 80, color: '#eab308' },  // Fair
+    { from: 40, to: 65, color: '#f97316' },  // Poor
+    { from: 0, to: 40, color: '#ef4444' }    // Very Poor
+];
+
 async function fetchDeteriorationForecast() {
     const fail = () => {
         document.getElementById('fc-structures-body').innerHTML =
@@ -844,6 +855,18 @@ function renderPortfolioChart(row) {
 
     const thresholdY = y(40).toFixed(1);
     let svg = `<svg class="fc-portfolio-svg" viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">`;
+
+    // Condition-band backdrop - same 5-colour palette as the BCI Score
+    // Distribution legend right above this widget, so the line's colour
+    // context reads the same way everywhere on the page. Purely a backdrop
+    // (low opacity, drawn first): it answers "which band is the trend in
+    // right now," which the shaded min/max band and the line itself don't.
+    FC_BCI_BANDS.forEach(band => {
+        const from = Math.max(band.from, minV), to = Math.min(band.to, maxV);
+        if (to <= from) return;
+        svg += `<rect x="${padX}" y="${y(to).toFixed(1)}" width="${(W - padX * 2).toFixed(1)}" height="${(y(from) - y(to)).toFixed(1)}" fill="${band.color}" class="fc-band-zone"/>`;
+    });
+
     svg += `<line x1="${padX}" y1="${thresholdY}" x2="${W - padX}" y2="${thresholdY}" class="fc-threshold-line"/>`;
     svg += `<text x="${padX}" y="${thresholdY - 4}" class="fc-threshold-label">Very Poor · 40</text>`;
     svg += `<polygon points="${bandTop.join(' ')} ${bandBottom.join(' ')}" class="fc-band"/>`;
