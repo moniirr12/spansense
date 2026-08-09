@@ -654,6 +654,8 @@ function renderCriticalBridges(data) {
    toggle click) and fcSwitch just flips which pre-rendered view is shown.
    ============================================================ */
 let fcStructureRows = []; // full unfiltered list, so search can re-render instantly with no round trip
+const FC_PAGE_SIZE = 5;
+let fcVisibleCount = FC_PAGE_SIZE;
 
 async function fetchDeteriorationForecast() {
     const fail = () => {
@@ -679,11 +681,20 @@ async function fetchDeteriorationForecast() {
     }
 }
 
+function fcFilteredStructureRows() {
+    const term = (document.getElementById('fcStructureSearch')?.value || '').trim().toLowerCase();
+    return term ? fcStructureRows.filter(r => r.structureName.toLowerCase().includes(term)) : fcStructureRows;
+}
+
 document.getElementById('fcStructureSearch')?.addEventListener('input', function () {
-    const term = this.value.trim().toLowerCase();
-    const filtered = term ? fcStructureRows.filter(r => r.structureName.toLowerCase().includes(term)) : fcStructureRows;
-    renderForecastStructures(filtered);
+    fcVisibleCount = FC_PAGE_SIZE; // a new search is a new list - start from the top again
+    renderForecastStructures(fcFilteredStructureRows());
 });
+
+window.fcShowMoreStructures = function () {
+    fcVisibleCount += FC_PAGE_SIZE;
+    renderForecastStructures(fcFilteredStructureRows());
+};
 
 function formatForecastMonth(yyyymm) {
     if (!yyyymm) return '—';
@@ -756,11 +767,14 @@ function renderSparkline(series, row, width, height) {
 
 function renderForecastStructures(rows) {
     const tbody = document.getElementById('fc-structures-body');
+    const moreWrap = document.getElementById('fc-structures-more');
     if (!rows.length) {
         tbody.innerHTML = `<tr><td colspan="4" style="color: var(--text-muted); font-size: 0.8rem;">Nothing trending toward Very Poor right now.</td></tr>`;
+        if (moreWrap) moreWrap.innerHTML = '';
         return;
     }
-    tbody.innerHTML = rows.map(r => `
+    const visible = rows.slice(0, fcVisibleCount);
+    tbody.innerHTML = visible.map(r => `
         <tr>
             <td>
                 <span class="bridge-name">${r.structureName}</span>
@@ -770,6 +784,13 @@ function renderForecastStructures(rows) {
             <td class="bridge-id">${r.currentBciAve}</td>
             <td>${fcStatusCell(r)}</td>
         </tr>`).join('');
+
+    if (moreWrap) {
+        const remaining = rows.length - visible.length;
+        moreWrap.innerHTML = remaining > 0
+            ? `<button type="button" class="action-btn download-btn" onclick="fcShowMoreStructures()">Show ${Math.min(FC_PAGE_SIZE, remaining)} more <span class="fc-more-count">(${remaining} left)</span></button>`
+            : '';
+    }
 }
 
 function renderForecastCategory(rows) {
@@ -788,28 +809,68 @@ function renderForecastCategory(rows) {
         </tr>`).join('');
 }
 
+// Full-width chart for the whole-stock view: one averaged line (not the
+// per-type tangle the sparkline mechanism would produce) with the min/max
+// spread per year as a shaded band behind it, same visual convention as
+// twin.js's own BCI trend chart (viewBox + width:100% so the time axis
+// stretches to fill the card, true height otherwise) - bigger than a row
+// sparkline on purpose, since this is the single most important line on
+// the page, not one row among many.
+function renderPortfolioChart(row) {
+    const series = row.series || [];
+    if (series.length < 2) return '<div class="fc-chart-empty">Not enough history yet to chart.</div>';
+    const W = 600, H = 170, padX = 8, padY = 14, padBottom = 26;
+    const YEAR_MS = 365.25 * 24 * 60 * 60 * 1000;
+    const pts = series.map(p => ({ t: new Date(p.t).getTime(), v: p.v, min: p.min ?? p.v, max: p.max ?? p.v }));
+    const last = pts[pts.length - 1];
+
+    let extra = null;
+    if (row.slopePerYear != null && (row.status === 'projected' || row.status === 'beyond_horizon')) {
+        extra = (row.status === 'projected' && row.projectedCrossingDate)
+            ? { t: new Date(row.projectedCrossingDate + '-01').getTime(), v: 40 }
+            : { t: last.t + 5 * YEAR_MS, v: last.v + row.slopePerYear * 5 };
+    }
+
+    const allV = pts.flatMap(p => [p.min, p.max]).concat(extra ? [extra.v] : [], [40]);
+    let minV = Math.max(0, Math.min(...allV) - 4), maxV = Math.min(100, Math.max(...allV) + 4);
+    const minT = pts[0].t, maxT = extra ? extra.t : last.t;
+    const spanT = Math.max(1, maxT - minT);
+    const x = t => padX + ((t - minT) / spanT) * (W - padX * 2);
+    const y = v => (H - padBottom) - padY - ((Math.max(minV, Math.min(maxV, v)) - minV) / (maxV - minV)) * (H - padBottom - padY * 2);
+
+    const bandTop = pts.map(p => `${x(p.t).toFixed(1)},${y(p.max).toFixed(1)}`);
+    const bandBottom = pts.slice().reverse().map(p => `${x(p.t).toFixed(1)},${y(p.min).toFixed(1)}`);
+    const avgLine = pts.map(p => `${x(p.t).toFixed(1)},${y(p.v).toFixed(1)}`).join(' ');
+
+    const thresholdY = y(40).toFixed(1);
+    let svg = `<svg class="fc-portfolio-svg" viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">`;
+    svg += `<line x1="${padX}" y1="${thresholdY}" x2="${W - padX}" y2="${thresholdY}" class="fc-threshold-line"/>`;
+    svg += `<text x="${padX}" y="${thresholdY - 4}" class="fc-threshold-label">Very Poor · 40</text>`;
+    svg += `<polygon points="${bandTop.join(' ')} ${bandBottom.join(' ')}" class="fc-band"/>`;
+    svg += `<polyline points="${avgLine}" class="fc-avg-line"/>`;
+    pts.forEach(p => { svg += `<circle cx="${x(p.t).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="2.6" class="fc-avg-dot"/>`; });
+    if (extra) {
+        const dashCls = row.status === 'projected' ? 'fc-ext-line-soon' : 'fc-ext-line';
+        svg += `<polyline points="${x(last.t).toFixed(1)},${y(last.v).toFixed(1)} ${x(extra.t).toFixed(1)},${y(extra.v).toFixed(1)}" class="${dashCls}"/>`;
+        svg += `<circle cx="${x(extra.t).toFixed(1)}" cy="${y(extra.v).toFixed(1)}" r="3.4" class="${dashCls}-dot"/>`;
+    }
+    const rightLabel = extra
+        ? (row.status === 'projected' ? formatForecastMonth(row.projectedCrossingDate) : new Date(extra.t).getFullYear() + ' (proj.)')
+        : new Date(maxT).getFullYear();
+    svg += `<text x="${x(minT).toFixed(1)}" y="${H - 8}" class="fc-year-label">${new Date(minT).getFullYear()}</text>`;
+    svg += `<text x="${x(maxT).toFixed(1)}" y="${H - 8}" text-anchor="end" class="fc-year-label">${rightLabel}</text>`;
+    svg += '</svg>';
+    return svg;
+}
+
 function renderForecastPortfolio(row, withinYears) {
     const el = document.getElementById('fc-portfolio-body');
     if (!row) {
         el.textContent = 'Not enough history yet.';
         return;
     }
-    const spark = renderSparkline(row.series, row, 140, 46).replace('class="fc-spark"', 'class="fc-spark fc-hero-spark"');
-    if (row.status === 'projected') {
-        el.innerHTML = `
-            <div class="fc-hero">
-                ${spark}
-                <div class="fc-hero-mid">
-                    <div class="h-label">All ${row.structureCount} structures · portfolio-wide BCI avg</div>
-                    <div class="h-value">${row.avgBciAve} <span>now</span></div>
-                </div>
-                <div class="fc-hero-end">
-                    <div class="date">${formatForecastMonth(row.projectedCrossingDate)}</div>
-                    <div class="rel">crosses 40 in ${row.yearsToThreshold} yrs</div>
-                </div>
-            </div>`;
-        return;
-    }
+    const chart = renderPortfolioChart(row);
+    const isProjected = row.status === 'projected';
     const labels = {
         beyond_horizon: `Beyond the ${withinYears}-year horizon at the current rate`,
         no_decline: 'No portfolio-wide decline detected',
@@ -817,15 +878,18 @@ function renderForecastPortfolio(row, withinYears) {
         insufficient_history: 'Not enough history yet'
     };
     el.innerHTML = `
-        <div class="fc-hero">
-            ${spark}
-            <div class="fc-hero-mid">
-                <div class="h-label">All ${row.structureCount} structures · portfolio-wide BCI avg</div>
-                <div class="h-value">${row.avgBciAve ?? '—'} <span>now</span></div>
-            </div>
-            <div class="fc-hero-end fc-hero-ok">
-                <div class="date">—</div>
-                <div class="rel">${labels[row.status] || row.status}</div>
+        <div class="fc-portfolio-card">
+            <div class="fc-portfolio-graph">${chart}</div>
+            <div class="fc-portfolio-stats">
+                <div class="fc-portfolio-stat">
+                    <div class="h-label">Portfolio BCI avg · ${row.structureCount} structures</div>
+                    <div class="h-value-lg">${row.avgBciAve ?? '—'}<span>now</span></div>
+                </div>
+                <div class="fc-portfolio-stat fc-portfolio-stat-end">
+                    <div class="h-label">Projected crossing</div>
+                    <div class="h-value-lg${isProjected ? ' fc-crit' : ''}">${isProjected ? formatForecastMonth(row.projectedCrossingDate) : '—'}</div>
+                    <div class="h-sub">${isProjected ? `crosses 40 in ${row.yearsToThreshold} yrs` : (labels[row.status] || row.status)}</div>
+                </div>
             </div>
         </div>`;
 }

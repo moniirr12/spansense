@@ -532,63 +532,6 @@ body {
 .fc-when.fc-soon .date { color: #c0392b; }
 .night-mode .fc-when.fc-soon .date { color: #e8a0a0; }
 
-/* Whole-stock view: one blended figure rather than a one-row table. */
-.fc-hero {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    background: white;
-    border: 1px solid #cbd5df;
-    border-radius: 20px;
-    padding: 18px 22px;
-}
-.night-mode .fc-hero { background: #232e34; border-color: #2f3e45; }
-
-.fc-hero-mid { flex: 1; min-width: 0; }
-.fc-hero-mid .h-label {
-    font-size: 0.68rem;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: #5f6b73;
-    font-weight: 700;
-    margin-bottom: 4px;
-}
-.night-mode .fc-hero-mid .h-label { color: #a8b8bf; }
-
-.fc-hero-mid .h-value {
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: #2c4a48;
-}
-.night-mode .fc-hero-mid .h-value { color: #d4dfe3; }
-
-.fc-hero-mid .h-value span {
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: #5f6b73;
-}
-.night-mode .fc-hero-mid .h-value span { color: #a8b8bf; }
-
-.fc-hero-end { text-align: right; flex-shrink: 0; }
-.fc-hero-end .date {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #c0392b;
-}
-.night-mode .fc-hero-end .date { color: #e8a0a0; }
-
-.fc-hero-end.fc-hero-ok .date { color: #5b8c8a; }
-.night-mode .fc-hero-end.fc-hero-ok .date { color: #8ab4b0; }
-
-.fc-hero-end .rel {
-    font-size: 0.75rem;
-    color: #5f6b73;
-    margin-top: 2px;
-}
-.night-mode .fc-hero-end .rel { color: #a8b8bf; }
-
-.fc-hero-spark { flex-shrink: 0; }
-
 /* History sparkline (per-row in Structures/By category) - solid line
    through real readings, dashed continuation for whatever's projected
    past the last one. Vertically centered against the row's other cells. */
@@ -601,6 +544,112 @@ body {
     max-width: 320px;
     margin: 0 0 14px;
 }
+
+.fc-more-wrap {
+    display: flex;
+    justify-content: center;
+    padding-top: 6px;
+}
+
+/* ---------- Whole-stock chart card ----------
+   Deliberately bigger than any other single element in this widget - it's
+   the one number that answers "is the portfolio as a whole getting worse,"
+   which matters more than any individual row. */
+.fc-portfolio-card {
+    background: white;
+    border: 1px solid #cbd5df;
+    border-radius: 20px;
+    padding: 22px 26px 18px;
+}
+.night-mode .fc-portfolio-card { background: #232e34; border-color: #2f3e45; }
+
+.fc-portfolio-graph { margin-bottom: 18px; }
+.fc-chart-empty {
+    color: #5f6b73;
+    font-size: 0.85rem;
+    padding: 40px 0;
+    text-align: center;
+}
+.night-mode .fc-chart-empty { color: #a8b8bf; }
+
+.fc-band { fill: #5b8c8a; fill-opacity: 0.14; stroke: none; }
+.night-mode .fc-band { fill: #8ab4b0; fill-opacity: 0.16; }
+
+.fc-avg-line { fill: none; stroke: #5b8c8a; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.night-mode .fc-avg-line { stroke: #8ab4b0; }
+.fc-avg-dot { fill: #5b8c8a; }
+.night-mode .fc-avg-dot { fill: #8ab4b0; }
+
+.fc-ext-line, .fc-ext-line-soon {
+    fill: none;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-dasharray: 5 5;
+}
+.fc-ext-line { stroke: #c28b5a; }
+.fc-ext-line-soon { stroke: #c0392b; }
+.night-mode .fc-ext-line { stroke: #d4a84a; }
+.night-mode .fc-ext-line-soon { stroke: #e8a0a0; }
+.fc-ext-line-dot { fill: none; stroke: #c28b5a; stroke-width: 2; }
+.fc-ext-line-soon-dot { fill: none; stroke: #c0392b; stroke-width: 2; }
+.night-mode .fc-ext-line-dot { stroke: #d4a84a; }
+.night-mode .fc-ext-line-soon-dot { stroke: #e8a0a0; }
+
+.fc-threshold-line { stroke: #c28b5a; stroke-width: 1; stroke-dasharray: 3 4; opacity: 0.6; }
+.night-mode .fc-threshold-line { stroke: #d4a84a; }
+.fc-threshold-label, .fc-year-label {
+    font-size: 10px;
+    fill: #8a9aa0;
+    font-family: 'SF Mono', monospace;
+}
+.night-mode .fc-threshold-label, .night-mode .fc-year-label { fill: #7f9490; }
+
+.fc-portfolio-stats {
+    display: flex;
+    align-items: flex-end;
+    gap: 24px;
+    padding-top: 14px;
+    border-top: 1px solid #e9edf2;
+}
+.night-mode .fc-portfolio-stats { border-color: #2f3e45; }
+
+.fc-portfolio-stat { flex: 1; min-width: 0; }
+.fc-portfolio-stat-end { text-align: right; }
+
+.fc-portfolio-stat .h-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #5f6b73;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+.night-mode .fc-portfolio-stat .h-label { color: #a8b8bf; }
+
+.fc-portfolio-stat .h-value-lg {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #2c4a48;
+    line-height: 1.1;
+}
+.night-mode .fc-portfolio-stat .h-value-lg { color: #d4dfe3; }
+.fc-portfolio-stat .h-value-lg.fc-crit { color: #c0392b; }
+.night-mode .fc-portfolio-stat .h-value-lg.fc-crit { color: #e8a0a0; }
+
+.fc-portfolio-stat .h-value-lg span {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #5f6b73;
+    margin-left: 6px;
+}
+.night-mode .fc-portfolio-stat .h-value-lg span { color: #a8b8bf; }
+
+.fc-portfolio-stat .h-sub {
+    font-size: 0.8rem;
+    color: #5f6b73;
+    margin-top: 4px;
+}
+.night-mode .fc-portfolio-stat .h-sub { color: #a8b8bf; }
 
 /* ============================================
    BOTTOM ROW: CRITICAL + ACTIVITY
