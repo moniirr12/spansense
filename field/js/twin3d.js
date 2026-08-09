@@ -14,6 +14,7 @@
   let renderer, scene, camera, rig, structureGroup, defectGroup, gridHelper, glowMesh;
   let matSteel, matDeck, matPier, matStone, matConcrete, matDefect;
   let canvas, onTapCallback;
+  let compassNeedle = null;
   let rotY = 0.4, rotX = 0.18, camDistance = 58, camHeight = 13, baseCamDistance = 58;
   let active = false;
   let inited = false;
@@ -32,6 +33,7 @@
     if (inited) return;
     inited = true;
     canvas = canvasEl;
+    compassNeedle = document.getElementById('compassNeedle');
 
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -163,10 +165,13 @@
   function animate() {
     requestAnimationFrame(animate);
     if (!active) return;
-    if (autoRotateEnabled && !dragging) rotY += 0.0022;
+    if (autoRotateEnabled && !dragging) rotY += 0.0013;
     rig.rotation.set(rotX, rotY, 0);
     camera.position.set(0, camHeight, camDistance);
     camera.lookAt(0, 1.5, 0);
+    // Decorative only - no real-world bearing recorded per structure yet,
+    // so this tracks the rig's own model-space yaw rather than true north.
+    if (compassNeedle) compassNeedle.style.transform = 'rotate(' + (rotY * 180 / Math.PI) + 'deg)';
     renderer.render(scene, camera);
   }
 

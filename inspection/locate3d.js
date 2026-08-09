@@ -75,6 +75,7 @@ function initLocate3DEngine() {
         yawReadout: document.getElementById('locate3d-yaw-readout'),
         tiltReadout: document.getElementById('locate3d-tilt-readout'),
         zoomReadout: document.getElementById('locate3d-zoom-readout'),
+        compassNeedle: document.getElementById('locate3d-compass-needle'),
         matSteel: new THREE.MeshStandardMaterial({ color: 0x5a6b6a, metalness: 0.6, roughness: 0.4 }),
         matDeck: new THREE.MeshStandardMaterial({ color: 0x394645, metalness: 0.25, roughness: 0.6 }),
         matPier: new THREE.MeshStandardMaterial({ color: 0x435150, metalness: 0.15, roughness: 0.7 }),
@@ -632,6 +633,9 @@ function animateLocate3D() {
     if (l3d.yawReadout) l3d.yawReadout.textContent = yawDeg.toFixed(1).padStart(5, '0') + '°';
     if (l3d.tiltReadout) l3d.tiltReadout.textContent = tiltDeg.toFixed(1).padStart(5, '0') + '°';
     if (l3d.zoomReadout) l3d.zoomReadout.textContent = (58 / l3d.camDistance).toFixed(2) + 'x';
+    // Decorative only, same as twinView's compass (twin.js) - no real-world
+    // bearing recorded per structure yet, so this tracks model-space yaw.
+    if (l3d.compassNeedle) l3d.compassNeedle.style.transform = 'rotate(' + yawDeg + 'deg)';
     l3d.renderer.render(l3d.scene, l3d.camera);
 }
 

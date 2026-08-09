@@ -1521,10 +1521,11 @@ bindLayerPills('.vc-pill');
 const yawReadout = document.getElementById('yaw-readout');
 const tiltReadout = document.getElementById('tilt-readout');
 const zoomReadout = document.getElementById('zoom-readout');
+const compassNeedle = document.getElementById('compassNeedle');
 
 function animate() {
     requestAnimationFrame(animate);
-    if (autoRotate && !dragging) rotY += 0.0022;
+    if (autoRotate && !dragging) rotY += 0.0013;
     rig.rotation.set(rotX, rotY, 0);
     camera.position.set(0, camHeight, camDistance);
     camera.lookAt(0, 1.5, 0);
@@ -1533,6 +1534,9 @@ function animate() {
     yawReadout.textContent = yawDeg.toFixed(1).padStart(5, '0') + '°';
     tiltReadout.textContent = tiltDeg.toFixed(1).padStart(5, '0') + '°';
     zoomReadout.textContent = (58 / camDistance).toFixed(2) + 'x';
+    // Decorative only - no real-world bearing is recorded per structure yet,
+    // so this tracks the rig's own model-space yaw rather than true north.
+    if (compassNeedle) compassNeedle.style.transform = 'rotate(' + yawDeg + 'deg)';
     renderer.render(scene, camera);
 }
 
