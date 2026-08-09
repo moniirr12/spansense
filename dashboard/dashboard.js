@@ -882,8 +882,50 @@ function renderPortfolioChart(row) {
         : new Date(maxT).getFullYear();
     svg += `<text x="${x(minT).toFixed(1)}" y="${H - 8}" class="fc-year-label">${new Date(minT).getFullYear()}</text>`;
     svg += `<text x="${x(maxT).toFixed(1)}" y="${H - 8}" text-anchor="end" class="fc-year-label">${rightLabel}</text>`;
+
+    // Hover targets, same convention as twin.js's own BCI trend chart (one
+    // invisible full-height hit column per point, wide enough to catch a
+    // hover even when points sit close together) - shows the exact avg/
+    // min/max a reader would otherwise have to guess from the pixel.
+    const hitWidth = Math.max(14, (W - padX * 2) / Math.max(1, pts.length));
+    pts.forEach(p => {
+        const px = x(p.t).toFixed(1);
+        svg += `<rect class="fc-hit" data-year="${new Date(p.t).getFullYear()}" data-avg="${p.v.toFixed(1)}" data-min="${p.min.toFixed(1)}" data-max="${p.max.toFixed(1)}" x="${(px - hitWidth / 2).toFixed(1)}" y="0" width="${hitWidth.toFixed(1)}" height="${H}" fill="transparent"/>`;
+    });
+    if (extra) {
+        const label = row.status === 'projected' ? 'Projected crossing' : 'Projected (+5y)';
+        svg += `<rect class="fc-hit" data-label="${label}" data-avg="${extra.v.toFixed(1)}" data-year="${new Date(extra.t).getFullYear()}" x="${(x(extra.t) - 10).toFixed(1)}" y="0" width="20" height="${H}" fill="transparent"/>`;
+    }
+
     svg += '</svg>';
     return svg;
+}
+
+// Wires up hover on the hit rects renderPortfolioChart embedded, reusing
+// the same .chart-tooltip element/positioning the Chart.js cards above
+// (externalTooltipHandler) and twin.js's own BCI trend chart already use,
+// rather than a new tooltip style just for this one chart.
+function wirePortfolioChartTooltip() {
+    const container = document.querySelector('.fc-portfolio-graph');
+    if (!container) return;
+    let tooltip = container.querySelector('.chart-tooltip');
+    if (!tooltip) {
+        tooltip = document.createElement('div');
+        tooltip.className = 'chart-tooltip';
+        container.appendChild(tooltip);
+    }
+    container.querySelectorAll('.fc-hit').forEach(hit => {
+        hit.addEventListener('mouseenter', () => {
+            const { year, avg, min, max, label } = hit.dataset;
+            tooltip.innerHTML = label
+                ? `<b>${label}</b>BCI avg ${avg}`
+                : `<b>${year}</b>Avg ${avg}${min !== max ? `<br>Range ${min}–${max}` : ''}`;
+            const cx = parseFloat(hit.getAttribute('x')) + parseFloat(hit.getAttribute('width')) / 2;
+            tooltip.style.left = ((cx / 600) * 100) + '%';
+            tooltip.style.opacity = '1';
+        });
+        hit.addEventListener('mouseleave', () => { tooltip.style.opacity = '0'; });
+    });
 }
 
 function renderForecastPortfolio(row, withinYears) {
@@ -915,6 +957,7 @@ function renderForecastPortfolio(row, withinYears) {
                 </div>
             </div>
         </div>`;
+    wirePortfolioChartTooltip();
 }
 
 window.fcSwitch = function fcSwitch(view, btn) {
