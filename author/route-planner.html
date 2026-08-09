@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="/fetch-credentials.js"></script>
+<script src="/hoverTip.js"></script>
+<script src="/roleBadge.js"></script>
+<script>(function(){var nm=localStorage.getItem('nightMode');var dark=nm==='on'||(nm===null&&!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches));if(dark)document.documentElement.classList.add('nm-preload');})();</script>
+<style>html.nm-preload,html.nm-preload body{background-color:#1a2428!important;}</style>
+<title>spanSense · Route Planner</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root{
+  --teal:#5b8c8a; --teal-dark:#2c5a57; --green-dark:#2c4a48;
+  --text:#2c3e44; --text-mute:#5f6b73; --text-mute2:#4d5960;
+  --border:#e2e8f0; --border2:#e9edf2;
+  --bg-soft:#fafbfc; --bg-mint:#eef4f2;
+  --ok:#2d7a6e; --ok-bg:#e8f5f0; --ok-border:#b8dcc8;
+  --amber:#BA7517; --amber-bg:#fff8ee; --amber-border:#e8d4b8;
+  --red:#c0392b; --red-bg:#fdecea; --red-border:#f0c4be;
+  --ai:#6c5ce7; --ai-bg:#f1efff; --ai-border:#d9d3fb;
+  /* condition-band scale, same source of truth as map.js's bciTier() */
+  --band-vgood:#22c55e; --band-good:#84cc16; --band-fair:#eab308;
+  --band-poor:#f97316; --band-critical:#ef4444;
+  --font-display:'Source Serif 4', Georgia, serif;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body{font-family:'Inter','Segoe UI',Tahoma,sans-serif; color:var(--text); background:#f5f7fb; min-height:100vh; position:relative; transition: background 0.3s ease, color 0.3s ease; overflow-x: hidden;}
+a{color:inherit;}
+
+body::before{
+  content:''; position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background:
+    radial-gradient(900px circle at 12% -6%, rgba(91,140,138,.10), transparent 62%),
+    radial-gradient(900px circle at 88% 105%, rgba(91,140,138,.07), transparent 62%);
+  transition:background .3s ease;
+}
+body.night-mode::before{
+  background:
+    radial-gradient(900px circle at 12% -6%, rgba(138,180,176,.09), transparent 62%),
+    radial-gradient(900px circle at 88% 105%, rgba(138,180,176,.06), transparent 62%);
+}
+
+/* ---------- NAVIGATION BAR (standard spanSense chrome) ---------- */
+.navbar {
+    position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+    width: 67%; max-width: 1190px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-radius: 60px; border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+    z-index: 1100; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 28px; height: 64px;
+}
+.navbar .left { display: flex; align-items: center; gap: 24px; }
+.navbar .logo { font-size: 1.2rem; font-weight: 700; background: linear-gradient(135deg, #5b8c8a 0%, #7ba8a5 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.navbar .menu { display: flex; gap: 16px; }
+.navbar .menu a { text-decoration: none; color: #4a5b6e; font-weight: 500; font-size: 0.85rem; transition: color 0.2s; display: flex; align-items: center; gap: 8px; }
+.navbar .menu a:hover, .navbar .menu a.active { color: #5b8c8a; }
+.navbar .menu a.active { background: rgba(91, 140, 138, 0.1); padding: 6px 14px; border-radius: 20px; }
+.navbar .right { display: flex; align-items: center; gap: 10px; }
+.night-mode-toggle { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #5f6b73; background: #f0f2f5; transition: all 0.2s; }
+.night-mode-toggle:hover { background: #e2e8f0; color: #5b8c8a; }
+.navbar .account-links { display: flex; align-items: center; gap: 10px; }
+.navbar .account-links a { text-decoration: none; color: #5f6b73; font-size: 1.2rem; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: color 0.2s, transform 0.15s, background 0.2s; }
+.navbar .account-links a:hover { background: #f0f4f8; color: #5b8c8a; transform: scale(1.1); }
+/* Token-level overrides - every rule below that sets color:var(--text)/
+   var(--text-mute) etc. directly (not just inherited body color) needs
+   the token itself redefined here, or it silently keeps its light value
+   in dark mode. Fixes every such usage in one place instead of chasing
+   each element's own .night-mode rule. */
+.night-mode {
+  --text:#d4dfe3; --text-mute:#a8b8bf; --text-mute2:#bcc8ce;
+  --border:#2f3e45; --border2:#28353b;
+  --bg-soft:#1e2a2f; --bg-mint:#1e3a38;
+}
+.night-mode .navbar { background: rgba(35, 46, 52, 0.95) !important; border-color: #2f3e45; }
+.night-mode .navbar .logo { background: linear-gradient(135deg, #8ab4b0 0%, #a0c8c4 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.night-mode .navbar .menu a { color: #9ab0b8; }
+.night-mode .navbar .menu a.active { background: rgba(138, 180, 176, 0.15); color: #8ab4b0; }
+.night-mode .navbar .account-links a { color: #9ab0b8; }
+.night-mode .navbar .account-links a:hover { background: #2f3e45; color: #8ab4b0; }
+.night-mode .night-mode-toggle { background: #2f3e45; color: #9ab0b8; }
+.night-mode .night-mode-toggle:hover { background: #3a4b53; color: #8ab4b0; }
+
+/* ---------- MAIN WRAPPER ---------- */
+.page-wrapper { max-width: 90%; margin: 0 auto; padding: 100px 0 50px 0; }
+@media (max-width: 1300px) { .page-wrapper { max-width: 95%; } }
+
+.page-header { margin-bottom: 22px; display:flex; align-items:flex-end; justify-content:space-between; gap:20px; flex-wrap:wrap; }
+.page-header h1 { font-family: var(--font-display); font-weight:600; font-size: 1.9rem; color: #2c5a57; border-left: 4px solid #8ab4b0; padding-left: 16px; line-height:1.15; }
+.page-header p { color: #5f6b73; font-size: 0.85rem; padding-left: 20px; max-width: 56ch; margin-top:6px; }
+.night-mode .page-header h1 { color: #8ab4b0; }
+.night-mode .page-header p { color: #a8b8bf; }
+.head-actions{ display:flex; gap:10px; padding-left:20px; flex-shrink:0; }
+
+.btn{
+  font-family:inherit; font-size:.8rem; font-weight:600; cursor:pointer;
+  border-radius:11px; padding:10px 16px; display:inline-flex; align-items:center; gap:7px;
+  border:1px solid var(--border); background:#fff; color:var(--text-mute);
+  transition: all .15s; white-space:nowrap;
+}
+.btn svg{ width:14px; height:14px; flex-shrink:0; }
+.btn:hover{ border-color:var(--teal); color:var(--teal-dark); }
+.btn.primary{ background:linear-gradient(135deg,var(--teal),var(--teal-dark)); color:#fff; border-color:transparent; box-shadow:0 4px 14px rgba(91,140,138,.28); }
+.btn.primary:hover{ filter:brightness(1.06); color:#fff; }
+.btn:disabled{ opacity:.45; cursor:not-allowed; }
+.btn:disabled:hover{ border-color:var(--border); color:var(--text-mute); }
+.night-mode .btn{ background:#212f33; border-color:#2f3e45; color:#9ab0b8; }
+.night-mode .btn:hover{ border-color:#8ab4b0; color:#a0c8c4; }
+
+/* ===========================================================
+   3-COLUMN WORKSPACE
+   =========================================================== */
+.workspace{
+  display:grid; grid-template-columns: 300px 1fr 330px; gap:16px; align-items:start;
+}
+@media (max-width:1200px){ .workspace{ grid-template-columns: 280px 1fr; } .route-rail{ grid-column: 1 / -1; } }
+@media (max-width:800px){ .workspace{ grid-template-columns: 1fr; } }
+
+.panel{
+  background:#fff; border:1px solid var(--border2); border-radius:20px;
+  box-shadow:0 10px 28px rgba(44,90,87,.06);
+  display:flex; flex-direction:column; overflow:hidden;
+}
+.night-mode .panel{ background:#212f33; border-color:#2f3e45; box-shadow:0 6px 20px rgba(0,0,0,.3); }
+.panel-head{ padding:15px 17px 11px; border-bottom:1px solid var(--border2); }
+.night-mode .panel-head{ border-color:#2f3e45; }
+.panel-head .eyebrow{ font-size:10.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--text-mute); opacity:.8; }
+.panel-head h2{ font-size:.98rem; font-weight:700; margin-top:3px; display:flex; align-items:center; gap:8px; color:var(--green-dark); }
+.night-mode .panel-head h2{ color:#d4dfe3; }
+.panel-head h2 svg{ width:15px; height:15px; color:var(--teal); }
+
+/* ---------- FILTER + LIST RAIL ---------- */
+.filter-rail{ max-height: calc(100vh - 210px); }
+.filter-body{ padding:13px 15px; display:flex; flex-direction:column; gap:14px; }
+.search-box{ display:flex; align-items:center; gap:8px; background:var(--bg-soft); border:1px solid var(--border); border-radius:10px; padding:9px 12px; }
+.night-mode .search-box{ background:#1e2a2f; border-color:#3a4b53; }
+.search-box svg{ width:14px; height:14px; color:var(--text-mute); flex-shrink:0; }
+.search-box input{ border:none; background:none; outline:none; font-size:.82rem; color:var(--text); width:100%; font-family:inherit; }
+.night-mode .search-box input{ color:#d4dfe3; }
+.search-box input::placeholder{ color:var(--text-mute); }
+
+.fg-label{ font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-mute); margin-bottom:7px; }
+.chip-row{ display:flex; flex-wrap:wrap; gap:6px; }
+.chip{
+  font-size:.7rem; font-weight:600; padding:5px 10px; border-radius:20px;
+  border:1px solid var(--border); background:var(--bg-soft); color:var(--text-mute);
+  cursor:pointer; display:flex; align-items:center; gap:5px; transition: all .15s; user-select:none;
+}
+.night-mode .chip{ background:#1e2a2f; border-color:#3a4b53; color:#9ab0b8; }
+.chip .sw{ width:7px; height:7px; border-radius:50%; background:currentColor; opacity:.5; }
+.chip.on{ background:var(--bg-mint); border-color:var(--teal); color:var(--teal-dark); }
+.night-mode .chip.on{ background:#1e3a38; border-color:#6e9c98; color:#a0c8c4; }
+.chip.on .sw{ opacity:1; }
+.chip[data-band] .sw{ opacity:1; }
+
+.toggle-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.toggle-row .tr-label{ font-size:.79rem; color:var(--text); font-weight:600; }
+.toggle-row .tr-sub{ font-size:.68rem; color:var(--text-mute); margin-top:1px; }
+.switch{ position:relative; width:36px; height:21px; border-radius:20px; background:var(--border); cursor:pointer; flex-shrink:0; transition: background .15s; }
+.night-mode .switch{ background:#3a4b53; }
+.switch::after{ content:''; position:absolute; top:2px; left:2px; width:17px; height:17px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.2); transition: transform .15s; }
+.switch.on{ background:var(--teal); }
+.switch.on::after{ transform:translateX(15px); }
+
+.filter-reset{ font-size:.71rem; color:var(--teal-dark); font-weight:600; cursor:pointer; align-self:flex-start; background:none; border:none; font-family:inherit; padding:0; }
+.night-mode .filter-reset{ color:#8ab4b0; }
+.filter-reset:hover{ text-decoration:underline; }
+
+.list-count{ padding:9px 16px; font-size:.71rem; color:var(--text-mute); border-top:1px solid var(--border2); font-variant-numeric:tabular-nums; }
+.night-mode .list-count{ border-color:#2f3e45; }
+
+.struct-list{ list-style:none; overflow-y:auto; max-height: 300px; border-top:1px solid var(--border2); }
+.night-mode .struct-list{ border-color:#2f3e45; }
+.struct-row{ display:flex; align-items:center; gap:10px; padding:9px 16px; border-bottom:1px solid var(--border2); cursor:pointer; transition: background .12s; }
+.night-mode .struct-row{ border-color:#28353b; }
+.struct-row:hover{ background: var(--bg-soft); }
+.night-mode .struct-row:hover{ background:#1e2a2f; }
+.struct-row.selected{ background: var(--bg-mint); }
+.night-mode .struct-row.selected{ background:#1e3a38; }
+.struct-row .chk{ width:16px; height:16px; border-radius:5px; border:1.5px solid var(--border); flex-shrink:0; display:flex; align-items:center; justify-content:center; color:#fff; transition: all .12s; }
+.night-mode .struct-row .chk{ border-color:#3a4b53; }
+.struct-row.selected .chk{ background:var(--teal); border-color:var(--teal); }
+.struct-row .chk svg{ width:10px; height:10px; opacity:0; transition:opacity .1s; }
+.struct-row.selected .chk svg{ opacity:1; }
+.struct-row .band-dot{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.struct-row .sr-main{ min-width:0; flex:1; }
+.struct-row .sr-name{ font-size:.8rem; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.night-mode .struct-row .sr-name{ color:#d4dfe3; }
+.struct-row .sr-sub{ font-size:.67rem; color:var(--text-mute); margin-top:1px; }
+.struct-row .sr-due{ font-size:.6rem; font-weight:700; padding:2px 6px; border-radius:6px; flex-shrink:0; white-space:nowrap; }
+.struct-row .sr-due.overdue{ background: var(--red-bg); color: var(--red); }
+.struct-row .sr-due.soon{ background: var(--amber-bg); color: var(--amber); }
+.night-mode .struct-row .sr-due.overdue{ background:rgba(192,57,43,.22); color:#e0645a; }
+.night-mode .struct-row .sr-due.soon{ background:rgba(186,117,23,.22); color:#e0a94a; }
+.empty-list{ padding:24px 16px; text-align:center; color:var(--text-mute); font-size:.77rem; }
+
+/* ---------- MAP RAIL ---------- */
+.map-rail{ min-height: calc(100vh - 210px); padding:12px; }
+.map-stage{ position:relative; flex:1; border-radius:16px; overflow:hidden; min-height:540px; background:#e4ece7; }
+#routeMap{ position:absolute; inset:0; width:100%; height:100%; }
+
+.map-toolbar{
+  position:absolute; top:12px; left:12px; z-index:401;
+  display:flex; flex-direction:column; gap:5px;
+  background:rgba(255,255,255,.92); backdrop-filter:blur(10px);
+  border:1px solid var(--border); border-radius:12px; padding:5px;
+  box-shadow:0 4px 14px rgba(0,0,0,.1);
+}
+.night-mode .map-toolbar{ background:rgba(33,47,51,.92); border-color:#2f3e45; }
+.map-tool{ width:32px; height:32px; border-radius:8px; border:none; background:none; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--text-mute); transition: all .12s; }
+.map-tool svg{ width:16px; height:16px; }
+.map-tool:hover{ background:var(--bg-soft); color:var(--teal-dark); }
+.night-mode .map-tool:hover{ background:#1e2a2f; color:#a0c8c4; }
+.map-tool.active{ background:var(--teal); color:#fff; }
+
+.map-summary-chip{
+  position:absolute; top:12px; left:50%; transform:translateX(-50%); z-index:401;
+  background:rgba(255,255,255,.92); backdrop-filter:blur(10px); border:1px solid var(--border); border-radius:30px;
+  padding:8px 18px; box-shadow:0 4px 14px rgba(0,0,0,.1);
+  display:flex; align-items:center; gap:14px; font-size:.75rem; color:var(--text-mute);
+  font-variant-numeric: tabular-nums;
+}
+.night-mode .map-summary-chip{ background:rgba(33,47,51,.92); border-color:#2f3e45; color:#9ab0b8; }
+.map-summary-chip b{ color:var(--text); font-weight:700; }
+.night-mode .map-summary-chip b{ color:#d4dfe3; }
+.map-summary-chip .msc-div{ width:1px; height:12px; background:var(--border); }
+.night-mode .map-summary-chip .msc-div{ background:#3a4b53; }
+
+.map-compass{ position:absolute; bottom:36px; right:10px; z-index:401; width:38px; height:38px; pointer-events:none; }
+.map-compass .ring{ position:absolute; inset:0; border-radius:50%; background:rgba(255,255,255,.8); backdrop-filter:blur(8px); border:1px solid var(--border); box-shadow:0 4px 14px rgba(0,0,0,.1); }
+.night-mode .map-compass .ring{ background:rgba(33,47,51,.8); border-color:#2f3e45; }
+.map-compass .n, .map-compass .s{ position:absolute; left:50%; top:50%; font-size:8px; font-weight:800; transform:translate(-50%,-50%); }
+.map-compass .n{ margin-top:-13px; color: var(--red); }
+.map-compass .s{ margin-top:13px; color: var(--text-mute); }
+.night-mode .map-compass .n{ color:#e0645a; }
+.night-mode .map-compass .s{ color:#7f979f; }
+
+.map-hint{ position:absolute; bottom:8px; right:8px; z-index:401; font-size:.65rem; color:var(--text-mute); font-style:italic; background:rgba(255,255,255,.8); padding:3px 8px; border-radius:8px; }
+.night-mode .map-hint{ background:rgba(33,47,51,.8); color:#9ab0b8; }
+
+.box-select-rect{ position:absolute; border:1.5px dashed var(--teal); background:rgba(91,140,138,.14); z-index:500; pointer-events:none; }
+
+/* Leaflet marker tweaks - numbered stop badges reuse the same rounded
+   circle language as the type icons (getStructureIcon), just showing an
+   order number instead of a type glyph once selected. */
+.rp-pin-num{ width:26px; height:26px; border-radius:50%; background:var(--teal-dark); border:2.5px solid #fff; color:#fff; font-size:.7rem; font-weight:800; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,.25); font-variant-numeric:tabular-nums; }
+.night-mode .rp-pin-num{ border-color:#212f33; }
+
+/* ---------- ROUTE RAIL ---------- */
+.route-rail{ max-height: calc(100vh - 210px); }
+.route-summary{ padding:15px 17px; border-bottom:1px solid var(--border2); }
+.night-mode .route-summary{ border-color:#2f3e45; }
+.route-summary .rs-figure{ font-family: var(--font-display); font-style:italic; font-size:2.05rem; font-weight:600; color:var(--text); line-height:1; font-variant-numeric:tabular-nums; }
+.night-mode .route-summary .rs-figure{ color:#d4dfe3; }
+.route-summary .rs-figure small{ font-family:'Inter',sans-serif; font-style:normal; font-size:.82rem; font-weight:600; color:var(--text-mute); margin-left:5px; }
+.route-summary .rs-meta{ margin-top:6px; font-size:.75rem; color:var(--text-mute); display:flex; gap:12px; font-variant-numeric:tabular-nums; }
+.route-summary .rs-meta b{ color:var(--text); }
+.night-mode .route-summary .rs-meta b{ color:#d4dfe3; }
+
+.route-actions{ display:flex; gap:8px; padding:11px 15px; border-bottom:1px solid var(--border2); }
+.night-mode .route-actions{ border-color:#2f3e45; }
+.route-actions .btn{ flex:1; justify-content:center; padding:8px 8px; font-size:.73rem; }
+
+.route-list{ list-style:none; overflow-y:auto; flex:1; padding:6px; min-height:80px; }
+.route-item{ display:flex; align-items:flex-start; gap:9px; padding:9px 8px; border-radius:11px; background:var(--bg-soft); border:1px solid var(--border2); margin-bottom:6px; cursor:grab; }
+.night-mode .route-item{ background:#1e2a2f; border-color:#2f3e45; }
+.route-item.dragging{ opacity:.4; }
+.route-item .ri-handle{ color:var(--text-mute); margin-top:2px; flex-shrink:0; }
+.route-item .ri-handle svg{ width:12px; height:12px; }
+.route-item .ri-num{ width:20px; height:20px; border-radius:50%; background:var(--teal-dark); color:#fff; font-size:.65rem; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; font-variant-numeric:tabular-nums; }
+.route-item .ri-main{ flex:1; min-width:0; }
+.route-item .ri-name{ font-size:.78rem; font-weight:600; color:var(--text); }
+.night-mode .route-item .ri-name{ color:#d4dfe3; }
+.route-item .ri-leg{ font-size:.67rem; color:var(--text-mute); margin-top:2px; font-variant-numeric:tabular-nums; }
+.route-item .ri-remove{ background:none; border:none; color:var(--text-mute); cursor:pointer; padding:2px; flex-shrink:0; margin-top:1px; }
+.route-item .ri-remove:hover{ color:var(--red); }
+.route-item .ri-remove svg{ width:13px; height:13px; }
+
+.route-empty{ padding:32px 20px; text-align:center; }
+.route-empty svg{ width:28px; height:28px; color:var(--text-mute); margin-bottom:10px; }
+.route-empty p{ font-size:.79rem; color:var(--text-mute); max-width:22ch; margin:0 auto; }
+
+.route-footnote{ padding:9px 15px; font-size:.64rem; color:var(--text-mute); border-top:1px solid var(--border2); font-style:italic; }
+.night-mode .route-footnote{ border-color:#2f3e45; }
+
+:focus-visible{ outline:2px solid var(--teal); outline-offset:2px; }
+@media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
+</style>
+</head>
+<body>
+<script>if(document.documentElement.classList.contains('nm-preload'))document.body.classList.add('night-mode');</script>
+
+<nav class="navbar">
+    <div class="left">
+        <div class="logo">spanSense</div>
+        <div class="menu">
+            <a href="../map/map.html"><i class="fas fa-map"></i>Map</a>
+            <a href="../dashboard/dashboard.html"><i class="fas fa-chart-pie"></i>Dashboard</a>
+            <a href="../author/author.html"><i class="fas fa-feather-pointed"></i>Author</a>
+            <a href="../author/route-planner.html" class="active"><i class="fas fa-route"></i>Route Planner</a>
+        </div>
+    </div>
+    <div class="right">
+        <div class="night-mode-toggle" id="nightToggle"><i class="fas fa-moon"></i></div>
+        <div class="account-links">
+            <a href="../accounts/accounts.html" data-tip="Account"><i class="fas fa-user-circle"></i></a>
+            <a href="../contacts/contacts.html" data-tip="Contact Us"><i class="fas fa-envelope"></i></a>
+        </div>
+    </div>
+</nav>
+
+<div class="page-wrapper">
+
+  <div class="page-header">
+    <div>
+      <h1>Plan today's inspection round</h1>
+      <p>Select several structures from the list or map, then order them into a route before you head out.</p>
+    </div>
+    <div class="head-actions">
+      <button class="btn" id="autoSelectBtn"><i class="fas fa-bolt"></i>&nbsp;Select due this month</button>
+      <button class="btn primary" id="exportBtn"><i class="fas fa-file-export"></i>&nbsp;Export route (CSV)</button>
+    </div>
+  </div>
+
+  <div class="workspace">
+
+    <!-- ============ LEFT: FILTERS + STRUCTURE LIST ============ -->
+    <div class="panel filter-rail">
+      <div class="panel-head">
+        <div class="eyebrow">Filter</div>
+        <h2><i class="fas fa-layer-group"></i> Structures</h2>
+      </div>
+      <div class="filter-body">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
+          <input type="text" id="searchInput" placeholder="Search by name or location…" autocomplete="off">
+        </div>
+        <div>
+          <div class="fg-label">Type</div>
+          <div class="chip-row" id="typeChips"></div>
+        </div>
+        <div>
+          <div class="fg-label">Condition band</div>
+          <div class="chip-row" id="bandChips"></div>
+        </div>
+        <div class="toggle-row">
+          <div>
+            <div class="tr-label">Due within 3 months</div>
+            <div class="tr-sub">Includes overdue &amp; never-inspected</div>
+          </div>
+          <div class="switch" id="dueToggle" role="switch" aria-checked="false" tabindex="0"></div>
+        </div>
+        <button class="filter-reset" id="resetFilters">Reset filters</button>
+      </div>
+      <div class="list-count" id="listCount">Loading…</div>
+      <ul class="struct-list" id="structList"></ul>
+    </div>
+
+    <!-- ============ CENTER: MAP ============ -->
+    <div class="panel map-rail">
+      <div class="map-stage" id="mapStage">
+        <div id="routeMap"></div>
+
+        <div class="map-toolbar">
+          <button class="map-tool active" id="toolPointer" data-tip="Select"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg></button>
+          <button class="map-tool" id="toolBox" data-tip="Box-select multiple (drag on map)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 3"><rect x="4" y="4" width="16" height="16" rx="2"/></svg></button>
+          <button class="map-tool" id="toolSat" data-tip="Toggle satellite backdrop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>
+        </div>
+
+        <div class="map-summary-chip" id="mapSummary">
+          <span><b id="chipCount">0</b> selected</span>
+          <span class="msc-div"></span>
+          <span><b id="chipDist">0.0</b> km</span>
+          <span class="msc-div"></span>
+          <span><b id="chipTime">0h 00m</b> drive</span>
+        </div>
+
+        <div class="map-compass" data-tip="North">
+          <div class="ring"></div>
+          <span class="n">N</span><span class="s">S</span>
+        </div>
+
+        <div class="map-hint">Route distances are straight-line, for planning only</div>
+      </div>
+    </div>
+
+    <!-- ============ RIGHT: ROUTE ITINERARY ============ -->
+    <div class="panel route-rail">
+      <div class="route-summary">
+        <div class="rs-figure" id="rsFigure">0.0<small>km total</small></div>
+        <div class="rs-meta">
+          <span><b id="rsStops">0</b> stops</span>
+          <span><b id="rsTime">0h 00m</b> drive</span>
+        </div>
+      </div>
+      <div class="route-actions">
+        <button class="btn" id="optimizeBtn" disabled><i class="fas fa-route"></i>&nbsp;Optimize</button>
+        <button class="btn" id="clearBtn" disabled><i class="fas fa-trash-can"></i>&nbsp;Clear</button>
+      </div>
+      <ul class="route-list" id="routeList"></ul>
+      <div class="route-footnote">Route order is editable — drag stops to reorder.</div>
+    </div>
+
+  </div>
+</div>
+
+<script src="../test.js"></script>
+<script src="route-planner.js"></script>
+</body>
+</html>
