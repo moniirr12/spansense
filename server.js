@@ -3805,7 +3805,6 @@ app.get('/api/dashboard/critical-bridges', requireAuth, async (req, res) => {
             WHERE i.overall_bciave IS NOT NULL
               AND i.overall_bciave < 65
             ORDER BY i.overall_bciave ASC
-            LIMIT 10
         `);
 
         res.json({ success: true, data: rows });
@@ -3945,6 +3944,14 @@ function buildForecastStatus(currentAvg, series) {
     };
 }
 
+// Most urgent first: already past the threshold, then soonest-projected,
+// then "declining but not for years yet" last.
+function forecastSortKey(row) {
+    if (row.status === 'already_critical') return -1;
+    if (row.status === 'projected') return row.yearsToThreshold;
+    return 999; // beyond_horizon
+}
+
 // Trims a {t (epoch ms), v, min?, max?}[] series down to what a sparkline
 // actually needs on the wire - ISO date + one decimal place, not the full
 // float and millisecond timestamp precision the fit itself used. min/max
@@ -3989,19 +3996,18 @@ app.get('/api/dashboard/deterioration-forecast', requireAuth, async (req, res) =
             byStructure.forEach(g => {
                 const last = g.series[g.series.length - 1];
                 const forecast = buildForecastStatus(last.v, g.series);
-                // This list is specifically "heading toward Very Poor" - only
-                // an actual declining fit belongs here. Already-critical
-                // belongs on the Very Poor list instead; no_decline and
-                // insufficient_history aren't heading anywhere, so listing
-                // them here under this title would read as a false alarm.
-                if (forecast.status !== 'projected' && forecast.status !== 'beyond_horizon') return;
+                // "Heading toward Poor" covers anything worth watching:
+                // already there, or trending there within the horizon.
+                // no_decline and insufficient_history genuinely have nothing
+                // to report, so those are the only statuses left out.
+                if (forecast.status === 'no_decline' || forecast.status === 'insufficient_history') return;
                 rows.push({
                     structureId: g.structureId, structureName: g.structureName, type: g.type,
                     currentBciAve: Math.round(last.v * 10) / 10, dataPoints: g.series.length,
                     historySince: g.historySince, series: seriesForClient(g.series), ...forecast
                 });
             });
-            rows.sort((a, b) => (a.yearsToThreshold ?? 999) - (b.yearsToThreshold ?? 999));
+            rows.sort((a, b) => forecastSortKey(a) - forecastSortKey(b));
             return res.json({ granularity, withinYears: FORECAST_HORIZON_YEARS, thresholdBciAve: FORECAST_THRESHOLD_BCIAVE, rows });
         }
 
@@ -4085,19 +4091,19 @@ app.get('/api/dashboard/deterioration-forecast', requireAuth, async (req, res) =
         groups.forEach(g => {
             const currentAvg = g.structureCount ? g.currentSum / g.structureCount : null;
             const forecast = buildForecastStatus(currentAvg, g.series);
-            // Same "only show it if it's actually heading there" rule as
-            // structures above - category is a list of several rows same as
-            // structures, unlike portfolio's single summary card where
-            // "no decline detected" etc. is the direct answer to the only
-            // question that card is asking, not noise in a list.
-            if (forecast.status !== 'projected' && forecast.status !== 'beyond_horizon') return;
+            // Same "worth watching" rule as structures above - category is a
+            // list of several rows same as structures, unlike portfolio's
+            // single summary card where "no decline detected" etc. is the
+            // direct answer to the only question that card is asking, not
+            // noise in a list.
+            if (forecast.status === 'no_decline' || forecast.status === 'insufficient_history') return;
             rows.push({
                 type: g.type, structureCount: g.structureCount,
                 avgBciAve: currentAvg != null ? Math.round(currentAvg * 10) / 10 : null,
                 dataPoints: g.series.length, series: seriesForClient(g.series), ...forecast
             });
         });
-        rows.sort((a, b) => (a.yearsToThreshold ?? 999) - (b.yearsToThreshold ?? 999));
+        rows.sort((a, b) => forecastSortKey(a) - forecastSortKey(b));
         res.json({ granularity, withinYears: FORECAST_HORIZON_YEARS, thresholdBciAve: FORECAST_THRESHOLD_BCIAVE, rows });
     } catch (err) {
         console.error('Deterioration forecast error:', err);

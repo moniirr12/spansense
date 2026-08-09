@@ -572,9 +572,10 @@ async function fetchCriticalBridges() {
         const result = await response.json();
 
         if (result.success && result.data) {
+            criticalBridgesRows = result.data;
             criticalBridgesCount = result.data.length;  // Store the count
             updateHighRiskMetric(criticalBridgesCount);  // Update the card
-            renderCriticalBridges(result.data);
+            renderCriticalBridges(criticalBridgesRows);
         }
     } catch (error) {
         console.error('Error fetching critical bridges:', error);
@@ -614,20 +615,31 @@ window.scrollToDashboardSection = function scrollToDashboardSection(id) {
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 };
 
+const CB_PAGE_SIZE = 5;
+let criticalBridgesRows = [];
+let criticalBridgesVisibleCount = CB_PAGE_SIZE;
+
 function renderCriticalBridges(data) {
     const tbody = document.getElementById('critical-bridges-body');
+    const moreWrap = document.getElementById('critical-bridges-more');
 
     if (!data.length) {
         tbody.innerHTML = `
             <tr><td colspan="4" style="color: var(--text-muted); font-size: 0.8rem;">No structures below BCI avg 65.</td></tr>`;
+        if (moreWrap) moreWrap.innerHTML = '';
         return;
     }
 
-    // Every row here is already BCI avg < 65 - the Poor and Very Poor bands
-    // from the BCI Score Distribution legend merged into one list, all
-    // displayed here simply as "Poor" rather than splitting the two.
-    tbody.innerHTML = data.map(bridge => {
+    // The list itself is scoped to BCI avg < 65 (Poor and Very Poor from the
+    // BCI Score Distribution legend merged into one alert bucket), but each
+    // row still shows its real severity rather than flattening both bands
+    // into the same label - a 31 is genuinely worse than a 58.
+    const visible = data.slice(0, criticalBridgesVisibleCount);
+    tbody.innerHTML = visible.map(bridge => {
         const bci = bridge.overall_bciave !== null ? Math.round(bridge.overall_bciave) : '—';
+        const isVeryPoor = bridge.overall_bciave < 40;
+        const label = isVeryPoor ? 'Very Poor' : 'Poor';
+        const badgeClass = isVeryPoor ? 'risk-critical' : 'risk-high';
 
         return `
             <tr>
@@ -635,7 +647,7 @@ function renderCriticalBridges(data) {
                     <span class="bridge-id">${bridge.structure_id}</span>
                     <span class="bridge-location">${bridge.structure_name}</span>
                 </td>
-                <td><span class="risk-badge risk-critical">Poor · ${bci}</span></td>
+                <td><span class="risk-badge ${badgeClass}">${label} · ${bci}</span></td>
                 <td>${formatDate(bridge.inspection_date)}</td>
                 <td>
                     <button class="action-btn download-btn" onclick="downloadReport('${bridge.structure_id}', '${bridge.structure_name.replace(/'/g, "\\'")}', '${bridge.inspection_date}')">
@@ -644,7 +656,19 @@ function renderCriticalBridges(data) {
                 </td>
             </tr>`;
     }).join('');
+
+    if (moreWrap) {
+        const remaining = data.length - visible.length;
+        moreWrap.innerHTML = remaining > 0
+            ? `<button type="button" class="action-btn download-btn" onclick="showMoreCriticalBridges()">Show ${Math.min(CB_PAGE_SIZE, remaining)} more <span class="fc-more-count">(${remaining} left)</span></button>`
+            : '';
+    }
 }
+
+window.showMoreCriticalBridges = function () {
+    criticalBridgesVisibleCount += CB_PAGE_SIZE;
+    renderCriticalBridges(criticalBridgesRows);
+};
 
 /* ============================================================
    DETERIORATION FORECAST — "Heading Toward Poor"
@@ -727,7 +751,7 @@ function fcStatusCell(row) {
     const labels = {
         beyond_horizon: 'Beyond 5-yr horizon',
         no_decline: 'No decline detected',
-        already_critical: 'Already below threshold',
+        already_critical: `Already below ${fcThreshold}`,
         insufficient_history: 'Insufficient history'
     };
     const cls = row.status === 'already_critical' ? 'fc-status fc-status-crit' : 'fc-status';
