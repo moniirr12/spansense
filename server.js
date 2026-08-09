@@ -3782,10 +3782,10 @@ app.get('/api/inspections', requireAuth, async (req, res) => {
     }
 });
 
-// Critical bridges: lowest BCI per structure
-// "Very Poor" per the app's own BCI band wording (0-39 on the BCI Score
-// Distribution legend) - keyed off overall_bciave, not overall_bcicrit, to
-// match the rest of the dashboard's headline metric.
+// "Poor" bridges: lowest BCI per structure - BCI avg < 65, the Poor and
+// Very Poor bands from the BCI Score Distribution legend merged into one
+// list. Keyed off overall_bciave, not overall_bcicrit, to match the rest
+// of the dashboard's headline metric.
 app.get('/api/dashboard/critical-bridges', requireAuth, async (req, res) => {
     try {
         const rows = await dbAll(`
@@ -3803,9 +3803,8 @@ app.get('/api/dashboard/critical-bridges', requireAuth, async (req, res) => {
             ) latest ON i.structure_id = latest.structure_id
                    AND i.inspection_date = latest.latest_date
             WHERE i.overall_bciave IS NOT NULL
-              AND i.overall_bciave < 40
+              AND i.overall_bciave < 65
             ORDER BY i.overall_bciave ASC
-            LIMIT 10
         `);
 
         res.json({ success: true, data: rows });
@@ -3900,10 +3899,12 @@ function forecastLinearFit(pts) {
     return { slope, intercept };
 }
 
-// "Very Poor" is the same 0-39 BCI-avg band the rest of the dashboard uses
-// (see the BCI Score Distribution legend and the Very Poor structures list
-// above) - the forecast projects toward the same line, not a separate one.
-const FORECAST_THRESHOLD_BCIAVE = 40;
+// "Poor" here means BCI avg < 65 - the Poor and Very Poor bands from the
+// BCI Score Distribution legend merged into one alert threshold, since
+// splitting the two into separate lists added a distinction without much
+// practical difference. Matches the dashboard's "Poor" structures list
+// below, which uses the same cutoff.
+const FORECAST_THRESHOLD_BCIAVE = 65;
 const FORECAST_HORIZON_YEARS = 5;
 const FORECAST_MIN_POINTS = 3;
 const FORECAST_YEAR_MS = 365.25 * 24 * 60 * 60 * 1000;
@@ -3943,11 +3944,25 @@ function buildForecastStatus(currentAvg, series) {
     };
 }
 
-// Trims a {t (epoch ms), v}[] series down to what a sparkline actually
-// needs on the wire - ISO date + one decimal place, not the full float and
-// millisecond timestamp precision the fit itself used.
+// Most urgent first: already past the threshold, then soonest-projected,
+// then "declining but not for years yet" last.
+function forecastSortKey(row) {
+    if (row.status === 'already_critical') return -1;
+    if (row.status === 'projected') return row.yearsToThreshold;
+    return 999; // beyond_horizon
+}
+
+// Trims a {t (epoch ms), v, min?, max?}[] series down to what a sparkline
+// actually needs on the wire - ISO date + one decimal place, not the full
+// float and millisecond timestamp precision the fit itself used. min/max
+// (portfolio only - the shaded spread band) pass through when present.
 function seriesForClient(series) {
-    return series.map(p => ({ t: new Date(p.t).toISOString().slice(0, 10), v: Math.round(p.v * 10) / 10 }));
+    return series.map(p => {
+        const out = { t: new Date(p.t).toISOString().slice(0, 10), v: Math.round(p.v * 10) / 10 };
+        if (p.min != null) out.min = Math.round(p.min * 10) / 10;
+        if (p.max != null) out.max = Math.round(p.max * 10) / 10;
+        return out;
+    });
 }
 
 app.get('/api/dashboard/deterioration-forecast', requireAuth, async (req, res) => {
@@ -3981,26 +3996,67 @@ app.get('/api/dashboard/deterioration-forecast', requireAuth, async (req, res) =
             byStructure.forEach(g => {
                 const last = g.series[g.series.length - 1];
                 const forecast = buildForecastStatus(last.v, g.series);
-                // Already-critical belongs on the Very Poor list instead, and
-                // there's nothing actionable to show for insufficient
-                // history - this list is specifically the early-warning set.
-                if (forecast.status === 'already_critical' || forecast.status === 'insufficient_history') return;
+                // "Heading toward Poor" covers anything worth watching:
+                // already there, or trending there within the horizon.
+                // no_decline and insufficient_history genuinely have nothing
+                // to report, so those are the only statuses left out.
+                if (forecast.status === 'no_decline' || forecast.status === 'insufficient_history') return;
                 rows.push({
                     structureId: g.structureId, structureName: g.structureName, type: g.type,
                     currentBciAve: Math.round(last.v * 10) / 10, dataPoints: g.series.length,
                     historySince: g.historySince, series: seriesForClient(g.series), ...forecast
                 });
             });
-            rows.sort((a, b) => (a.yearsToThreshold ?? 999) - (b.yearsToThreshold ?? 999));
+            rows.sort((a, b) => forecastSortKey(a) - forecastSortKey(b));
             return res.json({ granularity, withinYears: FORECAST_HORIZON_YEARS, thresholdBciAve: FORECAST_THRESHOLD_BCIAVE, rows });
         }
 
-        // category / portfolio: same mechanism, just averaged across a
-        // coarser group before fitting - each inspection gets bucketed into
-        // its calendar year first (individual structures rarely inspect on
-        // matching dates, so a per-year average is the simplest common time
-        // axis to fit a trend through).
-        const groupByType = granularity === 'category';
+        if (granularity === 'portfolio') {
+            // One row, one properly time-ordered series blended across every
+            // type - deliberately a separate query from category's rather
+            // than reusing its (type, year) grouped rows ungrouped, which
+            // used to concatenate each type's points back-to-back instead of
+            // interleaving them by year (the zigzag sparkline bug). min/max
+            // per year become the shaded spread band on the client.
+            const historyRows = await dbAll(`
+                SELECT date_trunc('year', i.inspection_date) AS yr,
+                       AVG(i.overall_bciave) AS avg_bciave,
+                       MIN(i.overall_bciave) AS min_bciave,
+                       MAX(i.overall_bciave) AS max_bciave
+                FROM inspections i
+                WHERE i.overall_bciave IS NOT NULL
+                GROUP BY yr
+                ORDER BY yr
+            `);
+            const currentRows = await dbAll(`
+                SELECT i.overall_bciave
+                FROM inspections i
+                INNER JOIN (
+                    SELECT structure_id, MAX(inspection_date) as latest_date
+                    FROM inspections GROUP BY structure_id
+                ) latest ON i.structure_id = latest.structure_id AND i.inspection_date = latest.latest_date
+                WHERE i.overall_bciave IS NOT NULL
+            `);
+            const series = historyRows.map(r => ({
+                t: new Date(r.yr).getTime(), v: parseFloat(r.avg_bciave),
+                min: parseFloat(r.min_bciave), max: parseFloat(r.max_bciave)
+            }));
+            const currentAvg = currentRows.length
+                ? currentRows.reduce((sum, r) => sum + parseFloat(r.overall_bciave), 0) / currentRows.length
+                : null;
+            const forecast = buildForecastStatus(currentAvg, series);
+            const row = {
+                structureCount: currentRows.length,
+                avgBciAve: currentAvg != null ? Math.round(currentAvg * 10) / 10 : null,
+                dataPoints: series.length, series: seriesForClient(series), ...forecast
+            };
+            return res.json({ granularity, withinYears: FORECAST_HORIZON_YEARS, thresholdBciAve: FORECAST_THRESHOLD_BCIAVE, rows: [row] });
+        }
+
+        // category: same mechanism as structures, just averaged within each
+        // type/year bucket before fitting (individual structures rarely
+        // inspect on matching dates, so a per-year average is the simplest
+        // common time axis to fit a trend through).
         const historyRows = await dbAll(`
             SELECT b.type, date_trunc('year', i.inspection_date) AS yr, AVG(i.overall_bciave) AS avg_bciave
             FROM inspections i JOIN bridges b ON b.id = i.structure_id
@@ -4020,16 +4076,13 @@ app.get('/api/dashboard/deterioration-forecast', requireAuth, async (req, res) =
         `);
 
         const groups = new Map();
-        const keyFor = (type) => groupByType ? type : '__portfolio__';
         historyRows.forEach(r => {
-            const key = keyFor(r.type);
-            if (!groups.has(key)) groups.set(key, { type: groupByType ? r.type : null, series: [], currentSum: 0, structureCount: 0 });
-            groups.get(key).series.push({ t: new Date(r.yr).getTime(), v: parseFloat(r.avg_bciave) });
+            if (!groups.has(r.type)) groups.set(r.type, { type: r.type, series: [], currentSum: 0, structureCount: 0 });
+            groups.get(r.type).series.push({ t: new Date(r.yr).getTime(), v: parseFloat(r.avg_bciave) });
         });
         currentRows.forEach(r => {
-            const key = keyFor(r.type);
-            if (!groups.has(key)) groups.set(key, { type: groupByType ? r.type : null, series: [], currentSum: 0, structureCount: 0 });
-            const g = groups.get(key);
+            if (!groups.has(r.type)) groups.set(r.type, { type: r.type, series: [], currentSum: 0, structureCount: 0 });
+            const g = groups.get(r.type);
             g.currentSum += parseFloat(r.overall_bciave);
             g.structureCount += 1;
         });
@@ -4038,13 +4091,19 @@ app.get('/api/dashboard/deterioration-forecast', requireAuth, async (req, res) =
         groups.forEach(g => {
             const currentAvg = g.structureCount ? g.currentSum / g.structureCount : null;
             const forecast = buildForecastStatus(currentAvg, g.series);
+            // Same "worth watching" rule as structures above - category is a
+            // list of several rows same as structures, unlike portfolio's
+            // single summary card where "no decline detected" etc. is the
+            // direct answer to the only question that card is asking, not
+            // noise in a list.
+            if (forecast.status === 'no_decline' || forecast.status === 'insufficient_history') return;
             rows.push({
                 type: g.type, structureCount: g.structureCount,
                 avgBciAve: currentAvg != null ? Math.round(currentAvg * 10) / 10 : null,
                 dataPoints: g.series.length, series: seriesForClient(g.series), ...forecast
             });
         });
-        rows.sort((a, b) => (a.yearsToThreshold ?? 999) - (b.yearsToThreshold ?? 999));
+        rows.sort((a, b) => forecastSortKey(a) - forecastSortKey(b));
         res.json({ granularity, withinYears: FORECAST_HORIZON_YEARS, thresholdBciAve: FORECAST_THRESHOLD_BCIAVE, rows });
     } catch (err) {
         console.error('Deterioration forecast error:', err);

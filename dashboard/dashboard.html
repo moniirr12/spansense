@@ -70,7 +70,7 @@
                 </div>
                 <div class="metric-content">
                     <h3>0</h3>  <!-- Will be updated by JS -->
-                    <p>Very Poor</p>
+                    <p>Poor Structures</p>
                 </div>
                 <i class="fas fa-chevron-right metric-arrow"></i>
             </div>
@@ -158,23 +158,23 @@
         </div>
 
 
-        <!-- Deterioration forecast: same BCI-avg/40 threshold as Very Poor
-             below, but forward-looking - which structures/categories/the
-             whole stock are trending toward that band, not there yet. -->
+        <!-- Deterioration forecast: same BCI-avg/65 threshold as the Poor
+             section below, but forward-looking - which structures/categories/
+             the whole stock are trending toward that band, not there yet. -->
         <div class="forecast-section" id="forecastSection">
             <div class="section-header">
-                <h2><i class="fas fa-arrow-trend-down"></i> Heading Toward Very Poor</h2>
+                <h2><i class="fas fa-arrow-trend-down"></i> Heading Toward Poor</h2>
                 <div style="display:flex; align-items:center; gap:10px;">
                     <div class="chart-toggle" role="tablist" aria-label="Forecast granularity">
-                        <button type="button" class="chart-toggle-btn active" data-fc-view="structures" onclick="fcSwitch('structures', this)">Structures</button>
+                        <button type="button" class="chart-toggle-btn" data-fc-view="structures" onclick="fcSwitch('structures', this)">Structures</button>
                         <button type="button" class="chart-toggle-btn" data-fc-view="category" onclick="fcSwitch('category', this)">By category</button>
-                        <button type="button" class="chart-toggle-btn" data-fc-view="portfolio" onclick="fcSwitch('portfolio', this)">Whole stock</button>
+                        <button type="button" class="chart-toggle-btn active" data-fc-view="portfolio" onclick="fcSwitch('portfolio', this)">Whole stock</button>
                     </div>
-                    <span class="section-badge">next 5 yrs · BCI avg &lt; 40</span>
+                    <span class="section-badge">next 5 yrs · BCI avg &lt; 65</span>
                 </div>
             </div>
 
-            <div class="fc-view active" id="fcView-structures">
+            <div class="fc-view" id="fcView-structures">
                 <div class="pr-search-wrap fc-search-wrap">
                     <i class="fas fa-search"></i>
                     <input type="text" id="fcStructureSearch" placeholder="Search structures...">
@@ -185,6 +185,7 @@
                         <tr><td colspan="4" style="color: var(--text-muted); font-size: 0.85rem;">Loading...</td></tr>
                     </tbody>
                 </table>
+                <div id="fc-structures-more" class="fc-more-wrap"></div>
             </div>
             <div class="fc-view" id="fcView-category">
                 <table class="data-table card-rows">
@@ -194,18 +195,18 @@
                     </tbody>
                 </table>
             </div>
-            <div class="fc-view" id="fcView-portfolio">
-                <div id="fc-portfolio-body" style="color: var(--text-muted); font-size: 0.85rem; padding: 14px 4px;">Loading...</div>
+            <div class="fc-view active" id="fcView-portfolio">
+                <div id="fc-portfolio-body" style="color: var(--text-muted); font-size: 0.85rem;">Loading...</div>
             </div>
         </div>
 
         <div class="dashboard-bottom-row">
 
-            <!-- Very Poor structures (left) -->
+            <!-- Poor structures (left) -->
             <div class="critical-bridges-section" id="criticalStructuresSection">
                 <div class="section-header">
-                    <h2><i class="fas fa-exclamation-triangle"></i> Very Poor</h2>
-                    <span class="section-badge">BCI avg &lt; 40</span>
+                    <h2><i class="fas fa-exclamation-triangle"></i> Poor Structures</h2>
+                    <span class="section-badge">BCI avg &lt; 65</span>
                 </div>
                 <div class="critical-bridges">
                     <table class="data-table card-rows">
@@ -216,6 +217,7 @@
                             <tr><td colspan="4" style="color: var(--text-muted); font-size: 0.85rem;">Loading...</td></tr>
                         </tbody>
                     </table>
+                    <div id="critical-bridges-more" class="fc-more-wrap"></div>
                 </div>
             </div>
 
