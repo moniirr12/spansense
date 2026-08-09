@@ -402,6 +402,13 @@ body.night-mode .layer-pill{ background:rgba(35,46,52,.85); }
 .layer-pill.on{ color:var(--teal-700); border-color:var(--teal-300); }
 body.night-mode .layer-pill.on{ color:#8ab4b0; }
 .layer-pill svg{ width:11px; height:11px; }
+.stage-compass{ position:relative; margin-left:auto; width:26px; height:26px; flex-shrink:0; }
+.stage-compass-ring{ position:absolute; inset:0; border-radius:50%; background:rgba(255,255,255,.88); border:1px solid var(--border); }
+body.night-mode .stage-compass-ring{ background:rgba(35,46,52,.85); }
+.stage-compass-needle{ position:absolute; inset:0; }
+.stage-compass .cn-n, .stage-compass .cn-s{ position:absolute; left:50%; top:50%; font-size:7px; font-weight:800; line-height:1; transform:translate(-50%,-50%); }
+.stage-compass .cn-n{ margin-top:-9px; color:var(--critical); }
+.stage-compass .cn-s{ margin-top:9px; color:var(--ink-dim); }
 .popup{ position:absolute; width:200px; background:var(--pop); color:#eef4f2; border-radius:16px; padding:12px 13px; z-index:20; box-shadow:0 14px 30px rgba(0,0,0,.3); display:none; }
 .popup.show{ display:block; }
 .popup .p-code{ font-family:'SFMono-Regular',Consolas,monospace; font-size:10.5px; color:#9ecac4; margin:0 0 3px; }
