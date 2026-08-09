@@ -3782,10 +3782,10 @@ app.get('/api/inspections', requireAuth, async (req, res) => {
     }
 });
 
-// Critical bridges: lowest BCI per structure
-// "Very Poor" per the app's own BCI band wording (0-39 on the BCI Score
-// Distribution legend) - keyed off overall_bciave, not overall_bcicrit, to
-// match the rest of the dashboard's headline metric.
+// "Poor" bridges: lowest BCI per structure - BCI avg < 65, the Poor and
+// Very Poor bands from the BCI Score Distribution legend merged into one
+// list. Keyed off overall_bciave, not overall_bcicrit, to match the rest
+// of the dashboard's headline metric.
 app.get('/api/dashboard/critical-bridges', requireAuth, async (req, res) => {
     try {
         const rows = await dbAll(`
@@ -3803,7 +3803,7 @@ app.get('/api/dashboard/critical-bridges', requireAuth, async (req, res) => {
             ) latest ON i.structure_id = latest.structure_id
                    AND i.inspection_date = latest.latest_date
             WHERE i.overall_bciave IS NOT NULL
-              AND i.overall_bciave < 40
+              AND i.overall_bciave < 65
             ORDER BY i.overall_bciave ASC
             LIMIT 10
         `);
@@ -3900,10 +3900,12 @@ function forecastLinearFit(pts) {
     return { slope, intercept };
 }
 
-// "Very Poor" is the same 0-39 BCI-avg band the rest of the dashboard uses
-// (see the BCI Score Distribution legend and the Very Poor structures list
-// above) - the forecast projects toward the same line, not a separate one.
-const FORECAST_THRESHOLD_BCIAVE = 40;
+// "Poor" here means BCI avg < 65 - the Poor and Very Poor bands from the
+// BCI Score Distribution legend merged into one alert threshold, since
+// splitting the two into separate lists added a distinction without much
+// practical difference. Matches the dashboard's "Poor" structures list
+// below, which uses the same cutoff.
+const FORECAST_THRESHOLD_BCIAVE = 65;
 const FORECAST_HORIZON_YEARS = 5;
 const FORECAST_MIN_POINTS = 3;
 const FORECAST_YEAR_MS = 365.25 * 24 * 60 * 60 * 1000;

@@ -158,19 +158,19 @@
         </div>
 
 
-        <!-- Deterioration forecast: same BCI-avg/40 threshold as the Poor
+        <!-- Deterioration forecast: same BCI-avg/65 threshold as the Poor
              section below, but forward-looking - which structures/categories/
              the whole stock are trending toward that band, not there yet. -->
         <div class="forecast-section" id="forecastSection">
             <div class="section-header">
-                <h2><i class="fas fa-arrow-trend-down"></i> Heading Toward Very Poor</h2>
+                <h2><i class="fas fa-arrow-trend-down"></i> Heading Toward Poor</h2>
                 <div style="display:flex; align-items:center; gap:10px;">
                     <div class="chart-toggle" role="tablist" aria-label="Forecast granularity">
                         <button type="button" class="chart-toggle-btn" data-fc-view="structures" onclick="fcSwitch('structures', this)">Structures</button>
                         <button type="button" class="chart-toggle-btn" data-fc-view="category" onclick="fcSwitch('category', this)">By category</button>
                         <button type="button" class="chart-toggle-btn active" data-fc-view="portfolio" onclick="fcSwitch('portfolio', this)">Whole stock</button>
                     </div>
-                    <span class="section-badge">next 5 yrs · BCI avg &lt; 40</span>
+                    <span class="section-badge">next 5 yrs · BCI avg &lt; 65</span>
                 </div>
             </div>
 
@@ -206,7 +206,7 @@
             <div class="critical-bridges-section" id="criticalStructuresSection">
                 <div class="section-header">
                     <h2><i class="fas fa-exclamation-triangle"></i> Poor</h2>
-                    <span class="section-badge">BCI avg &lt; 40</span>
+                    <span class="section-badge">BCI avg &lt; 65</span>
                 </div>
                 <div class="critical-bridges">
                     <table class="data-table card-rows">

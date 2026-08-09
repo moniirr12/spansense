@@ -604,12 +604,17 @@ body {
 
 .fc-threshold-line { stroke: #c28b5a; stroke-width: 1; stroke-dasharray: 3 4; opacity: 0.6; }
 .night-mode .fc-threshold-line { stroke: #d4a84a; }
-/* No font-family override, deliberately - same as twin.js's own trend
-   chart labels (trend-axis-label/trend-date-label): SVG's own default
-   sans renders noticeably tighter at this size than pulling in 'Inter',
-   which was reading as too wide/spaced-out for a 9-10px label. */
+/* font-family set explicitly, not left to inherit - SVG text inherits
+   font-family through the DOM same as any other element, so leaving this
+   unset was still pulling in body's 'Inter' stack (too wide/spaced-out at
+   9-10px), not some tighter SVG default. Chart.js's canvas-rendered
+   labels in Asset Inventory etc. above never inherit page CSS at all -
+   they render with Chart.js's own built-in default font
+   ('Helvetica Neue'/Helvetica/Arial) - matching that here directly gets
+   the same tight, familiar look instead of approximating it. */
 .fc-threshold-label, .fc-year-label {
-    font-size: 9.5px;
+    font-size: 10px;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     fill: #5f6b73;
 }
 .night-mode .fc-threshold-label, .night-mode .fc-year-label { fill: #a8b8bf; }

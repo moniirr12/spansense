@@ -619,14 +619,13 @@ function renderCriticalBridges(data) {
 
     if (!data.length) {
         tbody.innerHTML = `
-            <tr><td colspan="4" style="color: var(--text-muted); font-size: 0.8rem;">No structures below BCI avg 40.</td></tr>`;
+            <tr><td colspan="4" style="color: var(--text-muted); font-size: 0.8rem;">No structures below BCI avg 65.</td></tr>`;
         return;
     }
 
-    // Every row here is already BCI avg < 40 (the Very Poor band per the
-    // BCI Score Distribution legend), displayed here as "Poor" - a
-    // deliberately shorter/less alarming label for this section, distinct
-    // from the legend's own canonical band name.
+    // Every row here is already BCI avg < 65 - the Poor and Very Poor bands
+    // from the BCI Score Distribution legend merged into one list, all
+    // displayed here simply as "Poor" rather than splitting the two.
     tbody.innerHTML = data.map(bridge => {
         const bci = bridge.overall_bciave !== null ? Math.round(bridge.overall_bciave) : '—';
 
@@ -648,16 +647,17 @@ function renderCriticalBridges(data) {
 }
 
 /* ============================================================
-   DETERIORATION FORECAST — "Heading Toward Very Poor"
-   Same BCI-avg/40 threshold as the Poor list above (displayed there as
-   "Poor," the same underlying Very Poor band), just forward-looking:
-   fetches all three granularities up front (the
-   portfolio is small enough that this is cheaper than a round-trip per
-   toggle click) and fcSwitch just flips which pre-rendered view is shown.
+   DETERIORATION FORECAST — "Heading Toward Poor"
+   Same BCI-avg/65 threshold as the Poor list above (Poor and Very Poor
+   merged into one alert band), just forward-looking: fetches all three
+   granularities up front (the portfolio is small enough that this is
+   cheaper than a round-trip per toggle click) and fcSwitch just flips
+   which pre-rendered view is shown.
    ============================================================ */
 let fcStructureRows = []; // full unfiltered list, so search can re-render instantly with no round trip
 const FC_PAGE_SIZE = 5;
 let fcVisibleCount = FC_PAGE_SIZE;
+let fcThreshold = 65; // overwritten from the API response - see fetchDeteriorationForecast
 
 // Same 5 colours/cutoffs as the BCI Score Distribution legend above this
 // widget (dashboard.html's .bci-legend) - one definition of the bands
@@ -684,6 +684,7 @@ async function fetchDeteriorationForecast() {
             fetch(API_BASE + '/api/dashboard/deterioration-forecast?granularity=category', { credentials: 'include' }).then(r => r.json()),
             fetch(API_BASE + '/api/dashboard/deterioration-forecast?granularity=portfolio', { credentials: 'include' }).then(r => r.json())
         ]);
+        if (structures.thresholdBciAve != null) fcThreshold = structures.thresholdBciAve;
         fcStructureRows = structures.rows || [];
         renderForecastStructures(fcStructureRows);
         renderForecastCategory(category.rows || []);
@@ -750,7 +751,7 @@ function renderSparkline(series, row, width, height) {
     let extra = null;
     if (row.slopePerYear != null && (row.status === 'projected' || row.status === 'beyond_horizon')) {
         if (row.status === 'projected' && row.projectedCrossingDate) {
-            extra = { t: new Date(row.projectedCrossingDate + '-01').getTime(), v: 40 };
+            extra = { t: new Date(row.projectedCrossingDate + '-01').getTime(), v: fcThreshold };
         } else {
             extra = { t: last.t + 5 * YEAR_MS, v: last.v + row.slopePerYear * 5 };
         }
@@ -782,7 +783,7 @@ function renderForecastStructures(rows) {
     const tbody = document.getElementById('fc-structures-body');
     const moreWrap = document.getElementById('fc-structures-more');
     if (!rows.length) {
-        tbody.innerHTML = `<tr><td colspan="4" style="color: var(--text-muted); font-size: 0.8rem;">Nothing trending toward Very Poor right now.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" style="color: var(--text-muted); font-size: 0.8rem;">Nothing trending toward Poor right now.</td></tr>`;
         if (moreWrap) moreWrap.innerHTML = '';
         return;
     }
@@ -840,11 +841,11 @@ function renderPortfolioChart(row) {
     let extra = null;
     if (row.slopePerYear != null && (row.status === 'projected' || row.status === 'beyond_horizon')) {
         extra = (row.status === 'projected' && row.projectedCrossingDate)
-            ? { t: new Date(row.projectedCrossingDate + '-01').getTime(), v: 40 }
+            ? { t: new Date(row.projectedCrossingDate + '-01').getTime(), v: fcThreshold }
             : { t: last.t + 5 * YEAR_MS, v: last.v + row.slopePerYear * 5 };
     }
 
-    const allV = pts.flatMap(p => [p.min, p.max]).concat(extra ? [extra.v] : [], [40]);
+    const allV = pts.flatMap(p => [p.min, p.max]).concat(extra ? [extra.v] : [], [fcThreshold]);
     let minV = Math.max(0, Math.min(...allV) - 4), maxV = Math.min(100, Math.max(...allV) + 4);
     const minT = pts[0].t, maxT = extra ? extra.t : last.t;
     const spanT = Math.max(1, maxT - minT);
@@ -855,7 +856,7 @@ function renderPortfolioChart(row) {
     const bandBottom = pts.slice().reverse().map(p => `${x(p.t).toFixed(1)},${y(p.min).toFixed(1)}`);
     const avgLine = pts.map(p => `${x(p.t).toFixed(1)},${y(p.v).toFixed(1)}`).join(' ');
 
-    const thresholdY = y(40).toFixed(1);
+    const thresholdY = y(fcThreshold).toFixed(1);
     let svg = `<svg class="fc-portfolio-svg" viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">`;
 
     // Condition-band backdrop - same 5-colour palette as the BCI Score
@@ -870,7 +871,7 @@ function renderPortfolioChart(row) {
     });
 
     svg += `<line x1="${padX}" y1="${thresholdY}" x2="${W - padX}" y2="${thresholdY}" class="fc-threshold-line"/>`;
-    svg += `<text x="${padX}" y="${thresholdY - 4}" class="fc-threshold-label">Very Poor · 40</text>`;
+    svg += `<text x="${padX}" y="${thresholdY - 4}" class="fc-threshold-label">Poor · ${fcThreshold}</text>`;
     svg += `<polygon points="${bandTop.join(' ')} ${bandBottom.join(' ')}" class="fc-band"/>`;
     svg += `<polyline points="${avgLine}" class="fc-avg-line"/>`;
     pts.forEach(p => { svg += `<circle cx="${x(p.t).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="2.6" class="fc-avg-dot"/>`; });
@@ -941,7 +942,7 @@ function renderForecastPortfolio(row, withinYears) {
     const labels = {
         beyond_horizon: `Beyond the ${withinYears}-year horizon at the current rate`,
         no_decline: 'No portfolio-wide decline detected',
-        already_critical: 'Portfolio average is already below 40',
+        already_critical: `Portfolio average is already below ${fcThreshold}`,
         insufficient_history: 'Not enough history yet'
     };
     el.innerHTML = `
@@ -955,7 +956,7 @@ function renderForecastPortfolio(row, withinYears) {
                 <div class="fc-portfolio-stat fc-portfolio-stat-end">
                     <div class="h-label">Projected crossing</div>
                     <div class="h-value-lg${isProjected ? ' fc-crit' : ''}">${isProjected ? formatForecastMonth(row.projectedCrossingDate) : '—'}</div>
-                    <div class="h-sub">${isProjected ? `crosses 40 in ${row.yearsToThreshold} yrs` : (labels[row.status] || row.status)}</div>
+                    <div class="h-sub">${isProjected ? `crosses ${fcThreshold} in ${row.yearsToThreshold} yrs` : (labels[row.status] || row.status)}</div>
                 </div>
             </div>
         </div>`;
