@@ -387,30 +387,20 @@
        building UI; everything selection-related stays hidden until then.
        --------------------------------------------------------- */
     var routeModeBtn = document.getElementById('routeModeBtn');
-    var routeModeActions = document.getElementById('routeModeActions');
     var routeRailEl = document.getElementById('routeRail');
-    var workspaceEl = document.getElementById('workspace');
     var selectToolsEl = document.getElementById('selectTools');
     var mapSummaryEl = document.getElementById('mapSummary');
     var mapHintEl = document.getElementById('mapHint');
-    var pageTitleEl = document.getElementById('pageTitle');
-    var pageDescEl = document.getElementById('pageDesc');
 
     function setRouteMode(on) {
         routeMode = on;
         routeModeBtn.innerHTML = on
             ? '<i class="fas fa-xmark"></i>&nbsp;Exit route mode'
             : '<i class="fas fa-route"></i>&nbsp;Plan a route';
-        routeModeActions.style.display = on ? 'flex' : 'none';
         routeRailEl.style.display = on ? 'flex' : 'none';
         selectToolsEl.style.display = on ? 'flex' : 'none';
         mapSummaryEl.style.display = on ? 'flex' : 'none';
         mapHintEl.style.display = on ? 'block' : 'none';
-        workspaceEl.classList.toggle('route-mode', on);
-        pageTitleEl.textContent = on ? 'Plan today’s inspection round' : 'Structures map';
-        pageDescEl.textContent = on
-            ? 'Select several structures from the list or map, then order them into a route before you head out.'
-            : 'Browse the portfolio on the map, or click "Plan a route" to start building an inspection round.';
         if (!on) setBoxSelectMode(false);
         map.closePopup();
         renderPins();

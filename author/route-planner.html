@@ -31,23 +31,11 @@
   --font-display:'Source Serif 4', Georgia, serif;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body{font-family:'Inter','Segoe UI',Tahoma,sans-serif; color:var(--text); background:#f5f7fb; min-height:100vh; position:relative; transition: background 0.3s ease, color 0.3s ease; overflow-x: hidden;}
+html, body{ height:100%; overflow:hidden; }
+body{font-family:'Inter','Segoe UI',Tahoma,sans-serif; color:var(--text); background:#f5f7fb; position:relative; transition: background 0.3s ease, color 0.3s ease;}
 a{color:inherit;}
 
-body::before{
-  content:''; position:fixed; inset:0; z-index:-1; pointer-events:none;
-  background:
-    radial-gradient(900px circle at 12% -6%, rgba(91,140,138,.10), transparent 62%),
-    radial-gradient(900px circle at 88% 105%, rgba(91,140,138,.07), transparent 62%);
-  transition:background .3s ease;
-}
-body.night-mode::before{
-  background:
-    radial-gradient(900px circle at 12% -6%, rgba(138,180,176,.09), transparent 62%),
-    radial-gradient(900px circle at 88% 105%, rgba(138,180,176,.06), transparent 62%);
-}
-
-/* ---------- NAVIGATION BAR (standard spanSense chrome) ---------- */
+/* ---------- NAVIGATION BAR (standard spanSense chrome, floats over the full-screen map like map.html's) ---------- */
 .navbar {
     position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
     width: 67%; max-width: 1190px;
@@ -89,17 +77,6 @@ body.night-mode::before{
 .night-mode .night-mode-toggle { background: #2f3e45; color: #9ab0b8; }
 .night-mode .night-mode-toggle:hover { background: #3a4b53; color: #8ab4b0; }
 
-/* ---------- MAIN WRAPPER ---------- */
-.page-wrapper { max-width: 90%; margin: 0 auto; padding: 100px 0 50px 0; }
-@media (max-width: 1300px) { .page-wrapper { max-width: 95%; } }
-
-.page-header { margin-bottom: 22px; display:flex; align-items:flex-end; justify-content:space-between; gap:20px; flex-wrap:wrap; }
-.page-header h1 { font-family: var(--font-display); font-weight:600; font-size: 1.9rem; color: #2c5a57; border-left: 4px solid #8ab4b0; padding-left: 16px; line-height:1.15; }
-.page-header p { color: #5f6b73; font-size: 0.85rem; padding-left: 20px; max-width: 56ch; margin-top:6px; }
-.night-mode .page-header h1 { color: #8ab4b0; }
-.night-mode .page-header p { color: #a8b8bf; }
-.head-actions{ display:flex; gap:10px; padding-left:20px; flex-shrink:0; }
-
 .btn{
   font-family:inherit; font-size:.8rem; font-weight:600; cursor:pointer;
   border-radius:11px; padding:10px 16px; display:inline-flex; align-items:center; gap:7px;
@@ -115,18 +92,26 @@ body.night-mode::before{
 .night-mode .btn{ background:#212f33; border-color:#2f3e45; color:#9ab0b8; }
 .night-mode .btn:hover{ border-color:#8ab4b0; color:#a0c8c4; }
 
-/* ===========================================================
-   3-COLUMN WORKSPACE
-   =========================================================== */
-.workspace{
-  display:grid; grid-template-columns: 300px 1fr; gap:16px; align-items:start;
-}
-.workspace.route-mode{ grid-template-columns: 300px 1fr 330px; }
-@media (max-width:1200px){ .workspace, .workspace.route-mode{ grid-template-columns: 280px 1fr; } .route-rail{ grid-column: 1 / -1; } }
-@media (max-width:800px){ .workspace, .workspace.route-mode{ grid-template-columns: 1fr; } }
+/* Small icon-only buttons for the route rail's header actions */
+.icon-btn{ width:30px; height:30px; border-radius:9px; border:1px solid var(--border); background:#fff; color:var(--text-mute); display:flex; align-items:center; justify-content:center; cursor:pointer; transition: all .15s; flex-shrink:0; }
+.icon-btn svg, .icon-btn i{ font-size:13px; width:13px; height:13px; }
+.icon-btn:hover{ border-color:var(--teal); color:var(--teal-dark); }
+.icon-btn.primary{ background:linear-gradient(135deg,var(--teal),var(--teal-dark)); color:#fff; border-color:transparent; }
+.icon-btn.primary:hover{ filter:brightness(1.06); color:#fff; }
+.night-mode .icon-btn{ background:#1e2a2f; border-color:#3a4b53; color:#9ab0b8; }
+.night-mode .icon-btn:hover{ border-color:#8ab4b0; color:#a0c8c4; }
 
-/* ---------- BROWSE / ROUTE MODE TOGGLE ---------- */
-.route-mode-actions{ display:none; gap:10px; }
+/* ===========================================================
+   FULL-SCREEN MAP + FLOATING PANELS
+   Same pattern as map/map.html: the map fills the viewport and
+   runs behind the navbar; everything else floats on top of it.
+   =========================================================== */
+.map-stage{ position:fixed; inset:0; z-index:0; background:#e4ece7; }
+.night-mode .map-stage{ background:#1e2a2f; }
+#routeMap{ position:absolute; inset:0; width:100%; height:100%; }
+
+/* "Plan a route" toggle - floats just under the sticky navbar, left side */
+#routeModeBtn{ position:fixed; top:100px; left:20px; z-index:500; }
 
 .panel{
   background:#fff; border:1px solid var(--border2); border-radius:20px;
@@ -141,8 +126,8 @@ body.night-mode::before{
 .night-mode .panel-head h2{ color:#d4dfe3; }
 .panel-head h2 svg{ width:15px; height:15px; color:var(--teal); }
 
-/* ---------- FILTER + LIST RAIL ---------- */
-.filter-rail{ max-height: calc(100vh - 210px); }
+/* ---------- FILTER + LIST RAIL (floating, left, under the route button) ---------- */
+.filter-rail{ position:fixed; top:156px; left:20px; width:300px; max-height: calc(100vh - 176px); z-index:500; }
 .filter-body{ padding:13px 15px; display:flex; flex-direction:column; gap:14px; }
 .search-box{ display:flex; align-items:center; gap:8px; background:var(--bg-soft); border:1px solid var(--border); border-radius:10px; padding:9px 12px; }
 .night-mode .search-box{ background:#1e2a2f; border-color:#3a4b53; }
@@ -206,13 +191,9 @@ body.night-mode::before{
 .night-mode .struct-row .sr-due.soon{ background:rgba(186,117,23,.22); color:#e0a94a; }
 .empty-list{ padding:24px 16px; text-align:center; color:var(--text-mute); font-size:.77rem; }
 
-/* ---------- MAP RAIL ---------- */
-.map-rail{ min-height: calc(100vh - 210px); padding:12px; }
-.map-stage{ position:relative; flex:1; border-radius:16px; overflow:hidden; min-height:540px; background:#e4ece7; }
-#routeMap{ position:absolute; inset:0; width:100%; height:100%; }
-
+/* ---------- MAP OVERLAY CONTROLS (float directly over the map) ---------- */
 .map-toolbar{
-  position:absolute; top:12px; left:12px; z-index:401;
+  position:fixed; top:100px; left:336px; z-index:401;
   display:flex; flex-direction:column; gap:5px;
   background:rgba(255,255,255,.92); backdrop-filter:blur(10px);
   border:1px solid var(--border); border-radius:12px; padding:5px;
@@ -227,7 +208,7 @@ body.night-mode::before{
 .map-tool.active{ background:var(--teal); color:#fff; }
 
 .map-summary-chip{
-  position:absolute; top:12px; left:50%; transform:translateX(-50%); z-index:401;
+  position:fixed; top:100px; left:50%; transform:translateX(-50%); z-index:401;
   background:rgba(255,255,255,.92); backdrop-filter:blur(10px); border:1px solid var(--border); border-radius:30px;
   padding:8px 18px; box-shadow:0 4px 14px rgba(0,0,0,.1);
   display:none; align-items:center; gap:14px; font-size:.75rem; color:var(--text-mute);
@@ -239,7 +220,7 @@ body.night-mode::before{
 .map-summary-chip .msc-div{ width:1px; height:12px; background:var(--border); }
 .night-mode .map-summary-chip .msc-div{ background:#3a4b53; }
 
-.map-compass{ position:absolute; bottom:36px; right:10px; z-index:401; width:38px; height:38px; pointer-events:none; }
+.map-compass{ position:fixed; bottom:36px; right:10px; z-index:401; width:38px; height:38px; pointer-events:none; }
 .map-compass .ring{ position:absolute; inset:0; border-radius:50%; background:rgba(255,255,255,.8); backdrop-filter:blur(8px); border:1px solid var(--border); box-shadow:0 4px 14px rgba(0,0,0,.1); }
 .night-mode .map-compass .ring{ background:rgba(33,47,51,.8); border-color:#2f3e45; }
 .map-compass .n, .map-compass .s{ position:absolute; left:50%; top:50%; font-size:8px; font-weight:800; transform:translate(-50%,-50%); }
@@ -248,10 +229,10 @@ body.night-mode::before{
 .night-mode .map-compass .n{ color:#e0645a; }
 .night-mode .map-compass .s{ color:#7f979f; }
 
-.map-hint{ display:none; position:absolute; bottom:8px; right:8px; z-index:401; font-size:.65rem; color:var(--text-mute); font-style:italic; background:rgba(255,255,255,.8); padding:3px 8px; border-radius:8px; }
+.map-hint{ display:none; position:fixed; bottom:8px; right:8px; z-index:401; font-size:.65rem; color:var(--text-mute); font-style:italic; background:rgba(255,255,255,.8); padding:3px 8px; border-radius:8px; }
 .night-mode .map-hint{ background:rgba(33,47,51,.8); color:#9ab0b8; }
 
-.box-select-rect{ position:absolute; border:1.5px dashed var(--teal); background:rgba(91,140,138,.14); z-index:500; pointer-events:none; }
+.box-select-rect{ position:fixed; border:1.5px dashed var(--teal); background:rgba(91,140,138,.14); z-index:500; pointer-events:none; }
 
 /* Leaflet marker tweaks - numbered stop badges reuse the same rounded
    circle language as the type icons (getStructureIcon), just showing an
@@ -259,8 +240,16 @@ body.night-mode::before{
 .rp-pin-num{ width:26px; height:26px; border-radius:50%; background:var(--teal-dark); border:2.5px solid #fff; color:#fff; font-size:.7rem; font-weight:800; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,.25); font-variant-numeric:tabular-nums; }
 .night-mode .rp-pin-num{ border-color:#212f33; }
 
-/* ---------- ROUTE RAIL ---------- */
-.route-rail{ display:none; max-height: calc(100vh - 210px); }
+/* ---------- ROUTE RAIL (floating, right, route mode only) ---------- */
+.route-rail{ position:fixed; top:100px; right:20px; width:330px; max-height: calc(100vh - 120px); z-index:500; }
+.route-rail-head{ padding:13px 15px; border-bottom:1px solid var(--border2); display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.night-mode .route-rail-head{ border-color:#2f3e45; }
+.route-rail-head .rail-head-text{ min-width:0; }
+.route-rail-head h2{ font-size:.92rem; font-weight:700; display:flex; align-items:center; gap:7px; color:var(--green-dark); }
+.night-mode .route-rail-head h2{ color:#d4dfe3; }
+.route-rail-head h2 i{ color:var(--teal); font-size:.85rem; }
+.route-rail-head .rail-head-actions{ display:flex; gap:6px; flex-shrink:0; }
+
 .route-summary{ padding:15px 17px; border-bottom:1px solid var(--border2); }
 .night-mode .route-summary{ border-color:#2f3e45; }
 .route-summary .rs-figure{ font-family: var(--font-display); font-style:italic; font-size:2.05rem; font-weight:600; color:var(--text); line-height:1; font-variant-numeric:tabular-nums; }
@@ -298,6 +287,19 @@ body.night-mode::before{
 
 :focus-visible{ outline:2px solid var(--teal); outline-offset:2px; }
 @media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
+
+@media (max-width:900px){
+  .filter-rail, .route-rail{ width:260px; }
+  .map-toolbar{ left:296px; }
+}
+@media (max-width:760px){
+  #routeModeBtn{ top:90px; }
+  .filter-rail{ top:146px; left:12px; width:calc(100vw - 24px); max-height:38vh; }
+  .route-rail{ top:calc(38vh + 158px); left:12px; right:12px; width:auto; max-height:calc(62vh - 178px); }
+  .map-toolbar{ top:auto; bottom:16px; left:12px; flex-direction:row; }
+  .select-tools{ flex-direction:row; }
+  .map-summary-chip{ top:90px; padding:6px 12px; gap:8px; font-size:.68rem; }
+}
 </style>
 </head>
 <body>
@@ -322,104 +324,94 @@ body.night-mode::before{
     </div>
 </nav>
 
-<div class="page-wrapper">
+<!-- ============ FULL-SCREEN MAP (behind the navbar, like map.html) ============ -->
+<div class="map-stage" id="mapStage">
+    <div id="routeMap"></div>
 
-  <div class="page-header">
+    <div class="map-toolbar">
+      <div class="select-tools" id="selectTools">
+        <button class="map-tool active" id="toolPointer" data-tip="Select"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg></button>
+        <button class="map-tool" id="toolBox" data-tip="Box-select multiple (drag on map)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 3"><rect x="4" y="4" width="16" height="16" rx="2"/></svg></button>
+      </div>
+      <button class="map-tool" id="toolSat" data-tip="Toggle satellite backdrop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>
+    </div>
+
+    <div class="map-summary-chip" id="mapSummary">
+      <span><b id="chipCount">0</b> selected</span>
+      <span class="msc-div"></span>
+      <span><b id="chipDist">0.0</b> km</span>
+      <span class="msc-div"></span>
+      <span><b id="chipTime">0h 00m</b> drive</span>
+    </div>
+
+    <div class="map-compass" data-tip="North">
+      <div class="ring"></div>
+      <span class="n">N</span><span class="s">S</span>
+    </div>
+
+    <div class="map-hint" id="mapHint">Route distances are straight-line, for planning only</div>
+</div>
+
+<!-- ============ "Plan a route" toggle - floats under the sticky navbar, left ============ -->
+<button class="btn primary" id="routeModeBtn"><i class="fas fa-route"></i>&nbsp;Plan a route</button>
+
+<!-- ============ FLOATING LEFT: FILTERS + STRUCTURE LIST ============ -->
+<div class="panel filter-rail">
+  <div class="panel-head">
+    <div class="eyebrow">Filter</div>
+    <h2><i class="fas fa-layer-group"></i> Structures</h2>
+  </div>
+  <div class="filter-body">
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input type="text" id="searchInput" placeholder="Search by name or location…" autocomplete="off">
+    </div>
     <div>
-      <h1 id="pageTitle">Structures map</h1>
-      <p id="pageDesc">Browse the portfolio on the map, or click "Plan a route" to start building an inspection round.</p>
+      <div class="fg-label">Type</div>
+      <div class="chip-row" id="typeChips"></div>
     </div>
-    <div class="head-actions">
-      <div class="route-mode-actions" id="routeModeActions">
-        <button class="btn" id="autoSelectBtn"><i class="fas fa-bolt"></i>&nbsp;Select due this month</button>
-        <button class="btn primary" id="exportBtn"><i class="fas fa-file-export"></i>&nbsp;Export route (CSV)</button>
+    <div>
+      <div class="fg-label">Condition band</div>
+      <div class="chip-row" id="bandChips"></div>
+    </div>
+    <div class="toggle-row">
+      <div>
+        <div class="tr-label">Due within 3 months</div>
+        <div class="tr-sub">Includes overdue &amp; never-inspected</div>
       </div>
-      <button class="btn primary" id="routeModeBtn"><i class="fas fa-route"></i>&nbsp;Plan a route</button>
+      <div class="switch" id="dueToggle" role="switch" aria-checked="false" tabindex="0"></div>
+    </div>
+    <button class="filter-reset" id="resetFilters">Reset filters</button>
+  </div>
+  <div class="list-count" id="listCount">Loading…</div>
+  <ul class="struct-list" id="structList"></ul>
+</div>
+
+<!-- ============ FLOATING RIGHT: ROUTE ITINERARY (route mode only) ============ -->
+<div class="panel route-rail" id="routeRail">
+  <div class="route-rail-head">
+    <div class="rail-head-text">
+      <div class="eyebrow">Plan</div>
+      <h2><i class="fas fa-route"></i> Today's Route</h2>
+    </div>
+    <div class="rail-head-actions">
+      <button class="icon-btn" id="autoSelectBtn" data-tip="Select due this month"><i class="fas fa-bolt"></i></button>
+      <button class="icon-btn primary" id="exportBtn" data-tip="Export route (CSV)"><i class="fas fa-file-export"></i></button>
     </div>
   </div>
-
-  <div class="workspace" id="workspace">
-
-    <!-- ============ LEFT: FILTERS + STRUCTURE LIST ============ -->
-    <div class="panel filter-rail">
-      <div class="panel-head">
-        <div class="eyebrow">Filter</div>
-        <h2><i class="fas fa-layer-group"></i> Structures</h2>
-      </div>
-      <div class="filter-body">
-        <div class="search-box">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
-          <input type="text" id="searchInput" placeholder="Search by name or location…" autocomplete="off">
-        </div>
-        <div>
-          <div class="fg-label">Type</div>
-          <div class="chip-row" id="typeChips"></div>
-        </div>
-        <div>
-          <div class="fg-label">Condition band</div>
-          <div class="chip-row" id="bandChips"></div>
-        </div>
-        <div class="toggle-row">
-          <div>
-            <div class="tr-label">Due within 3 months</div>
-            <div class="tr-sub">Includes overdue &amp; never-inspected</div>
-          </div>
-          <div class="switch" id="dueToggle" role="switch" aria-checked="false" tabindex="0"></div>
-        </div>
-        <button class="filter-reset" id="resetFilters">Reset filters</button>
-      </div>
-      <div class="list-count" id="listCount">Loading…</div>
-      <ul class="struct-list" id="structList"></ul>
+  <div class="route-summary">
+    <div class="rs-figure" id="rsFigure">0.0<small>km total</small></div>
+    <div class="rs-meta">
+      <span><b id="rsStops">0</b> stops</span>
+      <span><b id="rsTime">0h 00m</b> drive</span>
     </div>
-
-    <!-- ============ CENTER: MAP ============ -->
-    <div class="panel map-rail">
-      <div class="map-stage" id="mapStage">
-        <div id="routeMap"></div>
-
-        <div class="map-toolbar">
-          <div class="select-tools" id="selectTools">
-            <button class="map-tool active" id="toolPointer" data-tip="Select"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg></button>
-            <button class="map-tool" id="toolBox" data-tip="Box-select multiple (drag on map)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 3"><rect x="4" y="4" width="16" height="16" rx="2"/></svg></button>
-          </div>
-          <button class="map-tool" id="toolSat" data-tip="Toggle satellite backdrop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>
-        </div>
-
-        <div class="map-summary-chip" id="mapSummary">
-          <span><b id="chipCount">0</b> selected</span>
-          <span class="msc-div"></span>
-          <span><b id="chipDist">0.0</b> km</span>
-          <span class="msc-div"></span>
-          <span><b id="chipTime">0h 00m</b> drive</span>
-        </div>
-
-        <div class="map-compass" data-tip="North">
-          <div class="ring"></div>
-          <span class="n">N</span><span class="s">S</span>
-        </div>
-
-        <div class="map-hint" id="mapHint">Route distances are straight-line, for planning only</div>
-      </div>
-    </div>
-
-    <!-- ============ RIGHT: ROUTE ITINERARY ============ -->
-    <div class="panel route-rail" id="routeRail">
-      <div class="route-summary">
-        <div class="rs-figure" id="rsFigure">0.0<small>km total</small></div>
-        <div class="rs-meta">
-          <span><b id="rsStops">0</b> stops</span>
-          <span><b id="rsTime">0h 00m</b> drive</span>
-        </div>
-      </div>
-      <div class="route-actions">
-        <button class="btn" id="optimizeBtn" disabled><i class="fas fa-route"></i>&nbsp;Optimize</button>
-        <button class="btn" id="clearBtn" disabled><i class="fas fa-trash-can"></i>&nbsp;Clear</button>
-      </div>
-      <ul class="route-list" id="routeList"></ul>
-      <div class="route-footnote">Route order is editable — drag stops to reorder.</div>
-    </div>
-
   </div>
+  <div class="route-actions">
+    <button class="btn" id="optimizeBtn" disabled><i class="fas fa-route"></i>&nbsp;Optimize</button>
+    <button class="btn" id="clearBtn" disabled><i class="fas fa-trash-can"></i>&nbsp;Clear</button>
+  </div>
+  <ul class="route-list" id="routeList"></ul>
+  <div class="route-footnote">Route order is editable — drag stops to reorder.</div>
 </div>
 
 <script src="../test.js"></script>
