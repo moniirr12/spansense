@@ -119,10 +119,14 @@ body.night-mode::before{
    3-COLUMN WORKSPACE
    =========================================================== */
 .workspace{
-  display:grid; grid-template-columns: 300px 1fr 330px; gap:16px; align-items:start;
+  display:grid; grid-template-columns: 300px 1fr; gap:16px; align-items:start;
 }
-@media (max-width:1200px){ .workspace{ grid-template-columns: 280px 1fr; } .route-rail{ grid-column: 1 / -1; } }
-@media (max-width:800px){ .workspace{ grid-template-columns: 1fr; } }
+.workspace.route-mode{ grid-template-columns: 300px 1fr 330px; }
+@media (max-width:1200px){ .workspace, .workspace.route-mode{ grid-template-columns: 280px 1fr; } .route-rail{ grid-column: 1 / -1; } }
+@media (max-width:800px){ .workspace, .workspace.route-mode{ grid-template-columns: 1fr; } }
+
+/* ---------- BROWSE / ROUTE MODE TOGGLE ---------- */
+.route-mode-actions{ display:none; gap:10px; }
 
 .panel{
   background:#fff; border:1px solid var(--border2); border-radius:20px;
@@ -215,6 +219,7 @@ body.night-mode::before{
   box-shadow:0 4px 14px rgba(0,0,0,.1);
 }
 .night-mode .map-toolbar{ background:rgba(33,47,51,.92); border-color:#2f3e45; }
+.select-tools{ display:none; flex-direction:column; gap:5px; }
 .map-tool{ width:32px; height:32px; border-radius:8px; border:none; background:none; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--text-mute); transition: all .12s; }
 .map-tool svg{ width:16px; height:16px; }
 .map-tool:hover{ background:var(--bg-soft); color:var(--teal-dark); }
@@ -225,7 +230,7 @@ body.night-mode::before{
   position:absolute; top:12px; left:50%; transform:translateX(-50%); z-index:401;
   background:rgba(255,255,255,.92); backdrop-filter:blur(10px); border:1px solid var(--border); border-radius:30px;
   padding:8px 18px; box-shadow:0 4px 14px rgba(0,0,0,.1);
-  display:flex; align-items:center; gap:14px; font-size:.75rem; color:var(--text-mute);
+  display:none; align-items:center; gap:14px; font-size:.75rem; color:var(--text-mute);
   font-variant-numeric: tabular-nums;
 }
 .night-mode .map-summary-chip{ background:rgba(33,47,51,.92); border-color:#2f3e45; color:#9ab0b8; }
@@ -243,7 +248,7 @@ body.night-mode::before{
 .night-mode .map-compass .n{ color:#e0645a; }
 .night-mode .map-compass .s{ color:#7f979f; }
 
-.map-hint{ position:absolute; bottom:8px; right:8px; z-index:401; font-size:.65rem; color:var(--text-mute); font-style:italic; background:rgba(255,255,255,.8); padding:3px 8px; border-radius:8px; }
+.map-hint{ display:none; position:absolute; bottom:8px; right:8px; z-index:401; font-size:.65rem; color:var(--text-mute); font-style:italic; background:rgba(255,255,255,.8); padding:3px 8px; border-radius:8px; }
 .night-mode .map-hint{ background:rgba(33,47,51,.8); color:#9ab0b8; }
 
 .box-select-rect{ position:absolute; border:1.5px dashed var(--teal); background:rgba(91,140,138,.14); z-index:500; pointer-events:none; }
@@ -255,7 +260,7 @@ body.night-mode::before{
 .night-mode .rp-pin-num{ border-color:#212f33; }
 
 /* ---------- ROUTE RAIL ---------- */
-.route-rail{ max-height: calc(100vh - 210px); }
+.route-rail{ display:none; max-height: calc(100vh - 210px); }
 .route-summary{ padding:15px 17px; border-bottom:1px solid var(--border2); }
 .night-mode .route-summary{ border-color:#2f3e45; }
 .route-summary .rs-figure{ font-family: var(--font-display); font-style:italic; font-size:2.05rem; font-weight:600; color:var(--text); line-height:1; font-variant-numeric:tabular-nums; }
@@ -321,16 +326,19 @@ body.night-mode::before{
 
   <div class="page-header">
     <div>
-      <h1>Plan today's inspection round</h1>
-      <p>Select several structures from the list or map, then order them into a route before you head out.</p>
+      <h1 id="pageTitle">Structures map</h1>
+      <p id="pageDesc">Browse the portfolio on the map, or click "Plan a route" to start building an inspection round.</p>
     </div>
     <div class="head-actions">
-      <button class="btn" id="autoSelectBtn"><i class="fas fa-bolt"></i>&nbsp;Select due this month</button>
-      <button class="btn primary" id="exportBtn"><i class="fas fa-file-export"></i>&nbsp;Export route (CSV)</button>
+      <div class="route-mode-actions" id="routeModeActions">
+        <button class="btn" id="autoSelectBtn"><i class="fas fa-bolt"></i>&nbsp;Select due this month</button>
+        <button class="btn primary" id="exportBtn"><i class="fas fa-file-export"></i>&nbsp;Export route (CSV)</button>
+      </div>
+      <button class="btn primary" id="routeModeBtn"><i class="fas fa-route"></i>&nbsp;Plan a route</button>
     </div>
   </div>
 
-  <div class="workspace">
+  <div class="workspace" id="workspace">
 
     <!-- ============ LEFT: FILTERS + STRUCTURE LIST ============ -->
     <div class="panel filter-rail">
@@ -370,8 +378,10 @@ body.night-mode::before{
         <div id="routeMap"></div>
 
         <div class="map-toolbar">
-          <button class="map-tool active" id="toolPointer" data-tip="Select"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg></button>
-          <button class="map-tool" id="toolBox" data-tip="Box-select multiple (drag on map)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 3"><rect x="4" y="4" width="16" height="16" rx="2"/></svg></button>
+          <div class="select-tools" id="selectTools">
+            <button class="map-tool active" id="toolPointer" data-tip="Select"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg></button>
+            <button class="map-tool" id="toolBox" data-tip="Box-select multiple (drag on map)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 3"><rect x="4" y="4" width="16" height="16" rx="2"/></svg></button>
+          </div>
           <button class="map-tool" id="toolSat" data-tip="Toggle satellite backdrop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>
         </div>
 
@@ -388,12 +398,12 @@ body.night-mode::before{
           <span class="n">N</span><span class="s">S</span>
         </div>
 
-        <div class="map-hint">Route distances are straight-line, for planning only</div>
+        <div class="map-hint" id="mapHint">Route distances are straight-line, for planning only</div>
       </div>
     </div>
 
     <!-- ============ RIGHT: ROUTE ITINERARY ============ -->
-    <div class="panel route-rail">
+    <div class="panel route-rail" id="routeRail">
       <div class="route-summary">
         <div class="rs-figure" id="rsFigure">0.0<small>km total</small></div>
         <div class="rs-meta">

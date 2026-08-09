@@ -1,8 +1,10 @@
 // ============================================
 // spanSense - Author - Route Planner
-// Multi-select structures (list or map) and order them into an inspection
-// route. Reuses map.js's own condition-band thresholds/colors and marker
-// icon language so this reads as the same product's map, not a new one.
+// Loads as an ordinary browsable structure map (click a marker/row for an
+// info popup); "Plan a route" switches it into selection mode to multi-
+// select structures and order them into an inspection route. Reuses
+// map.js's own condition-band thresholds/colors and marker icon language
+// so this reads as the same product's map, not a new one.
 // API_BASE / formatDate come from ../test.js (loaded before this file).
 // ============================================
 (function () {
@@ -67,6 +69,17 @@
     };
     function typeLabel(id) { var t = TYPES.filter(function (t) { return t.id === id; })[0]; return t ? t.label : id; }
 
+    // Browse-mode click popup - short info card, same fields as map.js's
+    // marker popup, shown until route mode takes over marker clicks.
+    function popupHtml(s) {
+        var tier = bciTier(s.bci_av);
+        return '<b>' + s.name + '</b><br>' +
+            (s.location ? 'Location: ' + s.location + '<br>' : '') +
+            'Type: ' + typeLabel(s.type) + '<br>' +
+            'Condition: <span style="color:' + tier.color + ';font-weight:700;">' + tier.label + '</span>' +
+            (s.bci_av != null ? ' (' + Math.round(s.bci_av) + ')' : '');
+    }
+
     /* ---------------------------------------------------------
        DUE-DATE LOGIC
        Same 2yr default / override rules as planning.html's
@@ -123,6 +136,7 @@
        STATE
        --------------------------------------------------------- */
     var STRUCTURES = [], byId = {};
+    var routeMode = false;
     var state = {
         search: '',
         types: new Set(TYPES.map(function (t) { return t.id; })),
@@ -225,13 +239,18 @@
         visible.forEach(function (s) {
             var tier = bciTier(s.bci_av);
             var li = document.createElement('li');
-            li.className = 'struct-row' + (state.selected.indexOf(s.id) > -1 ? ' selected' : '');
+            li.className = 'struct-row' + (routeMode && state.selected.indexOf(s.id) > -1 ? ' selected' : '');
             li.innerHTML =
                 '<div class="chk">' + checkSvg + '</div>' +
                 '<div class="band-dot" style="background:' + tier.color + '"></div>' +
                 '<div class="sr-main"><div class="sr-name">' + s.name + '</div><div class="sr-sub">' + (s.location || typeLabel(s.type)) + ' · ' + typeLabel(s.type) + '</div></div>' +
                 dueTag(s.dueMonths);
-            li.addEventListener('click', function () { toggleSelect(s.id); });
+            li.addEventListener('click', function () {
+                if (routeMode) { toggleSelect(s.id); return; }
+                map.setView([s.latitude, s.longitude], 15);
+                var m = markerById[s.id];
+                if (m) m.openPopup();
+            });
             listEl.appendChild(li);
         });
     }
@@ -278,7 +297,9 @@
         Object.keys(markerById).forEach(function (id) {
             var s = byId[id];
             var m = markerById[id];
-            var selIdx = state.selected.indexOf(s.id);
+            // Numbered route badges are route-mode-only - a leftover
+            // selection shouldn't make browse mode look mid-route.
+            var selIdx = routeMode ? state.selected.indexOf(s.id) : -1;
             m.setIcon(pinIcon(s, selIdx));
             m.setOpacity(passesFilter(s) ? 1 : 0.28);
             m.setZIndexOffset(selIdx > -1 ? 1000 : 0);
@@ -289,7 +310,14 @@
         STRUCTURES.forEach(function (s) {
             var marker = L.marker([s.latitude, s.longitude], { icon: pinIcon(s, -1) });
             marker.bindTooltip(s.name, { direction: 'top', offset: [0, -14] });
-            marker.on('click', function () { toggleSelect(s.id); });
+            marker.bindPopup(popupHtml(s), { closeButton: false });
+            // bindPopup wires its own click-to-open handler - remove it so
+            // click behavior can be driven manually by routeMode below.
+            marker.off('click');
+            marker.on('click', function () {
+                if (routeMode) { toggleSelect(s.id); return; }
+                marker.openPopup();
+            });
             marker.addTo(markersLayer);
             markerById[s.id] = marker;
         });
@@ -351,6 +379,44 @@
         boxRectEl.style.width = (x2 - x1) + 'px';
         boxRectEl.style.height = (y2 - y1) + 'px';
     }
+
+    /* ---------------------------------------------------------
+       BROWSE / ROUTE MODE TOGGLE
+       Page loads as a plain browsable map (click = popup). "Plan a route"
+       switches marker/list clicks over to selection and reveals the route-
+       building UI; everything selection-related stays hidden until then.
+       --------------------------------------------------------- */
+    var routeModeBtn = document.getElementById('routeModeBtn');
+    var routeModeActions = document.getElementById('routeModeActions');
+    var routeRailEl = document.getElementById('routeRail');
+    var workspaceEl = document.getElementById('workspace');
+    var selectToolsEl = document.getElementById('selectTools');
+    var mapSummaryEl = document.getElementById('mapSummary');
+    var mapHintEl = document.getElementById('mapHint');
+    var pageTitleEl = document.getElementById('pageTitle');
+    var pageDescEl = document.getElementById('pageDesc');
+
+    function setRouteMode(on) {
+        routeMode = on;
+        routeModeBtn.innerHTML = on
+            ? '<i class="fas fa-xmark"></i>&nbsp;Exit route mode'
+            : '<i class="fas fa-route"></i>&nbsp;Plan a route';
+        routeModeActions.style.display = on ? 'flex' : 'none';
+        routeRailEl.style.display = on ? 'flex' : 'none';
+        selectToolsEl.style.display = on ? 'flex' : 'none';
+        mapSummaryEl.style.display = on ? 'flex' : 'none';
+        mapHintEl.style.display = on ? 'block' : 'none';
+        workspaceEl.classList.toggle('route-mode', on);
+        pageTitleEl.textContent = on ? 'Plan today’s inspection round' : 'Structures map';
+        pageDescEl.textContent = on
+            ? 'Select several structures from the list or map, then order them into a route before you head out.'
+            : 'Browse the portfolio on the map, or click "Plan a route" to start building an inspection round.';
+        if (!on) setBoxSelectMode(false);
+        map.closePopup();
+        renderPins();
+    }
+    routeModeBtn.addEventListener('click', function () { setRouteMode(!routeMode); });
+    setRouteMode(false);
 
     /* ---------------------------------------------------------
        SELECTION + ROUTE
