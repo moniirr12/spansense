@@ -235,25 +235,114 @@
   // Shared by the live save path and the queue flush: uploads every photo
   // blob for the job, builds photoData keyed by the exact temp key the
   // server computes in /save-inspection, then saves the inspection.
+  //
+  // Two retry hazards on a genuinely flaky (not cleanly offline/online)
+  // connection, both handled here:
+  //  - A photo upload can succeed on the server but the response never
+  //    arrives, or a later photo in the same job can fail. Without tracking
+  //    which ones already landed, the *next* attempt re-uploads every photo
+  //    in the job from scratch - wasted bytes on exactly the connection that
+  //    can least afford it. Each photo's server-assigned path is cached onto
+  //    the job (and persisted back to IndexedDB via FieldDB.updateJob, when
+  //    this is a queued retry rather than the first live attempt) so a retry
+  //    skips whatever already succeeded.
+  //  - The final saveInspection call can itself succeed server-side and
+  //    still look like a failure here if the response is lost - a naive
+  //    retry would then create a second, fully-duplicate inspection. job.
+  //    idempotencyKey is a client-generated id echoed to the server, which
+  //    recognizes a repeat and returns the original inspection instead of
+  //    inserting again (see /save-inspection).
   async function submitJob(job) {
     const photoData = {};
     for (const p of job.photos) {
-      const uploadRes = await Api.uploadPhotos(job.structureId, {
-        defectId: p.tempDefectKey,
-        inspectionDate: job.inspection.inspection_date,
-        files: [{ blob: p.blob, filename: p.filename }],
-        descriptions: [p.description || ''],
-        displayOrders: [p.displayOrder || 0]
-      });
-      const uploaded = uploadRes.photos[0];
+      if (!p.uploadedPath) {
+        const uploadRes = await Api.uploadPhotos(job.structureId, {
+          defectId: p.tempDefectKey,
+          inspectionDate: job.inspection.inspection_date,
+          files: [{ blob: p.blob, filename: p.filename }],
+          descriptions: [p.description || ''],
+          displayOrders: [p.displayOrder || 0]
+        });
+        p.uploadedPath = uploadRes.photos[0].path;
+        if (job.id != null) { try { await FieldDB.updateJob(job); } catch {} }
+      }
       if (!photoData[p.tempDefectKey]) photoData[p.tempDefectKey] = [];
       photoData[p.tempDefectKey].push({
-        photo_url: uploaded.path,
+        photo_url: p.uploadedPath,
         photo_description: p.description || '',
         display_order: p.displayOrder || 0
       });
     }
-    return Api.saveInspection({ inspection: job.inspection, defects: job.defects, photoData, notes: job.notes || [] });
+    return Api.saveInspection({
+      inspection: Object.assign({ client_submission_id: job.idempotencyKey }, job.inspection),
+      defects: job.defects, photoData, notes: job.notes || []
+    });
+  }
+
+  /* ============================================================
+     DRAFT AUTOSAVE / RECOVERY
+     An inspection being actively edited (S.draft) lives only in memory
+     until Save is pressed - on a flaky-signal field job, a backgrounded tab
+     getting killed by the OS, or a reload while chasing a signal, loses the
+     whole thing with no warning. Periodically snapshotting it to IndexedDB
+     (and offering to restore it on next launch) is a safety net, not a
+     replacement for Save - it's cleared the moment the draft actually
+     becomes a queued job or a real save.
+     ============================================================ */
+  let draftAutosaveTimer = null;
+  function startDraftAutosave() {
+    stopDraftAutosave();
+    draftAutosaveTimer = setInterval(persistActiveDraft, 8000);
+  }
+  function stopDraftAutosave() {
+    if (draftAutosaveTimer) { clearInterval(draftAutosaveTimer); draftAutosaveTimer = null; }
+  }
+  async function persistActiveDraft() {
+    if (!S.draft) return;
+    try {
+      await FieldDB.saveActiveDraft({ draft: S.draft, currentSpan: S.currentSpan, savedAt: new Date().toISOString() });
+    } catch (err) {
+      console.error('Draft autosave failed', err);
+    }
+  }
+  // The two moments a mobile browser is most likely to actually kill this
+  // tab - covers backgrounding/OS memory pressure and real navigation away,
+  // which the 8s interval alone could miss by a few seconds either way.
+  document.addEventListener('visibilitychange', () => { if (document.hidden) persistActiveDraft(); });
+  window.addEventListener('pagehide', () => { persistActiveDraft(); });
+
+  async function maybeOfferDraftRecovery() {
+    let saved;
+    try { saved = await FieldDB.getActiveDraft(); } catch { return; }
+    if (!saved || !saved.draft) return;
+    const when = saved.savedAt
+      ? new Date(saved.savedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+      : null;
+    const resume = await showConfirmModal({
+      title: 'Resume unsaved inspection?',
+      message: `An inspection for ${saved.draft.structureName || 'a structure'} wasn't saved${when ? ` (autosaved ${when})` : ''}. Resume it, or discard and start fresh?`,
+      confirmLabel: 'Resume',
+      cancelLabel: 'Discard'
+    });
+    if (!resume) { await FieldDB.clearActiveDraft(); return; }
+    S.currentStructure = {
+      id: saved.draft.structureId, name: saved.draft.structureName,
+      type: saved.draft.structureType, span_number: saved.draft.totalSpans
+    };
+    try {
+      await loadElementsFor(saved.draft.structureType);
+    } catch (err) {
+      toast('Could not load the element list to resume this draft - try again once you have a signal.');
+      return;
+    }
+    // Object URLs don't survive a reload even though the underlying Blobs
+    // (restored intact via IndexedDB's structured clone) do - every photo
+    // needs a fresh one before its thumbnail will render.
+    saved.draft.defects.forEach((d) => d.photos.forEach((p) => { p.localUrl = URL.createObjectURL(p.blob); }));
+    saved.draft.generalPhotos.forEach((p) => { p.localUrl = URL.createObjectURL(p.blob); });
+    S.draft = saved.draft;
+    S.currentSpan = saved.currentSpan || (S.draft.spans[0] ? S.draft.spans[0].spanNumber : 1);
+    openViewer();
   }
 
   /* ============================================================
@@ -340,6 +429,7 @@
     ensureHistoryGuard();
     updateSyncBar();
     await loadStructures();
+    await maybeOfferDraftRecovery();
   }
 
   async function boot() {
@@ -818,6 +908,7 @@
     setHomeTab('twin');
     document.getElementById('viewerSaveBar').hidden = false;
     goto('viewer');
+    startDraftAutosave();
   }
   function renderSpanTabs() {
     const row = document.getElementById('spanTabsRow');
@@ -1568,6 +1659,7 @@
   async function doSave() {
     const btn = document.getElementById('saveInspectionBtn');
     btn.disabled = true; const originalText = btn.textContent; btn.textContent = 'Saving…';
+    let job; // declared outside try so the offline catch below can still queue it
     try {
       const dateStr = new Date().toISOString().slice(0, 10);
       const structureId = S.draft.structureId;
@@ -1634,7 +1726,11 @@
       const notes = S.draft.fieldNote && S.draft.fieldNote.trim()
         ? [{ text: S.draft.fieldNote.trim(), source: 'field' }] : [];
 
-      const job = { structureId, structureName: S.draft.structureName, inspection, defects, photos, notes };
+      // Generated once and reused across every retry of this same job
+      // (including the immediate offline fallback below and any later
+      // flushQueue attempt) - see submitJob's comment for why.
+      const idempotencyKey = (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      job = { structureId, structureName: S.draft.structureName, inspection, defects, photos, notes, idempotencyKey };
 
       // Always attempt the live save first - navigator.onLine is only ever
       // a hint (some browsers/networks report it wrong) and the real
@@ -1643,45 +1739,21 @@
       noteRequestSucceeded();
       toast('Inspection saved.');
       S.draft.defects.forEach((d) => d.photos.forEach((p) => URL.revokeObjectURL(p.localUrl)));
+      stopDraftAutosave();
+      await FieldDB.clearActiveDraft();
       stack = ['structures', 'inspections'];
       renderStack(true);
       await openInspections(structureId);
     } catch (err) {
       if (err.offline) {
-        const dateStr = new Date().toISOString().slice(0, 10);
-        const structureId = S.draft.structureId;
-        // rebuild the same job shape for queuing (blobs survive in IndexedDB)
-        const seen = new Set();
-        S.draft.defects.forEach((d) => { const k = `${d.spanNumber}-${d.elementNumber}`; d.isPrimary = !seen.has(k); seen.add(k); });
-        const spansPayload = S.draft.spans.map((sp) => {
-          const savedSpan = S.currentSpan; S.currentSpan = sp.spanNumber;
-          const { bciAv, bciCrit } = computeSpanBci(); S.currentSpan = savedSpan;
-          const spanEntries = S.draft.defects.filter((d) => d.spanNumber === sp.spanNumber);
-          return { spanNumber: sp.spanNumber, elementsInspected: spanEntries.length > 0,
-            photographsTaken: spanEntries.some((d) => d.photos.length > 0), comments: sp.comments || '',
-            bciCrit: Number(bciCrit.toFixed(2)), bciAv: Number(bciAv.toFixed(2)) };
-        });
-        const inspection = {
-          structure_id: structureId, structure_name: S.draft.structureName, inspection_date: dateStr,
-          inspection_type: S.draft.inspectionType, inspector_name: S.session?.fullName || S.session?.username || 'Field inspector',
-          total_spans: S.draft.totalSpans, conclusions: S.draft.conclusions || '', source: 'field', spans: spansPayload
-        };
-        const defects = S.draft.defects.map((d) => ({
-          spanNumber: d.spanNumber, elementNumber: d.elementNumber, defectType: d.defectType, defectNumber: d.defectNumber,
-          severity: parseInt(d.severity, 10), extent: d.extent, worksRequired: d.worksRequired, priority: d.priority,
-          cost: d.cost, comments: d.comments, remedial_works: d.remedial_works, timestamp: d.timestamp,
-          posX: null, posY: null, posZ: null, isPrimary: d.isPrimary
-        }));
-        const photos = [];
-        S.draft.defects.forEach((d) => {
-          const tempKey = `${structureId}_${dateStr}_${d.spanNumber}_${d.elementNumber}_${d.defectType}.${d.defectNumber}`;
-          d.photos.forEach((p) => photos.push({ tempDefectKey: tempKey, blob: p.blob, filename: p.filename, description: p.description, displayOrder: p.displayOrder }));
-        });
-        S.draft.generalPhotos.forEach((p) => photos.push({ tempDefectKey: 'general', blob: p.blob, filename: p.filename, description: p.description, displayOrder: p.displayOrder }));
-        const notes = S.draft.fieldNote && S.draft.fieldNote.trim()
-          ? [{ text: S.draft.fieldNote.trim(), source: 'field' }] : [];
-        await FieldDB.queueJob({ structureId, structureName: S.draft.structureName, inspection, defects, photos, notes });
+        // job (with any photos that already made it through submitJob's
+        // partial attempt above, each carrying its uploadedPath) is queued
+        // as-is so a later flushQueue retry picks up where this left off
+        // instead of re-uploading from scratch.
+        await FieldDB.queueJob(job);
         toast('Offline. Inspection queued, will sync automatically.');
+        stopDraftAutosave();
+        await FieldDB.clearActiveDraft();
         updateSyncBar();
         stack = ['structures', 'inspections'];
         renderStack(true);

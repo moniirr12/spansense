@@ -246,6 +246,11 @@
                     if (!findResponse.ok) throw new Error(findResult.message || "Failed to find inspection");
                     inspectionId = findResult.inspectionId;
                     payload.inspectionId = inspectionId;
+                    // Echoed back so the server can tell whether someone else
+                    // saved this inspection since it was loaded (see
+                    // loadDefectsFromAPI in inspection.js and the version
+                    // check in /update-inspection).
+                    payload.version = inspectionData.version;
                 }
 
                 const endpoint = isEditMode ? '/update-inspection' : '/save-inspection';

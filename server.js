@@ -165,6 +165,21 @@ function dbRun(query, params = []) {
     });
 }
 
+// Defense-in-depth for /save-inspection and /update-inspection: the real
+// XSS fix is escaping on render (every consumer of structure_name/
+// inspector_name/conclusions must do that regardless), but these short
+// label fields never legitimately contain angle brackets, so stripping them
+// on write closes the door even if some future render path forgets to
+// escape. Not applied to conclusions - that's freeform inspection text that
+// can legitimately contain "<"/">" (e.g. "crack width < 2mm"), so mangling
+// it here would corrupt real engineering notes; it's capped for length
+// instead and relies on render-time escaping like everything else does.
+function stripAngleBrackets(str, maxLength) {
+    if (str == null) return str;
+    const cleaned = String(str).replace(/[<>]/g, '');
+    return maxLength ? cleaned.slice(0, maxLength) : cleaned;
+}
+
 // Initialize database tables
 async function initDatabase() {
     try {
@@ -260,6 +275,12 @@ async function initDatabase() {
         await pool.query(`ALTER TABLE bridges ADD COLUMN IF NOT EXISTS width DECIMAL`);
         await pool.query(`ALTER TABLE bridges ADD COLUMN IF NOT EXISTS load_capacity DECIMAL`);
 
+        // Optimistic-concurrency counter for PATCH /api/bridges/:id/info - lets
+        // that endpoint detect two people editing the same structure's info
+        // panel at once instead of whoever saves last silently overwriting the
+        // other's fields. See the matching `version` column on inspections.
+        await pool.query(`ALTER TABLE bridges ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 1`);
+
         // Per-span geometry and deck construction - a structure's own
         // span/length/width columns above are just a "typical span"
         // shorthand (e.g. total length / span count), not real per-span
@@ -314,6 +335,29 @@ async function initDatabase() {
         await pool.query(`ALTER TABLE inspections ADD COLUMN IF NOT EXISTS reviewed_by TEXT`);
         await pool.query(`ALTER TABLE inspections ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMP`);
         await pool.query(`ALTER TABLE inspections ADD COLUMN IF NOT EXISTS engineer_comments TEXT`);
+
+        // Optimistic-concurrency counter for PUT /update-inspection - every
+        // save there deletes and reinserts every span/defect row from the
+        // client's in-memory copy, so without this, two people editing the
+        // same inspection at once means whoever saves second silently wipes
+        // out whatever the first person just added. See the matching
+        // `version` column on bridges.
+        await pool.query(`ALTER TABLE inspections ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 1`);
+
+        // Idempotency key for /save-inspection - Field generates one per
+        // save attempt and resends the same one on every retry of that
+        // attempt (see doSave/submitJob in field/js/app.js). On a flaky
+        // connection the request can succeed on the server while the
+        // response never reaches the client, which looks identical to a
+        // failure - without this, the client's retry would create a second,
+        // fully-duplicate inspection. A partial unique index (only enforced
+        // when a key is actually present) leaves desktop saves, which never
+        // send one, unaffected.
+        await pool.query(`ALTER TABLE inspections ADD COLUMN IF NOT EXISTS client_submission_id TEXT`);
+        await pool.query(`
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_inspections_client_submission_id
+            ON inspections (client_submission_id) WHERE client_submission_id IS NOT NULL
+        `);
 
         // Tags which client saved this inspection - 'desktop' (the existing
         // full inspection1.html flow) or 'field' (spanSense Field's phone
@@ -1184,25 +1228,39 @@ app.patch('/api/bridges/:id/info', requireAuth, async (req, res) => {
         const {
             name, type, location, latitude, longitude, description,
             span_number, length, width, built_year, load_capacity,
-            primary_material, secondary_material
+            primary_material, secondary_material, version
         } = req.body;
         if (!name || !String(name).trim()) {
             return res.status(400).json({ error: 'name is required' });
         }
-        await pool.query(
+        // Optimistic concurrency: the client echoes back the version it
+        // loaded, and the WHERE clause only matches if nobody else has saved
+        // since. A missing/non-integer version fails closed (treated as a
+        // conflict) rather than silently applying the overwrite.
+        const clientVersion = Number.isInteger(version) ? version : -1;
+        const result = await pool.query(
             `UPDATE bridges SET name = $1, type = $2, location = $3, latitude = $4, longitude = $5,
                                  description = $6, span_number = $7, length = $8, width = $9,
                                  built_year = $10, load_capacity = $11, primary_material = $12,
-                                 secondary_material = $13
-             WHERE id = $14`,
+                                 secondary_material = $13, version = version + 1
+             WHERE id = $14 AND version = $15
+             RETURNING version`,
             [
                 name.trim(), type || null, location || null, latitude ?? null, longitude ?? null,
                 description || null, span_number || null, length || null, width ?? null,
                 built_year || null, load_capacity ?? null, primary_material || null,
-                secondary_material || null, req.params.id
+                secondary_material || null, req.params.id, clientVersion
             ]
         );
-        res.json({ success: true });
+        if (result.rowCount === 0) {
+            const exists = await pool.query('SELECT id FROM bridges WHERE id = $1', [req.params.id]);
+            if (exists.rowCount === 0) return res.status(404).json({ error: 'Structure not found' });
+            return res.status(409).json({
+                error: 'conflict',
+                message: 'This structure was edited by someone else since you opened it. Reload the page to see their changes, then reapply yours.'
+            });
+        }
+        res.json({ success: true, version: result.rows[0].version });
     } catch (err) {
         console.error('Update bridge info error:', err);
         res.status(500).json({ error: 'Database error' });
@@ -1854,7 +1912,24 @@ app.get('/api/debug/count-test', requireAuth, async (req, res) => {
 // SAVE INSPECTION DATA TO DATABASE
 app.post('/save-inspection', requireAuth, async (req, res) => {
     const { inspection, defects, photoData = {}, notes = [] } = req.body;
+    if (inspection) {
+        inspection.structure_name = stripAngleBrackets(inspection.structure_name, 200);
+        inspection.inspector_name = stripAngleBrackets(inspection.inspector_name, 200);
+        if (typeof inspection.conclusions === 'string') inspection.conclusions = inspection.conclusions.slice(0, 10000);
+    }
 
+    // Idempotent retry short-circuit - see the client_submission_id column
+    // migration above for why this exists. Checked before opening a
+    // transaction so a repeat retry doesn't pay for the full insert work.
+    if (inspection.client_submission_id) {
+        const already = await pool.query(
+            'SELECT id FROM inspections WHERE client_submission_id = $1',
+            [inspection.client_submission_id]
+        );
+        if (already.rows.length > 0) {
+            return res.json({ success: true, inspectionId: already.rows[0].id, message: 'Inspection already saved' });
+        }
+    }
 
     const client = await pool.connect();
 
@@ -1876,8 +1951,8 @@ app.post('/save-inspection', requireAuth, async (req, res) => {
             `INSERT INTO inspections (
                 structure_id, structure_name, inspection_date,
                 inspection_type, inspector_name, total_spans, conclusions,
-                overall_bcicrit, overall_bciave, source
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`,
+                overall_bcicrit, overall_bciave, source, client_submission_id
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
             [
                 inspection.structure_id,
                 inspection.structure_name,
@@ -1888,7 +1963,8 @@ app.post('/save-inspection', requireAuth, async (req, res) => {
                 inspection.conclusions || '',
                 overallBciCrit,
                 overallBciAve,
-                source
+                source,
+                inspection.client_submission_id || null
             ]
         );
 
@@ -2038,10 +2114,24 @@ app.post('/save-inspection', requireAuth, async (req, res) => {
 
     } catch (err) {
         await client.query('ROLLBACK');
+        // 23505 = unique_violation. Only realistically hit here on
+        // client_submission_id (the only unique constraint this insert can
+        // trip) if two retries of the same job raced past the pre-check
+        // above - treat it the same as a normal idempotent retry rather
+        // than surfacing a false failure.
+        if (err.code === '23505' && inspection.client_submission_id) {
+            const already = await pool.query(
+                'SELECT id FROM inspections WHERE client_submission_id = $1',
+                [inspection.client_submission_id]
+            );
+            if (already.rows.length > 0) {
+                return res.json({ success: true, inspectionId: already.rows[0].id, message: 'Inspection already saved' });
+            }
+        }
         console.error('[ERROR] Transaction failed:', err);
-        res.status(500).json({ 
-            success: false, 
-            message: err.message 
+        res.status(500).json({
+            success: false,
+            message: err.message
         });
     } finally {
         client.release();
@@ -2056,7 +2146,12 @@ app.put('/update-inspection', requireAuth, async (req, res) => {
     // POST /api/inspections/:id/notes instead of batching them here. Only a
     // brand-new inspection (still going through /save-inspection, no id
     // yet) needs notes queued into the save payload itself.
-    const { inspection, defects, inspectionId } = req.body;
+    const { inspection, defects, inspectionId, version } = req.body;
+    if (inspection) {
+        inspection.structure_name = stripAngleBrackets(inspection.structure_name, 200);
+        inspection.inspector_name = stripAngleBrackets(inspection.inspector_name, 200);
+        if (typeof inspection.conclusions === 'string') inspection.conclusions = inspection.conclusions.slice(0, 10000);
+    }
 
     const client = await pool.connect();
 
@@ -2086,7 +2181,18 @@ app.put('/update-inspection', requireAuth, async (req, res) => {
         // CASE expressions read the pre-update row, so this correctly
         // resets status and clears the now-stale decision in one statement,
         // and is a no-op for an inspection still 'submitted'.
-        await client.query(
+        //
+        // Optimistic concurrency: below this point every span/defect row for
+        // the inspection gets deleted and reinserted from the client's
+        // in-memory copy (see step 3), so two people editing the same
+        // inspection at once would otherwise mean whoever saves second wipes
+        // out whatever the first person just added, with no warning. The
+        // `AND version = $11` only lets this through if nobody else has
+        // saved since this client loaded the inspection; a missing/
+        // non-integer version fails closed (treated as a conflict) rather
+        // than silently applying the overwrite.
+        const clientVersion = Number.isInteger(version) ? version : -1;
+        const updateResult = await client.query(
             `UPDATE inspections SET
                 structure_id = $1,
                 structure_name = $2,
@@ -2101,8 +2207,10 @@ app.put('/update-inspection', requireAuth, async (req, res) => {
                 reviewed_by = CASE WHEN status IN ('approved','rejected') THEN NULL ELSE reviewed_by END,
                 reviewed_at = CASE WHEN status IN ('approved','rejected') THEN NULL ELSE reviewed_at END,
                 engineer_comments = CASE WHEN status IN ('approved','rejected') THEN NULL ELSE engineer_comments END,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id = $10`,
+                updated_at = CURRENT_TIMESTAMP,
+                version = version + 1
+            WHERE id = $10 AND version = $11
+            RETURNING version`,
             [
                 inspection.structure_id,
                 inspection.structure_name,
@@ -2113,9 +2221,20 @@ app.put('/update-inspection', requireAuth, async (req, res) => {
                 inspection.conclusions || '',
                 overallBciCrit,
                 overallBciAve,
-                inspectionId
+                inspectionId,
+                clientVersion
             ]
         );
+
+        if (updateResult.rowCount === 0) {
+            await client.query('ROLLBACK');
+            return res.status(409).json({
+                success: false,
+                error: 'conflict',
+                message: 'This inspection was edited by someone else since you opened it. Reload the page to see their changes, then reapply yours.'
+            });
+        }
+        const newVersion = updateResult.rows[0].version;
 
         // 3. Delete existing spans and defects
         //
@@ -2236,7 +2355,7 @@ app.put('/update-inspection', requireAuth, async (req, res) => {
         }
 
         await client.query('COMMIT');
-        res.json({ success: true, inspectionId });
+        res.json({ success: true, inspectionId, version: newVersion });
 
     } catch (error) {
         await client.query('ROLLBACK');
@@ -2287,7 +2406,7 @@ app.get('/api/inspection/full', requireAuth, async (req, res) => {
             SELECT id, structure_id, structure_name, inspection_date,
                    inspection_type, inspector_name, total_spans, conclusions,
                    overall_bcicrit, overall_bciave, source,
-                   status, reviewed_by, reviewed_at, engineer_comments
+                   status, reviewed_by, reviewed_at, engineer_comments, version
             FROM inspections
             WHERE structure_id = $1 AND inspection_date = $2
         `, [structure_id, date]);
@@ -2405,6 +2524,7 @@ app.get('/api/inspection/full', requireAuth, async (req, res) => {
             reviewedBy: inspection.reviewed_by,
             reviewedAt: inspection.reviewed_at,
             engineerComments: inspection.engineer_comments,
+            version: inspection.version,
 
             spans: spans.map(span => ({
                 spanNumber: span.span_number,
@@ -3663,10 +3783,13 @@ app.get('/api/inspections', requireAuth, async (req, res) => {
 });
 
 // Critical bridges: lowest BCI per structure
+// "Very Poor" per the app's own BCI band wording (0-39 on the BCI Score
+// Distribution legend) - keyed off overall_bciave, not overall_bcicrit, to
+// match the rest of the dashboard's headline metric.
 app.get('/api/dashboard/critical-bridges', requireAuth, async (req, res) => {
     try {
         const rows = await dbAll(`
-            SELECT 
+            SELECT
                 i.structure_id,
                 i.structure_name,
                 i.inspection_date,
@@ -3677,11 +3800,11 @@ app.get('/api/dashboard/critical-bridges', requireAuth, async (req, res) => {
                 SELECT structure_id, MAX(inspection_date) as latest_date
                 FROM inspections
                 GROUP BY structure_id
-            ) latest ON i.structure_id = latest.structure_id 
+            ) latest ON i.structure_id = latest.structure_id
                    AND i.inspection_date = latest.latest_date
-            WHERE i.overall_bcicrit IS NOT NULL
-              AND i.overall_bcicrit < 55
-            ORDER BY i.overall_bcicrit ASC
+            WHERE i.overall_bciave IS NOT NULL
+              AND i.overall_bciave < 40
+            ORDER BY i.overall_bciave ASC
             LIMIT 10
         `);
 
@@ -3755,6 +3878,176 @@ app.get('/api/dashboard/avg-bci-by-type', requireAuth, async (req, res) => {
         res.json({ success: true, data: rows });
     } catch (err) {
         console.error('Average BCI by type error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// ---- Deterioration forecast ----
+// Ordinary least-squares fit (v = slope*t + intercept), t in epoch ms.
+// Mirrors twin/twin.js's linearFit() exactly - same algorithm, ported here
+// rather than shared, since that one only ever runs client-side against a
+// single structure's data already in the page, and this needs to run
+// server-side across every structure/category in one request.
+function forecastLinearFit(pts) {
+    const n = pts.length;
+    if (n < 3) return null;
+    let sumT = 0, sumV = 0, sumTT = 0, sumTV = 0;
+    pts.forEach(p => { sumT += p.t; sumV += p.v; sumTT += p.t * p.t; sumTV += p.t * p.v; });
+    const denom = n * sumTT - sumT * sumT;
+    if (denom === 0) return null;
+    const slope = (n * sumTV - sumT * sumV) / denom;
+    const intercept = (sumV - slope * sumT) / n;
+    return { slope, intercept };
+}
+
+// "Very Poor" is the same 0-39 BCI-avg band the rest of the dashboard uses
+// (see the BCI Score Distribution legend and the Very Poor structures list
+// above) - the forecast projects toward the same line, not a separate one.
+const FORECAST_THRESHOLD_BCIAVE = 40;
+const FORECAST_HORIZON_YEARS = 5;
+const FORECAST_MIN_POINTS = 3;
+const FORECAST_YEAR_MS = 365.25 * 24 * 60 * 60 * 1000;
+
+// currentAvg/series describe one group (a single structure, or a
+// category's/the portfolio's year-bucketed average) - same rules apply at
+// every granularity, only what got averaged before this runs differs.
+function buildForecastStatus(currentAvg, series) {
+    if (currentAvg != null && currentAvg < FORECAST_THRESHOLD_BCIAVE) {
+        return { status: 'already_critical' };
+    }
+    if (series.length < FORECAST_MIN_POINTS) {
+        return { status: 'insufficient_history' };
+    }
+    const fit = forecastLinearFit(series);
+    if (!fit) {
+        return { status: 'no_decline' };
+    }
+    // BCI points per year - lets the client extend a dashed line past the
+    // last real reading on the history sparkline, not just used for the
+    // crossing-date maths below.
+    const slopePerYear = Math.round(fit.slope * FORECAST_YEAR_MS * 100) / 100;
+    if (fit.slope >= 0) {
+        return { status: 'no_decline', slopePerYear };
+    }
+    const now = Date.now();
+    const tCross = (FORECAST_THRESHOLD_BCIAVE - fit.intercept) / fit.slope;
+    const yearsToThreshold = Math.max(0, (tCross - now) / FORECAST_YEAR_MS);
+    if (yearsToThreshold > FORECAST_HORIZON_YEARS) {
+        return { status: 'beyond_horizon', slopePerYear };
+    }
+    return {
+        status: 'projected',
+        projectedCrossingDate: new Date(Math.max(tCross, now)).toISOString().slice(0, 7),
+        yearsToThreshold: Math.round(yearsToThreshold * 10) / 10,
+        slopePerYear
+    };
+}
+
+// Trims a {t (epoch ms), v}[] series down to what a sparkline actually
+// needs on the wire - ISO date + one decimal place, not the full float and
+// millisecond timestamp precision the fit itself used.
+function seriesForClient(series) {
+    return series.map(p => ({ t: new Date(p.t).toISOString().slice(0, 10), v: Math.round(p.v * 10) / 10 }));
+}
+
+app.get('/api/dashboard/deterioration-forecast', requireAuth, async (req, res) => {
+    try {
+        const granularity = ['structures', 'category', 'portfolio'].includes(req.query.granularity)
+            ? req.query.granularity : 'structures';
+
+        if (granularity === 'structures') {
+            const historyRows = await dbAll(`
+                SELECT i.structure_id, b.name AS structure_name, b.type,
+                       i.inspection_date, i.overall_bciave
+                FROM inspections i
+                JOIN bridges b ON b.id = i.structure_id
+                WHERE i.overall_bciave IS NOT NULL
+                ORDER BY i.structure_id, i.inspection_date ASC
+            `);
+            const byStructure = new Map();
+            historyRows.forEach(r => {
+                if (!byStructure.has(r.structure_id)) {
+                    byStructure.set(r.structure_id, {
+                        structureId: r.structure_id, structureName: r.structure_name, type: r.type,
+                        series: [], historySince: null
+                    });
+                }
+                const g = byStructure.get(r.structure_id);
+                g.series.push({ t: new Date(r.inspection_date).getTime(), v: parseFloat(r.overall_bciave) });
+                if (g.historySince == null) g.historySince = new Date(r.inspection_date).getFullYear();
+            });
+
+            const rows = [];
+            byStructure.forEach(g => {
+                const last = g.series[g.series.length - 1];
+                const forecast = buildForecastStatus(last.v, g.series);
+                // Already-critical belongs on the Very Poor list instead, and
+                // there's nothing actionable to show for insufficient
+                // history - this list is specifically the early-warning set.
+                if (forecast.status === 'already_critical' || forecast.status === 'insufficient_history') return;
+                rows.push({
+                    structureId: g.structureId, structureName: g.structureName, type: g.type,
+                    currentBciAve: Math.round(last.v * 10) / 10, dataPoints: g.series.length,
+                    historySince: g.historySince, series: seriesForClient(g.series), ...forecast
+                });
+            });
+            rows.sort((a, b) => (a.yearsToThreshold ?? 999) - (b.yearsToThreshold ?? 999));
+            return res.json({ granularity, withinYears: FORECAST_HORIZON_YEARS, thresholdBciAve: FORECAST_THRESHOLD_BCIAVE, rows });
+        }
+
+        // category / portfolio: same mechanism, just averaged across a
+        // coarser group before fitting - each inspection gets bucketed into
+        // its calendar year first (individual structures rarely inspect on
+        // matching dates, so a per-year average is the simplest common time
+        // axis to fit a trend through).
+        const groupByType = granularity === 'category';
+        const historyRows = await dbAll(`
+            SELECT b.type, date_trunc('year', i.inspection_date) AS yr, AVG(i.overall_bciave) AS avg_bciave
+            FROM inspections i JOIN bridges b ON b.id = i.structure_id
+            WHERE i.overall_bciave IS NOT NULL AND b.type IS NOT NULL
+            GROUP BY b.type, yr
+            ORDER BY b.type, yr
+        `);
+        const currentRows = await dbAll(`
+            SELECT b.type, i.overall_bciave, b.id AS structure_id
+            FROM inspections i
+            JOIN bridges b ON b.id = i.structure_id
+            INNER JOIN (
+                SELECT structure_id, MAX(inspection_date) as latest_date
+                FROM inspections GROUP BY structure_id
+            ) latest ON i.structure_id = latest.structure_id AND i.inspection_date = latest.latest_date
+            WHERE i.overall_bciave IS NOT NULL AND b.type IS NOT NULL
+        `);
+
+        const groups = new Map();
+        const keyFor = (type) => groupByType ? type : '__portfolio__';
+        historyRows.forEach(r => {
+            const key = keyFor(r.type);
+            if (!groups.has(key)) groups.set(key, { type: groupByType ? r.type : null, series: [], currentSum: 0, structureCount: 0 });
+            groups.get(key).series.push({ t: new Date(r.yr).getTime(), v: parseFloat(r.avg_bciave) });
+        });
+        currentRows.forEach(r => {
+            const key = keyFor(r.type);
+            if (!groups.has(key)) groups.set(key, { type: groupByType ? r.type : null, series: [], currentSum: 0, structureCount: 0 });
+            const g = groups.get(key);
+            g.currentSum += parseFloat(r.overall_bciave);
+            g.structureCount += 1;
+        });
+
+        const rows = [];
+        groups.forEach(g => {
+            const currentAvg = g.structureCount ? g.currentSum / g.structureCount : null;
+            const forecast = buildForecastStatus(currentAvg, g.series);
+            rows.push({
+                type: g.type, structureCount: g.structureCount,
+                avgBciAve: currentAvg != null ? Math.round(currentAvg * 10) / 10 : null,
+                dataPoints: g.series.length, series: seriesForClient(g.series), ...forecast
+            });
+        });
+        rows.sort((a, b) => (a.yearsToThreshold ?? 999) - (b.yearsToThreshold ?? 999));
+        res.json({ granularity, withinYears: FORECAST_HORIZON_YEARS, thresholdBciAve: FORECAST_THRESHOLD_BCIAVE, rows });
+    } catch (err) {
+        console.error('Deterioration forecast error:', err);
         res.status(500).json({ success: false, error: err.message });
     }
 });

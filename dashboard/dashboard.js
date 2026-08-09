@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
     fetchCriticalBridges();
     fetchBciSummary();
     fetchRecentActivity();
+    fetchDeteriorationForecast();
     initBciChartToggle();
     checkSessionAndInitReview();
 
@@ -618,30 +619,23 @@ function renderCriticalBridges(data) {
 
     if (!data.length) {
         tbody.innerHTML = `
-            <tr><td colspan="4" style="color: var(--text-muted); font-size: 0.8rem;">No bridges below BCI crit 55.</td></tr>`;
+            <tr><td colspan="4" style="color: var(--text-muted); font-size: 0.8rem;">No structures below BCI avg 40.</td></tr>`;
         return;
     }
 
+    // Every row here is already BCI avg < 40, i.e. the Very Poor band on its
+    // own (see the BCI Score Distribution legend) - no Poor/Very Poor split
+    // to make here now that the list itself is scoped to just that band.
     tbody.innerHTML = data.map(bridge => {
-        const bci = bridge.overall_bcicrit !== null ? Math.round(bridge.overall_bcicrit) : '—';
-        // Every row here is already BCI crit < 55, so only the Poor (40-64)
-        // and Very Poor (<40) bands are ever possible - same band wording
-        // as the BCI Score Distribution chart above and everywhere else in
-        // the app (bciTier()'s 'critical' is only an internal band id, not
-        // display text).
-        const isCritical = bridge.overall_bcicrit < 40;
-        const badgeClass = isCritical ? 'risk-critical' : 'risk-high';
-        const badgeLabel = isCritical ? 'Very Poor' : 'Poor';
+        const bci = bridge.overall_bciave !== null ? Math.round(bridge.overall_bciave) : '—';
 
-        // Use template literals properly with ${} interpolation
-        // Escape quotes in the onclick by using backticks or different quote styles
         return `
             <tr>
                 <td>
                     <span class="bridge-id">${bridge.structure_id}</span>
                     <span class="bridge-location">${bridge.structure_name}</span>
                 </td>
-                <td><span class="risk-badge ${badgeClass}">${badgeLabel} · ${bci}</span></td>
+                <td><span class="risk-badge risk-critical">Very Poor · ${bci}</span></td>
                 <td>${formatDate(bridge.inspection_date)}</td>
                 <td>
                     <button class="action-btn download-btn" onclick="downloadReport('${bridge.structure_id}', '${bridge.structure_name.replace(/'/g, "\\'")}', '${bridge.inspection_date}')">
@@ -651,6 +645,197 @@ function renderCriticalBridges(data) {
             </tr>`;
     }).join('');
 }
+
+/* ============================================================
+   DETERIORATION FORECAST — "Heading Toward Very Poor"
+   Same BCI-avg/40 threshold as the Very Poor list above, just
+   forward-looking: fetches all three granularities up front (the
+   portfolio is small enough that this is cheaper than a round-trip per
+   toggle click) and fcSwitch just flips which pre-rendered view is shown.
+   ============================================================ */
+let fcStructureRows = []; // full unfiltered list, so search can re-render instantly with no round trip
+
+async function fetchDeteriorationForecast() {
+    const fail = () => {
+        document.getElementById('fc-structures-body').innerHTML =
+            `<tr><td colspan="4" style="color: var(--text-muted); font-size: 0.8rem;">Could not load data.</td></tr>`;
+        document.getElementById('fc-category-body').innerHTML =
+            `<tr><td colspan="5" style="color: var(--text-muted); font-size: 0.8rem;">Could not load data.</td></tr>`;
+        document.getElementById('fc-portfolio-body').textContent = 'Could not load data.';
+    };
+    try {
+        const [structures, category, portfolio] = await Promise.all([
+            fetch(API_BASE + '/api/dashboard/deterioration-forecast?granularity=structures', { credentials: 'include' }).then(r => r.json()),
+            fetch(API_BASE + '/api/dashboard/deterioration-forecast?granularity=category', { credentials: 'include' }).then(r => r.json()),
+            fetch(API_BASE + '/api/dashboard/deterioration-forecast?granularity=portfolio', { credentials: 'include' }).then(r => r.json())
+        ]);
+        fcStructureRows = structures.rows || [];
+        renderForecastStructures(fcStructureRows);
+        renderForecastCategory(category.rows || []);
+        renderForecastPortfolio((portfolio.rows || [])[0] || null, portfolio.withinYears);
+    } catch (error) {
+        console.error('Error fetching deterioration forecast:', error);
+        fail();
+    }
+}
+
+document.getElementById('fcStructureSearch')?.addEventListener('input', function () {
+    const term = this.value.trim().toLowerCase();
+    const filtered = term ? fcStructureRows.filter(r => r.structureName.toLowerCase().includes(term)) : fcStructureRows;
+    renderForecastStructures(filtered);
+});
+
+function formatForecastMonth(yyyymm) {
+    if (!yyyymm) return '—';
+    const [y, m] = yyyymm.split('-').map(Number);
+    return new Date(y, m - 1, 1).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+}
+
+// Shared across the structures/category/portfolio tables - one rendering
+// rule per status regardless of which granularity produced the row.
+function fcStatusCell(row) {
+    if (row.status === 'projected') {
+        const soon = row.yearsToThreshold <= 2;
+        const yrLabel = row.yearsToThreshold === 1 ? '1 yr' : `${row.yearsToThreshold} yrs`;
+        return `<div class="fc-when${soon ? ' fc-soon' : ''}"><div class="date">${formatForecastMonth(row.projectedCrossingDate)}</div><div class="rel">in ${yrLabel}</div></div>`;
+    }
+    const labels = {
+        beyond_horizon: 'Beyond 5-yr horizon',
+        no_decline: 'No decline detected',
+        already_critical: 'Already below threshold',
+        insufficient_history: 'Insufficient history'
+    };
+    const cls = row.status === 'already_critical' ? 'fc-status fc-status-crit' : 'fc-status';
+    return `<span class="${cls}">${labels[row.status] || row.status}</span>`;
+}
+
+// Solid line through the row's real BCI-avg readings; a dashed continuation
+// past the last one for anything with a fitted decline (projected/beyond
+// horizon) - to the actual crossing point for 'projected', or a flat +5y
+// extrapolation for 'beyond_horizon' so there's still something to see even
+// though it doesn't reach the threshold. No dashed segment otherwise -
+// 'no_decline' has nothing to extrapolate toward.
+function renderSparkline(series, row, width, height) {
+    width = width || 72; height = height || 26;
+    if (!series || series.length < 2) return '';
+    const padX = 3, padY = 3;
+    const YEAR_MS = 365.25 * 24 * 60 * 60 * 1000;
+    const pts = series.map(p => ({ t: new Date(p.t).getTime(), v: p.v }));
+    const last = pts[pts.length - 1];
+
+    let extra = null;
+    if (row.slopePerYear != null && (row.status === 'projected' || row.status === 'beyond_horizon')) {
+        if (row.status === 'projected' && row.projectedCrossingDate) {
+            extra = { t: new Date(row.projectedCrossingDate + '-01').getTime(), v: 40 };
+        } else {
+            extra = { t: last.t + 5 * YEAR_MS, v: last.v + row.slopePerYear * 5 };
+        }
+    }
+
+    let minV = Math.min(...pts.map(p => p.v), extra ? extra.v : Infinity);
+    let maxV = Math.max(...pts.map(p => p.v), extra ? extra.v : -Infinity);
+    minV = Math.max(0, minV - 3); maxV = Math.min(100, maxV + 3);
+    if (maxV - minV < 6) { minV = Math.max(0, minV - 3); maxV = Math.min(100, maxV + 3); }
+
+    const minT = pts[0].t, maxT = extra ? extra.t : last.t;
+    const spanT = Math.max(1, maxT - minT);
+    const x = t => padX + ((t - minT) / spanT) * (width - padX * 2);
+    const y = v => height - padY - ((Math.max(minV, Math.min(maxV, v)) - minV) / (maxV - minV)) * (height - padY * 2);
+
+    let svg = `<svg class="fc-spark" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
+    svg += `<polyline points="${pts.map(p => `${x(p.t).toFixed(1)},${y(p.v).toFixed(1)}`).join(' ')}" fill="none" stroke="#5b8c8a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+    if (extra) {
+        const dashColor = row.status === 'projected' ? '#c0392b' : '#c28b5a';
+        svg += `<polyline points="${x(last.t).toFixed(1)},${y(last.v).toFixed(1)} ${x(extra.t).toFixed(1)},${y(extra.v).toFixed(1)}" fill="none" stroke="${dashColor}" stroke-width="2" stroke-linecap="round" stroke-dasharray="3 3"/>`;
+        svg += `<circle cx="${x(extra.t).toFixed(1)}" cy="${y(extra.v).toFixed(1)}" r="2.6" fill="none" stroke="${dashColor}" stroke-width="1.6"/>`;
+    }
+    svg += `<circle cx="${x(last.t).toFixed(1)}" cy="${y(last.v).toFixed(1)}" r="2.4" fill="#5b8c8a"/>`;
+    svg += '</svg>';
+    return svg;
+}
+
+function renderForecastStructures(rows) {
+    const tbody = document.getElementById('fc-structures-body');
+    if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="4" style="color: var(--text-muted); font-size: 0.8rem;">Nothing trending toward Very Poor right now.</td></tr>`;
+        return;
+    }
+    tbody.innerHTML = rows.map(r => `
+        <tr>
+            <td>
+                <span class="bridge-name">${r.structureName}</span>
+                <span class="bridge-location">${r.type} · ${r.dataPoints} inspections since ${r.historySince}</span>
+            </td>
+            <td>${renderSparkline(r.series, r)}</td>
+            <td class="bridge-id">${r.currentBciAve}</td>
+            <td>${fcStatusCell(r)}</td>
+        </tr>`).join('');
+}
+
+function renderForecastCategory(rows) {
+    const tbody = document.getElementById('fc-category-body');
+    if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="5" style="color: var(--text-muted); font-size: 0.8rem;">Not enough history yet.</td></tr>`;
+        return;
+    }
+    tbody.innerHTML = rows.map(r => `
+        <tr>
+            <td><span class="bridge-name">${r.type}</span></td>
+            <td>${renderSparkline(r.series, r)}</td>
+            <td class="bridge-id">${r.structureCount}</td>
+            <td class="bridge-id">${r.avgBciAve ?? '—'}</td>
+            <td>${fcStatusCell(r)}</td>
+        </tr>`).join('');
+}
+
+function renderForecastPortfolio(row, withinYears) {
+    const el = document.getElementById('fc-portfolio-body');
+    if (!row) {
+        el.textContent = 'Not enough history yet.';
+        return;
+    }
+    const spark = renderSparkline(row.series, row, 140, 46).replace('class="fc-spark"', 'class="fc-spark fc-hero-spark"');
+    if (row.status === 'projected') {
+        el.innerHTML = `
+            <div class="fc-hero">
+                ${spark}
+                <div class="fc-hero-mid">
+                    <div class="h-label">All ${row.structureCount} structures · portfolio-wide BCI avg</div>
+                    <div class="h-value">${row.avgBciAve} <span>now</span></div>
+                </div>
+                <div class="fc-hero-end">
+                    <div class="date">${formatForecastMonth(row.projectedCrossingDate)}</div>
+                    <div class="rel">crosses 40 in ${row.yearsToThreshold} yrs</div>
+                </div>
+            </div>`;
+        return;
+    }
+    const labels = {
+        beyond_horizon: `Beyond the ${withinYears}-year horizon at the current rate`,
+        no_decline: 'No portfolio-wide decline detected',
+        already_critical: 'Portfolio average is already below 40',
+        insufficient_history: 'Not enough history yet'
+    };
+    el.innerHTML = `
+        <div class="fc-hero">
+            ${spark}
+            <div class="fc-hero-mid">
+                <div class="h-label">All ${row.structureCount} structures · portfolio-wide BCI avg</div>
+                <div class="h-value">${row.avgBciAve ?? '—'} <span>now</span></div>
+            </div>
+            <div class="fc-hero-end fc-hero-ok">
+                <div class="date">—</div>
+                <div class="rel">${labels[row.status] || row.status}</div>
+            </div>
+        </div>`;
+}
+
+window.fcSwitch = function fcSwitch(view, btn) {
+    document.querySelectorAll('#forecastSection .fc-view').forEach(el => el.classList.remove('active'));
+    document.getElementById('fcView-' + view).classList.add('active');
+    btn.parentElement.querySelectorAll('.chart-toggle-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+};
 
 async function fetchRecentActivity() {
     try {
@@ -907,6 +1092,17 @@ window.goToPendingReviewPage = function goToPendingReviewPage(page) {
     renderPendingReviewPage();
 };
 
+// structure_name/inspector_name/conclusions are free text any authenticated
+// account can set via /save-inspection or /update-inspection - escaping is
+// required wherever they're interpolated into innerHTML below, not just
+// obviously-raw fields (getInitials() slices raw characters out of
+// inspector_name too, so it needs the same treatment).
+function escapeHtml(str) {
+    return String(str == null ? '' : str).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+}
+
 function renderPendingReview(data) {
     const list = document.getElementById('pending-review-list');
 
@@ -922,8 +1118,9 @@ function renderPendingReview(data) {
     list.innerHTML = data.map(item => {
         const bci = item.overall_bciave !== null ? Math.round(item.overall_bciave) : '—';
         const tier = bciTier(item.overall_bciave);
-        const initials = getInitials(item.inspector_name);
-        const inspector = item.inspector_name || 'Unknown';
+        const initials = escapeHtml(getInitials(item.inspector_name));
+        const inspector = escapeHtml(item.inspector_name || 'Unknown');
+        const structureName = escapeHtml(item.structure_name || 'Structure ' + item.structure_id);
 
         const fieldBadge = item.source === 'field'
             ? '<span class="pr-field-badge" data-tip="Saved from spanSense Field"><i class="fas fa-mobile-screen-button"></i> Field</span>'
@@ -934,7 +1131,7 @@ function renderPendingReview(data) {
                     <div class="pr-structure-cell">
                         <div class="activity-avatar activity-avatar-${tier.avatarColor}">${initials}</div>
                         <div class="activity-content">
-                            <div class="activity-title">${item.structure_name || 'Structure ' + item.structure_id} ${fieldBadge}</div>
+                            <div class="activity-title">${structureName} ${fieldBadge}</div>
                         </div>
                     </div>
                 </td>
@@ -957,9 +1154,9 @@ window.openReviewModal = function openReviewModal(inspectionId) {
     document.getElementById('reviewModalTitle').textContent =
         (item.structure_name || 'Structure ' + item.structure_id) + ' · STR #' + item.structure_id;
     document.getElementById('reviewModalSummary').innerHTML =
-        `Inspected by ${item.inspector_name || 'Unknown'} on ${formatDate(item.inspection_date)} &nbsp;·&nbsp; ` +
+        `Inspected by ${escapeHtml(item.inspector_name || 'Unknown')} on ${formatDate(item.inspection_date)} &nbsp;·&nbsp; ` +
         `BCI<sub>avg</sub> ${bciAv} / BCI<sub>crit</sub> ${bciCrit}` +
-        (item.conclusions ? `<br><br>"${item.conclusions}"` : '');
+        (item.conclusions ? `<br><br>"${escapeHtml(item.conclusions)}"` : '');
     document.getElementById('reviewCommentsInput').value = '';
 
     // Same deep-link the existing "Edit Report" buttons use elsewhere (see

@@ -987,6 +987,10 @@ async function loadDefectsFromAPI(structureId, inspectionDate, currentSpan) {
             const storedForNotes = JSON.parse(sessionStorage.getItem('inspectionData') || '{}');
             storedForNotes.id = inspectionData.id;
             storedForNotes.notes = inspectionData.notes || [];
+            // Version this inspection was at when loaded - echoed back on save
+            // (saveSequence.js) so the server can detect someone else having
+            // saved over it in the meantime instead of silently overwriting.
+            storedForNotes.version = inspectionData.version;
             sessionStorage.setItem('inspectionData', JSON.stringify(storedForNotes));
             if (typeof window.renderNotesList === 'function') window.renderNotesList();
         }

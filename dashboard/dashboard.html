@@ -70,7 +70,7 @@
                 </div>
                 <div class="metric-content">
                     <h3>0</h3>  <!-- Will be updated by JS -->
-                    <p>High-Risk Structures</p>
+                    <p>Very Poor</p>
                 </div>
                 <i class="fas fa-chevron-right metric-arrow"></i>
             </div>
@@ -158,18 +158,59 @@
         </div>
 
 
+        <!-- Deterioration forecast: same BCI-avg/40 threshold as Very Poor
+             below, but forward-looking - which structures/categories/the
+             whole stock are trending toward that band, not there yet. -->
+        <div class="forecast-section" id="forecastSection">
+            <div class="section-header">
+                <h2><i class="fas fa-arrow-trend-down"></i> Heading Toward Very Poor</h2>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div class="chart-toggle" role="tablist" aria-label="Forecast granularity">
+                        <button type="button" class="chart-toggle-btn active" data-fc-view="structures" onclick="fcSwitch('structures', this)">Structures</button>
+                        <button type="button" class="chart-toggle-btn" data-fc-view="category" onclick="fcSwitch('category', this)">By category</button>
+                        <button type="button" class="chart-toggle-btn" data-fc-view="portfolio" onclick="fcSwitch('portfolio', this)">Whole stock</button>
+                    </div>
+                    <span class="section-badge">next 5 yrs · BCI avg &lt; 40</span>
+                </div>
+            </div>
+
+            <div class="fc-view active" id="fcView-structures">
+                <div class="pr-search-wrap fc-search-wrap">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="fcStructureSearch" placeholder="Search structures...">
+                </div>
+                <table class="data-table card-rows">
+                    <thead><tr><th>Structure</th><th>History</th><th>BCI Avg</th><th>Projected crossing</th></tr></thead>
+                    <tbody id="fc-structures-body">
+                        <tr><td colspan="4" style="color: var(--text-muted); font-size: 0.85rem;">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="fc-view" id="fcView-category">
+                <table class="data-table card-rows">
+                    <thead><tr><th>Category</th><th>History</th><th>Structures</th><th>Avg BCI Avg</th><th>Projected crossing</th></tr></thead>
+                    <tbody id="fc-category-body">
+                        <tr><td colspan="5" style="color: var(--text-muted); font-size: 0.85rem;">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="fc-view" id="fcView-portfolio">
+                <div id="fc-portfolio-body" style="color: var(--text-muted); font-size: 0.85rem; padding: 14px 4px;">Loading...</div>
+            </div>
+        </div>
+
         <div class="dashboard-bottom-row">
 
-            <!-- Critical Bridges (left) -->
+            <!-- Very Poor structures (left) -->
             <div class="critical-bridges-section" id="criticalStructuresSection">
                 <div class="section-header">
-                    <h2><i class="fas fa-exclamation-triangle"></i> Critical Structures</h2>
-                    <span class="section-badge">BCI crit &lt; 55</span>
+                    <h2><i class="fas fa-exclamation-triangle"></i> Very Poor</h2>
+                    <span class="section-badge">BCI avg &lt; 40</span>
                 </div>
                 <div class="critical-bridges">
                     <table class="data-table card-rows">
                         <thead>
-                            <tr><th>Bridge</th><th>BCI Crit Score</th><th>Last Inspection</th><th>Report</th></tr>
+                            <tr><th>Bridge</th><th>BCI Avg Score</th><th>Last Inspection</th><th>Report</th></tr>
                         </thead>
                         <tbody id="critical-bridges-body">
                             <tr><td colspan="4" style="color: var(--text-muted); font-size: 0.85rem;">Loading...</td></tr>
