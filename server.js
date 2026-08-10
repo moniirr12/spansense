@@ -3312,6 +3312,20 @@ const loginRateLimiter = rateLimit({
     message: { success: false, message: 'Too many login attempts. Please try again in a few minutes.' }
 });
 
+// The 2FA step below also caps wrong codes at 5 per pending login via
+// req.session.pendingAttempts, but that counter does a read-modify-write on
+// the session on every request - concurrent requests against the same
+// session can race and each read the same stale count, letting more than 5
+// guesses land before the store catches up. An IP-keyed limiter closes that
+// gap independently of the session store's consistency.
+const twoFactorRateLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, message: 'Too many 2FA attempts. Please try again in a few minutes.' }
+});
+
 // LOGIN ENDPOINT
 app.post('/api/login', loginRateLimiter, async (req, res) => {
     try {
@@ -3387,7 +3401,7 @@ app.post('/api/login', loginRateLimiter, async (req, res) => {
 // Second step of login when the account has 2FA enabled - requires
 // req.session.pendingUserId from /api/login above, so this can't be hit
 // standalone without a correct password first.
-app.post('/api/login/2fa', async (req, res) => {
+app.post('/api/login/2fa', twoFactorRateLimiter, async (req, res) => {
     try {
         if (!req.session.pendingUserId) {
             return res.status(400).json({ success: false, message: 'No login in progress' });
