@@ -830,6 +830,12 @@ body {
 .activity-feed {
     display: flex;
     flex-direction: column;
+    /* Grid items default to min-width:auto (their content's natural width),
+       not 0 - without this, a long structure name refuses to let this
+       column shrink below its own width at narrower viewports, so it
+       pushes past the grid track instead of the row's ellipsis truncation
+       (already set up on .activity-title) ever getting a chance to apply. */
+    min-width: 0;
 }
 
 .activity-list {
@@ -844,7 +850,14 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin: 0 14px 8px;
+    /* Matches Poor Structures' 28px gap under the section header: that
+       side gets it for free from its table's border-spacing running above
+       the first row too, not just between rows - this needs an explicit
+       top margin to match since it isn't a table. Left/right at 0 (not
+       14px) so this pill goes flush to the same edges as the section
+       header's badge and Poor Structures' table, instead of stopping
+       short of the panel's right edge. */
+    margin: 8px 0;
     padding: 14px 18px;
     background: #fafbfc;
     border: 1px solid #cbd5df;
@@ -882,7 +895,10 @@ body {
    each item's content (avatar/title/meta/badge/status) doesn't map to
    fixed columns the way Critical Structures' bridge/BCI/date/report does. */
 .activity-list.card-rows {
-    padding: 0 14px 10px;
+    /* Left/right at 0 (not 14px) so item rows go flush to the same edges
+       as .activity-list-header above and Poor Structures' table, instead
+       of finishing short of the panel's right edge. */
+    padding: 0 0 10px;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -1439,6 +1455,21 @@ html.night-mode .glass-scrollbar .thumb {
     padding: 2px 8px; border-radius: 10px; background: #eef4f2; color: #5b8c8a; vertical-align: middle;
 }
 .night-mode .pr-field-badge { background: #1e3a3e; color: #8ab4b0; }
+
+/* Inspection-type badges - same GI/PI/SI color language as the Previous
+   Inspections modal's .ss-badge-* (map.css), so the type reads the same
+   way across the app instead of only being distinguishable via the type
+   filter buttons above the table. */
+.pr-type-badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 0.65rem; font-weight: 700; border: 1px solid transparent;
+}
+.pr-type-gi { background: #eef4f2; color: #5b8c8a; border-color: #c5dbd8; }
+.pr-type-pi { background: #f0f4ff; color: #5b7c8a; border-color: #c5d0db; }
+.pr-type-si { background: #fff8e6; color: #b8953a; border-color: #e8d8a8; }
+.night-mode .pr-type-gi { background: #2f4a48; color: #8ab4b0; border-color: #3a6b62; }
+.night-mode .pr-type-pi { background: #2a3a4a; color: #7aa0b0; border-color: #3a5a6a; }
+.night-mode .pr-type-si { background: #2f2a1a; color: #c8a84a; border-color: #4a3a20; }
 
 .night-mode .pending-review-filters { border-bottom-color: #2f3e45; }
 .night-mode .pr-search-wrap input { background: #1e2a2f; border-color: #3a4b53; color: #d4dfe3; }

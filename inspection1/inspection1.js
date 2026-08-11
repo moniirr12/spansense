@@ -466,7 +466,7 @@ async function fetchAndUpdateBridgeData(bridgeId) {
         }
         
         if (bridgeNameEl && bridgeData.name) bridgeNameEl.innerText = bridgeData.name;
-        if (bridgeIdEl && bridgeData.id) bridgeIdEl.innerText = `Bridge ID: ${bridgeData.id}`;
+        if (bridgeIdEl && bridgeData.id) bridgeIdEl.innerText = `Structure ID: ${bridgeData.id}`;
 
         populateBridgeInfoPanel(bridgeData);
 
@@ -1179,7 +1179,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 const sidebarBridgeName = document.getElementById('sidebarBridgeName');
                 const sidebarBridgeId = document.getElementById('sidebarBridgeId');
                 if (sidebarBridgeName) sidebarBridgeName.textContent = structureName;
-                if (sidebarBridgeId) sidebarBridgeId.textContent = `STR #${structureId}`;
+                if (sidebarBridgeId) sidebarBridgeId.textContent = `Structure ID: ${structureId}`;
             }
             
             return;
@@ -1283,7 +1283,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const sidebarBridgeName = document.getElementById('sidebarBridgeName');
         const sidebarBridgeId = document.getElementById('sidebarBridgeId');
         if (sidebarBridgeName) sidebarBridgeName.textContent = structureName;
-        if (sidebarBridgeId) sidebarBridgeId.textContent = `STR #${structureId}`;
+        if (sidebarBridgeId) sidebarBridgeId.textContent = `Structure ID: ${structureId}`;
 
         fetchSpans(structureId);
     } else {

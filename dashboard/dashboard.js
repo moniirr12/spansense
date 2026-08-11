@@ -1164,17 +1164,19 @@ function getPendingReviewFilters() {
     return {
         search: (document.getElementById('pendingReviewSearch')?.value || '').trim().toLowerCase(),
         type: document.querySelector('#pendingReviewTypeFilter .chart-toggle-btn.active')?.dataset.type || 'all',
-        criticalOnly: document.getElementById('pendingReviewCriticalToggle')?.classList.contains('active') || false,
+        poorOnly: document.getElementById('pendingReviewPoorToggle')?.classList.contains('active') || false,
         fieldOnly: document.getElementById('pendingReviewFieldToggle')?.classList.contains('active') || false
     };
 }
 
+// 65 matches the "Poor Structures" threshold used by the dashboard section
+// and metric tile of the same name - see bciTier()/BCI avg < 65 elsewhere.
 function applyPendingReviewFilters() {
-    const { search, type, criticalOnly, fieldOnly } = getPendingReviewFilters();
+    const { search, type, poorOnly, fieldOnly } = getPendingReviewFilters();
 
     const filtered = pendingReviewData.filter(item => {
         if (type !== 'all' && item.inspection_type !== type) return false;
-        if (criticalOnly && !(item.overall_bciave !== null && item.overall_bciave < 55)) return false;
+        if (poorOnly && !(item.overall_bciave !== null && item.overall_bciave < 65)) return false;
         if (fieldOnly && item.source !== 'field') return false;
         if (search) {
             const haystack = ((item.structure_name || '') + ' ' + (item.inspector_name || '') + ' ' + item.structure_id).toLowerCase();
@@ -1268,7 +1270,7 @@ function renderPendingReview(data) {
             ? 'Nothing awaiting review.'
             : 'No inspections match your filters.';
         list.innerHTML = `
-            <tr><td colspan="6" style="color: var(--text-muted); font-size: 0.8rem;">${message}</td></tr>`;
+            <tr><td colspan="7" style="color: var(--text-muted); font-size: 0.8rem;">${message}</td></tr>`;
         return;
     }
 
@@ -1292,7 +1294,8 @@ function renderPendingReview(data) {
                         </div>
                     </div>
                 </td>
-                <td>#${item.structure_id}</td>
+                <td>${item.structure_id}</td>
+                <td><span class="pr-type-badge pr-type-${(item.inspection_type || '').toLowerCase()}">${escapeHtml(item.inspection_type || '—')}</span></td>
                 <td>${inspector}</td>
                 <td>${formatDate(item.inspection_date)}</td>
                 <td><span class="activity-bci bci-${tier.band}">${bci}</span></td>
@@ -1309,7 +1312,7 @@ window.openReviewModal = function openReviewModal(inspectionId) {
     const bciAv = item.overall_bciave !== null ? Math.round(item.overall_bciave) : '—';
     const bciCrit = item.overall_bcicrit !== null ? Math.round(item.overall_bcicrit) : '—';
     document.getElementById('reviewModalTitle').textContent =
-        (item.structure_name || 'Structure ' + item.structure_id) + ' · STR #' + item.structure_id;
+        (item.structure_name || 'Structure ' + item.structure_id) + ' · Structure ID ' + item.structure_id;
     document.getElementById('reviewModalSummary').innerHTML =
         `Inspected by ${escapeHtml(item.inspector_name || 'Unknown')} on ${formatDate(item.inspection_date)} &nbsp;·&nbsp; ` +
         `BCI<sub>avg</sub> ${bciAv} / BCI<sub>crit</sub> ${bciCrit}` +
@@ -1395,7 +1398,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    document.getElementById('pendingReviewCriticalToggle')?.addEventListener('click', function () {
+    document.getElementById('pendingReviewPoorToggle')?.addEventListener('click', function () {
         this.classList.toggle('active');
         applyPendingReviewFilters();
     });
