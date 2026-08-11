@@ -844,7 +844,14 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin: 0 14px 8px;
+    /* Matches Poor Structures' 28px gap under the section header: that
+       side gets it for free from its table's border-spacing running above
+       the first row too, not just between rows - this needs an explicit
+       top margin to match since it isn't a table. Left/right at 0 (not
+       14px) so this pill goes flush to the same edges as the section
+       header's badge and Poor Structures' table, instead of stopping
+       short of the panel's right edge. */
+    margin: 8px 0;
     padding: 14px 18px;
     background: #fafbfc;
     border: 1px solid #cbd5df;
@@ -882,7 +889,10 @@ body {
    each item's content (avatar/title/meta/badge/status) doesn't map to
    fixed columns the way Critical Structures' bridge/BCI/date/report does. */
 .activity-list.card-rows {
-    padding: 0 14px 10px;
+    /* Left/right at 0 (not 14px) so item rows go flush to the same edges
+       as .activity-list-header above and Poor Structures' table, instead
+       of finishing short of the panel's right edge. */
+    padding: 0 0 10px;
     display: flex;
     flex-direction: column;
     gap: 8px;
