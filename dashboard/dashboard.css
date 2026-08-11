@@ -830,6 +830,12 @@ body {
 .activity-feed {
     display: flex;
     flex-direction: column;
+    /* Grid items default to min-width:auto (their content's natural width),
+       not 0 - without this, a long structure name refuses to let this
+       column shrink below its own width at narrower viewports, so it
+       pushes past the grid track instead of the row's ellipsis truncation
+       (already set up on .activity-title) ever getting a chance to apply. */
+    min-width: 0;
 }
 
 .activity-list {

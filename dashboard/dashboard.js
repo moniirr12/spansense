@@ -1164,17 +1164,19 @@ function getPendingReviewFilters() {
     return {
         search: (document.getElementById('pendingReviewSearch')?.value || '').trim().toLowerCase(),
         type: document.querySelector('#pendingReviewTypeFilter .chart-toggle-btn.active')?.dataset.type || 'all',
-        criticalOnly: document.getElementById('pendingReviewCriticalToggle')?.classList.contains('active') || false,
+        poorOnly: document.getElementById('pendingReviewPoorToggle')?.classList.contains('active') || false,
         fieldOnly: document.getElementById('pendingReviewFieldToggle')?.classList.contains('active') || false
     };
 }
 
+// 65 matches the "Poor Structures" threshold used by the dashboard section
+// and metric tile of the same name - see bciTier()/BCI avg < 65 elsewhere.
 function applyPendingReviewFilters() {
-    const { search, type, criticalOnly, fieldOnly } = getPendingReviewFilters();
+    const { search, type, poorOnly, fieldOnly } = getPendingReviewFilters();
 
     const filtered = pendingReviewData.filter(item => {
         if (type !== 'all' && item.inspection_type !== type) return false;
-        if (criticalOnly && !(item.overall_bciave !== null && item.overall_bciave < 55)) return false;
+        if (poorOnly && !(item.overall_bciave !== null && item.overall_bciave < 65)) return false;
         if (fieldOnly && item.source !== 'field') return false;
         if (search) {
             const haystack = ((item.structure_name || '') + ' ' + (item.inspector_name || '') + ' ' + item.structure_id).toLowerCase();
@@ -1395,7 +1397,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    document.getElementById('pendingReviewCriticalToggle')?.addEventListener('click', function () {
+    document.getElementById('pendingReviewPoorToggle')?.addEventListener('click', function () {
         this.classList.toggle('active');
         applyPendingReviewFilters();
     });
