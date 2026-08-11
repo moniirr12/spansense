@@ -884,7 +884,7 @@ async function loadBridgeSidebarInfo() {
     const bridgeData = await response.json();
 
     if (nameEl && bridgeData.name) nameEl.innerText = bridgeData.name;
-    if (idEl && bridgeData.id) idEl.innerText = `Bridge ID: ${bridgeData.id}`;
+    if (idEl && bridgeData.id) idEl.innerText = `Structure ID: ${bridgeData.id}`;
     if (spanCountEl) spanCountEl.innerText = bridgeData.span_number || bridgeData.total_spans || '--';
     if (lengthEl) {
       const length = bridgeData.length_metres || bridgeData.length || '--';

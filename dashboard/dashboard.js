@@ -1294,7 +1294,7 @@ function renderPendingReview(data) {
                         </div>
                     </div>
                 </td>
-                <td>#${item.structure_id}</td>
+                <td>${item.structure_id}</td>
                 <td><span class="pr-type-badge pr-type-${(item.inspection_type || '').toLowerCase()}">${escapeHtml(item.inspection_type || '—')}</span></td>
                 <td>${inspector}</td>
                 <td>${formatDate(item.inspection_date)}</td>
@@ -1312,7 +1312,7 @@ window.openReviewModal = function openReviewModal(inspectionId) {
     const bciAv = item.overall_bciave !== null ? Math.round(item.overall_bciave) : '—';
     const bciCrit = item.overall_bcicrit !== null ? Math.round(item.overall_bcicrit) : '—';
     document.getElementById('reviewModalTitle').textContent =
-        (item.structure_name || 'Structure ' + item.structure_id) + ' · STR #' + item.structure_id;
+        (item.structure_name || 'Structure ' + item.structure_id) + ' · Structure ID ' + item.structure_id;
     document.getElementById('reviewModalSummary').innerHTML =
         `Inspected by ${escapeHtml(item.inspector_name || 'Unknown')} on ${formatDate(item.inspection_date)} &nbsp;·&nbsp; ` +
         `BCI<sub>avg</sub> ${bciAv} / BCI<sub>crit</sub> ${bciCrit}` +

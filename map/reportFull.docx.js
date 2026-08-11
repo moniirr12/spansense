@@ -499,7 +499,7 @@ async function buildFullInspectionReportDocx(doc) {
     var secondaryMaterial = docxMaterialLabel(firstSpan.secondaryMaterialCode || bridgeData.secondary_material);
     children.push(kvTable(d, [
         ['Structure Name:', structureName],
-        ['Structure Number:', structureId],
+        ['Structure ID:', structureId],
         ['Date of Construction:', bridgeData.year_built || 'Unknown'],
         ['Crosses:', bridgeData.crosses || 'Not specified'],
         ['Carries:', bridgeData.carries || 'Not specified'],
