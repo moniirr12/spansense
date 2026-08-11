@@ -5,8 +5,8 @@
 // are never touched here - app.js/db.js queue those in IndexedDB and retry
 // them itself, since a failed mutation needs the app's own conflict/ordering
 // logic, not a blind service-worker replay.
-const SHELL_CACHE = 'spansense-field-shell-v39';
-const API_CACHE = 'spansense-field-api-v39';
+const SHELL_CACHE = 'spansense-field-shell-v40';
+const API_CACHE = 'spansense-field-api-v40';
 
 const SHELL_ASSETS = [
   '/field/',
@@ -14,6 +14,7 @@ const SHELL_ASSETS = [
   '/field/manifest.json',
   '/field/css/app.css',
   '/field/css/vendor/leaflet.css',
+  '/photoQuality.js',
   '/field/js/api.js',
   '/field/js/bci.js',
   '/field/js/defectCodes.js',
