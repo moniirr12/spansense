@@ -5,6 +5,7 @@
     <script src="/fetch-credentials.js"></script>
     <script src="/hoverTip.js"></script>
     <script src="/roleBadge.js"></script>
+    <script src="/photoQuality.js"></script>
     <script>(function(){var nm=localStorage.getItem('nightMode');var dark=nm==='on'||(nm===null&&!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches));if(dark)document.documentElement.classList.add('nm-preload');})();</script>
     <style>html.nm-preload,html.nm-preload body{background-color:#1a2428!important;}</style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1088,8 +1089,17 @@ document.getElementById('addStructureForm').addEventListener('submit', function(
     .then(function(data) {
         var coverPhoto = photos[0];
         if (!coverPhoto) return data;
-        return fetch(coverPhoto.dataURL)
-            .then(function(r) { return r.blob(); })
+        return Promise.all([
+            fetch(coverPhoto.dataURL).then(function(r) { return r.blob(); }),
+            fetch('/api/me/settings').then(function(r) { return r.ok ? r.json() : {}; }).catch(function() { return {}; })
+        ])
+            .then(function(results) {
+                var blob = results[0], photoSettings = results[1];
+                if (photoSettings.compressPhotos !== false && window.PhotoQuality) {
+                    return window.PhotoQuality.compressImageFile(blob, photoSettings.photoQuality || 'balanced');
+                }
+                return blob;
+            })
             .then(function(blob) {
                 var form = new FormData();
                 form.append('photo', blob, 'cover.jpg');

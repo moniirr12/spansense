@@ -40,6 +40,11 @@
     logout: () => request('/api/logout', { method: 'POST' }),
     getMe: () => request('/api/me'),
 
+    // --- settings ---
+    getMySettings: () => request('/api/me/settings'),
+    putMySettings: (settings) => request('/api/me/settings', { method: 'PUT', body: JSON.stringify(settings) }),
+    getOrgSettings: () => request('/api/org-settings'),
+
     // --- structures ---
     getBridges: () => request('/api/bridges'),
     getBridge: (id) => request(`/api/bridges/${id}`),

@@ -171,7 +171,10 @@
   });
   renderNightIcon();
 
-  document.getElementById('accountBtn').addEventListener('click', async () => {
+  // Shared by the appbar's account icon and the Sign out row at the bottom
+  // of the new Settings screen - same confirm-then-clear-session flow either
+  // way, just two entry points into it.
+  async function doSignOut() {
     const confirmed = await showConfirmModal({
       title: 'Sign out?',
       message: `Signed in as ${S.session ? S.session.username : ''}.`,
@@ -182,7 +185,192 @@
       clearCachedSession();
       location.reload();
     }
+  }
+  document.getElementById('accountBtn').addEventListener('click', doSignOut);
+  document.getElementById('settingsSignOutBtn').addEventListener('click', doSignOut);
+  document.getElementById('settingsBtn').addEventListener('click', () => { goto('settings'); renderSettingsScreen(); });
+
+  /* ============================================================
+     SETTINGS
+     Field previously had nothing here beyond sign-out. Cached to
+     localStorage (same pattern as SESSION_CACHE_KEY above) so both the
+     settings screen and photo capture work offline; refreshed from the
+     server whenever reachable. fieldSettings always holds the FULL
+     /api/me/settings shape (not just the fields Field's UI shows) so a
+     save from here round-trips Core-only fields (email/reminders/autosave)
+     unchanged instead of clobbering them back to defaults.
+     ============================================================ */
+  const FIELD_SETTINGS_CACHE_KEY = 'fieldUserSettings';
+  const ORG_SETTINGS_CACHE_KEY = 'fieldOrgSettings';
+  const DEFAULT_FIELD_SETTINGS = {
+    emailNotifications: true, inspectionReminders: true, autosaveDrafts: true, autosaveIntervalSeconds: 30,
+    photoQuality: 'balanced', compressPhotos: true, warnOversized: true, wifiOnlySync: false
+  };
+  const DEFAULT_ORG_SETTINGS = { maxUploadMb: 15, requireFieldCompression: true };
+  const QUALITY_ESTIMATES = {
+    original: 'No compression.',
+    high: 'High quality, light compression.',
+    balanced: 'Balanced keeps most detail and cuts upload size by roughly 60%.',
+    data_saver: 'Smallest files, most compression - best on a weak signal.'
+  };
+
+  function readCachedJSON(key) {
+    try { return JSON.parse(localStorage.getItem(key)); } catch { return null; }
+  }
+  function writeCachedJSON(key, val) {
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+  }
+
+  let fieldSettings = Object.assign({}, DEFAULT_FIELD_SETTINGS, readCachedJSON(FIELD_SETTINGS_CACHE_KEY) || {});
+  let orgSettings = Object.assign({}, DEFAULT_ORG_SETTINGS, readCachedJSON(ORG_SETTINGS_CACHE_KEY) || {});
+
+  async function loadFieldSettings() {
+    try {
+      const [me, org] = await Promise.all([Api.getMySettings(), Api.getOrgSettings()]);
+      fieldSettings = Object.assign({}, DEFAULT_FIELD_SETTINGS, me);
+      orgSettings = Object.assign({}, DEFAULT_ORG_SETTINGS, org);
+      writeCachedJSON(FIELD_SETTINGS_CACHE_KEY, fieldSettings);
+      writeCachedJSON(ORG_SETTINGS_CACHE_KEY, orgSettings);
+      renderSettingsScreen();
+    } catch {
+      // offline - stay on whatever was cached (or the defaults above)
+    }
+  }
+
+  function saveFieldSettings(patch) {
+    fieldSettings = Object.assign({}, fieldSettings, patch);
+    writeCachedJSON(FIELD_SETTINGS_CACHE_KEY, fieldSettings);
+    Api.putMySettings(fieldSettings).then((saved) => {
+      fieldSettings = Object.assign({}, DEFAULT_FIELD_SETTINGS, saved);
+      writeCachedJSON(FIELD_SETTINGS_CACHE_KEY, fieldSettings);
+    }).catch(() => { /* kept locally; next successful load reconciles it */ });
+  }
+
+  function setToggleState(id, on) {
+    const el = document.getElementById(id);
+    el.classList.toggle('on', on);
+    el.setAttribute('aria-checked', on ? 'true' : 'false');
+  }
+
+  function setQualityChip(val) {
+    const row = document.getElementById('fieldQualityChips');
+    Array.from(row.querySelectorAll('.chip')).forEach((c) => c.classList.toggle('active', c.dataset.val === val));
+    document.getElementById('fieldQualityEstimate').textContent = QUALITY_ESTIMATES[val] || QUALITY_ESTIMATES.balanced;
+  }
+
+  // Locks quality options whose typical output can't fit under the org
+  // ceiling - guidance, not a hard rule, since the ceiling can change more
+  // often than a device happens to be online to re-check it.
+  function applyFieldCeilingLocks() {
+    document.getElementById('fieldCeilingLabel').textContent = orgSettings.maxUploadMb + 'MB';
+    const row = document.getElementById('fieldQualityChips');
+    Array.from(row.querySelectorAll('.chip')).forEach((c) => {
+      const locked = parseInt(c.dataset.min, 10) > orgSettings.maxUploadMb;
+      c.classList.toggle('locked', locked);
+      c.title = locked ? `Not recommended above your organisation's ${orgSettings.maxUploadMb}MB limit.` : '';
+    });
+    const activeChip = row.querySelector('.chip.active');
+    if (activeChip && parseInt(activeChip.dataset.min, 10) > orgSettings.maxUploadMb) {
+      const fallback = row.querySelector('.chip:not(.locked)');
+      if (fallback) { setQualityChip(fallback.dataset.val); saveFieldSettings({ photoQuality: fallback.dataset.val }); }
+    }
+  }
+
+  async function renderPendingSync() {
+    let jobs = [];
+    try { jobs = await FieldDB.listJobs(); } catch {}
+    const title = document.getElementById('fieldPendingSyncTitle');
+    const desc = document.getElementById('fieldPendingSyncDesc');
+    if (jobs.length === 0) {
+      title.textContent = 'Up to date';
+      desc.textContent = 'Nothing waiting to sync.';
+    } else {
+      title.textContent = jobs.length === 1 ? '1 inspection pending' : `${jobs.length} inspections pending`;
+      desc.textContent = navigator.onLine ? 'Ready to sync.' : 'Waiting for a connection.';
+    }
+  }
+
+  async function renderStorageEstimate() {
+    const label = document.getElementById('fieldStorageLabel');
+    if (navigator.storage && navigator.storage.estimate) {
+      try {
+        const { usage } = await navigator.storage.estimate();
+        if (typeof usage === 'number') {
+          label.textContent = `Using approximately ${(usage / (1024 * 1024)).toFixed(0)}MB on this device.`;
+          return;
+        }
+      } catch {}
+    }
+    label.textContent = "Storage details aren't available on this browser.";
+  }
+
+  function renderSettingsScreen() {
+    setQualityChip(fieldSettings.photoQuality || 'balanced');
+    applyFieldCeilingLocks();
+
+    const compressToggle = document.getElementById('fieldCompressToggle');
+    const compressLocked = !!orgSettings.requireFieldCompression;
+    const compressOn = compressLocked ? true : fieldSettings.compressPhotos !== false;
+    compressToggle.classList.toggle('on', compressOn);
+    compressToggle.classList.toggle('locked', compressLocked);
+    compressToggle.setAttribute('aria-checked', compressOn ? 'true' : 'false');
+    document.getElementById('fieldCompressDesc').textContent = compressLocked
+      ? 'Turned on and locked by your organisation.'
+      : 'Shrinks photos to fit your quality setting before they leave your device.';
+
+    setToggleState('fieldWarnToggle', fieldSettings.warnOversized !== false);
+    setToggleState('fieldWifiOnlyToggle', !!fieldSettings.wifiOnlySync);
+    setToggleState('fieldDarkToggle', document.body.classList.contains('night-mode'));
+
+    renderPendingSync();
+    renderStorageEstimate();
+  }
+
+  document.getElementById('fieldQualityChips').addEventListener('click', (e) => {
+    const chip = e.target.closest('.chip');
+    if (!chip || chip.classList.contains('locked')) return;
+    setQualityChip(chip.dataset.val);
+    saveFieldSettings({ photoQuality: chip.dataset.val });
   });
+  document.getElementById('fieldCompressToggle').addEventListener('click', function () {
+    if (this.classList.contains('locked')) return;
+    const next = !this.classList.contains('on');
+    setToggleState('fieldCompressToggle', next);
+    saveFieldSettings({ compressPhotos: next });
+  });
+  document.getElementById('fieldWarnToggle').addEventListener('click', function () {
+    const next = !this.classList.contains('on');
+    setToggleState('fieldWarnToggle', next);
+    saveFieldSettings({ warnOversized: next });
+  });
+  document.getElementById('fieldWifiOnlyToggle').addEventListener('click', function () {
+    const next = !this.classList.contains('on');
+    setToggleState('fieldWifiOnlyToggle', next);
+    saveFieldSettings({ wifiOnlySync: next });
+  });
+  document.getElementById('fieldDarkToggle').addEventListener('click', () => {
+    nightBtn.click();
+    setToggleState('fieldDarkToggle', document.body.classList.contains('night-mode'));
+  });
+  document.getElementById('fieldSyncNowBtn').addEventListener('click', async () => {
+    await flushQueue();
+    renderPendingSync();
+  });
+
+  // Applied at capture/pick time in both photo inputs below - compresses to
+  // the saved quality preset, then (if the org's ceiling still can't fit it)
+  // warns immediately instead of only failing once sync finally reaches the
+  // server.
+  async function maybeCompressPhoto(file) {
+    let out = file;
+    if (fieldSettings.compressPhotos !== false && window.PhotoQuality) {
+      out = await window.PhotoQuality.compressImageFile(file, fieldSettings.photoQuality || 'balanced');
+    }
+    if (fieldSettings.warnOversized !== false && out.size > orgSettings.maxUploadMb * 1024 * 1024) {
+      toast(`Still over your organisation's ${orgSettings.maxUploadMb}MB limit - won't sync until it's smaller.`, 4200);
+    }
+    return out;
+  }
 
   /* ============================================================
      OFFLINE BANNER + SYNC QUEUE
@@ -428,6 +616,7 @@
     document.getElementById('appShell').hidden = false;
     ensureHistoryGuard();
     updateSyncBar();
+    loadFieldSettings();
     await loadStructures();
     await maybeOfferDraftRecovery();
   }
@@ -1564,24 +1753,28 @@
   function renderNotesPhotoStrip() {
     renderPhotoStripInto('notesPhotoStrip', { photos: S.draft.generalPhotos }, () => document.getElementById('notesCameraInput').click());
   }
-  document.getElementById('notesCameraInput').addEventListener('change', (e) => {
+  document.getElementById('notesCameraInput').addEventListener('change', async (e) => {
     const files = Array.from(e.target.files || []);
-    if (!files.length) return;
-    files.forEach((file) => S.draft.generalPhotos.push({ blob: file, filename: file.name, description: '', displayOrder: S.draft.generalPhotos.length, localUrl: URL.createObjectURL(file) }));
-    renderNotesPhotoStrip();
     e.target.value = '';
+    if (!files.length) return;
+    for (const raw of files) {
+      const file = await maybeCompressPhoto(raw);
+      S.draft.generalPhotos.push({ blob: file, filename: file.name, description: '', displayOrder: S.draft.generalPhotos.length, localUrl: URL.createObjectURL(file) });
+    }
+    renderNotesPhotoStrip();
   });
   document.getElementById('addPhotoBtn').addEventListener('click', () => document.getElementById('cameraInput').click());
-  document.getElementById('cameraInput').addEventListener('change', (e) => {
+  document.getElementById('cameraInput').addEventListener('change', async (e) => {
     const files = Array.from(e.target.files || []);
+    e.target.value = '';
     if (!files.length) return;
     ensureCurrentDraftDefect();
     const d = S.draft.defects.find((x) => x.key === S.currentDefectKey);
-    files.forEach((file) => {
+    for (const raw of files) {
+      const file = await maybeCompressPhoto(raw);
       d.photos.push({ blob: file, filename: file.name, description: '', displayOrder: d.photos.length, localUrl: URL.createObjectURL(file) });
-    });
+    }
     renderPhotoStrip(d);
-    e.target.value = '';
   });
 
   // A photo can be added before the defect's other fields are first saved

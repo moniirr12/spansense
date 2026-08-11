@@ -78,6 +78,7 @@
           <h2>Structure List</h2>
           <p id="structuresSubtitle">--</p>
         </div>
+        <button class="icon-btn" id="settingsBtn" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></button>
         <button class="icon-btn" id="nightToggleBtn" title="Toggle dark mode"></button>
         <button class="icon-btn" id="accountBtn" title="Sign out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
       </div>
@@ -110,6 +111,84 @@
         </div>
         <button class="map-recenter-btn" id="structuresMapRecenterBtn" title="Fit all structures"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V5h4"/><path d="M16 5h4v4"/><path d="M4 15v4h4"/><path d="M16 19h4v-4"/></svg></button>
         <div class="structures-map-popup" id="structuresMapPopup" hidden></div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="screen" data-screen="settings">
+      <div class="appbar safe-top">
+        <button class="icon-btn" data-back><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <div class="appbar-titles"><h2>Settings</h2></div>
+      </div>
+      <div class="scrollarea" style="padding:4px 16px 30px;">
+        <p class="cat-label" style="margin:8px 0 8px;">Camera &amp; uploads</p>
+        <div class="settings-card">
+          <div class="settings-row stacked">
+            <div class="settings-row-title">Photo quality</div>
+            <div class="settings-chip-row" id="fieldQualityChips">
+              <button type="button" class="chip" data-min="12" data-val="original">Original</button>
+              <button type="button" class="chip" data-min="6" data-val="high">High</button>
+              <button type="button" class="chip active" data-min="2" data-val="balanced">Balanced</button>
+              <button type="button" class="chip" data-min="0" data-val="data_saver">Data saver</button>
+            </div>
+            <div class="settings-row-desc" id="fieldQualityEstimate">Balanced keeps most detail and cuts upload size by roughly 60%.</div>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-title">Compress before upload</div>
+              <div class="settings-row-desc" id="fieldCompressDesc">Shrinks photos to fit your quality setting before they leave your device.</div>
+            </div>
+            <div class="toggle on" id="fieldCompressToggle" tabindex="0" role="switch" aria-checked="true"><div class="knob"></div></div>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-title">Warn before a photo can't sync</div>
+              <div class="settings-row-desc">Flag it at capture, not once you're back in signal.</div>
+            </div>
+            <div class="toggle on" id="fieldWarnToggle" tabindex="0" role="switch" aria-checked="true"><div class="knob"></div></div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-desc">Organisation limit: <strong id="fieldCeilingLabel">15MB</strong> per photo</div>
+          </div>
+        </div>
+
+        <p class="cat-label" style="margin:8px 0 8px;">Sync</p>
+        <div class="settings-card">
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-title">Wi-Fi only for photo sync</div>
+              <div class="settings-row-desc">Best-effort - depends on what your browser/device reports.</div>
+            </div>
+            <div class="toggle" id="fieldWifiOnlyToggle" tabindex="0" role="switch" aria-checked="false"><div class="knob"></div></div>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-title" id="fieldPendingSyncTitle">Up to date</div>
+              <div class="settings-row-desc" id="fieldPendingSyncDesc">Nothing waiting to sync.</div>
+            </div>
+            <button type="button" class="btn-outline-sm" id="fieldSyncNowBtn">Sync now</button>
+          </div>
+        </div>
+
+        <p class="cat-label" style="margin:8px 0 8px;">Display</p>
+        <div class="settings-card">
+          <div class="settings-row">
+            <div class="settings-row-title">Dark mode</div>
+            <div class="toggle" id="fieldDarkToggle" tabindex="0" role="switch" aria-checked="false"><div class="knob"></div></div>
+          </div>
+        </div>
+
+        <p class="cat-label" style="margin:8px 0 8px;">This device</p>
+        <div class="settings-card">
+          <div class="settings-row">
+            <div class="settings-row-desc" id="fieldStorageLabel">Checking storage use…</div>
+          </div>
+        </div>
+
+        <button type="button" class="signout-row" id="settingsSignOutBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Sign out
+        </button>
       </div>
     </section>
 
@@ -373,6 +452,7 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="/photoQuality.js"></script>
 <script src="/field/js/api.js"></script>
 <script src="/field/js/bci.js"></script>
 <script src="/field/js/defectCodes.js"></script>
