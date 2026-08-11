@@ -477,7 +477,7 @@ function renderDropdownList(filter) {
     });
 
     if (filtered.length === 0) {
-        ddList.innerHTML = '<div class="dd-empty"><i class="fa-solid fa-magnifying-glass"></i>No bridges found</div>';
+        ddList.innerHTML = '<div class="dd-empty"><i class="fa-solid fa-magnifying-glass"></i>No structures found</div>';
         return;
     }
 
@@ -860,7 +860,7 @@ async function loadBridgeList() {
         return;
     }
     if (!bridgeList.length) {
-        showToast('No bridges', 'No structures found in the database', 'error');
+        showToast('No structures', 'No structures found in the database', 'error');
         return;
     }
     var savedId = sessionStorage.getItem('structureId');

@@ -908,7 +908,7 @@ function populateDocumentsQuickStats(documents) {
 
         if (!structureId) {
             console.warn('No structure selected for action:', action);
-            alert('No structure selected. Please click on a bridge marker first.');
+            alert('No structure selected. Please click on a structure marker first.');
             return;
         }
 
@@ -1110,7 +1110,7 @@ function populateDocumentsQuickStats(documents) {
         const structureId = sessionStorage.getItem('structureId');
         const bridgeName  = sessionStorage.getItem('structureName');
         if (!structureId) {
-          alert('No structure selected. Please click on a bridge marker first.');
+          alert('No structure selected. Please click on a structure marker first.');
           return;
         }
 
@@ -1153,7 +1153,7 @@ function populateDocumentsQuickStats(documents) {
 async function generateBCIProformaForDate(structureId, structureName, date) {
     try {
         if (!structureId) {
-            alert('No structure selected. Please click on a bridge marker first.');
+            alert('No structure selected. Please click on a structure marker first.');
             return;
         }
         if (typeof pdfMake === 'undefined' || typeof buildBCIProformaContent !== 'function') {
