@@ -1270,7 +1270,7 @@ function renderPendingReview(data) {
             ? 'Nothing awaiting review.'
             : 'No inspections match your filters.';
         list.innerHTML = `
-            <tr><td colspan="6" style="color: var(--text-muted); font-size: 0.8rem;">${message}</td></tr>`;
+            <tr><td colspan="7" style="color: var(--text-muted); font-size: 0.8rem;">${message}</td></tr>`;
         return;
     }
 
@@ -1295,6 +1295,7 @@ function renderPendingReview(data) {
                     </div>
                 </td>
                 <td>#${item.structure_id}</td>
+                <td><span class="pr-type-badge pr-type-${(item.inspection_type || '').toLowerCase()}">${escapeHtml(item.inspection_type || '—')}</span></td>
                 <td>${inspector}</td>
                 <td>${formatDate(item.inspection_date)}</td>
                 <td><span class="activity-bci bci-${tier.band}">${bci}</span></td>
