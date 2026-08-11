@@ -841,6 +841,10 @@ body.modal-open {
     border-radius: 50%;
     background: none;
     color: #5f6b73;
+    /* Matches .ss-close-btn (Previous Inspections modal) exactly - the
+       shared .close class's 1.5rem is sized for a thin &times; glyph,
+       which reads much bigger once rendered as a solid fa-times icon. */
+    font-size: 1.1rem;
     transition: color 0.2s, background 0.2s;
     /* .card-header aligns to flex-start (so the avatar sits at the top of a
        two-line title instead of drifting to its vertical middle) - that
