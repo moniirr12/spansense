@@ -578,6 +578,48 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.15);
         }
         .toggle.on .knob { transform: translateX(20px); }
+        .toggle.locked { opacity: 0.5; cursor: not-allowed; }
+
+        /* Preferences/Uploads rows that carry a sub-control (interval chips,
+           quality chips) below the title+toggle line, instead of just a toggle. */
+        .pref-item.stacked { flex-direction: column; align-items: stretch; gap: 10px; }
+        .pref-item .pref-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+        .pref-item .sub-row { display: flex; align-items: center; gap: 10px; padding-left: 2px; }
+        .pref-item .sub-label { font-size: 0.76rem; color: #8a9ba8; }
+
+        .info-row { display: flex; align-items: center; gap: 7px; font-size: 0.78rem; color: #8a9ba8; padding-top: 12px; }
+        .info-row i { color: #BA7517; font-size: 0.78rem; }
+        .info-row strong { color: #5f6b73; }
+
+        /* New/Enhanced/Admin badges on settings controls */
+        .tag {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+            padding: 3px 9px; border-radius: 20px; white-space: nowrap;
+        }
+        .tag.new { color: #2d7a6e; background: #e8f5f0; border: 1px solid #b8dcc8; }
+        .tag.enhanced { color: #6c5ce7; background: #f1efff; border: 1px solid #d9d3fb; }
+        .tag.admin { color: #BA7517; background: #fff8ee; border: 1px solid #e8d4b8; }
+        .account-card h2 .tag { margin-left: 4px; }
+
+        /* Quality/file-type/interval chip selectors */
+        .chip-row { display: flex; flex-wrap: wrap; gap: 7px; }
+        .chip {
+            padding: 6px 13px; border-radius: 20px; border: 1px solid #e2e8f0; background: white;
+            font-size: 0.76rem; font-weight: 600; color: #5f6b73; cursor: pointer;
+            display: inline-flex; align-items: center; gap: 5px;
+            transition: background 0.15s, border-color 0.15s, color 0.15s, opacity 0.15s;
+        }
+        .chip.active { background: #e8f5f0; border-color: #8ab4b0; color: #2c5a57; }
+        .chip.locked { opacity: 0.42; cursor: not-allowed; text-decoration: line-through; }
+        .chip .lock-icon { font-size: 0.68rem; }
+
+        /* Organisation Defaults ceiling slider */
+        .account-card input[type="range"] { width: 100%; accent-color: #5b8c8a; height: 20px; cursor: pointer; }
+
+        /* Admin-only card gets a distinct top accent so it reads apart from
+           personal settings at a glance. */
+        .account-card.card-admin { border-top: 3px solid #BA7517; }
 
         /* Toast */
         .toast-container {
@@ -763,6 +805,15 @@
         .night-mode .pref-item .pref-left .pref-desc { color: #a8b8bf; }
         .night-mode .toggle { background: #3a4b53; }
         .night-mode .toggle.on { background: #5b8c8a; }
+        .night-mode .pref-item .sub-label { color: #7f979f; }
+        .night-mode .info-row { color: #7f979f; }
+        .night-mode .info-row strong { color: #a8b8bf; }
+        .night-mode .tag.new { background: #173028; border-color: #2a4a3e; color: #6bbfa8; }
+        .night-mode .tag.enhanced { background: #241f3d; border-color: #3a3060; color: #a99bf5; }
+        .night-mode .tag.admin { background: #2c2416; border-color: #4a3a1e; color: #e0b060; }
+        .night-mode .chip { background: #1e2a2f; border-color: #3a4b53; color: #9ab0b8; }
+        .night-mode .chip.active { background: #1e3a3e; border-color: #3a5a56; color: #8ab4b0; }
+        .night-mode .account-card.card-admin { border-top-color: #e0b060; }
 
         /* ========== HIDE NATIVE SCROLLBAR ========== */
         html { scrollbar-width: none; -ms-overflow-style: none; }
@@ -1019,7 +1070,7 @@
                     <div class="pref-title">Email Notifications</div>
                     <div class="pref-desc">Get alerts for new inspections and exports</div>
                 </div>
-                <div class="toggle on" onclick="this.classList.toggle('on')"><div class="knob"></div></div>
+                <div class="toggle on" id="prefEmailNotifications" data-setting-toggle tabindex="0" role="switch" aria-checked="true"><div class="knob"></div></div>
             </div>
 
             <div class="pref-item">
@@ -1027,15 +1078,85 @@
                     <div class="pref-title">Inspection Reminders</div>
                     <div class="pref-desc">Weekly digest of upcoming due dates</div>
                 </div>
-                <div class="toggle on" onclick="this.classList.toggle('on')"><div class="knob"></div></div>
+                <div class="toggle on" id="prefInspectionReminders" data-setting-toggle tabindex="0" role="switch" aria-checked="true"><div class="knob"></div></div>
+            </div>
+
+            <div class="pref-item stacked">
+                <div class="pref-row">
+                    <div class="pref-left">
+                        <div class="pref-title">Auto-Save Drafts</div>
+                        <div class="pref-desc">Save inspection drafts automatically while you work</div>
+                    </div>
+                    <div class="toggle on" id="prefAutosaveDrafts" data-setting-toggle tabindex="0" role="switch" aria-checked="true"><div class="knob"></div></div>
+                </div>
+                <div class="sub-row">
+                    <span class="sub-label">Every</span>
+                    <div class="chip-row" id="autosaveIntervalChips">
+                        <button type="button" class="chip" data-val="15">15s</button>
+                        <button type="button" class="chip active" data-val="30">30s</button>
+                        <button type="button" class="chip" data-val="60">60s</button>
+                        <button type="button" class="chip" data-val="120">2m</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- UPLOADS & STORAGE CARD -->
+        <div class="account-card" style="margin-bottom: 24px;">
+            <h2><i class="fas fa-image"></i> Uploads &amp; Storage <span class="tag new">New</span></h2>
+
+            <div class="pref-item stacked">
+                <div class="pref-left"><div class="pref-title">Photo quality when uploading</div></div>
+                <div class="chip-row" id="core-quality-chips">
+                    <button type="button" class="chip" data-min="12" data-val="original">Original</button>
+                    <button type="button" class="chip" data-min="6" data-val="high">High</button>
+                    <button type="button" class="chip active" data-min="2" data-val="balanced">Balanced</button>
+                    <button type="button" class="chip" data-min="0" data-val="data_saver">Data saver</button>
+                </div>
+                <div class="pref-desc">Balanced keeps most detail and cuts upload size by roughly 60%.</div>
             </div>
 
             <div class="pref-item">
                 <div class="pref-left">
-                    <div class="pref-title">Auto-Save Drafts</div>
-                    <div class="pref-desc">Save inspection drafts every 30 seconds</div>
+                    <div class="pref-title">Compress large photos automatically</div>
+                    <div class="pref-desc">Applies to structure &amp; inspection photo uploads</div>
                 </div>
-                <div class="toggle on" onclick="this.classList.toggle('on')"><div class="knob"></div></div>
+                <div class="toggle on" id="prefCompressPhotos" data-setting-toggle tabindex="0" role="switch" aria-checked="true"><div class="knob"></div></div>
+            </div>
+
+            <div class="pref-item">
+                <div class="pref-left">
+                    <div class="pref-title">Warn before uploading oversized files</div>
+                    <div class="pref-desc">Flag it before the upload fails server-side</div>
+                </div>
+                <div class="toggle on" id="prefWarnOversized" data-setting-toggle tabindex="0" role="switch" aria-checked="true"><div class="knob"></div></div>
+            </div>
+
+            <div class="info-row">
+                <i class="fas fa-shield-alt"></i>
+                <span>Organisation limit: <strong id="coreCeilingLabel">15MB</strong> per photo<span id="coreCeilingAdminHint"></span></span>
+            </div>
+        </div>
+
+        <!-- ORGANISATION DEFAULTS CARD (admin only) -->
+        <div class="account-card card-admin" id="orgDefaultsCard" style="margin-bottom: 24px; display:none;">
+            <h2><i class="fas fa-users"></i> Organisation Defaults <span class="tag admin">Admin only</span></h2>
+
+            <div class="pref-item stacked">
+                <div class="pref-row">
+                    <div class="pref-left"><div class="pref-title">Maximum photo upload size</div></div>
+                    <strong id="orgCeilingValue">15MB</strong>
+                </div>
+                <input type="range" min="5" max="15" step="1" value="15" id="orgCeilingSlider" aria-label="Maximum photo upload size in megabytes">
+                <div class="pref-desc">Applies to every inspector, on Core and Field. Structure &amp; inspection photos are hard-capped at 15MB server-side today &mdash; lowering this compresses uploads harder automatically.</div>
+            </div>
+
+            <div class="pref-item">
+                <div class="pref-left">
+                    <div class="pref-title">Require compression on Field before sync</div>
+                    <div class="pref-desc">Inspectors can't drop below your quality floor on-site</div>
+                </div>
+                <div class="toggle on" id="orgRequireFieldCompression" data-setting-toggle tabindex="0" role="switch" aria-checked="true"><div class="knob"></div></div>
             </div>
         </div>
 
@@ -1244,6 +1365,183 @@
                         e.target.value = '';
                     });
             });
+        })();
+
+        // ============================================
+        // SETTINGS (Preferences / Uploads & Storage / Organisation Defaults)
+        // Preferences used to be onclick="this.classList.toggle('on')" with
+        // nothing behind it - flipping a switch here did nothing server-side
+        // and reset on every reload. This IIFE loads /api/me/settings +
+        // /api/org-settings on page load, wires every toggle/chip/slider to
+        // actually persist, and drives the quality-chip lock state from the
+        // real org ceiling instead of a hardcoded one.
+        // ============================================
+        (function () {
+            var QUALITY_ESTIMATES = {
+                original: 'No compression.',
+                high: 'Balanced keeps most detail and cuts upload size by roughly 60%.',
+                balanced: 'Balanced keeps most detail and cuts upload size by roughly 60%.',
+                data_saver: 'Smallest files, most compression - best on a weak signal.'
+            };
+            var orgCeilingMb = 15;
+            var isAdmin = false;
+
+            function setToggle(el, on) {
+                if (!el) return;
+                el.classList.toggle('on', !!on);
+                el.setAttribute('aria-checked', on ? 'true' : 'false');
+            }
+            function isOn(el) { return !!el && el.classList.contains('on'); }
+            function setActiveChip(row, matchAttr, value) {
+                if (!row) return;
+                Array.prototype.forEach.call(row.querySelectorAll('.chip'), function (c) {
+                    c.classList.toggle('active', c.getAttribute(matchAttr) === String(value));
+                });
+            }
+            function activeChipVal(row, attr) {
+                var el = row && row.querySelector('.chip.active');
+                return el ? el.getAttribute(attr) : null;
+            }
+
+            function saveUserSettings() {
+                var body = {
+                    emailNotifications: isOn(document.getElementById('prefEmailNotifications')),
+                    inspectionReminders: isOn(document.getElementById('prefInspectionReminders')),
+                    autosaveDrafts: isOn(document.getElementById('prefAutosaveDrafts')),
+                    autosaveIntervalSeconds: parseInt(activeChipVal(document.getElementById('autosaveIntervalChips'), 'data-val'), 10) || 30,
+                    photoQuality: activeChipVal(document.getElementById('core-quality-chips'), 'data-val') || 'balanced',
+                    compressPhotos: isOn(document.getElementById('prefCompressPhotos')),
+                    warnOversized: isOn(document.getElementById('prefWarnOversized'))
+                };
+                fetch('/api/me/settings', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                })
+                    .then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
+                    .then(function (result) {
+                        if (!result.ok) throw new Error(result.data.error || 'Failed to save');
+                    })
+                    .catch(function (e) { showToast('Error', e.message || 'Failed to save preference', 'error'); });
+            }
+
+            function saveOrgSettings() {
+                var body = {
+                    maxUploadMb: parseInt(document.getElementById('orgCeilingSlider').value, 10),
+                    requireFieldCompression: isOn(document.getElementById('orgRequireFieldCompression'))
+                };
+                fetch('/api/org-settings', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                })
+                    .then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
+                    .then(function (result) {
+                        if (!result.ok) throw new Error(result.data.error || 'Failed to save');
+                        showToast('Saved', 'Organisation defaults updated', 'success');
+                    })
+                    .catch(function (e) { showToast('Error', e.message || 'Failed to save organisation defaults', 'error'); });
+            }
+
+            // Locks quality chips whose typical output can't fit under the
+            // org ceiling, in both the personal card and (implicitly, via
+            // the same ceiling) whatever Field shows - not a hard block on
+            // the setting itself, just steering away from a choice that
+            // will keep failing the server's own size check.
+            function applyCeilingLocks(announceIfChanged) {
+                document.getElementById('coreCeilingLabel').textContent = orgCeilingMb + 'MB';
+                var qualityRow = document.getElementById('core-quality-chips');
+                var wasActive = activeChipVal(qualityRow, 'data-val');
+                var bestAvailable = null;
+                Array.prototype.forEach.call(qualityRow.querySelectorAll('.chip'), function (c) {
+                    var min = parseInt(c.getAttribute('data-min'), 10);
+                    var locked = min > orgCeilingMb;
+                    c.classList.toggle('locked', locked);
+                    if (locked) {
+                        c.title = 'Not recommended above your organisation’s ' + orgCeilingMb + 'MB limit.';
+                    } else {
+                        c.removeAttribute('title');
+                        if (bestAvailable === null || min > parseInt(bestAvailable, 10)) bestAvailable = c.getAttribute('data-min');
+                    }
+                });
+                var activeEl = qualityRow.querySelector('.chip.active');
+                var activeMin = activeEl ? parseInt(activeEl.getAttribute('data-min'), 10) : 0;
+                if (activeMin > orgCeilingMb) {
+                    var fallback = qualityRow.querySelector('.chip:not(.locked)');
+                    if (fallback) {
+                        setActiveChip(qualityRow, 'data-val', fallback.getAttribute('data-val'));
+                        if (announceIfChanged) showToast('Quality adjusted', 'Lowered to fit your organisation’s ' + orgCeilingMb + 'MB limit.', 'success');
+                        saveUserSettings();
+                    }
+                }
+            }
+
+            Promise.all([
+                fetch('/api/me').then(function (r) { return r.ok ? r.json() : {}; }),
+                fetch('/api/me/settings').then(function (r) { return r.ok ? r.json() : {}; }),
+                fetch('/api/org-settings').then(function (r) { return r.ok ? r.json() : {}; })
+            ]).then(function (results) {
+                var me = results[0] || {}, prefs = results[1] || {}, org = results[2] || {};
+                isAdmin = me.role === 'admin';
+
+                setToggle(document.getElementById('prefEmailNotifications'), prefs.emailNotifications !== false);
+                setToggle(document.getElementById('prefInspectionReminders'), prefs.inspectionReminders !== false);
+                setToggle(document.getElementById('prefAutosaveDrafts'), prefs.autosaveDrafts !== false);
+                setActiveChip(document.getElementById('autosaveIntervalChips'), 'data-val', prefs.autosaveIntervalSeconds || 30);
+                setActiveChip(document.getElementById('core-quality-chips'), 'data-val', prefs.photoQuality || 'balanced');
+                setToggle(document.getElementById('prefCompressPhotos'), prefs.compressPhotos !== false);
+                setToggle(document.getElementById('prefWarnOversized'), prefs.warnOversized !== false);
+
+                orgCeilingMb = org.maxUploadMb || 15;
+                document.getElementById('orgCeilingSlider').value = orgCeilingMb;
+                document.getElementById('orgCeilingValue').textContent = orgCeilingMb + 'MB';
+                setToggle(document.getElementById('orgRequireFieldCompression'), org.requireFieldCompression !== false);
+                applyCeilingLocks(false);
+
+                if (isAdmin) {
+                    document.getElementById('orgDefaultsCard').style.display = '';
+                    document.getElementById('coreCeilingAdminHint').textContent = ', set below';
+                }
+            }).catch(function (e) {
+                console.error('Failed to load settings:', e);
+            });
+
+            // Generic toggle handler for every [data-setting-toggle] except
+            // the org-only one, which needs its own save call.
+            Array.prototype.forEach.call(document.querySelectorAll('[data-setting-toggle]'), function (el) {
+                function fire() {
+                    if (el.classList.contains('locked')) return;
+                    setToggle(el, !isOn(el));
+                    if (el.id === 'orgRequireFieldCompression') saveOrgSettings();
+                    else saveUserSettings();
+                }
+                el.addEventListener('click', fire);
+                el.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fire(); } });
+            });
+
+            document.getElementById('autosaveIntervalChips').addEventListener('click', function (e) {
+                var chip = e.target.closest('.chip');
+                if (!chip) return;
+                setActiveChip(this, 'data-val', chip.getAttribute('data-val'));
+                saveUserSettings();
+            });
+
+            document.getElementById('core-quality-chips').addEventListener('click', function (e) {
+                var chip = e.target.closest('.chip');
+                if (!chip || chip.classList.contains('locked')) return;
+                setActiveChip(this, 'data-val', chip.getAttribute('data-val'));
+                var desc = QUALITY_ESTIMATES[chip.getAttribute('data-val')];
+                if (desc) chip.closest('.pref-item').querySelector('.pref-desc').textContent = desc;
+                saveUserSettings();
+            });
+
+            var ceilingSlider = document.getElementById('orgCeilingSlider');
+            ceilingSlider.addEventListener('input', function () {
+                orgCeilingMb = parseInt(ceilingSlider.value, 10);
+                document.getElementById('orgCeilingValue').textContent = orgCeilingMb + 'MB';
+                applyCeilingLocks(true);
+            });
+            ceilingSlider.addEventListener('change', saveOrgSettings);
         })();
 
         // ============================================

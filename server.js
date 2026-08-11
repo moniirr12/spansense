@@ -517,6 +517,38 @@ async function initDatabase() {
             )
         `);
 
+        // Org-wide upload ceiling + field-compression policy - the
+        // admin-configurable version of what used to be a hardcoded 15MB
+        // limit on the structure/inspection photo routes below. Same loose
+        // organization_id keying as author_branding (no `organizations`
+        // table exists).
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS org_settings (
+                organization_id INTEGER PRIMARY KEY,
+                max_upload_mb INTEGER DEFAULT 15,
+                require_field_compression BOOLEAN DEFAULT true,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        // Personal preferences - one row per user, read/written by both the
+        // Account page's Preferences/Uploads cards and Field's Settings
+        // screen, so a change on either surface is reflected on the other.
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS user_settings (
+                user_id INTEGER PRIMARY KEY,
+                email_notifications BOOLEAN DEFAULT true,
+                inspection_reminders BOOLEAN DEFAULT true,
+                autosave_drafts BOOLEAN DEFAULT true,
+                autosave_interval_seconds INTEGER DEFAULT 30,
+                photo_quality TEXT DEFAULT 'balanced',
+                compress_photos BOOLEAN DEFAULT true,
+                warn_oversized BOOLEAN DEFAULT true,
+                wifi_only_sync BOOLEAN DEFAULT false,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
         console.log('All tables initialized');
 
         // Row-Level Security must be enabled per table - Supabase's
@@ -545,7 +577,7 @@ async function enableRowLevelSecurity() {
     const tables = [
         'users', 'bridges', 'inspections', 'inspection_spans', 'defects',
         'defect_photos', 'maintenance_history', 'elements', 'folders',
-        'files', 'author_branding', 'session'
+        'files', 'author_branding', 'org_settings', 'user_settings', 'session'
     ];
     for (const table of tables) {
         try {
@@ -1089,24 +1121,28 @@ app.put('/api/bridges/:id/spans', requireAuth, requireEngineer, async (req, res)
     }
 });
 
-const uploadStructurePhoto = multer({
-    storage: multer.memoryStorage(),
-    limits: { fileSize: 15 * 1024 * 1024 },
-    fileFilter: (req, file, cb) => {
-        if (file.mimetype.startsWith('image/')) cb(null, true);
-        else cb(new Error('Only image files are allowed'), false);
-    }
-});
+function makeImageUpload(fileSizeBytes) {
+    return multer({
+        storage: multer.memoryStorage(),
+        limits: { fileSize: fileSizeBytes },
+        fileFilter: (req, file, cb) => {
+            if (file.mimetype.startsWith('image/')) cb(null, true);
+            else cb(new Error('Only image files are allowed'), false);
+        }
+    });
+}
 
 // Cover photo for a structure - same single photo_url column map.js's
 // bridge modal already reads via GET /getBridgePhoto below. Only the first
 // photo picked in Add Structure's photo grid becomes this; there's no
 // multi-photo gallery for structures the way inspections have one.
 app.post('/api/bridges/:id/photo', requireAuth, requireEngineer,
-    (req, res, next) => {
-        uploadStructurePhoto.single('photo')(req, res, (err) => {
+    async (req, res, next) => {
+        const ceilingBytes = await getOrgUploadCeilingBytes(req);
+        const ceilingMb = Math.round(ceilingBytes / (1024 * 1024));
+        makeImageUpload(ceilingBytes).single('photo')(req, res, (err) => {
             if (!err) return next();
-            if (err.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: 'Photo exceeds the 15MB limit.' });
+            if (err.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: `Photo exceeds the ${ceilingMb}MB limit.` });
             return res.status(400).json({ error: err.message });
         });
     },
@@ -2877,6 +2913,126 @@ app.post('/api/author/branding/:organizationId/logo', requireAuth,
     }
 );
 
+// ============================================
+// ORGANISATION & PERSONAL SETTINGS
+// Backs the Account page's Uploads & Storage / Organisation Defaults cards
+// and Field's Settings screen. See getOrgUploadCeilingBytes() below for how
+// max_upload_mb actually gets enforced on the photo upload routes.
+// ============================================
+const DEFAULT_MAX_UPLOAD_MB = 15; // matches the multer limit this replaces
+const HARD_MAX_UPLOAD_MB = 15;    // structure/inspection photo routes are still hard-capped here server-side; raising this needs a backend change, not just a setting
+const HARD_MIN_UPLOAD_MB = 5;
+
+async function getOrgSettings(organizationId) {
+    if (!organizationId) return { maxUploadMb: DEFAULT_MAX_UPLOAD_MB, requireFieldCompression: true };
+    const row = await dbGet(
+        'SELECT max_upload_mb, require_field_compression FROM org_settings WHERE organization_id = $1',
+        [organizationId]
+    );
+    if (!row) return { maxUploadMb: DEFAULT_MAX_UPLOAD_MB, requireFieldCompression: true };
+    return { maxUploadMb: row.max_upload_mb, requireFieldCompression: row.require_field_compression };
+}
+
+async function getOrgUploadCeilingBytes(req) {
+    const settings = await getOrgSettings(req.session.organizationId);
+    return (settings.maxUploadMb || DEFAULT_MAX_UPLOAD_MB) * 1024 * 1024;
+}
+
+app.get('/api/org-settings', requireAuth, async (req, res) => {
+    try {
+        res.json(await getOrgSettings(req.session.organizationId));
+    } catch (err) {
+        console.error('Fetch org settings error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/org-settings', requireAuth, requireAdmin, async (req, res) => {
+    try {
+        if (!req.session.organizationId) {
+            return res.status(400).json({ error: 'Your account has no organisation set, so there is nothing to configure org-wide yet.' });
+        }
+        let maxUploadMb = parseInt(req.body.maxUploadMb, 10);
+        if (!Number.isFinite(maxUploadMb)) maxUploadMb = DEFAULT_MAX_UPLOAD_MB;
+        maxUploadMb = Math.min(HARD_MAX_UPLOAD_MB, Math.max(HARD_MIN_UPLOAD_MB, maxUploadMb));
+        const requireFieldCompression = !!req.body.requireFieldCompression;
+
+        await pool.query(
+            `INSERT INTO org_settings (organization_id, max_upload_mb, require_field_compression, updated_at)
+             VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+             ON CONFLICT (organization_id) DO UPDATE SET
+                max_upload_mb = EXCLUDED.max_upload_mb,
+                require_field_compression = EXCLUDED.require_field_compression,
+                updated_at = CURRENT_TIMESTAMP`,
+            [req.session.organizationId, maxUploadMb, requireFieldCompression]
+        );
+        res.json({ maxUploadMb, requireFieldCompression });
+    } catch (err) {
+        console.error('Save org settings error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+const PHOTO_QUALITY_VALUES = ['original', 'high', 'balanced', 'data_saver'];
+const AUTOSAVE_INTERVAL_VALUES = [15, 30, 60, 120];
+
+function userSettingsResponse(row) {
+    if (!row) {
+        return {
+            emailNotifications: true, inspectionReminders: true, autosaveDrafts: true, autosaveIntervalSeconds: 30,
+            photoQuality: 'balanced', compressPhotos: true, warnOversized: true, wifiOnlySync: false
+        };
+    }
+    return {
+        emailNotifications: row.email_notifications, inspectionReminders: row.inspection_reminders,
+        autosaveDrafts: row.autosave_drafts, autosaveIntervalSeconds: row.autosave_interval_seconds,
+        photoQuality: row.photo_quality, compressPhotos: row.compress_photos, warnOversized: row.warn_oversized,
+        wifiOnlySync: row.wifi_only_sync
+    };
+}
+
+app.get('/api/me/settings', requireAuth, async (req, res) => {
+    try {
+        const row = await dbGet('SELECT * FROM user_settings WHERE user_id = $1', [req.session.userId]);
+        res.json(userSettingsResponse(row));
+    } catch (err) {
+        console.error('Fetch user settings error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/me/settings', requireAuth, async (req, res) => {
+    try {
+        const b = req.body || {};
+        const photoQuality = PHOTO_QUALITY_VALUES.includes(b.photoQuality) ? b.photoQuality : 'balanced';
+        const autosaveIntervalSeconds = AUTOSAVE_INTERVAL_VALUES.includes(parseInt(b.autosaveIntervalSeconds, 10))
+            ? parseInt(b.autosaveIntervalSeconds, 10) : 30;
+
+        await pool.query(
+            `INSERT INTO user_settings (user_id, email_notifications, inspection_reminders, autosave_drafts,
+                autosave_interval_seconds, photo_quality, compress_photos, warn_oversized, wifi_only_sync, updated_at)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,CURRENT_TIMESTAMP)
+             ON CONFLICT (user_id) DO UPDATE SET
+                email_notifications = EXCLUDED.email_notifications,
+                inspection_reminders = EXCLUDED.inspection_reminders,
+                autosave_drafts = EXCLUDED.autosave_drafts,
+                autosave_interval_seconds = EXCLUDED.autosave_interval_seconds,
+                photo_quality = EXCLUDED.photo_quality,
+                compress_photos = EXCLUDED.compress_photos,
+                warn_oversized = EXCLUDED.warn_oversized,
+                wifi_only_sync = EXCLUDED.wifi_only_sync,
+                updated_at = CURRENT_TIMESTAMP`,
+            [req.session.userId, !!b.emailNotifications, !!b.inspectionReminders, !!b.autosaveDrafts,
+                autosaveIntervalSeconds, photoQuality, !!b.compressPhotos, !!b.warnOversized, !!b.wifiOnlySync]
+        );
+        const row = await dbGet('SELECT * FROM user_settings WHERE user_id = $1', [req.session.userId]);
+        res.json(userSettingsResponse(row));
+    } catch (err) {
+        console.error('Save user settings error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // GET /api/worksrequired
 app.get('/api/worksrequired', requireAuth, async (req, res) => {
     try {
@@ -2943,25 +3099,15 @@ function buildInspectionPhotoStoragePath(structureId, inspectionDate, originalna
     return `bridge_${structureId}/inspections/${inspectionDate}/photo-${uniqueSuffix}${path.extname(originalname)}`;
 }
 
-const uploadInspectionPhotos = multer({
-    storage: multer.memoryStorage(),
-    limits: { fileSize: 15 * 1024 * 1024 },
-    fileFilter: (req, file, cb) => {
-        if (file.mimetype.startsWith('image/')) {
-            cb(null, true);
-        } else {
-            cb(new Error('Only image files are allowed!'), false);
-        }
-    }
-});
-
 // Photo upload endpoint
 app.post('/api/bridges/:structureId/inspection-photos', requireAuth,
-    (req, res, next) => {
-        uploadInspectionPhotos.array('photos', 20)(req, res, (err) => {
+    async (req, res, next) => {
+        const ceilingBytes = await getOrgUploadCeilingBytes(req);
+        const ceilingMb = Math.round(ceilingBytes / (1024 * 1024));
+        makeImageUpload(ceilingBytes).array('photos', 20)(req, res, (err) => {
             if (!err) return next();
             if (err.code === 'LIMIT_FILE_SIZE') {
-                return res.status(413).json({ success: false, error: 'Photo exceeds the 15MB limit.' });
+                return res.status(413).json({ success: false, error: `Photo exceeds the ${ceilingMb}MB limit.` });
             }
             return res.status(400).json({ success: false, error: err.message });
         });

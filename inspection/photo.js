@@ -76,6 +76,13 @@ window.showAlertModal = showAlertModal;
 // Global photoData object
 let photoData = JSON.parse(sessionStorage.getItem('photoData')) || {};
 
+// Fired once at load, awaited inside uploadPhotoNow() below - a shared
+// promise instead of a callback-order dependency, so it doesn't matter
+// whether the first photo goes up before or after this resolves.
+const __photoSettingsPromise = fetch('/api/me/settings')
+    .then((r) => (r.ok ? r.json() : {}))
+    .catch(() => ({}));
+
 // ============================================
 // OPEN PHOTO MODAL
 // ============================================
@@ -283,11 +290,21 @@ async function uploadPhotoNow(defectId, clientId) {
     // file_object doesn't survive a sessionStorage round-trip (e.g. a retry
     // after a page reload), so fall back to rebuilding it from the base64
     // preview, which does.
-    const file = photo.file_object || (photo.preview_url && dataURLtoFile(photo.preview_url, photo.file_name, photo.file_type));
+    let file = photo.file_object || (photo.preview_url && dataURLtoFile(photo.preview_url, photo.file_name, photo.file_type));
     if (!bridgeId || !inspectionDate || !file) {
         setPhotoUploadState(defectId, clientId, { uploading: false, failed: true });
         showToast('Missing required information — photo not saved');
         return;
+    }
+
+    // Uploads & Storage in Account settings - compresses to the user's
+    // chosen quality before it ever hits the network, same preset used by
+    // Field. The server's own org-configurable ceiling (see
+    // /api/org-settings) is still the real backstop if this doesn't get it
+    // small enough.
+    const photoSettings = await __photoSettingsPromise;
+    if (photoSettings.compressPhotos !== false && window.PhotoQuality) {
+        file = await window.PhotoQuality.compressImageFile(file, photoSettings.photoQuality || 'balanced');
     }
 
     const formData = new FormData();
@@ -302,7 +319,10 @@ async function uploadPhotoNow(defectId, clientId) {
             method: 'POST',
             body: formData
         });
-        if (!response.ok) throw new Error('Upload failed');
+        if (!response.ok) {
+            const errBody = await response.json().catch(() => ({}));
+            throw new Error(errBody.error || 'Upload failed');
+        }
         const result = await response.json();
         const uploaded = result.success && result.photos && result.photos[0];
         if (!uploaded) throw new Error('Upload failed');
@@ -328,7 +348,7 @@ async function uploadPhotoNow(defectId, clientId) {
     } catch (error) {
         console.error('Upload error:', error);
         setPhotoUploadState(defectId, clientId, { uploading: false, failed: true });
-        showToast('Upload failed — tap the photo to retry');
+        showToast(error.message && error.message !== 'Upload failed' ? error.message : 'Upload failed — tap the photo to retry');
     }
 }
 
