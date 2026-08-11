@@ -510,7 +510,7 @@ async function buildFullInspectionReportDocx(doc) {
     ] : [])));
 
     children.push(bookmarkedHeading(d, '1.1 Structure Description', d.HeadingLevel.HEADING_2, 'section1_1'));
-    children.push(reportPara(d, bridgeData.description || 'No structural description available for this bridge.'));
+    children.push(reportPara(d, bridgeData.description || 'No structural description available for this structure.'));
 
     children.push(bookmarkedHeading(d, '1.2 Coordinates', d.HeadingLevel.HEADING_2, 'section1_2'));
     children.push(kvTable(d, [

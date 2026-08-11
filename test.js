@@ -1076,7 +1076,7 @@ function buildInspectionReportDocDefinition(ctx) {
             ] : [])
         ]),
         subhead('1.1 Description', 'section1_1'),
-        { text: bridgeData.description || 'No structural description available for this bridge.', fontSize: 9.5, lineHeight: 1.4, color: RC.body, margin: [0, 0, 0, 13] },
+        { text: bridgeData.description || 'No structural description available for this structure.', fontSize: 9.5, lineHeight: 1.4, color: RC.body, margin: [0, 0, 0, 13] },
         subhead('1.2 Location & Coordinates', 'section1_2'),
         narrKvTable([
             ['Latitude / Longitude', (bridgeData.latitude && bridgeData.longitude) ? `${Number(bridgeData.latitude).toFixed(6)}, ${Number(bridgeData.longitude).toFixed(6)}` : 'N/A'],

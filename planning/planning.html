@@ -1193,7 +1193,7 @@
                 <div class="header-actions">
                     <div class="gantt-search-wrap">
                         <i class="fas fa-search"></i>
-                        <input type="text" id="ganttSearchInput" placeholder="Search bridge..." oninput="onGanttSearchInput(this.value)">
+                        <input type="text" id="ganttSearchInput" placeholder="Search structure..." oninput="onGanttSearchInput(this.value)">
                     </div>
                     <button class="gantt-icon-btn" id="exportGanttBtn" data-tip="Export PDF"><i class="fas fa-download"></i></button>
                 </div>
@@ -1589,14 +1589,14 @@
             const numCols = isDecade ? 10 : 12;
             const bridgesList = computeGanttBridgesList(isDecade, startYear, filter, search);
 
-            let sidebarHtml = '<div class="gantt-sidebar-header">Bridge</div>';
+            let sidebarHtml = '<div class="gantt-sidebar-header">Structure</div>';
             let timelineHeader = '<div class="gantt-timeline-header">';
             for (let c = 0; c < numCols; c++) timelineHeader += `<div class="gantt-month">${isDecade ? startYear + c : months[c]}</div>`;
             timelineHeader += '</div>';
 
             let gridRows = '';
             if (bridgesList.length === 0) {
-                gridRows = `<div style="padding: 60px; text-align: center; color: #5f6b73;">${search ? 'No bridges match your search' : 'No inspections match the selected filter'}</div>`;
+                gridRows = `<div style="padding: 60px; text-align: center; color: #5f6b73;">${search ? 'No structures match your search' : 'No inspections match the selected filter'}</div>`;
             } else {
                 for (const bridge of bridgesList) {
                     const hasOverdue = bridge.inspections.some(i => i.position === 'Overdue');
@@ -1705,7 +1705,7 @@
 
             const body = [
                 [
-                    { text: 'Bridge', style: 'tableHeader', fillColor: '#1a2e38' },
+                    { text: 'Structure', style: 'tableHeader', fillColor: '#1a2e38' },
                     ...years.map(y => ({ text: String(y), style: 'tableHeader', alignment: 'center', fillColor: '#1a2e38' }))
                 ],
                 ...bridgesList.map(bridge => [

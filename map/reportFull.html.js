@@ -422,7 +422,7 @@ async function buildFullInspectionReportHtml(doc) {
             ['Span / length', spanCount + (spanCount > 1 ? ' spans' : ' span') + (bridgeData.length ? ('   ·   ' + bridgeData.length + ' m') : '')]
         ]) +
         '<a id="section1_1"></a>' + htmlSubhead('1.1 Description') +
-        '<p class="body-text">' + nl2br(bridgeData.description || 'No structural description available for this bridge.') + '</p>' +
+        '<p class="body-text">' + nl2br(bridgeData.description || 'No structural description available for this structure.') + '</p>' +
         '<a id="section1_2"></a>' + htmlSubhead('1.2 Location & Coordinates') +
         htmlKvTable([
             ['Latitude / Longitude', (bridgeData.latitude && bridgeData.longitude) ? (Number(bridgeData.latitude).toFixed(6) + ', ' + Number(bridgeData.longitude).toFixed(6)) : 'N/A'],
