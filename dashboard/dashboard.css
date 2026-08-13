@@ -538,10 +538,9 @@ body {
 .fc-spark { vertical-align: middle; }
 
 /* Search box above the Structures view - reuses .pr-search-wrap's look
-   (Pending Review's search field) rather than a new input style, just
-   sized for its own block instead of a filter row's flex:1. */
+   (Pending Review's search field) rather than a new input style. Full
+   width of the section, same as the toggle/badge row above it. */
 .fc-search-wrap {
-    max-width: 320px;
     margin: 0 0 14px;
 }
 
