@@ -52,12 +52,12 @@
             transform: translateX(-50%);
             width: 67%;
             max-width: 1190px;
-            background: rgba(255, 255, 255, 0.65);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            background: linear-gradient(135deg, rgba(238, 244, 242, 0.75), rgba(255, 255, 255, 0.45));
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
             border-radius: 60px;
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(138, 180, 176, 0.35);
+            box-shadow: 0 8px 28px rgba(44, 90, 87, 0.12);
             z-index: 1100;
             display: flex;
             align-items: center;
@@ -500,7 +500,7 @@
             background-color: #1a2428 !important;
             color: #d4dfe3;
         }
-        .night-mode .navbar { background: rgba(35, 46, 52, 0.95) !important; border-color: #2f3e45; }
+        .night-mode .navbar { background: rgba(47, 62, 72, 0.85) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; }
         .night-mode .navbar .logo { background: linear-gradient(135deg, #8ab4b0 0%, #a0c8c4 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .night-mode .navbar .menu a { color: #9ab0b8; }
         .night-mode .navbar .menu a.active { background: rgba(138, 180, 176, 0.15); color: #8ab4b0; }
