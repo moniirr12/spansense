@@ -29,12 +29,12 @@ body {
     transform: translateX(-50%);
     width: 67%;
     max-width: 1190px;
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    background: linear-gradient(135deg, rgba(238, 244, 242, 0.75), rgba(255, 255, 255, 0.45));
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-radius: 60px;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(138, 180, 176, 0.35);
+    box-shadow: 0 8px 28px rgba(44, 90, 87, 0.12);
     z-index: 1100;
     display: flex;
     align-items: center;
@@ -538,10 +538,9 @@ body {
 .fc-spark { vertical-align: middle; }
 
 /* Search box above the Structures view - reuses .pr-search-wrap's look
-   (Pending Review's search field) rather than a new input style, just
-   sized for its own block instead of a filter row's flex:1. */
+   (Pending Review's search field) rather than a new input style. Full
+   width of the section, same as the toggle/badge row above it. */
 .fc-search-wrap {
-    max-width: 320px;
     margin: 0 0 14px;
 }
 
@@ -1047,7 +1046,7 @@ body {
 }
 
 .night-mode .navbar {
-    background: rgba(35, 46, 52, 0.95) !important;
+    background: rgba(47, 62, 72, 0.85) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 

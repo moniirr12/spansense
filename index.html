@@ -155,12 +155,12 @@ body {
     transform: translateX(-50%);
     width: 67%;
     max-width: 1190px;
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    background: linear-gradient(135deg, rgba(238, 244, 242, 0.75), rgba(255, 255, 255, 0.45));
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-radius: 60px;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(138, 180, 176, 0.35);
+    box-shadow: 0 8px 28px rgba(44, 90, 87, 0.12);
     z-index: 1000;
     display: flex;
     align-items: center;
@@ -262,8 +262,8 @@ body {
 
 /* Dark mode navbar styles */
 .night-mode .navbar {
-    background: rgba(35, 46, 52, 0.95);
-    border-color: #2f3e45;
+    background: rgba(47, 62, 72, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .night-mode .navbar .logo {

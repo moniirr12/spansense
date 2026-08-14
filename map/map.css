@@ -10,7 +10,7 @@
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #eef2f8;
     color: #2c3e44;
     transition: background 0.3s ease, color 0.3s ease;
@@ -29,12 +29,12 @@ body {
     transform: translateX(-50%);
     width: 67%;
     max-width: 1190px;
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    background: linear-gradient(135deg, rgba(238, 244, 242, 0.75), rgba(255, 255, 255, 0.45));
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-radius: 60px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(138, 180, 176, 0.35);
+    box-shadow: 0 8px 28px rgba(44, 90, 87, 0.12);
     z-index: 1200;
     display: flex;
     align-items: center;
@@ -2461,6 +2461,12 @@ body.modal-open {
 .night-mode .navbar {
     background: rgba(47, 62, 72, 0.85) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.night-mode .navbar .logo {
+    background: linear-gradient(135deg, #8ab4b0 0%, #a0c8c4 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
 }
 
 .night-mode .navbar .menu a,
