@@ -1386,6 +1386,7 @@ async function buildPortfolioSummary() {
     const bciBands = { veryGood: 0, good: 0, fair: 0, poor: 0, veryPoor: 0, unscored: 0 };
     const overdue = [];
     const neverInspected = [];
+    const scored = [];
     let bciSum = 0, bciCount = 0;
     const today = new Date();
 
@@ -1396,6 +1397,7 @@ async function buildPortfolioSummary() {
         if (b.bci_av != null) {
             bciSum += Number(b.bci_av);
             bciCount++;
+            scored.push({ name: b.name || `Structure #${b.id}`, bci: Number(b.bci_av) });
             const band = BCI_BANDS.find(x => b.bci_av >= x.min && b.bci_av < x.max) || (b.bci_av >= 100 ? BCI_BANDS[0] : null);
             if (band) bciBands[band.key]++;
         } else {
@@ -1416,6 +1418,7 @@ async function buildPortfolioSummary() {
     }
 
     overdue.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+    scored.sort((a, b) => a.bci - b.bci);
 
     return {
         totalStructures: rows.length,
@@ -1423,7 +1426,9 @@ async function buildPortfolioSummary() {
         avgBci: bciCount ? bciSum / bciCount : null,
         bciBands,
         overdue,
-        neverInspected
+        neverInspected,
+        lowestScoring: scored.slice(0, 8),
+        highestScoring: scored.slice(-8).reverse()
     };
 }
 

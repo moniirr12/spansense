@@ -217,7 +217,12 @@ Defects recorded (most severe first):
 ${defectLines}`;
 }
 
-async function callGemini(prompt) {
+// 503 ("model overloaded") and 429 (rate limit) are the free tier's normal
+// background noise, not real failures - Google's own error text calls 503
+// "usually temporary". One retry after a short pause clears most of them
+// instead of surfacing a 500 to the user for something that succeeds a
+// second later (observed live: 2 of 4 chat requests in one test session).
+async function callGemini(prompt, attempt = 1) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
 
@@ -227,6 +232,10 @@ async function callGemini(prompt) {
         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
     });
     if (!res.ok) {
+        if ((res.status === 503 || res.status === 429) && attempt === 1) {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            return callGemini(prompt, attempt + 1);
+        }
         const errText = await res.text();
         throw new Error(`Gemini API error ${res.status}: ${errText.slice(0, 300)}`);
     }
@@ -310,10 +319,22 @@ function buildPortfolioFactsBlock(summary) {
     const neverInspectedLines = (summary.neverInspected || []).slice(0, 8)
         .map(n => `- ${n}`).join('\n') || '(none)';
 
+    const lowestScoringLines = (summary.lowestScoring || [])
+        .map(s => `- ${s.name}: ${s.bci.toFixed(1)}`).join('\n') || '(none scored yet)';
+
+    const highestScoringLines = (summary.highestScoring || [])
+        .map(s => `- ${s.name}: ${s.bci.toFixed(1)}`).join('\n') || '(none scored yet)';
+
     return `Total structures: ${summary.totalStructures}
 By type: ${byType}
 Portfolio average BCI: ${summary.avgBci != null ? summary.avgBci.toFixed(1) : 'not available'}
 BCI condition bands (count of structures in each): ${bandLine}
+
+Lowest-scoring structures (worst BCI avg first, up to 8):
+${lowestScoringLines}
+
+Highest-scoring structures (best BCI avg first, up to 8):
+${highestScoringLines}
 
 Overdue for inspection (${summary.overdue ? summary.overdue.length : 0} total, showing up to 8):
 ${overdueLines}
