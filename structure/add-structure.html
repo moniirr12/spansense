@@ -143,9 +143,11 @@ body {
 
 /* ---------- FORM SECTIONS ---------- */
 .form-section {
-    background: white;
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.88), rgba(244, 248, 247, 0.72));
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
     border-radius: 22px;
-    border: 1px solid #cbd5df;
+    border: 1px solid rgba(138, 180, 176, 0.28);
     padding: 24px 26px;
     margin-bottom: 18px;
 }
@@ -357,8 +359,10 @@ body {
 /* ---------- TOAST ---------- */
 .toast-container { position: fixed; bottom: 30px; right: 30px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; }
 .toast {
-    background: white; border-radius: 16px; padding: 16px 20px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-    border: 1px solid #cbd5df; display: flex; align-items: center; gap: 12px; min-width: 300px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(238, 244, 242, 0.7));
+    backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%);
+    border-radius: 16px; padding: 16px 20px; box-shadow: 0 10px 30px rgba(44, 90, 87, 0.14);
+    border: 1px solid rgba(138, 180, 176, 0.3); display: flex; align-items: center; gap: 12px; min-width: 300px;
     transform: translateX(120%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 .toast.show { transform: translateX(0); }
@@ -403,7 +407,11 @@ body {
 .night-mode .page-header h1 { color: #8ab4b0; }
 .night-mode .page-header p { color: #a8b8bf; }
 
-.night-mode .form-section { background: #232e34; border-color: #2f3e45; }
+.night-mode .form-section {
+    background: linear-gradient(160deg, rgba(51, 68, 79, 0.88), rgba(36, 48, 56, 0.72));
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
+}
 .night-mode .form-section h2 { color: #d4dfe3; }
 .night-mode .form-section .section-sub { color: #a8b8bf; }
 .night-mode .extract-section { border-color: rgba(138, 180, 176, 0.3); background: rgba(138, 180, 176, 0.06); }
@@ -445,7 +453,11 @@ body {
 .night-mode .btn-cancel { background: #1e2a2f; border-color: #3a4b53; color: #9ab0b8; }
 .night-mode .btn-cancel:hover { border-color: #6e9c98; color: #d4dfe3; }
 
-.night-mode .toast { background: #232e34; border-color: #2f3e45; }
+.night-mode .toast {
+    background: linear-gradient(135deg, rgba(51, 68, 79, 0.88), rgba(36, 48, 56, 0.78));
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
 .night-mode .toast-content .toast-title { color: #d4dfe3; }
 .night-mode .toast-content .toast-msg { color: #a8b8bf; }
 .night-mode .toast-close { background: #1e2a2f; color: #a8b8bf; }
