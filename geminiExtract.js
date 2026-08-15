@@ -276,4 +276,73 @@ Rewrite the Conclusions section applying the requested change, in the same plain
     return callGemini(prompt);
 }
 
-module.exports = { extractElementsWithGemini, extractStructureInfoWithGemini, draftConclusionsWithGemini, reviseConclusionsWithGemini };
+// Static reference facts for the map.html chat assistant - a compact
+// version of the same ground truth map.js's local CHAT_FAQ answers from,
+// so the model stays consistent with the canned answers rather than
+// improvising its own description of how the app works.
+const APP_REFERENCE = `- New inspection: click a structure marker on the map, then "New Inspection" on its card. Step 1 sets type (GI/PI/SI), date, inspector; step 2 walks through each element to log defects.
+- Defects: Severity 1 (Minor) to 5 (Emergency), Extent A (isolated) to E (extensive). A live BCI impact preview shows the effect before saving.
+- BCI avg: condition across every inspected element, weighted by importance. BCI crit: only a fixed set of critical elements (e.g. main girders, bearings) for that structure type.
+- BCI condition bands: Very Good 90-100, Good 80-89, Fair 65-79, Poor 40-64, Very Poor 0-39.
+- Map: search bar jumps to a structure by name; sidebar filters narrow by type/condition.
+- Previous Inspections (on a structure card): every past inspection for it, filterable by PI/GI/SI, with CRIT and AV scores.
+- twinView: 3D model of a structure from its real span/condition data; Inspection History timeline shows past condition.
+- Reports: generate an inspection PDF or BCI Proforma from Previous Inspections; export structure/inspection records as CSV/PDF/JSON/XML from Database.
+- Planning: Month/Year/Gantt views of upcoming inspections; pencil icon sets a custom cycle or moves the next due date.
+- Dashboard: portfolio-wide totals, high-risk structures, BCI averages, and a Pending Review queue for engineers/admins.
+- Roles: Inspectors run inspections and view reports. Engineers also approve/reject inspections and edit schedules. Admins have full access.`;
+
+// Turns a portfolio summary (see server.js's buildPortfolioSummary) into the
+// facts block the chat assistant is grounded in - same "only use what's
+// given, don't invent numbers" discipline as buildInspectionFactsBlock.
+function buildPortfolioFactsBlock(summary) {
+    const byType = Object.entries(summary.byType || {})
+        .filter(([, count]) => count > 0)
+        .map(([type, count]) => `${type.replace('_', ' ')}: ${count}`)
+        .join(', ') || '(none)';
+
+    const bands = summary.bciBands || {};
+    const bandLine = `Very Good ${bands.veryGood || 0}, Good ${bands.good || 0}, Fair ${bands.fair || 0}, Poor ${bands.poor || 0}, Very Poor ${bands.veryPoor || 0}, not yet scored ${bands.unscored || 0}`;
+
+    const overdueLines = (summary.overdue || []).slice(0, 8)
+        .map(o => `- ${o.name} (${o.type} due, was due ${o.dueDate})`).join('\n') || '(none overdue)';
+
+    const neverInspectedLines = (summary.neverInspected || []).slice(0, 8)
+        .map(n => `- ${n}`).join('\n') || '(none)';
+
+    return `Total structures: ${summary.totalStructures}
+By type: ${byType}
+Portfolio average BCI: ${summary.avgBci != null ? summary.avgBci.toFixed(1) : 'not available'}
+BCI condition bands (count of structures in each): ${bandLine}
+
+Overdue for inspection (${summary.overdue ? summary.overdue.length : 0} total, showing up to 8):
+${overdueLines}
+
+Never inspected (${summary.neverInspected ? summary.neverInspected.length : 0} total, showing up to 8):
+${neverInspectedLines}`;
+}
+
+// The map.html chat assistant's live-data path - used when the client's
+// local keyword-matched CHAT_FAQ (map.js) doesn't confidently match the
+// question, so anything about "how do I..." still gets a fast free local
+// answer and only genuinely open-ended or data-specific questions ("which
+// structures are overdue", "what's my average BCI") reach here.
+async function answerChatMessage(question, summary) {
+    const prompt = `You are the in-app assistant for spanSense, a UK highway structures (bridges/culverts/retaining walls/sign gantries) inspection and asset management tool. Answer the user's question in 1-4 short sentences, plain factual tone, no markdown formatting, no headings, no bullet points.
+
+Only use the reference facts and live portfolio data below - if the question asks for something neither section covers, say plainly that you don't have that information, rather than guessing or inventing a number.
+
+How the app works:
+${APP_REFERENCE}
+
+Live portfolio data (current, from the database):
+${buildPortfolioFactsBlock(summary)}
+
+User's question: "${question}"
+
+Answer now:`;
+
+    return callGemini(prompt);
+}
+
+module.exports = { extractElementsWithGemini, extractStructureInfoWithGemini, draftConclusionsWithGemini, reviseConclusionsWithGemini, answerChatMessage };

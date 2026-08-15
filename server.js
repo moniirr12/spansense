@@ -21,7 +21,7 @@ const storage = require('./supabaseStorage');
 const { PDFParse } = require('pdf-parse');
 const mammoth = require('mammoth');
 const { extractElements } = require('./extractPreviousInspection');
-const { extractElementsWithGemini, extractStructureInfoWithGemini, draftConclusionsWithGemini, reviseConclusionsWithGemini } = require('./geminiExtract');
+const { extractElementsWithGemini, extractStructureInfoWithGemini, draftConclusionsWithGemini, reviseConclusionsWithGemini, answerChatMessage } = require('./geminiExtract');
 
 const router = express.Router();
 const session = require('express-session');
@@ -1351,6 +1351,102 @@ function computeNextDue(bridge, historyUpToNow, nextInspectionOverride) {
     const type = (stepIndex % piEveryNth === 0) ? 'PI' : 'GI';
     return { type, date: dueDate };
 }
+
+// Portfolio-wide aggregate for the map.html chat assistant's live-data
+// answers (POST /api/chat below). Deliberately mirrors GET /api/bridges'
+// query shape/scoping exactly (no organization_id filter - matches every
+// other read in the app, see the reviewed-and-accepted role-model note) so
+// the assistant never reports numbers inconsistent with what the same user
+// sees on the Map/Dashboard.
+const BCI_BANDS = [
+    { key: 'veryGood', min: 90, max: 100 },
+    { key: 'good', min: 80, max: 90 },
+    { key: 'fair', min: 65, max: 80 },
+    { key: 'poor', min: 40, max: 65 },
+    { key: 'veryPoor', min: 0, max: 40 }
+];
+
+async function buildPortfolioSummary() {
+    const rows = await dbAll(`
+        SELECT b.id, b.name, b.type, b.gi_cycle_years, b.pi_cycle_years, b.next_inspection_override,
+               latest_insp.overall_bciave AS bci_av,
+               MAX(i.inspection_date) AS last_inspected,
+               COUNT(i.id) AS inspection_count
+        FROM bridges b
+        LEFT JOIN inspections i ON b.id = i.structure_id
+        LEFT JOIN LATERAL (
+            SELECT overall_bciave FROM inspections
+            WHERE structure_id = b.id ORDER BY inspection_date DESC LIMIT 1
+        ) latest_insp ON true
+        GROUP BY b.id, b.name, b.type, b.gi_cycle_years, b.pi_cycle_years,
+                 b.next_inspection_override, latest_insp.overall_bciave
+    `);
+
+    const byType = {};
+    const bciBands = { veryGood: 0, good: 0, fair: 0, poor: 0, veryPoor: 0, unscored: 0 };
+    const overdue = [];
+    const neverInspected = [];
+    let bciSum = 0, bciCount = 0;
+    const today = new Date();
+
+    for (const b of rows) {
+        const type = b.type || 'other';
+        byType[type] = (byType[type] || 0) + 1;
+
+        if (b.bci_av != null) {
+            bciSum += Number(b.bci_av);
+            bciCount++;
+            const band = BCI_BANDS.find(x => b.bci_av >= x.min && b.bci_av < x.max) || (b.bci_av >= 100 ? BCI_BANDS[0] : null);
+            if (band) bciBands[band.key]++;
+        } else {
+            bciBands.unscored++;
+        }
+
+        if (!b.last_inspected) {
+            neverInspected.push(b.name || `Structure #${b.id}`);
+            continue;
+        }
+
+        const fakeHistory = Array.from({ length: Number(b.inspection_count) }, () => ({}));
+        fakeHistory[fakeHistory.length - 1] = { inspection_date: b.last_inspected };
+        const nextDue = computeNextDue(b, fakeHistory, b.next_inspection_override);
+        if (nextDue && new Date(nextDue.date) < today) {
+            overdue.push({ name: b.name || `Structure #${b.id}`, type: nextDue.type, dueDate: new Date(nextDue.date).toISOString().slice(0, 10) });
+        }
+    }
+
+    overdue.sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+
+    return {
+        totalStructures: rows.length,
+        byType,
+        avgBci: bciCount ? bciSum / bciCount : null,
+        bciBands,
+        overdue,
+        neverInspected
+    };
+}
+
+// map.html's chat widget: map.js tries its local keyword-matched FAQ first
+// (free, instant) and only calls this when that doesn't confidently match -
+// see CHAT_FAQ in map.js. Falls through to a plain error the client already
+// knows how to show if Gemini is unavailable for any reason (missing key,
+// quota, network) - same fallback shape as every other Gemini call in the
+// app, just surfaced as an HTTP error here since there's no local template
+// equivalent to fall back to server-side.
+app.post('/api/chat', requireAuth, async (req, res) => {
+    try {
+        const message = (req.body && req.body.message || '').trim();
+        if (!message) return res.status(400).json({ error: 'message is required' });
+        if (message.length > 500) return res.status(400).json({ error: 'message too long' });
+
+        const summary = await buildPortfolioSummary();
+        const answer = await answerChatMessage(message, summary);
+        res.json({ answer });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 // Used by the full inspection report's "4.3 Next Inspection" section
 // (test.js) to replace the old flat "24 months" boilerplate with the same
