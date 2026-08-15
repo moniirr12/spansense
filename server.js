@@ -555,6 +555,44 @@ async function initDatabase() {
         // client (null for spanSense's normal owner-direct structures).
         await pool.query(`ALTER TABLE bridges ADD COLUMN IF NOT EXISTS client_id INTEGER`);
 
+        // Author's Planning: day-level unavailability per inspector (holiday/
+        // annual leave). Deliberately day granularity, not time-of-day - see
+        // inspection_assignments below for the other half of "is this
+        // inspector free" (an existing job that day is also a clash, checked
+        // at the API layer rather than stored here).
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS staff_leave (
+                id SERIAL PRIMARY KEY,
+                organization_id INTEGER,
+                user_id INTEGER NOT NULL,
+                leave_date DATE NOT NULL,
+                reason TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_id, leave_date)
+            )
+        `);
+
+        // Author's Planning: a scheduled inspection job - which inspector,
+        // which structure, what date, plus the traffic-management details
+        // that need arranging for that specific visit (lane closure type,
+        // night working, site location notes). One structure can only have
+        // one *upcoming* assignment at a time (partial unique index below) -
+        // completed/past ones stay in history once their date has passed.
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS inspection_assignments (
+                id SERIAL PRIMARY KEY,
+                organization_id INTEGER,
+                bridge_id INTEGER NOT NULL,
+                inspector_id INTEGER NOT NULL,
+                scheduled_date DATE NOT NULL,
+                tm_lane_closure TEXT DEFAULT 'none',
+                tm_night_inspection BOOLEAN DEFAULT false,
+                tm_site_location TEXT,
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
         // Personal preferences - one row per user, read/written by both the
         // Account page's Preferences/Uploads cards and Field's Settings
         // screen, so a change on either surface is reflected on the other.
@@ -982,7 +1020,7 @@ app.get('/api/bridges', requireAuth, async (req, res) => {
         const rows = await dbAll(`
             SELECT b.id, b.name, b.location, b.latitude, b.longitude, b.span, b.length,
                     b.built_year, b.type, b.span_number, b.OSE, b.OSN,
-                    b.primary_material, b.secondary_material, b.organization_id,
+                    b.primary_material, b.secondary_material, b.organization_id, b.client_id,
                     latest_insp.overall_bciave AS bci_av,
                     b.gi_cycle_years, b.pi_cycle_years, b.next_inspection_override,
                     MAX(i.inspection_date) as last_inspected
@@ -997,7 +1035,7 @@ app.get('/api/bridges', requireAuth, async (req, res) => {
             ) latest_insp ON true
             GROUP BY b.id, b.name, b.location, b.latitude, b.longitude, b.span, b.length,
                      b.built_year, b.type, b.span_number, b.OSE, b.OSN,
-                     b.primary_material, b.secondary_material, b.organization_id,
+                     b.primary_material, b.secondary_material, b.organization_id, b.client_id,
                      latest_insp.overall_bciave,
                      b.gi_cycle_years, b.pi_cycle_years, b.next_inspection_override
             ORDER BY b.name
@@ -2807,6 +2845,262 @@ app.delete('/api/author/clients/:id', requireAuth, async (req, res) => {
         res.json({ success: true });
     } catch (err) {
         console.error('Delete client error:', err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+// Author's dashboard - per-client rollup (structures, overdue/due-soon
+// counts, report status) plus a recent-activity feed, scoped to this
+// consultancy's client-tagged structures only. Due-date math mirrors
+// buildPortfolioSummary's fakeHistory approach above (same computeNextDue,
+// same "count-of-past-inspections plus last date" trick to get a due date
+// without pulling every inspection row).
+app.get('/api/author/dashboard', requireAuth, async (req, res) => {
+    try {
+        const orgId = req.session.organizationId ?? null;
+        const clients = await dbAll(
+            'SELECT id, name FROM clients WHERE organization_id IS NOT DISTINCT FROM $1 ORDER BY name',
+            [orgId]
+        );
+
+        const bridges = await dbAll(`
+            SELECT b.id, b.client_id, b.name, b.gi_cycle_years, b.pi_cycle_years, b.next_inspection_override,
+                   MAX(i.inspection_date) AS last_inspected, COUNT(i.id) AS inspection_count
+            FROM bridges b
+            LEFT JOIN inspections i ON i.structure_id = b.id
+            WHERE b.client_id IS NOT NULL
+            GROUP BY b.id, b.client_id, b.name, b.gi_cycle_years, b.pi_cycle_years, b.next_inspection_override
+        `);
+
+        const statusRows = await dbAll(`
+            SELECT b.client_id, i.status, COUNT(*) AS count
+            FROM inspections i
+            JOIN bridges b ON b.id = i.structure_id
+            WHERE b.client_id IS NOT NULL
+            GROUP BY b.client_id, i.status
+        `);
+
+        const today = new Date();
+        const byClient = {};
+        clients.forEach((c) => {
+            byClient[c.id] = {
+                id: c.id, name: c.name,
+                structureCount: 0, overdueCount: 0, dueSoonCount: 0,
+                reports: { submitted: 0, approved: 0, rejected: 0 }
+            };
+        });
+
+        bridges.forEach((b) => {
+            const bucket = byClient[b.client_id];
+            if (!bucket) return; // structure tagged to a client outside this org - shouldn't happen, skip defensively
+            bucket.structureCount++;
+            if (!b.last_inspected) { bucket.overdueCount++; return; } // never inspected counts as needing attention
+            const fakeHistory = Array.from({ length: Number(b.inspection_count) }, () => ({}));
+            fakeHistory[fakeHistory.length - 1] = { inspection_date: b.last_inspected };
+            const nextDue = computeNextDue(b, fakeHistory, b.next_inspection_override);
+            if (!nextDue) return;
+            const dueDate = new Date(nextDue.date);
+            const daysUntil = (dueDate - today) / (1000 * 60 * 60 * 24);
+            if (daysUntil < 0) bucket.overdueCount++;
+            else if (daysUntil <= 90) bucket.dueSoonCount++;
+        });
+
+        statusRows.forEach((r) => {
+            const bucket = byClient[r.client_id];
+            if (!bucket) return;
+            const status = (r.status || 'submitted').toLowerCase();
+            if (bucket.reports[status] !== undefined) bucket.reports[status] = parseInt(r.count);
+        });
+
+        const activity = await dbAll(`
+            SELECT i.id, i.structure_id, i.structure_name, i.inspection_date, i.inspection_type,
+                   i.inspector_name, i.status, b.client_id, c.name AS client_name
+            FROM inspections i
+            JOIN bridges b ON b.id = i.structure_id
+            JOIN clients c ON c.id = b.client_id
+            WHERE c.organization_id IS NOT DISTINCT FROM $1
+            ORDER BY i.inspection_date DESC NULLS LAST, i.created_at DESC
+            LIMIT 15
+        `, [orgId]);
+
+        res.json({ clients: Object.values(byClient), activity });
+    } catch (err) {
+        console.error('Author dashboard error:', err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+// Author's Planning: the consultancy's own staff pool for the "assign an
+// inspector" picker. No admin user-listing endpoint exists elsewhere in
+// spanSense (accounts.html only ever reads/writes the logged-in user's own
+// profile), so this is the first one - scoped to this org and to the two
+// roles that actually go out and inspect.
+app.get('/api/author/staff', requireAuth, async (req, res) => {
+    try {
+        const rows = await dbAll(
+            `SELECT id, username, full_name, role FROM users
+             WHERE organization_id IS NOT DISTINCT FROM $1 AND role IN ('inspector', 'engineer')
+             ORDER BY full_name NULLS LAST, username`,
+            [req.session.organizationId ?? null]
+        );
+        res.json(rows);
+    } catch (err) {
+        console.error('List staff error:', err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+app.get('/api/author/staff-leave', requireAuth, async (req, res) => {
+    try {
+        const rows = await dbAll(
+            `SELECT id, user_id, leave_date, reason FROM staff_leave
+             WHERE organization_id IS NOT DISTINCT FROM $1
+             ORDER BY leave_date`,
+            [req.session.organizationId ?? null]
+        );
+        res.json(rows);
+    } catch (err) {
+        console.error('List staff leave error:', err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+app.post('/api/author/staff-leave', requireAuth, async (req, res) => {
+    try {
+        const { user_id, leave_date, reason } = req.body;
+        if (!user_id || !leave_date) return res.status(400).json({ error: 'user_id and leave_date are required' });
+        const row = await dbGet(
+            `INSERT INTO staff_leave (organization_id, user_id, leave_date, reason)
+             VALUES ($1,$2,$3,$4)
+             ON CONFLICT (user_id, leave_date) DO UPDATE SET reason = EXCLUDED.reason
+             RETURNING id`,
+            [req.session.organizationId ?? null, user_id, leave_date, reason || null]
+        );
+        res.json({ success: true, id: row.id });
+    } catch (err) {
+        console.error('Create staff leave error:', err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+app.delete('/api/author/staff-leave/:id', requireAuth, async (req, res) => {
+    try {
+        const result = await pool.query(
+            'DELETE FROM staff_leave WHERE id = $1 AND organization_id IS NOT DISTINCT FROM $2',
+            [req.params.id, req.session.organizationId ?? null]
+        );
+        if (result.rowCount === 0) return res.status(404).json({ error: 'Not found' });
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Delete staff leave error:', err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+// Author's Planning: scheduled inspection jobs. GET returns everything
+// needed to render the calendar in one call - assignment + structure +
+// client + inspector names joined in, rather than making the frontend
+// stitch four separate fetches together.
+app.get('/api/author/assignments', requireAuth, async (req, res) => {
+    try {
+        const rows = await dbAll(
+            `SELECT a.id, a.bridge_id, b.name AS bridge_name, b.client_id, c.name AS client_name,
+                    a.inspector_id, u.full_name AS inspector_name, u.username AS inspector_username,
+                    a.scheduled_date, a.tm_lane_closure, a.tm_night_inspection, a.tm_site_location, a.notes
+             FROM inspection_assignments a
+             JOIN bridges b ON b.id = a.bridge_id
+             LEFT JOIN clients c ON c.id = b.client_id
+             LEFT JOIN users u ON u.id = a.inspector_id
+             WHERE a.organization_id IS NOT DISTINCT FROM $1
+             ORDER BY a.scheduled_date`,
+            [req.session.organizationId ?? null]
+        );
+        res.json(rows);
+    } catch (err) {
+        console.error('List assignments error:', err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+// A clash check the client calls before/while filling in the assign form -
+// "this inspector already has X that day" - surfaced as a warning in the
+// UI, not a hard block: a planner might legitimately double-book (short
+// jobs, or one is provisional), so the API returns the conflict rather
+// than refusing the write.
+app.get('/api/author/assignments/conflicts', requireAuth, async (req, res) => {
+    try {
+        const { inspector_id, date } = req.query;
+        if (!inspector_id || !date) return res.status(400).json({ error: 'inspector_id and date are required' });
+        const orgId = req.session.organizationId ?? null;
+        const leave = await dbGet(
+            'SELECT reason FROM staff_leave WHERE user_id = $1 AND leave_date = $2 AND organization_id IS NOT DISTINCT FROM $3',
+            [inspector_id, date, orgId]
+        );
+        const clashes = await dbAll(
+            `SELECT a.id, b.name AS bridge_name FROM inspection_assignments a
+             JOIN bridges b ON b.id = a.bridge_id
+             WHERE a.inspector_id = $1 AND a.scheduled_date = $2 AND a.organization_id IS NOT DISTINCT FROM $3`,
+            [inspector_id, date, orgId]
+        );
+        res.json({ onLeave: leave ? { reason: leave.reason } : null, clashes });
+    } catch (err) {
+        console.error('Assignment conflict check error:', err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+app.post('/api/author/assignments', requireAuth, async (req, res) => {
+    try {
+        const { bridge_id, inspector_id, scheduled_date, tm_lane_closure, tm_night_inspection, tm_site_location, notes } = req.body;
+        if (!bridge_id || !inspector_id || !scheduled_date) {
+            return res.status(400).json({ error: 'bridge_id, inspector_id and scheduled_date are required' });
+        }
+        const row = await dbGet(
+            `INSERT INTO inspection_assignments
+                (organization_id, bridge_id, inspector_id, scheduled_date, tm_lane_closure, tm_night_inspection, tm_site_location, notes)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
+            [req.session.organizationId ?? null, bridge_id, inspector_id, scheduled_date,
+             tm_lane_closure || 'none', !!tm_night_inspection, tm_site_location || null, notes || null]
+        );
+        res.json({ success: true, id: row.id });
+    } catch (err) {
+        console.error('Create assignment error:', err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+app.patch('/api/author/assignments/:id', requireAuth, async (req, res) => {
+    try {
+        const { inspector_id, scheduled_date, tm_lane_closure, tm_night_inspection, tm_site_location, notes } = req.body;
+        if (!inspector_id || !scheduled_date) {
+            return res.status(400).json({ error: 'inspector_id and scheduled_date are required' });
+        }
+        const result = await pool.query(
+            `UPDATE inspection_assignments SET
+                inspector_id = $1, scheduled_date = $2, tm_lane_closure = $3,
+                tm_night_inspection = $4, tm_site_location = $5, notes = $6
+             WHERE id = $7 AND organization_id IS NOT DISTINCT FROM $8`,
+            [inspector_id, scheduled_date, tm_lane_closure || 'none', !!tm_night_inspection,
+             tm_site_location || null, notes || null, req.params.id, req.session.organizationId ?? null]
+        );
+        if (result.rowCount === 0) return res.status(404).json({ error: 'Assignment not found' });
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Update assignment error:', err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+app.delete('/api/author/assignments/:id', requireAuth, async (req, res) => {
+    try {
+        const result = await pool.query(
+            'DELETE FROM inspection_assignments WHERE id = $1 AND organization_id IS NOT DISTINCT FROM $2',
+            [req.params.id, req.session.organizationId ?? null]
+        );
+        if (result.rowCount === 0) return res.status(404).json({ error: 'Assignment not found' });
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Delete assignment error:', err);
         res.status(500).json({ error: 'Database error' });
     }
 });

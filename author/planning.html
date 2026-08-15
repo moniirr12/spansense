@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="/fetch-credentials.js"></script>
+<script src="/hoverTip.js"></script>
+<script src="/roleBadge.js"></script>
+<script>(function(){var nm=localStorage.getItem('nightMode');var dark=nm==='on'||(nm===null&&!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches));if(dark)document.documentElement.classList.add('nm-preload');})();</script>
+<style>html.nm-preload,html.nm-preload body{background-color:#1a2428!important;}</style>
+<title>spanSense · Author Planning</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="../assets/sunIcon.css">
+<style>
+:root{
+  --teal:#5b8c8a; --teal-dark:#2c5a57; --green-dark:#2c4a48;
+  --text:#2c3e44; --text-mute:#5f6b73; --text-mute2:#4d5960;
+  --border:#e2e8f0; --border2:#e9edf2;
+  --bg-soft:#fafbfc; --bg-mint:#eef4f2;
+  --ok:#2d7a6e; --ok-bg:#e8f5f0; --ok-border:#b8dcc8;
+  --amber:#BA7517; --amber-bg:#fff8ee; --amber-border:#e8d4b8;
+  --red:#c0392b; --red-bg:#fdecea; --red-border:#f0c4be;
+  --font-display:'Source Serif 4', Georgia, serif;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body{font-family:'Inter','Segoe UI',Tahoma,sans-serif; color:var(--text); background:#f5f7fb; min-height:100vh; transition: background 0.3s ease, color 0.3s ease;}
+a{color:inherit;}
+
+.navbar {
+    position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+    width: 67%; max-width: 1190px;
+    background: linear-gradient(135deg, rgba(238, 244, 242, 0.75), rgba(255, 255, 255, 0.45));
+    backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-radius: 60px; border: 1px solid rgba(138, 180, 176, 0.35);
+    box-shadow: 0 8px 28px rgba(44, 90, 87, 0.12);
+    z-index: 1100; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 28px; height: 64px;
+}
+.navbar .left { display: flex; align-items: center; gap: 24px; }
+.navbar .logo { font-size: 1.2rem; font-weight: 700; background: linear-gradient(135deg, #5b8c8a 0%, #7ba8a5 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.navbar .menu { display: flex; gap: 16px; }
+.navbar .menu a { text-decoration: none; color: #4a5b6e; font-weight: 500; font-size: 0.85rem; transition: color 0.2s; display: flex; align-items: center; gap: 8px; }
+.navbar .menu a:hover, .navbar .menu a.active { color: #5b8c8a; }
+.navbar .menu a.active { background: rgba(91, 140, 138, 0.1); padding: 6px 14px; border-radius: 20px; }
+.navbar .right { display: flex; align-items: center; gap: 10px; }
+.night-mode-toggle { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #5f6b73; background: #f0f2f5; transition: all 0.2s; }
+.night-mode-toggle:hover { background: #e2e8f0; color: #5b8c8a; }
+.navbar .account-links { display: flex; align-items: center; gap: 10px; }
+.navbar .account-links a { text-decoration: none; color: #5f6b73; font-size: 1.2rem; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: color 0.2s, transform 0.15s, background 0.2s; }
+.navbar .account-links a:hover { background: #f0f4f8; color: #5b8c8a; transform: scale(1.1); }
+.night-mode {
+  --text:#d4dfe3; --text-mute:#a8b8bf; --text-mute2:#bcc8ce;
+  --border:#2f3e45; --border2:#28353b;
+  --bg-soft:#1e2a2f; --bg-mint:#1e3a38;
+}
+body.night-mode { background: #151f1d; }
+.night-mode .navbar { background: rgba(47, 62, 72, 0.85) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; }
+.night-mode .navbar .logo { background: linear-gradient(135deg, #8ab4b0 0%, #a0c8c4 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.night-mode .navbar .menu a { color: #9ab0b8; }
+.night-mode .navbar .menu a.active { background: rgba(138, 180, 176, 0.15); color: #8ab4b0; }
+.night-mode .navbar .account-links a { color: #9ab0b8; }
+.night-mode .navbar .account-links a:hover { background: #2f3e45; color: #8ab4b0; }
+.night-mode .night-mode-toggle { background: #2f3e45; color: #9ab0b8; }
+.night-mode .night-mode-toggle:hover { background: #3a4b53; color: #8ab4b0; }
+
+.btn{ font-family:inherit; font-size:.8rem; font-weight:600; cursor:pointer; border-radius:11px; padding:9px 15px; display:inline-flex; align-items:center; gap:7px; border:1px solid var(--border); background:#fff; color:var(--text-mute); transition: all .15s; white-space:nowrap; }
+.btn:hover{ border-color:var(--teal); color:var(--teal-dark); }
+.btn.primary{ background:linear-gradient(135deg,var(--teal),var(--teal-dark)); color:#fff; border-color:transparent; }
+.btn.primary:hover{ filter:brightness(1.06); color:#fff; }
+.btn:disabled{ opacity:.45; cursor:not-allowed; }
+.night-mode .btn{ background:#212f33; border-color:#2f3e45; color:#9ab0b8; }
+.night-mode .btn:hover{ border-color:#8ab4b0; color:#a0c8c4; }
+.btn-sm{ padding:5px 10px; font-size:.72rem; border-radius:8px; }
+
+.page { max-width: 1180px; margin: 0 auto; padding: 112px 28px 60px; }
+.page-head { margin-bottom: 24px; display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+.page-head h1 { font-family: var(--font-display); font-size: 1.9rem; color: var(--green-dark); }
+.night-mode .page-head h1 { color: #d4dfe3; }
+.page-head p { color: var(--text-mute); font-size: 0.9rem; margin-top: 4px; }
+
+.layout { display:grid; grid-template-columns: 340px 1fr; gap: 20px; align-items:start; }
+@media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+.panel{ background:#fff; border:1px solid var(--border2); border-radius:16px; box-shadow:0 6px 20px rgba(44,90,87,.05); overflow:hidden; }
+.night-mode .panel{ background:#1c2826; border-color:#2f3e45; box-shadow:0 6px 20px rgba(0,0,0,.3); }
+.panel-head{ padding:14px 18px; border-bottom:1px solid var(--border2); display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.night-mode .panel-head{ border-color:#2f3e45; }
+.panel-head h2{ font-family:var(--font-display); font-size:1.02rem; color:var(--green-dark); display:flex; align-items:center; gap:7px; }
+.night-mode .panel-head h2{ color:#d4dfe3; }
+.panel-head .count{ font-size:.72rem; color:var(--text-mute); }
+
+/* ---------- Unscheduled list ---------- */
+.unsched-list{ list-style:none; max-height:640px; overflow-y:auto; }
+.unsched-row{ padding:12px 18px; border-bottom:1px solid var(--border2); cursor:pointer; transition: background .12s; }
+.night-mode .unsched-row{ border-color:#28353b; }
+.unsched-row:hover{ background:var(--bg-soft); }
+.night-mode .unsched-row:hover{ background:#182320; }
+.unsched-row .ur-name{ font-size:.83rem; font-weight:600; color:var(--text); }
+.night-mode .unsched-row .ur-name{ color:#d4dfe3; }
+.unsched-row .ur-sub{ font-size:.7rem; color:var(--text-mute); margin-top:2px; }
+.unsched-row .ur-due{ display:inline-block; margin-top:5px; font-size:.64rem; font-weight:700; padding:2px 8px; border-radius:20px; }
+.unsched-row .ur-due.overdue{ background:var(--red-bg); color:var(--red); }
+.unsched-row .ur-due.soon{ background:var(--amber-bg); color:var(--amber); }
+.night-mode .unsched-row .ur-due.overdue{ background:rgba(192,57,43,.22); color:#e0645a; }
+.night-mode .unsched-row .ur-due.soon{ background:rgba(186,117,23,.22); color:#e0a94a; }
+
+/* ---------- Agenda ---------- */
+.agenda-group + .agenda-group{ border-top:1px solid var(--border2); }
+.night-mode .agenda-group + .agenda-group{ border-color:#2f3e45; }
+.agenda-date{ padding:9px 18px; font-size:.7rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--text-mute); background:var(--bg-soft); }
+.night-mode .agenda-date{ background:#182320; }
+.agenda-row{ display:flex; align-items:flex-start; gap:12px; padding:13px 18px; border-bottom:1px solid var(--border2); }
+.night-mode .agenda-row{ border-color:#28353b; }
+.agenda-row:last-child{ border-bottom:none; }
+.agenda-row .ar-avatar{ width:32px; height:32px; border-radius:50%; background:var(--bg-mint); color:var(--teal-dark); display:flex; align-items:center; justify-content:center; font-size:.68rem; font-weight:800; flex-shrink:0; }
+.night-mode .agenda-row .ar-avatar{ background:#1e3a38; color:#8ab4b0; }
+.agenda-row .ar-main{ flex:1; min-width:0; }
+.agenda-row .ar-title{ font-size:.85rem; font-weight:600; color:var(--text); }
+.night-mode .agenda-row .ar-title{ color:#d4dfe3; }
+.agenda-row .ar-sub{ font-size:.72rem; color:var(--text-mute); margin-top:2px; }
+.agenda-row .ar-tm{ display:flex; gap:6px; margin-top:7px; flex-wrap:wrap; }
+.tm-chip{ font-size:.64rem; font-weight:700; padding:2px 8px; border-radius:20px; background:var(--bg-soft); color:var(--text-mute); border:1px solid var(--border2); }
+.tm-chip.full{ background:var(--red-bg); color:var(--red); border-color:var(--red-border); }
+.tm-chip.partial{ background:var(--amber-bg); color:var(--amber); border-color:var(--amber-border); }
+.tm-chip.night{ background:#eef0fb; color:#4a4fb0; border-color:#d5d8f5; }
+.night-mode .tm-chip{ background:#212f33; border-color:#2f3e45; color:#9ab0b8; }
+.night-mode .tm-chip.full{ background:rgba(192,57,43,.22); color:#e0645a; border-color:transparent; }
+.night-mode .tm-chip.partial{ background:rgba(186,117,23,.22); color:#e0a94a; border-color:transparent; }
+.night-mode .tm-chip.night{ background:rgba(108,92,231,.22); color:#b0a8f0; border-color:transparent; }
+.agenda-row .ar-actions{ display:flex; gap:6px; flex-shrink:0; }
+.icon-btn{ width:28px; height:28px; border-radius:8px; border:1px solid var(--border); background:#fff; color:var(--text-mute); display:flex; align-items:center; justify-content:center; cursor:pointer; transition: all .15s; }
+.icon-btn:hover{ border-color:var(--teal); color:var(--teal-dark); }
+.icon-btn.danger:hover{ border-color:var(--red); color:var(--red); }
+.night-mode .icon-btn{ background:#212f33; border-color:#2f3e45; color:#9ab0b8; }
+
+.empty-state{ padding:36px 20px; text-align:center; color:var(--text-mute); font-size:.82rem; }
+.empty-state i{ font-size:1.5rem; margin-bottom:8px; display:block; color:var(--border); }
+
+/* ---------- Staff availability ---------- */
+.staff-list{ list-style:none; }
+.staff-row{ display:flex; align-items:center; justify-content:space-between; padding:10px 18px; border-bottom:1px solid var(--border2); gap:10px; }
+.night-mode .staff-row{ border-color:#28353b; }
+.staff-row:last-child{ border-bottom:none; }
+.staff-row .sr-name{ font-size:.8rem; font-weight:600; color:var(--text); }
+.night-mode .staff-row .sr-name{ color:#d4dfe3; }
+.staff-row .sr-leave{ font-size:.68rem; color:var(--text-mute); margin-top:2px; }
+.leave-tag{ display:inline-flex; align-items:center; gap:5px; background:var(--bg-soft); border:1px solid var(--border2); border-radius:20px; padding:2px 4px 2px 9px; font-size:.66rem; margin:2px 4px 2px 0; }
+.night-mode .leave-tag{ background:#212f33; border-color:#2f3e45; }
+.leave-tag button{ background:none; border:none; color:var(--text-mute); cursor:pointer; width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+.leave-tag button:hover{ color:var(--red); }
+
+/* ---------- Modal ---------- */
+.modal-overlay{ display:none; position:fixed; inset:0; background:rgba(20,30,32,.5); z-index:2000; align-items:center; justify-content:center; padding:20px; }
+.modal-overlay.show{ display:flex; }
+.modal-card{ background:#fff; border-radius:18px; width:100%; max-width:440px; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.25); }
+.night-mode .modal-card{ background:#1c2826; }
+.modal-head{ padding:18px 22px; border-bottom:1px solid var(--border2); display:flex; align-items:center; justify-content:space-between; }
+.night-mode .modal-head{ border-color:#2f3e45; }
+.modal-head h3{ font-family:var(--font-display); font-size:1.1rem; color:var(--green-dark); }
+.night-mode .modal-head h3{ color:#d4dfe3; }
+.modal-head .mh-sub{ font-size:.72rem; color:var(--text-mute); margin-top:2px; }
+.modal-close{ background:none; border:none; color:var(--text-mute); cursor:pointer; font-size:1rem; }
+.modal-body{ padding:18px 22px; display:flex; flex-direction:column; gap:14px; }
+.field label{ display:block; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-mute); margin-bottom:6px; }
+.field input, .field select, .field textarea{
+  width:100%; font-family:inherit; font-size:.85rem; color:var(--text); background:var(--bg-soft);
+  border:1px solid var(--border); border-radius:10px; padding:9px 12px; outline:none;
+}
+.night-mode .field input, .night-mode .field select, .night-mode .field textarea{ background:#182320; border-color:#3a4b53; color:#d4dfe3; }
+.field textarea{ resize:vertical; min-height:56px; }
+.field-row{ display:flex; gap:12px; }
+.field-row .field{ flex:1; }
+.checkbox-field{ display:flex; align-items:center; gap:8px; }
+.checkbox-field input{ width:auto; }
+.checkbox-field label{ margin:0; text-transform:none; font-weight:600; font-size:.8rem; color:var(--text); }
+.night-mode .checkbox-field label{ color:#d4dfe3; }
+.conflict-banner{ display:none; background:var(--amber-bg); border:1px solid var(--amber-border); color:#7a5310; border-radius:10px; padding:10px 12px; font-size:.76rem; }
+.conflict-banner.show{ display:block; }
+.night-mode .conflict-banner{ background:rgba(186,117,23,.18); border-color:transparent; color:#e0a94a; }
+.modal-foot{ padding:16px 22px; border-top:1px solid var(--border2); display:flex; justify-content:flex-end; gap:10px; }
+.night-mode .modal-foot{ border-color:#2f3e45; }
+</style>
+</head>
+<body>
+<script>if(document.documentElement.classList.contains('nm-preload'))document.body.classList.add('night-mode');</script>
+
+<nav class="navbar">
+    <div class="left">
+        <div class="logo">spanSense</div>
+        <div class="menu">
+            <a href="map.html"><i class="fas fa-map"></i>Map</a>
+            <a href="dashboard.html"><i class="fas fa-chart-pie"></i>Dashboard</a>
+            <a href="planning.html" class="active"><i class="fas fa-calendar-check"></i>Planning</a>
+            <a href="author.html"><i class="fas fa-feather-pointed"></i>Author</a>
+        </div>
+    </div>
+    <div class="right">
+        <div class="night-mode-toggle" id="nightToggle"><i class="fas fa-moon"></i></div>
+        <div class="account-links">
+            <a href="../accounts/accounts.html" data-tip="Account"><i class="fas fa-user-circle"></i></a>
+            <a href="../contacts/contacts.html" data-tip="Contact Us"><i class="fas fa-envelope"></i></a>
+        </div>
+    </div>
+</nav>
+
+<div class="page">
+    <div class="page-head">
+        <div>
+            <h1>Planning</h1>
+            <p>Fit every client's due inspections into one programme - pick an inspector, a date, and any traffic management the visit needs.</p>
+        </div>
+    </div>
+
+    <div class="layout">
+        <div>
+            <div class="panel" style="margin-bottom:20px;">
+                <div class="panel-head"><h2><i class="fas fa-list-check"></i> Unscheduled</h2><span class="count" id="unschedCount"></span></div>
+                <ul class="unsched-list" id="unschedList"><li class="empty-state">Loading…</li></ul>
+            </div>
+
+            <div class="panel">
+                <div class="panel-head"><h2><i class="fas fa-user-clock"></i> Staff Availability</h2></div>
+                <ul class="staff-list" id="staffList"><li class="empty-state">Loading…</li></ul>
+                <div style="padding:14px 18px; border-top:1px solid var(--border2);">
+                    <div class="field-row" style="margin-bottom:8px;">
+                        <div class="field" style="margin-bottom:0;"><label>Staff</label><select id="leaveStaffSelect"></select></div>
+                        <div class="field" style="margin-bottom:0;"><label>Date</label><input type="date" id="leaveDateInput"></div>
+                    </div>
+                    <button class="btn primary btn-sm" id="addLeaveBtn" style="width:100%; justify-content:center;"><i class="fas fa-plus"></i> Mark day off</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-head"><h2><i class="fas fa-route"></i> Programme</h2><span class="count" id="agendaCount"></span></div>
+            <div id="agenda"><div class="empty-state">Loading…</div></div>
+        </div>
+    </div>
+</div>
+
+<!-- ASSIGN MODAL -->
+<div class="modal-overlay" id="assignModal">
+    <div class="modal-card">
+        <div class="modal-head">
+            <div><h3 id="assignModalTitle">Schedule inspection</h3><div class="mh-sub" id="assignModalSub">--</div></div>
+            <button class="modal-close" id="assignModalClose"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="field-row">
+                <div class="field"><label>Inspector</label><select id="fInspector"></select></div>
+                <div class="field"><label>Date</label><input type="date" id="fDate"></div>
+            </div>
+            <div class="conflict-banner" id="conflictBanner"></div>
+            <div class="field"><label>Lane closure</label>
+                <select id="fLaneClosure">
+                    <option value="none">None needed</option>
+                    <option value="partial">Partial closure</option>
+                    <option value="full">Full closure</option>
+                </select>
+            </div>
+            <div class="checkbox-field"><input type="checkbox" id="fNight"><label for="fNight">Night inspection</label></div>
+            <div class="field"><label>Site location / access notes</label><textarea id="fSiteLocation" placeholder="e.g. northbound carriageway, layby access via B1234"></textarea></div>
+            <div class="field"><label>Notes</label><textarea id="fNotes" placeholder="Anything else the inspector needs to know"></textarea></div>
+        </div>
+        <div class="modal-foot">
+            <button class="btn" id="deleteAssignBtn" style="display:none; margin-right:auto; color:var(--red); border-color:var(--red-border);">Remove</button>
+            <button class="btn" id="cancelAssignBtn">Cancel</button>
+            <button class="btn primary" id="saveAssignBtn">Save</button>
+        </div>
+    </div>
+</div>
+
+<script src="planning.js"></script>
+</body>
+</html>
