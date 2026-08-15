@@ -594,12 +594,22 @@ const CHAT_FAQ = [
 ];
 const CHAT_FALLBACK = "I'm not sure about that yet. Try asking about inspections, BCI scores, the map, planning, reports, or your account.";
 
+// Word-boundary matching, not substring - a plain text.includes(kw) let
+// "overdue" match the keyword "due" (a live-data question about the
+// portfolio, wrongly answered by the static Planning-page FAQ entry instead
+// of reaching /api/chat below). \b doesn't work for multi-word keywords
+// like "new inspection", so those fall back to a plain substring test.
 function findChatAnswer(userText) {
     const text = userText.toLowerCase();
     let best = null, bestScore = 0;
     CHAT_FAQ.forEach(entry => {
         let score = 0;
-        entry.keywords.forEach(kw => { if (text.includes(kw)) score++; });
+        entry.keywords.forEach(kw => {
+            const matched = kw.includes(' ')
+                ? text.includes(kw)
+                : new RegExp(`\\b${kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`).test(text);
+            if (matched) score++;
+        });
         if (score > bestScore) { bestScore = score; best = entry; }
     });
     return best ? best.answer : CHAT_FALLBACK;
@@ -610,19 +620,43 @@ function appendChatMessage(role, text) {
     messageDiv.classList.add('message', role);
     messageDiv.textContent = text;
     const messagesContainer = document.querySelector('.chat-messages');
-    if (!messagesContainer) return;
+    if (!messagesContainer) return messageDiv;
     messagesContainer.appendChild(messageDiv);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    return messageDiv;
 }
 
+// Local FAQ answers app-help questions instantly for free. Anything it
+// doesn't confidently match (open-ended questions, or anything about the
+// live portfolio - "which structures are overdue", "what's my average
+// BCI") goes to /api/chat, which grounds a Gemini answer in real portfolio
+// data server-side. See CHAT_FAQ above and server.js's buildPortfolioSummary
+// / POST /api/chat.
 function sendMessage() {
     if (!chatInput) return;
     const message = chatInput.value.trim();
-    if (message) {
-        appendChatMessage('user', message);
-        chatInput.value = '';
-        setTimeout(() => appendChatMessage('bot', findChatAnswer(message)), 400);
+    if (!message) return;
+
+    appendChatMessage('user', message);
+    chatInput.value = '';
+
+    const localAnswer = findChatAnswer(message);
+    if (localAnswer !== CHAT_FALLBACK) {
+        setTimeout(() => appendChatMessage('bot', localAnswer), 400);
+        return;
     }
+
+    const typingEl = appendChatMessage('bot', '…');
+    fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message })
+    })
+        .then(r => r.json().then(data => ({ ok: r.ok, data })))
+        .then(({ ok, data }) => {
+            typingEl.textContent = (ok && data.answer) ? data.answer : CHAT_FALLBACK;
+        })
+        .catch(() => { typingEl.textContent = CHAT_FALLBACK; });
 }
 
 if (chatSend && chatInput) {
