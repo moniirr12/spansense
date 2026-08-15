@@ -531,6 +531,30 @@ async function initDatabase() {
             )
         `);
 
+        // Author's clients: the councils/asset owners a consultancy is
+        // appointed by to inspect structures on their behalf. Deliberately
+        // separate from the loose organization_id used elsewhere (that's
+        // "which company this login belongs to"; a client here is one of
+        // *that* consultancy's own customers) - organization_id on this
+        // table scopes which consultancy the client belongs to, same
+        // convention as author_branding/org_settings.
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS clients (
+                id SERIAL PRIMARY KEY,
+                organization_id INTEGER,
+                name TEXT NOT NULL,
+                contact_name TEXT,
+                contact_email TEXT,
+                contact_phone TEXT,
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        // Tags a structure as being managed via Author on behalf of a
+        // client (null for spanSense's normal owner-direct structures).
+        await pool.query(`ALTER TABLE bridges ADD COLUMN IF NOT EXISTS client_id INTEGER`);
+
         // Personal preferences - one row per user, read/written by both the
         // Account page's Preferences/Uploads cards and Field's Settings
         // screen, so a change on either surface is reflected on the other.
@@ -2700,6 +2724,90 @@ app.get('/api/inspection/full', requireAuth, async (req, res) => {
         res.json(response);
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+// Author's client list - the councils/asset owners this consultancy is
+// appointed by. Scoped to the logged-in user's own organization_id so one
+// consultancy never sees another's client roster, same scoping convention
+// as author_branding/org_settings above.
+app.get('/api/author/clients', requireAuth, async (req, res) => {
+    try {
+        const rows = await dbAll(
+            `SELECT c.id, c.name, c.contact_name, c.contact_email, c.contact_phone, c.notes, c.created_at,
+                    COUNT(b.id) AS structure_count
+             FROM clients c
+             LEFT JOIN bridges b ON b.client_id = c.id
+             WHERE c.organization_id IS NOT DISTINCT FROM $1
+             GROUP BY c.id
+             ORDER BY c.name`,
+            [req.session.organizationId ?? null]
+        );
+        res.json(rows);
+    } catch (err) {
+        console.error('List clients error:', err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+app.post('/api/author/clients', requireAuth, async (req, res) => {
+    try {
+        const { name, contact_name, contact_email, contact_phone, notes } = req.body;
+        if (!name || !name.trim()) {
+            return res.status(400).json({ error: 'name is required' });
+        }
+        const row = await dbGet(
+            `INSERT INTO clients (organization_id, name, contact_name, contact_email, contact_phone, notes)
+             VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
+            [req.session.organizationId ?? null, name.trim(), contact_name || null, contact_email || null, contact_phone || null, notes || null]
+        );
+        res.json({ success: true, id: row.id });
+    } catch (err) {
+        console.error('Create client error:', err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+app.patch('/api/author/clients/:id', requireAuth, async (req, res) => {
+    try {
+        const { name, contact_name, contact_email, contact_phone, notes } = req.body;
+        if (!name || !name.trim()) {
+            return res.status(400).json({ error: 'name is required' });
+        }
+        const result = await pool.query(
+            `UPDATE clients SET name = $1, contact_name = $2, contact_email = $3, contact_phone = $4, notes = $5
+             WHERE id = $6 AND organization_id IS NOT DISTINCT FROM $7`,
+            [name.trim(), contact_name || null, contact_email || null, contact_phone || null, notes || null,
+             req.params.id, req.session.organizationId ?? null]
+        );
+        if (result.rowCount === 0) return res.status(404).json({ error: 'Client not found' });
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Update client error:', err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+// A client with structures still tagged to it can't be deleted outright -
+// that would silently orphan real inspection history's client attribution.
+// Untag the structures (back to a normal owner-direct one, client_id null)
+// on the frontend first, same "make the consequence explicit" approach as
+// everywhere else in this app that guards against silent data loss.
+app.delete('/api/author/clients/:id', requireAuth, async (req, res) => {
+    try {
+        const stillUsed = await dbGet('SELECT COUNT(*) AS count FROM bridges WHERE client_id = $1', [req.params.id]);
+        if (parseInt(stillUsed.count) > 0) {
+            return res.status(409).json({ error: 'This client still has structures assigned to it. Reassign or remove them first.' });
+        }
+        const result = await pool.query(
+            'DELETE FROM clients WHERE id = $1 AND organization_id IS NOT DISTINCT FROM $2',
+            [req.params.id, req.session.organizationId ?? null]
+        );
+        if (result.rowCount === 0) return res.status(404).json({ error: 'Client not found' });
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Delete client error:', err);
+        res.status(500).json({ error: 'Database error' });
     }
 });
 
