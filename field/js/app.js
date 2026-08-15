@@ -1008,7 +1008,7 @@
   // timestamps (see the dictation handler below) - re-wrapping it in the
   // row's created_at would just double-stamp it, so only 'core' (desktop)
   // entries, which are one plain untimed line each, get a synthesized
-  // timestamp + an Office tag so they read as clearly not this inspector's
+  // timestamp + a Core tag so they read as clearly not this inspector's
   // own words.
   function formatNotesLog(notes) {
     if (!notes || !notes.length) return '';
@@ -1017,7 +1017,7 @@
       const time = n.created_at
         ? new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         : '';
-      return `[${time} · Office] ${n.text || ''}`;
+      return `[${time} · Core] ${n.text || ''}`;
     }).join('\n');
   }
 

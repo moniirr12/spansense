@@ -552,7 +552,11 @@ const CHAT_FAQ = [
         answer: "When logging a defect, set Severity (1 Minor to 5 Emergency) and Extent (A isolated to E extensive). A live BCI impact preview shows how your change affects the score before you save, and a Severity Guide explains what separates each level."
     },
     {
-        keywords: ['bci', 'score', 'crit', 'avg', 'average', 'critical'],
+        // Deliberately narrow, multi-word phrases only - bare words like
+        // 'score'/'avg'/'bci' also show up in live-data questions ("structure
+        // with the lowest score?", "what's our average BCI?") that need to
+        // reach /api/chat for a real answer, not this static definition.
+        keywords: ['bci avg', 'bci crit', 'vs crit', 'vs avg', 'difference between avg', 'difference between crit', 'difference between bci'],
         answer: "BCI avg is the condition across every inspected element, weighted by importance. BCI crit is narrower: it's based only on a fixed set of critical elements (like main girders or bearings) for that structure type, so a defect on a minor element won't move it."
     },
     {

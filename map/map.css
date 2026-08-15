@@ -2198,6 +2198,20 @@ body.modal-open {
     font-weight: 600 !important;
     margin: 0 !important;
     color: white !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+
+.chat-beta-badge {
+    background: rgba(255, 255, 255, 0.22) !important;
+    color: white !important;
+    font-size: 0.65rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.04em !important;
+    padding: 2px 8px !important;
+    border-radius: 20px !important;
 }
 
 .chat-close {
