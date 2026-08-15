@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="/fetch-credentials.js"></script>
+<script src="/hoverTip.js"></script>
+<script src="/roleBadge.js"></script>
+<script>(function(){var nm=localStorage.getItem('nightMode');var dark=nm==='on'||(nm===null&&!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches));if(dark)document.documentElement.classList.add('nm-preload');})();</script>
+<style>html.nm-preload,html.nm-preload body{background-color:#1a2428!important;}</style>
+<title>spanSense · Author Clients</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="../assets/sunIcon.css">
+<style>
+:root{
+  --teal:#5b8c8a; --teal-dark:#2c5a57; --green-dark:#2c4a48;
+  --text:#2c3e44; --text-mute:#5f6b73; --text-mute2:#4d5960;
+  --border:#e2e8f0; --border2:#e9edf2;
+  --bg-soft:#fafbfc; --bg-mint:#eef4f2;
+  --ok:#2d7a6e; --ok-bg:#e8f5f0;
+  --amber:#BA7517; --amber-bg:#fff8ee;
+  --red:#c0392b; --red-bg:#fdecea;
+  --font-display:'Source Serif 4', Georgia, serif;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body{font-family:'Inter','Segoe UI',Tahoma,sans-serif; color:var(--text); background:#f5f7fb; min-height:100vh; transition: background 0.3s ease, color 0.3s ease;}
+a{color:inherit;}
+
+.navbar {
+    position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+    width: 67%; max-width: 1190px;
+    background: linear-gradient(135deg, rgba(238, 244, 242, 0.75), rgba(255, 255, 255, 0.45));
+    backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-radius: 60px; border: 1px solid rgba(138, 180, 176, 0.35);
+    box-shadow: 0 8px 28px rgba(44, 90, 87, 0.12);
+    z-index: 1100; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 28px; height: 64px;
+}
+.navbar .left { display: flex; align-items: center; gap: 24px; }
+.navbar .logo { font-size: 1.2rem; font-weight: 700; background: linear-gradient(135deg, #5b8c8a 0%, #7ba8a5 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.navbar .menu { display: flex; gap: 16px; }
+.navbar .menu a { text-decoration: none; color: #4a5b6e; font-weight: 500; font-size: 0.85rem; transition: color 0.2s; display: flex; align-items: center; gap: 8px; }
+.navbar .menu a:hover, .navbar .menu a.active { color: #5b8c8a; }
+.navbar .menu a.active { background: rgba(91, 140, 138, 0.1); padding: 6px 14px; border-radius: 20px; }
+.navbar .right { display: flex; align-items: center; gap: 10px; }
+.night-mode-toggle { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #5f6b73; background: #f0f2f5; transition: all 0.2s; }
+.night-mode-toggle:hover { background: #e2e8f0; color: #5b8c8a; }
+.navbar .account-links { display: flex; align-items: center; gap: 10px; }
+.navbar .account-links a { text-decoration: none; color: #5f6b73; font-size: 1.2rem; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: color 0.2s, transform 0.15s, background 0.2s; }
+.navbar .account-links a:hover { background: #f0f4f8; color: #5b8c8a; transform: scale(1.1); }
+.night-mode {
+  --text:#d4dfe3; --text-mute:#a8b8bf; --text-mute2:#bcc8ce;
+  --border:#2f3e45; --border2:#28353b;
+  --bg-soft:#1e2a2f; --bg-mint:#1e3a38;
+}
+body.night-mode { background: #151f1d; }
+.night-mode .navbar { background: rgba(47, 62, 72, 0.85) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; }
+.night-mode .navbar .logo { background: linear-gradient(135deg, #8ab4b0 0%, #a0c8c4 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.night-mode .navbar .menu a { color: #9ab0b8; }
+.night-mode .navbar .menu a.active { background: rgba(138, 180, 176, 0.15); color: #8ab4b0; }
+.night-mode .navbar .account-links a { color: #9ab0b8; }
+.night-mode .navbar .account-links a:hover { background: #2f3e45; color: #8ab4b0; }
+.night-mode .night-mode-toggle { background: #2f3e45; color: #9ab0b8; }
+.night-mode .night-mode-toggle:hover { background: #3a4b53; color: #8ab4b0; }
+
+.btn{ font-family:inherit; font-size:.8rem; font-weight:600; cursor:pointer; border-radius:11px; padding:9px 16px; display:inline-flex; align-items:center; gap:7px; border:1px solid var(--border); background:#fff; color:var(--text-mute); transition: all .15s; white-space:nowrap; }
+.btn:hover{ border-color:var(--teal); color:var(--teal-dark); }
+.btn.primary{ background:linear-gradient(135deg,var(--teal),var(--teal-dark)); color:#fff; border-color:transparent; }
+.btn.primary:hover{ filter:brightness(1.06); color:#fff; }
+.night-mode .btn{ background:#212f33; border-color:#2f3e45; color:#9ab0b8; }
+.night-mode .btn:hover{ border-color:#8ab4b0; color:#a0c8c4; }
+
+.page { max-width: 980px; margin: 0 auto; padding: 112px 28px 60px; }
+.page-head { margin-bottom: 24px; display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+.page-head h1 { font-family: var(--font-display); font-size: 1.9rem; color: var(--green-dark); }
+.night-mode .page-head h1 { color: #d4dfe3; }
+.page-head p { color: var(--text-mute); font-size: 0.9rem; margin-top: 4px; }
+
+.panel{ background:#fff; border:1px solid var(--border2); border-radius:16px; box-shadow:0 6px 20px rgba(44,90,87,.05); overflow:hidden; }
+.night-mode .panel{ background:#1c2826; border-color:#2f3e45; box-shadow:0 6px 20px rgba(0,0,0,.3); }
+
+.client-row{ display:flex; align-items:center; gap:16px; padding:16px 20px; border-bottom:1px solid var(--border2); }
+.night-mode .client-row{ border-color:#28353b; }
+.client-row:last-child{ border-bottom:none; }
+.client-row .cr-avatar{ width:40px; height:40px; border-radius:12px; background:var(--bg-mint); color:var(--teal-dark); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:.85rem; flex-shrink:0; }
+.night-mode .client-row .cr-avatar{ background:#1e3a38; color:#8ab4b0; }
+.client-row .cr-main{ flex:1; min-width:0; }
+.client-row .cr-name{ font-size:.92rem; font-weight:700; color:var(--text); }
+.night-mode .client-row .cr-name{ color:#d4dfe3; }
+.client-row .cr-sub{ font-size:.75rem; color:var(--text-mute); margin-top:2px; }
+.client-row .cr-count{ font-size:.72rem; color:var(--text-mute); background:var(--bg-soft); border:1px solid var(--border2); border-radius:20px; padding:4px 11px; flex-shrink:0; }
+.night-mode .client-row .cr-count{ background:#182320; border-color:#2f3e45; }
+.client-row .cr-actions{ display:flex; gap:6px; flex-shrink:0; }
+.icon-btn{ width:32px; height:32px; border-radius:9px; border:1px solid var(--border); background:#fff; color:var(--text-mute); display:flex; align-items:center; justify-content:center; cursor:pointer; transition: all .15s; }
+.icon-btn:hover{ border-color:var(--teal); color:var(--teal-dark); }
+.icon-btn.danger:hover{ border-color:var(--red); color:var(--red); }
+.night-mode .icon-btn{ background:#212f33; border-color:#2f3e45; color:#9ab0b8; }
+
+.empty-state{ padding:40px 20px; text-align:center; color:var(--text-mute); font-size:.85rem; }
+.empty-state i{ font-size:1.6rem; margin-bottom:10px; display:block; color:var(--border); }
+
+/* ---------- Modal ---------- */
+.modal-overlay{ display:none; position:fixed; inset:0; background:rgba(20,30,32,.5); z-index:2000; align-items:center; justify-content:center; padding:20px; }
+.modal-overlay.show{ display:flex; }
+.modal-card{ background:#fff; border-radius:18px; width:100%; max-width:420px; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.25); }
+.night-mode .modal-card{ background:#1c2826; }
+.modal-head{ padding:18px 22px; border-bottom:1px solid var(--border2); display:flex; align-items:center; justify-content:space-between; }
+.night-mode .modal-head{ border-color:#2f3e45; }
+.modal-head h3{ font-family:var(--font-display); font-size:1.1rem; color:var(--green-dark); }
+.night-mode .modal-head h3{ color:#d4dfe3; }
+.modal-close{ background:none; border:none; color:var(--text-mute); cursor:pointer; font-size:1rem; }
+.modal-body{ padding:18px 22px; display:flex; flex-direction:column; gap:14px; }
+.field label{ display:block; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-mute); margin-bottom:6px; }
+.field input, .field textarea{
+  width:100%; font-family:inherit; font-size:.85rem; color:var(--text); background:var(--bg-soft);
+  border:1px solid var(--border); border-radius:10px; padding:9px 12px; outline:none;
+}
+.night-mode .field input, .night-mode .field textarea{ background:#182320; border-color:#3a4b53; color:#d4dfe3; }
+.field textarea{ resize:vertical; min-height:56px; }
+.modal-error{ display:none; background:var(--red-bg); border:1px solid transparent; color:var(--red); border-radius:10px; padding:9px 12px; font-size:.78rem; }
+.modal-error.show{ display:block; }
+.night-mode .modal-error{ background:rgba(192,57,43,.18); color:#e0645a; }
+.modal-foot{ padding:16px 22px; border-top:1px solid var(--border2); display:flex; justify-content:flex-end; gap:10px; }
+.night-mode .modal-foot{ border-color:#2f3e45; }
+</style>
+</head>
+<body>
+<script>if(document.documentElement.classList.contains('nm-preload'))document.body.classList.add('night-mode');</script>
+
+<nav class="navbar">
+    <div class="left">
+        <div class="logo">spanSense</div>
+        <div class="menu">
+            <a href="map.html"><i class="fas fa-map"></i>Map</a>
+            <a href="dashboard.html"><i class="fas fa-chart-pie"></i>Dashboard</a>
+            <a href="planning.html"><i class="fas fa-calendar-check"></i>Planning</a>
+            <a href="clients.html" class="active"><i class="fas fa-users"></i>Clients</a>
+            <a href="author.html"><i class="fas fa-feather-pointed"></i>Author</a>
+        </div>
+    </div>
+    <div class="right">
+        <div class="night-mode-toggle" id="nightToggle"><i class="fas fa-moon"></i></div>
+        <div class="account-links">
+            <a href="../accounts/accounts.html" data-tip="Account"><i class="fas fa-user-circle"></i></a>
+            <a href="../contacts/contacts.html" data-tip="Contact Us"><i class="fas fa-envelope"></i></a>
+        </div>
+    </div>
+</nav>
+
+<div class="page">
+    <div class="page-head">
+        <div>
+            <h1>Clients</h1>
+            <p>The councils and asset owners you're appointed by. Structures get assigned to a client from the Map's Add Structure flow.</p>
+        </div>
+        <button class="btn primary" id="addClientBtn"><i class="fas fa-plus"></i> Add client</button>
+    </div>
+
+    <div class="panel">
+        <div id="clientList"><div class="empty-state">Loading…</div></div>
+    </div>
+</div>
+
+<!-- CLIENT MODAL -->
+<div class="modal-overlay" id="clientModal">
+    <div class="modal-card">
+        <div class="modal-head">
+            <h3 id="clientModalTitle">Add client</h3>
+            <button class="modal-close" id="clientModalClose"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-error" id="clientModalError"></div>
+            <div class="field"><label>Name</label><input type="text" id="fName" placeholder="e.g. Reading Borough Council"></div>
+            <div class="field"><label>Contact name</label><input type="text" id="fContactName" placeholder="e.g. Jane Smith"></div>
+            <div class="field"><label>Contact email</label><input type="email" id="fContactEmail" placeholder="e.g. jane.smith@reading.gov.uk"></div>
+            <div class="field"><label>Contact phone</label><input type="text" id="fContactPhone" placeholder="e.g. 0118 937 3787"></div>
+            <div class="field"><label>Notes</label><textarea id="fNotes" placeholder="Appointment details, contract reference, anything worth remembering"></textarea></div>
+        </div>
+        <div class="modal-foot">
+            <button class="btn" id="deleteClientBtn" style="display:none; margin-right:auto; color:var(--red); border-color:var(--red-border);">Delete</button>
+            <button class="btn" id="cancelClientBtn">Cancel</button>
+            <button class="btn primary" id="saveClientBtn">Save</button>
+        </div>
+    </div>
+</div>
+
+<script src="clients.js"></script>
+</body>
+</html>
