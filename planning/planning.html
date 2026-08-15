@@ -1137,7 +1137,7 @@
         
         <div class="page-header">
             <h1>Inspection Planning</h1>
-            <p>Schedule and coordinate bridge inspections across your network (2-year GI / 6-year PI cycle by default, editable per structure)</p>
+            <p>Schedule and coordinate inspections across your stock (2-year GI / 6-year PI cycle by default, editable per structure)</p>
         </div>
 
         <div class="stats-row">
@@ -1428,11 +1428,11 @@
             const onSchedulePct = totalBridges ? Math.round((onBridges / totalBridges) * 100) : null;
             document.getElementById('onScheduleRate').textContent = onSchedulePct != null ? onSchedulePct + '%' : '--';
             document.getElementById('onScheduleSub').innerHTML = totalBridges
-                ? `${onBridges} of ${totalBridges} bridges`
+                ? `${onBridges} of ${totalBridges} structures`
                 : 'No structures yet';
 
             document.getElementById('overdueCount').textContent = overdue;
-            document.getElementById('overdueSub').innerHTML = overdue === 1 ? '1 bridge requires attention' : `${overdue} bridges require attention`;
+            document.getElementById('overdueSub').innerHTML = overdue === 1 ? '1 structure requires attention' : `${overdue} structures require attention`;
             document.getElementById('fyCount').textContent = plannedThisFY;
             const fyLabel = `${String(fyStartYear).slice(-2)}/${String(fyStartYear + 1).slice(-2)}`;
             document.getElementById('fySub').innerHTML = `Due in FY ${fyLabel}`;
