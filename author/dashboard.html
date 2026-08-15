@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="/fetch-credentials.js"></script>
+<script src="/hoverTip.js"></script>
+<script src="/roleBadge.js"></script>
+<script>(function(){var nm=localStorage.getItem('nightMode');var dark=nm==='on'||(nm===null&&!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches));if(dark)document.documentElement.classList.add('nm-preload');})();</script>
+<style>html.nm-preload,html.nm-preload body{background-color:#1a2428!important;}</style>
+<title>spanSense · Author Dashboard</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="../assets/sunIcon.css">
+<style>
+:root{
+  --teal:#5b8c8a; --teal-dark:#2c5a57; --green-dark:#2c4a48;
+  --text:#2c3e44; --text-mute:#5f6b73; --text-mute2:#4d5960;
+  --border:#e2e8f0; --border2:#e9edf2;
+  --bg-soft:#fafbfc; --bg-mint:#eef4f2;
+  --ok:#2d7a6e; --ok-bg:#e8f5f0; --ok-border:#b8dcc8;
+  --amber:#BA7517; --amber-bg:#fff8ee; --amber-border:#e8d4b8;
+  --red:#c0392b; --red-bg:#fdecea; --red-border:#f0c4be;
+  --font-display:'Source Serif 4', Georgia, serif;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body{font-family:'Inter','Segoe UI',Tahoma,sans-serif; color:var(--text); background:#f5f7fb; min-height:100vh; transition: background 0.3s ease, color 0.3s ease;}
+a{color:inherit;}
+
+.navbar {
+    position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+    width: 67%; max-width: 1190px;
+    background: linear-gradient(135deg, rgba(238, 244, 242, 0.75), rgba(255, 255, 255, 0.45));
+    backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-radius: 60px; border: 1px solid rgba(138, 180, 176, 0.35);
+    box-shadow: 0 8px 28px rgba(44, 90, 87, 0.12);
+    z-index: 1100; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 28px; height: 64px;
+}
+.navbar .left { display: flex; align-items: center; gap: 24px; }
+.navbar .logo { font-size: 1.2rem; font-weight: 700; background: linear-gradient(135deg, #5b8c8a 0%, #7ba8a5 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.navbar .menu { display: flex; gap: 16px; }
+.navbar .menu a { text-decoration: none; color: #4a5b6e; font-weight: 500; font-size: 0.85rem; transition: color 0.2s; display: flex; align-items: center; gap: 8px; }
+.navbar .menu a:hover, .navbar .menu a.active { color: #5b8c8a; }
+.navbar .menu a.active { background: rgba(91, 140, 138, 0.1); padding: 6px 14px; border-radius: 20px; }
+.navbar .right { display: flex; align-items: center; gap: 10px; }
+.night-mode-toggle { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #5f6b73; background: #f0f2f5; transition: all 0.2s; }
+.night-mode-toggle:hover { background: #e2e8f0; color: #5b8c8a; }
+.navbar .account-links { display: flex; align-items: center; gap: 10px; }
+.navbar .account-links a { text-decoration: none; color: #5f6b73; font-size: 1.2rem; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: color 0.2s, transform 0.15s, background 0.2s; }
+.navbar .account-links a:hover { background: #f0f4f8; color: #5b8c8a; transform: scale(1.1); }
+.night-mode {
+  --text:#d4dfe3; --text-mute:#a8b8bf; --text-mute2:#bcc8ce;
+  --border:#2f3e45; --border2:#28353b;
+  --bg-soft:#1e2a2f; --bg-mint:#1e3a38;
+}
+body.night-mode { background: #151f1d; }
+.night-mode .navbar { background: rgba(47, 62, 72, 0.85) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; }
+.night-mode .navbar .logo { background: linear-gradient(135deg, #8ab4b0 0%, #a0c8c4 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.night-mode .navbar .menu a { color: #9ab0b8; }
+.night-mode .navbar .menu a.active { background: rgba(138, 180, 176, 0.15); color: #8ab4b0; }
+.night-mode .navbar .account-links a { color: #9ab0b8; }
+.night-mode .navbar .account-links a:hover { background: #2f3e45; color: #8ab4b0; }
+.night-mode .night-mode-toggle { background: #2f3e45; color: #9ab0b8; }
+.night-mode .night-mode-toggle:hover { background: #3a4b53; color: #8ab4b0; }
+
+.page { max-width: 1080px; margin: 0 auto; padding: 112px 28px 60px; }
+.page-head { margin-bottom: 26px; }
+.page-head h1 { font-family: var(--font-display); font-size: 1.9rem; color: var(--green-dark); }
+.night-mode .page-head h1 { color: #d4dfe3; }
+.page-head p { color: var(--text-mute); font-size: 0.9rem; margin-top: 4px; }
+
+.panel{
+  background:#fff; border:1px solid var(--border2); border-radius:16px;
+  box-shadow:0 6px 20px rgba(44,90,87,.05);
+}
+.night-mode .panel{ background:#1c2826; border-color:#2f3e45; box-shadow:0 6px 20px rgba(0,0,0,.3); }
+
+.stat-row { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--border2); border:1px solid var(--border2); border-radius:14px; overflow:hidden; margin-bottom:26px; }
+.night-mode .stat-row { background:#2f3e45; border-color:#2f3e45; }
+.stat-cell { background:#fff; padding:16px 18px; }
+.night-mode .stat-cell { background:#1c2826; }
+.stat-cell .v { font-family:var(--font-display); font-size:1.7rem; font-weight:600; color:var(--green-dark); font-variant-numeric:tabular-nums; }
+.night-mode .stat-cell .v { color:#d4dfe3; }
+.stat-cell .l { font-size:11px; color:var(--text-mute); margin-top:2px; }
+.stat-cell.warn .v { color:var(--red); }
+.stat-cell.soon .v { color:var(--amber); }
+
+.section-head { display:flex; align-items:baseline; justify-content:space-between; margin: 30px 0 12px; }
+.section-head h2 { font-family:var(--font-display); font-size:1.15rem; color:var(--green-dark); }
+.night-mode .section-head h2 { color:#d4dfe3; }
+.section-head .count { font-size:.75rem; color:var(--text-mute); }
+
+.client-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px; }
+.client-card { padding:18px 20px; }
+.client-card .cc-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+.client-card .cc-name { font-size:1rem; font-weight:700; color:var(--text); }
+.night-mode .client-card .cc-name { color:#d4dfe3; }
+.client-card .cc-count { font-size:.72rem; color:var(--text-mute); }
+.cc-badges { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
+.badge { font-size:.68rem; font-weight:700; padding:3px 9px; border-radius:20px; }
+.badge.overdue { background:var(--red-bg); color:var(--red); }
+.badge.soon { background:var(--amber-bg); color:var(--amber); }
+.badge.ok { background:var(--ok-bg); color:var(--ok); }
+.night-mode .badge.overdue { background:rgba(192,57,43,.22); color:#e0645a; }
+.night-mode .badge.soon { background:rgba(186,117,23,.22); color:#e0a94a; }
+.night-mode .badge.ok { background:rgba(45,122,110,.22); color:#5fc4ae; }
+
+.cc-reports { display:flex; align-items:center; gap:2px; height:6px; border-radius:6px; overflow:hidden; background:var(--bg-soft); margin-bottom:8px; }
+.night-mode .cc-reports { background:#182320; }
+.cc-reports span { height:100%; }
+.cc-reports .submitted { background:var(--amber); }
+.cc-reports .approved { background:var(--ok); }
+.cc-reports .rejected { background:var(--red); }
+.cc-legend { display:flex; gap:12px; font-size:.68rem; color:var(--text-mute); flex-wrap:wrap; }
+.cc-legend span { display:flex; align-items:center; gap:4px; }
+.cc-legend .dot { width:7px; height:7px; border-radius:50%; }
+.cc-legend .dot.submitted { background:var(--amber); }
+.cc-legend .dot.approved { background:var(--ok); }
+.cc-legend .dot.rejected { background:var(--red); }
+
+.empty-state { padding:40px 20px; text-align:center; color:var(--text-mute); font-size:.85rem; }
+.empty-state i { font-size:1.6rem; margin-bottom:10px; display:block; color:var(--border); }
+
+.activity-list { list-style:none; }
+.activity-row { display:flex; align-items:center; gap:14px; padding:13px 20px; border-bottom:1px solid var(--border2); }
+.night-mode .activity-row { border-color:#2f3e45; }
+.activity-row:last-child { border-bottom:none; }
+.activity-row .ar-icon { width:34px; height:34px; border-radius:50%; background:var(--bg-mint); color:var(--teal-dark); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:.8rem; }
+.night-mode .activity-row .ar-icon { background:#1e3a38; color:#8ab4b0; }
+.activity-row .ar-main { flex:1; min-width:0; }
+.activity-row .ar-title { font-size:.85rem; font-weight:600; color:var(--text); }
+.night-mode .activity-row .ar-title { color:#d4dfe3; }
+.activity-row .ar-sub { font-size:.72rem; color:var(--text-mute); margin-top:2px; }
+.activity-row .ar-status { font-size:.68rem; font-weight:700; padding:3px 10px; border-radius:20px; text-transform:capitalize; flex-shrink:0; }
+.activity-row .ar-status.submitted { background:var(--amber-bg); color:var(--amber); }
+.activity-row .ar-status.approved { background:var(--ok-bg); color:var(--ok); }
+.activity-row .ar-status.rejected { background:var(--red-bg); color:var(--red); }
+.night-mode .activity-row .ar-status.submitted { background:rgba(186,117,23,.22); color:#e0a94a; }
+.night-mode .activity-row .ar-status.approved { background:rgba(45,122,110,.22); color:#5fc4ae; }
+.night-mode .activity-row .ar-status.rejected { background:rgba(192,57,43,.22); color:#e0645a; }
+
+@media (max-width:640px){ .stat-row{ grid-template-columns:repeat(2,1fr); } }
+</style>
+</head>
+<body>
+<script>if(document.documentElement.classList.contains('nm-preload'))document.body.classList.add('night-mode');</script>
+
+<nav class="navbar">
+    <div class="left">
+        <div class="logo">spanSense</div>
+        <div class="menu">
+            <a href="map.html"><i class="fas fa-map"></i>Map</a>
+            <a href="dashboard.html" class="active"><i class="fas fa-chart-pie"></i>Dashboard</a>
+            <a href="planning.html"><i class="fas fa-calendar-check"></i>Planning</a>
+            <a href="clients.html"><i class="fas fa-users"></i>Clients</a>
+            <a href="author.html"><i class="fas fa-feather-pointed"></i>Author</a>
+        </div>
+    </div>
+    <div class="right">
+        <div class="night-mode-toggle" id="nightToggle"><i class="fas fa-moon"></i></div>
+        <div class="account-links">
+            <a href="../accounts/accounts.html" data-tip="Account"><i class="fas fa-user-circle"></i></a>
+            <a href="../contacts/contacts.html" data-tip="Contact Us"><i class="fas fa-envelope"></i></a>
+        </div>
+    </div>
+</nav>
+
+<div class="page">
+    <div class="page-head">
+        <h1>Dashboard</h1>
+        <p>Your clients, their inspection programmes, and recent report activity.</p>
+    </div>
+
+    <div class="stat-row" id="statRow">
+        <div class="stat-cell"><div class="v" id="statClients">--</div><div class="l">Clients</div></div>
+        <div class="stat-cell"><div class="v" id="statStructures">--</div><div class="l">Structures managed</div></div>
+        <div class="stat-cell warn"><div class="v" id="statOverdue">--</div><div class="l">Overdue</div></div>
+        <div class="stat-cell soon"><div class="v" id="statSoon">--</div><div class="l">Due within 3 months</div></div>
+    </div>
+
+    <div class="section-head">
+        <h2>Clients</h2>
+        <span class="count" id="clientCount"></span>
+    </div>
+    <div class="client-grid" id="clientGrid">
+        <div class="panel empty-state">Loading…</div>
+    </div>
+
+    <div class="section-head">
+        <h2>Recent Activity</h2>
+    </div>
+    <div class="panel">
+        <ul class="activity-list" id="activityList">
+            <li class="empty-state">Loading…</li>
+        </ul>
+    </div>
+</div>
+
+<script src="dashboard.js"></script>
+</body>
+</html>

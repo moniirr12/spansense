@@ -1,0 +1,1815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="/roleBadge.js"></script>
+<script src="/hoverTip.js"></script>
+<script>(function(){var nm=localStorage.getItem('nightMode');var dark=nm==='on'||(nm===null&&!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches));if(dark)document.documentElement.classList.add('nm-preload');})();</script>
+<style>html.nm-preload,html.nm-preload body{background-color:#0f1419!important;}</style>
+<title>spanSense Author - Sign In</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Lexend:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<link rel="stylesheet" href="../assets/sunIcon.css">
+<style>
+/* ============================================
+   SPANSENSE - PREMIUM GLASSY LANDING PAGE
+   With Arch Bridge Animation & Full Dark Mode
+   ============================================ */
+
+:root {
+    /* Light Mode (Default) */
+    --bg-primary: #f5f7fb;
+    --bg-secondary: #ffffff;
+    --bg-glass: linear-gradient(135deg, rgba(238, 244, 242, 0.68), rgba(255, 255, 255, 0.42));
+    --bg-glass-solid: linear-gradient(135deg, rgba(244, 248, 247, 0.92), rgba(255, 255, 255, 0.85));
+    --text-primary: #2c3e44;
+    /* text-secondary/text-muted were #6a7c8e/#8a9ba8 - 4.30:1 and 2.86:1
+       against --bg-secondary (#fff), both under WCAG AA's 4.5:1. Neutral,
+       no-hue-bias contrast palette agreed app-wide across spanSense Core
+       (~7.2:1 / ~5.5:1 here; see body.night-mode below for the dark pair). */
+    --text-secondary: #4d5960;
+    --text-muted: #5f6b73;
+    --border: #e9edf2;
+    --border-light: rgba(138, 180, 176, 0.32);
+    --primary: #5b8c8a;
+    --primary-dark: #4a706e;
+    --primary-light: #8ab4b0;
+    --accent: #c5dbd8;
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.03);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.02);
+    --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.03);
+    --shadow-xl: 0 20px 40px rgba(44, 90, 87, 0.14), 0 8px 24px rgba(44, 90, 87, 0.08);
+    --glow-primary: rgba(91, 140, 138, 0.15);
+
+    /* Deliberately NOT redefined under body.night-mode - used for the
+       flagship dark-accent card and the CTA band, which should stay a
+       deep teal in both themes. --text-primary flips to near-white in
+       night mode (it's a text color, not a surface color), so pairing
+       a gradient with it inverted those elements to a washed-out white
+       card in dark mode instead of staying a dark accent. */
+    --accent-deep-1: #2c645c;
+    --accent-deep-2: #14262b;
+}
+
+body.night-mode {
+    --bg-primary: #0f1419;
+    --bg-secondary: #1a2027;
+    --bg-glass: linear-gradient(135deg, rgba(51, 68, 79, 0.62), rgba(26, 32, 39, 0.5));
+    --bg-glass-solid: linear-gradient(135deg, rgba(51, 68, 79, 0.92), rgba(26, 32, 39, 0.88));
+    --text-primary: #e8edf2;
+    --text-secondary: #bcc8ce;
+    --text-muted: #a8b8bf;
+    --border: #2d3748;
+    --border-light: rgba(255, 255, 255, 0.12);
+    --primary: #8ab4b0;
+    --primary-dark: #6e9692;
+    --primary-light: #a8c8c4;
+    --accent: #2d4a48;
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.4);
+    --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.2);
+    --glow-primary: rgba(138, 180, 176, 0.15);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* ============================================
+   ANIMATED BACKGROUND
+   ============================================ */
+.animated-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.gradient-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.4;
+    animation: float 20s ease-in-out infinite;
+}
+
+.orb-1 {
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, var(--primary-light), transparent);
+    top: -150px;
+    left: -150px;
+    animation-delay: 0s;
+}
+
+.orb-2 {
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, var(--primary), transparent);
+    bottom: -100px;
+    right: -100px;
+    animation-delay: -7s;
+}
+
+.orb-3 {
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, var(--accent), transparent);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation-delay: -14s;
+    opacity: 0.2;
+}
+
+@keyframes float {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(30px, -30px) scale(1.1); }
+    66% { transform: translate(-20px, 20px) scale(0.95); }
+}
+
+/* ============================================
+   NAVIGATION - Floating Island (Dashboard Style)
+   ============================================ */
+.navbar {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 67%;
+    max-width: 1190px;
+    background: linear-gradient(135deg, rgba(238, 244, 242, 0.75), rgba(255, 255, 255, 0.45));
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-radius: 60px;
+    border: 1px solid rgba(138, 180, 176, 0.35);
+    box-shadow: 0 8px 28px rgba(44, 90, 87, 0.12);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    height: 64px;
+}
+
+.navbar .left {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.navbar .logo {
+    font-size: 1.2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #5b8c8a 0%, #7ba8a5 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.navbar .menu {
+    display: flex;
+    gap: 24px;
+}
+
+.navbar .menu a {
+    text-decoration: none;
+    color: #4a5b6e;
+    font-weight: 500;
+    font-size: 0.85rem;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.navbar .menu a:hover,
+.navbar .menu a.active {
+    color: #5b8c8a;
+}
+
+.navbar .menu a.active {
+    background: rgba(91, 140, 138, 0.1);
+    padding: 6px 14px;
+    border-radius: 20px;
+}
+
+.navbar .right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.night-mode-toggle {
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: #5f6b73;
+    transition: all 0.2s;
+    background: #f0f2f5;
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.night-mode-toggle:hover {
+    background: #e2e8f0;
+    color: #5b8c8a;
+    transform: scale(1.05);
+}
+
+.navbar .account-links {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.navbar .account-links a {
+    text-decoration: none;
+    color: #5f6b73;
+    font-size: 1.2rem;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    transition: color 0.2s, transform 0.15s, background 0.2s;
+    cursor: pointer;
+}
+
+.navbar .account-links a:hover {
+    background: #f0f4f8;
+    color: #5b8c8a;
+    transform: scale(1.1);
+}
+
+/* Dark mode navbar styles */
+.night-mode .navbar {
+    background: rgba(47, 62, 72, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.night-mode .navbar .logo {
+    background: linear-gradient(135deg, #8ab4b0 0%, #a0c8c4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.night-mode .navbar .menu a {
+    color: #9ab0b8;
+}
+
+.night-mode .navbar .menu a:hover,
+.night-mode .navbar .menu a.active {
+    color: #8ab4b0;
+}
+
+.night-mode .navbar .menu a.active {
+    background: rgba(138, 180, 176, 0.15);
+}
+
+.night-mode .night-mode-toggle {
+    background: #3e525e;
+    color: #c5e0e6;
+}
+
+.night-mode .night-mode-toggle:hover {
+    background: #4a6570;
+}
+
+.night-mode .navbar .account-links a {
+    color: #9ab0b8;
+}
+
+.night-mode .navbar .account-links a:hover {
+    background: #2f3e45;
+    color: #b8d4d0;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .navbar {
+        width: 70%;
+    }
+}
+
+@media (max-width: 768px) {
+    .navbar {
+        width: 95%;
+        padding: 0 16px;
+    }
+    .navbar .menu {
+        display: none;
+    }
+}
+/* ============================================
+   HERO SECTION
+   ============================================ */
+.hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 120px 48px 80px;
+    max-width: 1400px;
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+    z-index: 10;
+}
+
+.hero-content {
+    flex: 1;
+    max-width: 560px;
+    position: relative;
+    z-index: 2;
+}
+
+.hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-glass-solid);
+    padding: 7px 16px 7px 12px;
+    border-radius: 40px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--primary);
+    margin-bottom: 28px;
+    border: 1px solid var(--border-light);
+}
+
+.hero-badge svg {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+}
+
+.hero h1 {
+    font-family: 'Lexend', sans-serif;
+    font-size: clamp(2.4rem, 4.8vw, 4rem);
+    font-weight: 700;
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+    margin-bottom: 22px;
+    color: var(--text-primary);
+}
+
+.hero h1 .highlight {
+    font-family: 'Lexend', sans-serif;
+    font-weight: 500;
+    font-style: italic;
+    background: linear-gradient(120deg, var(--primary), var(--primary-dark));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero-subtitle {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    margin-bottom: 32px;
+}
+
+.hero-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 40px;
+}
+
+.hero-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 30px;
+    background: var(--bg-glass-solid);
+    border: 1px solid var(--border-light);
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.hero-tag i {
+    color: var(--primary);
+    font-size: 0.8rem;
+}
+
+.hero-buttons {
+    display: flex;
+    gap: 16px;
+}
+
+.btn {
+    padding: 12px 32px;
+    border-radius: 40px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+    border: none;
+    font-family: inherit;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    box-shadow: 0 4px 14px var(--glow-primary);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px var(--glow-primary);
+}
+
+.btn-secondary {
+    background: var(--bg-glass);
+    backdrop-filter: blur(10px) saturate(160%);
+    -webkit-backdrop-filter: blur(10px) saturate(160%);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-light);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-glass-solid);
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateY(-2px);
+}
+
+/* ============================================
+   HERO LINE-ART BRIDGE
+   A minimal single-stroke suspension bridge spanning the full hero width,
+   sitting behind the text and the auth card (not a scene competing with
+   them). Colors track the theme variables so it reacts to night mode
+   automatically instead of being baked-in hex.
+   ============================================ */
+.hero-art-bg {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -18px;
+    width: 100%;
+    height: auto;
+    z-index: -1;
+    opacity: 0.55;
+    pointer-events: none;
+}
+
+.art-line {
+    fill: none;
+    stroke: var(--primary);
+    stroke-dasharray: 2200;
+    stroke-dashoffset: 2200;
+    animation: heroLineDraw 2.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.art-deck  { animation-delay: 0.5s; }
+.art-cable { animation-delay: 0s; }
+
+.art-tower {
+    stroke-width: 5;
+    stroke-linecap: round;
+    stroke-dasharray: 400;
+    stroke-dashoffset: 400;
+    animation: heroLineDraw 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.art-tower-1 { animation-delay: 0.15s; }
+.art-tower-2 { animation-delay: 0.3s; }
+
+.art-susp {
+    stroke: var(--primary-light);
+    stroke-width: 1.5;
+    stroke-dasharray: 220;
+    stroke-dashoffset: 220;
+    animation: heroLineDraw 0.6s ease-out forwards;
+    opacity: 0.7;
+}
+
+@keyframes heroLineDraw { to { stroke-dashoffset: 0; } }
+
+.art-pulse {
+    fill: var(--primary);
+    filter: drop-shadow(0 0 6px var(--primary));
+    opacity: 0;
+    animation: heroPulseTravel 7s linear infinite;
+    animation-delay: 2.6s;
+}
+
+@keyframes heroPulseTravel {
+    0%   { offset-distance: 0%;   opacity: 0; }
+    5%   { opacity: 1; }
+    95%  { opacity: 1; }
+    100% { offset-distance: 100%; opacity: 0; }
+}
+
+@media (max-width: 1024px) {
+    .hero-art-bg { opacity: 0.35; bottom: -8px; }
+}
+
+/* ============================================
+   AUTH CARD - GLASSY MORPHISM
+   ============================================ */
+.auth-card {
+    background: var(--bg-glass-solid);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-radius: 28px;
+    padding: 36px;
+    width: 380px;
+    margin-left: 60px;
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-xl);
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease, opacity 0.8s ease;
+    position: relative;
+    z-index: 2;
+}
+
+/* The one-time entrance fade uses the same .reveal/.reveal.active
+   transition system every other section uses (see handleScrollReveal),
+   not a @keyframes animation - that's deliberate. The highlight pulse
+   below needs its own real `animation` while it plays, and toggling an
+   `animation` shorthand off would otherwise restart the base `.auth-card`
+   animation from scratch (including its opening delay, where the "from"
+   keyframe is opacity:0) every single time the pulse ended - which is
+   exactly what was making this card appear to "disappear" after being
+   highlighted. Transitions don't have that restart hazard. */
+
+.auth-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+    border-color: var(--primary-light);
+}
+
+/* Same spring/bloom language as the pylon-grow motion the old bridge
+   animation used, and the gradient orbs in the background - a gentle
+   scale "pop" plus a soft glow bloom, rather than a sharp notification
+   ring. */
+.auth-card-highlight {
+    animation: authHighlightPop 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes authHighlightPop {
+    0%   { transform: scale(1);    box-shadow: 0 0 0 0 var(--glow-primary), var(--shadow-xl); border-color: var(--border-light); }
+    30%  { transform: scale(1.02); box-shadow: 0 0 50px 10px rgba(91, 140, 138, 0.4), var(--shadow-xl); border-color: var(--primary); }
+    100% { transform: scale(1);    box-shadow: 0 0 0 0 rgba(91, 140, 138, 0), var(--shadow-xl); border-color: var(--border-light); }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 28px;
+}
+
+.auth-header h2 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, var(--text-primary), var(--primary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.auth-header p {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 14px 16px;
+    background: var(--bg-glass-solid);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    transition: all 0.2s;
+    color: var(--text-primary);
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px var(--glow-primary);
+}
+
+.input-group input::placeholder {
+    color: var(--text-muted);
+}
+
+.input-hint {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+.auth-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 28px;
+}
+
+.auth-actions button {
+    width: 100%;
+    padding: 12px;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    font-family: inherit;
+}
+
+.btn-enter {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+}
+
+.btn-enter:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px var(--glow-primary);
+}
+
+.btn-enter:disabled {
+    opacity: 0.6;
+    transform: none;
+    cursor: not-allowed;
+}
+
+.btn-register {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-light);
+}
+
+.btn-register:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--bg-glass);
+}
+
+.auth-footer {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-light);
+    text-align: center;
+}
+
+.auth-footer a {
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.auth-footer a:hover {
+    text-decoration: underline;
+    color: var(--primary-light);
+}
+
+/* ============================================
+   FEATURES SECTION
+   ============================================ */
+.features {
+    padding: 80px 48px;
+    background: var(--bg-glass);
+    backdrop-filter: blur(10px) saturate(160%);
+    -webkit-backdrop-filter: blur(10px) saturate(160%);
+    border-top: 1px solid var(--border-light);
+    position: relative;
+    z-index: 10;
+}
+
+.features-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.section-header {
+    text-align: center;
+    margin-bottom: 56px;
+}
+
+.section-header h2 {
+    font-family: 'Lexend', sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 12px;
+    color: var(--text-primary);
+}
+
+.section-header p {
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+/* ---------- Bento feature grid: uneven card sizes instead of a
+   uniform repeated grid, so the two most "flagship" features (twinView,
+   Proformas & Reports) get more visual weight. ---------- */
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-auto-rows: 190px;
+    gap: 18px;
+}
+
+.feature-card {
+    grid-column: span 2;
+    text-align: left;
+    padding: 26px;
+    background: var(--bg-glass-solid);
+    border-radius: 22px;
+    transition: all 0.3s ease;
+    border: 1px solid var(--border-light);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.feature-card.big {
+    grid-column: span 4;
+}
+
+.feature-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--primary);
+    box-shadow: var(--shadow-lg);
+}
+
+.feature-card .feature-glow {
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--glow-primary), transparent 70%);
+}
+
+.feature-icon {
+    position: absolute;
+    top: 22px;
+    left: 24px;
+    width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    border-radius: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    color: white;
+}
+
+.feature-card.dark {
+    background: linear-gradient(135deg, var(--accent-deep-1), var(--accent-deep-2));
+    border-color: var(--accent-deep-1);
+}
+.feature-card.dark .feature-icon { background: rgba(255,255,255,0.16); }
+.feature-card.dark h3 { color: #fff; }
+.feature-card.dark p { color: rgba(255,255,255,0.75); }
+
+.feature-card h3 {
+    font-family: 'Lexend', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.feature-card p {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* ============================================
+   WORKFLOW STRIP
+   ============================================ */
+.workflow {
+    padding: 60px 48px 80px;
+    background: var(--bg-glass);
+    backdrop-filter: blur(10px) saturate(160%);
+    -webkit-backdrop-filter: blur(10px) saturate(160%);
+    position: relative;
+    z-index: 10;
+}
+
+.flow-strip {
+    position: relative;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+}
+
+.flow-strip::before {
+    content: '';
+    position: absolute;
+    top: 27px;
+    left: 12.5%;
+    right: 12.5%;
+    height: 2px;
+    background: repeating-linear-gradient(90deg, var(--primary-light) 0 8px, transparent 8px 16px);
+    opacity: 0.6;
+}
+
+.flow-step {
+    position: relative;
+    text-align: center;
+    padding: 0 18px;
+}
+
+.flow-num {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--bg-glass-solid);
+    border: 2px solid var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Lexend', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--primary);
+    margin: 0 auto 18px;
+    position: relative;
+    z-index: 2;
+    box-shadow: var(--shadow-sm);
+}
+
+.flow-step h4 {
+    font-family: 'Lexend', sans-serif;
+    font-size: 0.98rem;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+}
+
+.flow-step p {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0;
+}
+
+@media (max-width: 860px) {
+    .flow-strip { grid-template-columns: 1fr; gap: 32px; }
+    .flow-strip::before { display: none; }
+}
+
+/* ============================================
+   CTA BAND
+   ============================================ */
+.cta-band {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 48px 60px;
+    position: relative;
+    z-index: 10;
+}
+
+.cta-band-inner {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--accent-deep-1), var(--accent-deep-2));
+    border-radius: 32px;
+    padding: 64px 48px;
+    text-align: center;
+}
+
+.cta-band-inner h2 {
+    font-family: 'Lexend', sans-serif;
+    font-weight: 700;
+    font-size: clamp(1.7rem, 3vw, 2.3rem);
+    color: #fff;
+    margin-bottom: 14px;
+}
+
+.cta-band-inner p {
+    color: rgba(255,255,255,0.75);
+    max-width: 480px;
+    margin: 0 auto 32px;
+}
+
+.cta-band-inner .btn-lg {
+    background: #fff;
+    color: var(--primary-dark);
+    padding: 14px 30px;
+}
+
+.cta-band-inner .btn-lg:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+}
+
+@media (max-width: 768px) {
+    .cta-band { padding: 0 20px 40px; }
+    .cta-band-inner { padding: 48px 24px; }
+}
+
+/* ============================================
+   FOOTER
+   ============================================ */
+.footer {
+    padding: 40px 48px;
+    text-align: center;
+    border-top: 1px solid var(--border-light);
+    background: var(--bg-glass);
+    backdrop-filter: blur(10px) saturate(160%);
+    -webkit-backdrop-filter: blur(10px) saturate(160%);
+    position: relative;
+    z-index: 10;
+}
+
+.footer p {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+@media (max-width: 1024px) {
+    .hero {
+        flex-direction: column;
+        text-align: center;
+        padding: 100px 24px 60px;
+    }
+
+    .hero-content {
+        max-width: 100%;
+        margin-bottom: 48px;
+    }
+
+    .hero-tags {
+        justify-content: center;
+    }
+
+    .hero-buttons {
+        justify-content: center;
+    }
+
+    .auth-card {
+        margin-left: 0;
+        width: 100%;
+        max-width: 420px;
+    }
+
+    .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+        grid-auto-rows: 175px;
+        gap: 16px;
+    }
+    .feature-card, .feature-card.big {
+        grid-column: span 2;
+    }
+}
+
+@media (max-width: 768px) {
+    .navbar {
+        margin: 10px;
+        padding: 10px 20px;
+    }
+
+    .nav-links {
+        display: none;
+    }
+
+    .hero {
+        padding: 100px 20px 40px;
+    }
+
+    .features {
+        padding: 48px 20px;
+    }
+
+    .features-grid {
+        grid-template-columns: 1fr;
+        grid-auto-rows: auto;
+    }
+    .feature-card, .feature-card.big {
+        grid-column: 1;
+        min-height: 160px;
+    }
+
+    .hero-tags {
+        gap: 8px;
+    }
+}
+
+/* Loading animation */
+.btn-loading {
+    position: relative;
+    color: transparent !important;
+    pointer-events: none;
+}
+
+.btn-loading::after {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    border: 2px solid transparent;
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    left: 50%;
+    top: 50%;
+    margin-left: -9px;
+    margin-top: -9px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Scroll reveal animation */
+.reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.8s ease;
+}
+
+.reveal.active {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+html { scrollbar-width: none; -ms-overflow-style: none; }
+html::-webkit-scrollbar { display: none; }
+
+/* ========== GLASS SCROLLBAR ========== */
+.glass-scrollbar {
+    position: fixed;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 10px;
+    height: 55vh;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(238, 244, 242, 0.5));
+    backdrop-filter: blur(8px) saturate(160%);
+    -webkit-backdrop-filter: blur(8px) saturate(160%);
+    border-radius: 20px;
+    border: 1px solid rgba(138, 180, 176, 0.3);
+    box-shadow: 0 4px 16px rgba(44, 90, 87, 0.12);
+    z-index: 1000;
+    overflow: hidden;
+    cursor: default;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.glass-scrollbar .thumb {
+    width: 100%;
+    background: linear-gradient(180deg, #a0c8c4, #5b8c8a);
+    border-radius: 20px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.3), 0 0 12px rgba(91, 140, 138, 0.35), 0 0 24px rgba(91, 140, 138, 0.15);
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.glass-scrollbar .thumb:active {
+    cursor: grabbing;
+}
+
+/* ========== DARK MODE SCROLLBAR ========== */
+body.night-mode .glass-scrollbar {
+    background: linear-gradient(180deg, rgba(51, 68, 79, 0.75), rgba(35, 46, 52, 0.65)) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255,255,255,0.03) !important;
+}
+
+body.night-mode .glass-scrollbar .thumb {
+    background: linear-gradient(180deg, #ff6b6b, #c0392b) !important;
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.1), 0 0 14px rgba(138, 180, 176, 0.45), 0 0 28px rgba(138, 180, 176, 0.2) !important;
+}
+
+@media (max-width: 860px) {
+    .glass-scrollbar { display: none !important; }
+}
+
+/* ============================================
+   CONFIRM MODAL (styled stand-in for native alert()/confirm())
+   ============================================ */
+.confirm-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 20, 25, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 4000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.confirm-modal-overlay.active { display: flex; }
+
+.confirm-modal-card {
+    background: var(--bg-glass-solid);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid var(--border-light);
+    border-radius: 24px;
+    width: 100%;
+    max-width: 360px;
+    padding: 32px 28px 24px;
+    text-align: center;
+    box-shadow: var(--shadow-xl);
+    animation: fadeInUp 0.3s ease-out;
+}
+
+.confirm-modal-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 1.4rem;
+}
+.confirm-modal-icon.error   { background: rgba(196, 80, 80, 0.12); color: #c0574a; }
+.confirm-modal-icon.warning { background: rgba(200, 150, 60, 0.14); color: #c28b5a; }
+.confirm-modal-icon.success { background: var(--glow-primary); color: var(--primary); }
+
+.confirm-modal-title {
+    font-family: 'Lexend', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.confirm-modal-message {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.55;
+    margin-bottom: 24px;
+    white-space: pre-line;
+}
+
+.confirm-modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.confirm-modal-btn {
+    padding: 10px 22px;
+    border-radius: 30px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+    transition: all 0.2s;
+}
+.confirm-modal-btn.secondary {
+    background: var(--bg-glass);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-light);
+}
+.confirm-modal-btn.secondary:hover {
+    background: var(--bg-glass-solid);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+.confirm-modal-btn.primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: #fff;
+}
+.confirm-modal-btn.primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px var(--glow-primary);
+}
+
+/* ============================================
+   DEMO VIDEO MODAL
+   ============================================ */
+.demo-modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 20, 25, 0.65);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 3000;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+}
+
+.demo-modal-overlay.active {
+    display: flex;
+}
+
+.demo-modal {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    background: var(--bg-glass-solid);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-radius: 28px;
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-xl);
+    padding: 16px;
+    animation: fadeInUp 0.4s ease-out;
+}
+
+.demo-coming-soon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 12px;
+    padding: 36px 28px;
+    border-radius: 18px;
+    background: var(--bg-secondary);
+}
+
+.demo-coming-soon-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    background: rgba(91, 140, 138, 0.12);
+    color: var(--primary);
+}
+
+.demo-coming-soon h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.demo-coming-soon p {
+    max-width: 320px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.demo-coming-soon .btn {
+    margin-top: 8px;
+}
+
+@media (max-width: 768px) {
+    .demo-modal-overlay { padding: 16px; }
+}
+</style>
+<base target="_self">
+</head>
+
+<body>
+<script>if(document.documentElement.classList.contains('nm-preload'))document.body.classList.add('night-mode');</script>
+
+<!-- ANIMATED BACKGROUND -->
+<div class="animated-bg">
+    <div class="gradient-orb orb-1"></div>
+    <div class="gradient-orb orb-2"></div>
+    <div class="gradient-orb orb-3"></div>
+</div>
+
+<!-- NAVIGATION -->
+<nav class="navbar">
+    <div class="left">
+        <div class="logo">spanSense</div>
+        <div class="menu">
+        </div>
+    </div>
+    <div class="right">
+        <div class="night-mode-toggle" id="nightModeToggle"><i class="fas fa-moon"></i></div>
+        <div class="account-links">
+            <a href="#authCard" data-tip="Portal Access" onclick="scrollToAuth(); return false;"><i class="fas fa-user-circle"></i></a>
+            <a href="../contacts/contacts.html" data-tip="Contact Us"><i class="fas fa-envelope"></i></a>
+        </div>
+    </div>
+</nav>
+
+<!-- HERO SECTION -->
+<section class="hero">
+    <!-- Ambient line-art bridge, sits behind the text and the auth card -->
+    <svg class="hero-art-bg" viewBox="0 0 1400 260" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path class="art-line art-deck" d="M40,200 L1360,200" stroke-width="3" stroke-linecap="round"/>
+        <path class="art-line art-tower art-tower-1" d="M300,200 L300,40"/>
+        <path class="art-line art-tower art-tower-2" d="M1100,200 L1100,40"/>
+        <path class="art-line art-cable" d="M40,150 Q170,45 300,38 Q560,140 700,158 Q840,140 1100,38 Q1230,45 1360,150" stroke-width="2.5"/>
+        <line class="art-line art-susp" x1="380" y1="69"  x2="380" y2="200" style="animation-delay:0.9s"/>
+        <line class="art-line art-susp" x1="460" y1="97" x2="460" y2="200" style="animation-delay:0.98s"/>
+        <line class="art-line art-susp" x1="540" y1="123" x2="540" y2="200" style="animation-delay:1.06s"/>
+        <line class="art-line art-susp" x1="620" y1="144" x2="620" y2="200" style="animation-delay:1.14s"/>
+        <line class="art-line art-susp" x1="780" y1="144" x2="780" y2="200" style="animation-delay:1.22s"/>
+        <line class="art-line art-susp" x1="860" y1="123" x2="860" y2="200" style="animation-delay:1.3s"/>
+        <line class="art-line art-susp" x1="940" y1="97" x2="940" y2="200" style="animation-delay:1.38s"/>
+        <line class="art-line art-susp" x1="1020" y1="69" x2="1020" y2="200" style="animation-delay:1.46s"/>
+        <!-- traveling sensing pulse -->
+        <circle class="art-pulse" r="4" style="offset-path: path('M40,150 Q170,45 300,38 Q560,140 700,158 Q840,140 1100,38 Q1230,45 1360,150');"/>
+    </svg>
+
+    <div class="hero-content reveal">
+        <div class="hero-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+            spanSense Author
+        </div>
+        <h1>
+            One programme,<br>
+            every <span class="highlight">client</span>
+        </h1>
+        <p class="hero-subtitle">
+            Inspection reporting for consultancies - plan, inspect and report across every council or asset owner you're appointed by, in one place.
+        </p>
+        <div class="hero-tags">
+            <span class="hero-tag"><i class="fas fa-users"></i> Multi-client Planning</span>
+            <span class="hero-tag"><i class="fas fa-route"></i> Route &amp; Programme Scheduling</span>
+            <span class="hero-tag"><i class="fas fa-file-invoice"></i> Client-ready Reports</span>
+        </div>
+        <div class="hero-buttons">
+            <button class="btn btn-primary" onclick="scrollToAuth()">Sign In →</button>
+        </div>
+    </div>
+
+    <!-- AUTH CARD -->
+    <div class="auth-card reveal" id="authCard">
+        <div class="auth-header">
+            <h2>Consultancy Access</h2>
+            <p>Sign in to your Author workspace</p>
+        </div>
+        <form id="loginForm" onsubmit="return false;">
+            <div id="loginStep1">
+                <div class="input-group">
+                    <label>User ID</label>
+                    <input type="text" id="engineerId" placeholder="e.g. john.doe@agency.gov" autocomplete="username">
+                    <div class="input-hint">
+                        <span class="input-hint-icon">i</span>
+                        <span>Use your registered email or ID</span>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Secure Key</label>
+                    <input type="password" id="secureKey" placeholder="Enter your password" autocomplete="current-password">
+                </div>
+                <div class="auth-actions">
+                    <button type="button" class="btn-enter" id="loginBtn">
+                        ENTER SYSTEM
+                    </button>
+                    <button type="button" class="btn-register" onclick="handleRegister()">
+                        Request Access
+                    </button>
+                </div>
+            </div>
+            <div id="loginStep2" style="display:none;">
+                <div class="input-group">
+                    <label>Authenticator Code</label>
+                    <input type="text" id="twoFACode" placeholder="6-digit code" inputmode="numeric" autocomplete="one-time-code" maxlength="6">
+                    <div class="input-hint">
+                        <span class="input-hint-icon">i</span>
+                        <span>Enter the code from your authenticator app</span>
+                    </div>
+                </div>
+                <div class="auth-actions">
+                    <button type="button" class="btn-enter" id="twoFABtn">
+                        VERIFY
+                    </button>
+                    <button type="button" class="btn-register" id="twoFABackBtn">
+                        Back
+                    </button>
+                </div>
+            </div>
+        </form>
+        <div class="auth-footer">
+            <a onclick="showAlertModal('Contact your system administrator to reset credentials.', 'warning', 'Forgot Credentials')">Forgot credentials? →</a>
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+    <p>© <span id="footerYear"></span> spanSense Author. All rights reserved.</p>
+</footer>
+
+<!-- GLASS SCROLLBAR -->
+<div class="glass-scrollbar" id="glassScrollbar">
+    <div class="thumb" id="glassThumb"></div>
+</div>
+
+<!-- CONFIRM MODAL (styled stand-in for native alert()/confirm()) -->
+<div class="confirm-modal-overlay" id="confirmModalOverlay">
+    <div class="confirm-modal-card">
+        <div class="confirm-modal-icon" id="confirmModalIcon"><i class="fas fa-exclamation-circle"></i></div>
+        <h3 class="confirm-modal-title" id="confirmModalTitle">Notice</h3>
+        <p class="confirm-modal-message" id="confirmModalMessage"></p>
+        <div class="confirm-modal-actions" id="confirmModalActions">
+            <button class="confirm-modal-btn primary" id="confirmModalConfirmBtn">OK</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Night mode - defaults to dark unless the system explicitly prefers light
+(function() {
+    const toggleBtn = document.getElementById('nightModeToggle');
+    const nm = localStorage.getItem('nightMode');
+    const systemPrefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    const dark = nm === 'on' || (nm === null && !systemPrefersLight);
+
+    // The preload snippet in <head> forces a dark background to avoid a flash;
+    // now that the real theme is decided, drop it so the background can't stay dark once night-mode is removed.
+    document.documentElement.classList.remove('nm-preload');
+
+    if (dark) {
+        document.body.classList.add('night-mode');
+        if (toggleBtn) toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
+    }
+
+    if (toggleBtn) {
+        toggleBtn.onclick = function() {
+            document.body.classList.toggle('night-mode');
+            if (document.body.classList.contains('night-mode')) {
+                toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
+                localStorage.setItem('nightMode', 'on');
+            } else {
+                toggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
+                localStorage.setItem('nightMode', 'off');
+            }
+        };
+    }
+})();
+
+// Scroll reveal animation
+function handleScrollReveal() {
+    const reveals = document.querySelectorAll('.reveal');
+    for (let i = 0; i < reveals.length; i++) {
+        const windowHeight = window.innerHeight;
+        const revealTop = reveals[i].getBoundingClientRect().top;
+        const revealPoint = 150;
+        if (revealTop < windowHeight - revealPoint) {
+            reveals[i].classList.add('active');
+        }
+    }
+}
+
+window.addEventListener('scroll', handleScrollReveal);
+window.addEventListener('load', handleScrollReveal);
+
+// Styled stand-in for confirm()/alert() - same pattern used in inspection.js
+// and accounts.html's showConfirmModal, scoped to #confirmModalOverlay here.
+function showConfirmModal(opts) {
+    const overlay = document.getElementById('confirmModalOverlay');
+    if (!overlay) return Promise.resolve(true);
+
+    const iconBox = document.getElementById('confirmModalIcon');
+    const titleBox = document.getElementById('confirmModalTitle');
+    const msgBox = document.getElementById('confirmModalMessage');
+    const actionsBox = document.getElementById('confirmModalActions');
+
+    const type = opts.type || 'error';
+    const confirmText = opts.confirmText || 'OK';
+    const cancelText = opts.cancelText || 'Cancel';
+    const showCancel = opts.showCancel || false;
+
+    return new Promise((resolve) => {
+        iconBox.className = 'confirm-modal-icon ' + type;
+        const iconMap = { error: 'fa-exclamation-circle', warning: 'fa-exclamation-triangle', success: 'fa-check-circle' };
+        iconBox.innerHTML = `<i class="fas ${iconMap[type] || iconMap.error}"></i>`;
+
+        titleBox.textContent = opts.title || '';
+        msgBox.textContent = opts.message || '';
+
+        let buttonsHTML = '';
+        if (showCancel) buttonsHTML += `<button class="confirm-modal-btn secondary" id="confirmModalCancelBtn">${cancelText}</button>`;
+        buttonsHTML += `<button class="confirm-modal-btn primary" id="confirmModalConfirmBtn">${confirmText}</button>`;
+        actionsBox.innerHTML = buttonsHTML;
+
+        const close = (result) => {
+            overlay.classList.remove('active');
+            document.removeEventListener('keydown', escHandler);
+            resolve(result);
+        };
+        const escHandler = (e) => { if (e.key === 'Escape') close(false); };
+
+        document.getElementById('confirmModalConfirmBtn').onclick = () => close(true);
+        const cancelBtn = document.getElementById('confirmModalCancelBtn');
+        if (cancelBtn) cancelBtn.onclick = () => close(false);
+
+        overlay.classList.add('active');
+        document.addEventListener('keydown', escHandler);
+    });
+}
+document.getElementById('confirmModalOverlay')?.addEventListener('click', (e) => {
+    if (e.target.id === 'confirmModalOverlay') e.target.classList.remove('active');
+});
+
+// Styled stand-in for native alert() - single OK button, no cancel.
+function showAlertModal(message, type, title) {
+    const defaultTitles = { error: 'Error', warning: 'Heads Up', success: 'Success' };
+    type = type || 'error';
+    return showConfirmModal({
+        title: title || defaultTitles[type] || 'Notice',
+        message: message,
+        type: type,
+        confirmText: 'OK'
+    });
+}
+
+// Pulse the auth card so it's obvious where focus landed. Only scrolls if
+// the card genuinely isn't in view already - it usually already is (the
+// card lives in the hero, and this is most often clicked from the top of
+// the page), so scrollIntoView's forced re-centering was firing - and
+// visibly jumping the page - even when nothing needed to move.
+function scrollToAuth() {
+    const authCard = document.getElementById('authCard');
+    if (!authCard) return;
+
+    const rect = authCard.getBoundingClientRect();
+    const alreadyInView = rect.top >= 0 && rect.bottom <= window.innerHeight;
+    if (!alreadyInView) {
+        authCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    authCard.classList.remove('auth-card-highlight');
+    void authCard.offsetWidth; // restart animation if triggered twice in a row
+    authCard.classList.add('auth-card-highlight');
+    setTimeout(() => authCard.classList.remove('auth-card-highlight'), 1000);
+
+    setTimeout(() => {
+        // preventScroll: the smooth-scroll/no-scroll decision above is already
+        // made - don't let focus() re-trigger its own jump on top of it.
+        document.getElementById('engineerId').focus({ preventScroll: true });
+    }, alreadyInView ? 50 : 500);
+}
+
+// Register handler
+function handleRegister() {
+    showAlertModal('Registration portal coming soon.\nContact your agency administrator for access.', 'warning', 'Coming Soon');
+}
+
+const footerYearEl = document.getElementById('footerYear');
+if (footerYearEl) footerYearEl.textContent = new Date().getFullYear();
+
+// Login handler
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('spanSense ready');
+    
+    const loginBtn = document.getElementById('loginBtn');
+    
+    if (loginBtn) {
+        loginBtn.onclick = function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            const username = document.getElementById('engineerId').value;
+            const password = document.getElementById('secureKey').value;
+            
+            if (!username || !password) {
+                showAlertModal('Please enter both User ID and Secure Key', 'warning', 'Missing Details');
+                return false;
+            }
+            
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'VERIFYING...';
+            loginBtn.classList.add('btn-loading');
+            
+            fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ username: username, password: password })
+            })
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                if (data.success && data.requires2FA) {
+                    document.getElementById('loginStep1').style.display = 'none';
+                    document.getElementById('loginStep2').style.display = 'block';
+                    var codeInput = document.getElementById('twoFACode');
+                    if (codeInput) codeInput.focus();
+                } else if (data.success) {
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    sessionStorage.setItem('user', JSON.stringify(data.user));
+                    window.location.href = 'map.html';
+                } else {
+                    showAlertModal('Access denied: ' + (data.message || 'Invalid credentials'), 'error', 'Access Denied');
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'ENTER SYSTEM';
+                    loginBtn.classList.remove('btn-loading');
+
+                    // Shake animation for error
+                    const authCard = document.getElementById('authCard');
+                    if (authCard) {
+                        authCard.style.animation = 'shake 0.5s ease';
+                        setTimeout(() => { authCard.style.animation = ''; }, 500);
+                    }
+                }
+            })
+            .catch(function(err) {
+                console.error('Error:', err);
+                showAlertModal('Connection error! Please check if the server is running.', 'error', 'Connection Error');
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'ENTER SYSTEM';
+                loginBtn.classList.remove('btn-loading');
+            });
+            
+            return false;
+        };
+    }
+
+    const twoFABtn = document.getElementById('twoFABtn');
+    const twoFABackBtn = document.getElementById('twoFABackBtn');
+    const twoFACodeInput = document.getElementById('twoFACode');
+
+    function submitTwoFACode() {
+        const code = (twoFACodeInput.value || '').trim();
+        if (!/^\d{6}$/.test(code)) {
+            showAlertModal('Enter the 6-digit code from your authenticator app', 'warning', 'Missing Code');
+            return;
+        }
+
+        twoFABtn.disabled = true;
+        twoFABtn.textContent = 'VERIFYING...';
+        twoFABtn.classList.add('btn-loading');
+
+        fetch('/api/login/2fa', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ code: code })
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(data) {
+            if (data.success) {
+                localStorage.setItem('user', JSON.stringify(data.user));
+                sessionStorage.setItem('user', JSON.stringify(data.user));
+                window.location.href = 'map.html';
+            } else {
+                showAlertModal(data.message || 'Incorrect code', 'error', 'Verification Failed');
+                twoFABtn.disabled = false;
+                twoFABtn.textContent = 'VERIFY';
+                twoFABtn.classList.remove('btn-loading');
+                twoFACodeInput.value = '';
+                twoFACodeInput.focus();
+            }
+        })
+        .catch(function(err) {
+            console.error('Error:', err);
+            showAlertModal('Connection error! Please check if the server is running.', 'error', 'Connection Error');
+            twoFABtn.disabled = false;
+            twoFABtn.textContent = 'VERIFY';
+            twoFABtn.classList.remove('btn-loading');
+        });
+    }
+
+    if (twoFABtn) {
+        twoFABtn.onclick = function(event) {
+            event.preventDefault();
+            submitTwoFACode();
+        };
+    }
+
+    if (twoFACodeInput) {
+        twoFACodeInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                submitTwoFACode();
+            }
+        });
+    }
+
+    if (twoFABackBtn) {
+        twoFABackBtn.onclick = function(event) {
+            event.preventDefault();
+            document.getElementById('loginStep2').style.display = 'none';
+            document.getElementById('loginStep1').style.display = 'block';
+            twoFACodeInput.value = '';
+            if (loginBtn) {
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'ENTER SYSTEM';
+                loginBtn.classList.remove('btn-loading');
+            }
+        };
+    }
+
+    // Enter key handlers
+    const secureKeyInput = document.getElementById('secureKey');
+    if (secureKeyInput) {
+        secureKeyInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (loginBtn) loginBtn.click();
+            }
+        });
+    }
+    
+    const engineerIdInput = document.getElementById('engineerId');
+    if (engineerIdInput) {
+        engineerIdInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (secureKeyInput) secureKeyInput.focus();
+            }
+        });
+    }
+});
+
+
+(function(){
+    const sb=document.getElementById('glassScrollbar'), th=document.getElementById('glassThumb');
+    if(!sb||!th){console.warn('[Scrollbar] elements not found');return;}
+    let drag=false, sy=0, sty=0;
+    function m(){const st=window.scrollY||0,th=document.documentElement.scrollHeight,vh=window.innerHeight,dh=Math.max(1,th-vh),tr=sb.offsetHeight||1,r=vh/Math.max(1,th),h=Math.max(40,r*tr),mx=Math.max(0,tr-h);return{st,p:st/dh,tr,h,mx,dh}}
+    function u(){const x=m();th.style.setProperty('height',x.h+'px','important');th.style.setProperty('top',(x.p*x.mx)+'px','important')}
+    window.addEventListener('scroll',u,{passive:true});window.addEventListener('resize',u);
+    th.addEventListener('mousedown',e=>{drag=true;sy=e.clientY;sty=m().p*m().mx;e.preventDefault()});
+    sb.addEventListener('mousedown',e=>{if(e.target===th||th.contains(e.target))return;const r=sb.getBoundingClientRect(),y=e.clientY-r.top,x=m();window.scrollTo({top:Math.max(0,Math.min(1,y/x.tr))*x.dh,behavior:'smooth'})});
+    window.addEventListener('mousemove',e=>{if(!drag)return;const x=m(),ny=sty+(e.clientY-sy),c=Math.max(0,Math.min(x.mx,ny));window.scrollTo(0,(c/Math.max(1,x.mx))*x.dh)});
+    window.addEventListener('mouseup',()=>drag=false);
+    new MutationObserver(()=>{clearTimeout(window._t);window._t=setTimeout(u,50)}).observe(document.body,{childList:true,subtree:true});
+    u();[50,100,250,500,1000,2000].forEach(d=>setTimeout(u,d));
+    window.updateGlassScrollbar=u;
+})();
+
+
+// Add shake animation
+const shakeStyles = document.createElement('style');
+shakeStyles.textContent = `
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        20% { transform: translateX(-8px); }
+        40% { transform: translateX(8px); }
+        60% { transform: translateX(-4px); }
+        80% { transform: translateX(4px); }
+    }
+`;
+document.head.appendChild(shakeStyles);
+</script>
+
+</body>
+</html>

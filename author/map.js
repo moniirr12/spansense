@@ -1,10 +1,11 @@
 // ============================================
-// spanSense - Author - Route Planner
-// Loads as an ordinary browsable structure map (click a marker/row for an
-// info popup); "Plan a route" switches it into selection mode to multi-
-// select structures and order them into an inspection route. Reuses
-// map.js's own condition-band thresholds/colors and marker icon language
-// so this reads as the same product's map, not a new one.
+// spanSense - Author Map
+// Loads as an ordinary browsable structure map - click a marker/row to open
+// the same structure detail modal core map.html uses (see bcirep.js,
+// loaded before this file). "Plan a route" switches it into selection mode
+// to multi-select structures and order them into an inspection route.
+// Reuses map.js's own condition-band thresholds/colors and marker icon
+// language so this reads as the same product's map, not a new one.
 // API_BASE / formatDate come from ../test.js (loaded before this file).
 // ============================================
 (function () {
@@ -55,6 +56,10 @@
         if (bci >= 40) return { band: 'poor', label: 'Poor', color: '#f97316' };
         return { band: 'critical', label: 'Very Poor', color: '#ef4444' };
     }
+    // bcirep.js's updateBridgeModalData() calls bciTier() expecting it to be
+    // global (that's how map.js exposes its own copy) - this one is scoped
+    // inside this file's IIFE, so it needs an explicit window export.
+    window.bciTier = bciTier;
 
     var typeIcons = {
         bridge: function (sz) { return '<svg viewBox="0 0 20 20" width="' + sz + '" height="' + sz + '" stroke="white" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-width="1.9"><line x1="2" y1="6" x2="18" y2="6"/><line x1="5" y1="6" x2="5" y2="13"/><line x1="10" y1="6" x2="10" y2="13"/><line x1="15" y1="6" x2="15" y2="13"/><path d="M1 16 Q5 13.5 9 16 T17 16"/></svg>'; },
@@ -69,15 +74,27 @@
     };
     function typeLabel(id) { var t = TYPES.filter(function (t) { return t.id === id; })[0]; return t ? t.label : id; }
 
-    // Browse-mode click popup - short info card, same fields as map.js's
-    // marker popup, shown until route mode takes over marker clicks.
-    function popupHtml(s) {
-        var tier = bciTier(s.bci_av);
-        return '<b>' + s.name + '</b><br>' +
-            (s.location ? 'Location: ' + s.location + '<br>' : '') +
-            'Type: ' + typeLabel(s.type) + '<br>' +
-            'Condition: <span style="color:' + tier.color + ';font-weight:700;">' + tier.label + '</span>' +
-            (s.bci_av != null ? ' (' + Math.round(s.bci_av) + ')' : '');
+    // Browse-mode click opens the same structure detail modal core
+    // map.html uses (see #bridgeModal in author/map.html and bcirep.js,
+    // loaded before this file) - not just a short popup, so a consultancy
+    // user gets the real photo/BCI/quick-info/New Inspection actions.
+    function fetchBridgePhoto(bridgeId) {
+        fetch(API_BASE + '/getBridgePhoto?bridgeId=' + bridgeId)
+            .then(function (r) { if (!r.ok) throw new Error('Network response was not ok'); return r.json(); })
+            .then(function (data) {
+                var img = document.getElementById('bridgePhoto');
+                if (img && data.photo_url) img.src = data.photo_url;
+            })
+            .catch(function (err) { console.error('Error fetching bridge photo:', err); });
+    }
+    function openStructureModal(s) {
+        sessionStorage.setItem('structureId', s.id);
+        sessionStorage.setItem('structureName', s.name);
+        sessionStorage.setItem('structureType', s.type);
+        var modal = document.getElementById('bridgeModal');
+        if (modal) modal.style.display = 'block';
+        updateModalTitle(); // bcirep.js - reads sessionStorage, fills in the modal
+        fetchBridgePhoto(s.id);
     }
 
     /* ---------------------------------------------------------
@@ -106,13 +123,6 @@
         if (!d) return -999;
         return Math.round((d - today) / (1000 * 60 * 60 * 24 * 30.44));
     }
-    function dueTag(due) {
-        if (due <= -999) return '<span class="sr-due overdue">never inspected</span>';
-        if (due < 0) return '<span class="sr-due overdue">' + Math.abs(due) + 'mo overdue</span>';
-        if (due <= 3) return '<span class="sr-due soon">due ' + (due <= 0 ? 'this month' : 'in ' + due + 'mo') + '</span>';
-        return '';
-    }
-
     /* ---------------------------------------------------------
        DISTANCE - great-circle (haversine), km. No routing engine is
        wired up, so this is straight-line, same caveat shown in the UI.
@@ -138,79 +148,17 @@
     var STRUCTURES = [], byId = {};
     var routeMode = false;
     var state = {
-        search: '',
         types: new Set(TYPES.map(function (t) { return t.id; })),
         bands: new Set(BANDS.map(function (b) { return b.id; })),
-        dueSoon: false,
         selected: []
     };
     var today = new Date();
 
     function passesFilter(s) {
-        if (state.search) {
-            var q = state.search;
-            var hay = (s.name + ' ' + (s.location || '')).toLowerCase();
-            if (hay.indexOf(q) === -1) return false;
-        }
         if (!state.types.has(s.type)) return false;
         if (!state.bands.has(bciTier(s.bci_av).band)) return false;
-        if (state.dueSoon && s.dueMonths > 3) return false;
         return true;
     }
-
-    /* ---------------------------------------------------------
-       FILTER CHIPS
-       --------------------------------------------------------- */
-    var typeChipsEl = document.getElementById('typeChips');
-    TYPES.forEach(function (t) {
-        var el = document.createElement('div');
-        el.className = 'chip on'; el.dataset.type = t.id;
-        el.innerHTML = '<span class="sw"></span>' + t.label;
-        el.addEventListener('click', function () {
-            if (state.types.has(t.id)) { state.types.delete(t.id); el.classList.remove('on'); }
-            else { state.types.add(t.id); el.classList.add('on'); }
-            renderAll();
-        });
-        typeChipsEl.appendChild(el);
-    });
-
-    var bandChipsEl = document.getElementById('bandChips');
-    BANDS.forEach(function (b) {
-        var el = document.createElement('div');
-        el.className = 'chip on'; el.dataset.band = b.id;
-        el.innerHTML = '<span class="sw" style="background:' + b.color + '"></span>' + b.label;
-        el.addEventListener('click', function () {
-            if (state.bands.has(b.id)) { state.bands.delete(b.id); el.classList.remove('on'); }
-            else { state.bands.add(b.id); el.classList.add('on'); }
-            renderAll();
-        });
-        bandChipsEl.appendChild(el);
-    });
-
-    var dueToggle = document.getElementById('dueToggle');
-    dueToggle.addEventListener('click', function () {
-        state.dueSoon = !state.dueSoon;
-        dueToggle.classList.toggle('on', state.dueSoon);
-        dueToggle.setAttribute('aria-checked', String(state.dueSoon));
-        renderAll();
-    });
-    dueToggle.addEventListener('keydown', function (e) { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); dueToggle.click(); } });
-
-    document.getElementById('searchInput').addEventListener('input', function (e) {
-        state.search = e.target.value.trim().toLowerCase();
-        renderAll();
-    });
-
-    document.getElementById('resetFilters').addEventListener('click', function () {
-        state.search = ''; document.getElementById('searchInput').value = '';
-        state.types = new Set(TYPES.map(function (t) { return t.id; }));
-        state.bands = new Set(BANDS.map(function (b) { return b.id; }));
-        state.dueSoon = false;
-        dueToggle.classList.remove('on'); dueToggle.setAttribute('aria-checked', 'false');
-        typeChipsEl.querySelectorAll('.chip').forEach(function (c) { c.classList.add('on'); });
-        bandChipsEl.querySelectorAll('.chip').forEach(function (c) { c.classList.add('on'); });
-        renderAll();
-    });
 
     document.getElementById('autoSelectBtn').addEventListener('click', function () {
         STRUCTURES.filter(passesFilter).filter(function (s) { return s.dueMonths <= 0; }).forEach(function (s) {
@@ -222,44 +170,52 @@
     document.getElementById('exportBtn').addEventListener('click', exportRouteCsv);
 
     /* ---------------------------------------------------------
-       STRUCTURE LIST
+       SIDEBAR - View > Type > Condition, same submenu-toggle pattern and
+       type/condition checkboxes as core map/map.js's rebuildMarkersFromFilter,
+       wired here to this file's own passesFilter/state instead of rebuilding
+       Leaflet layers from scratch on every change.
        --------------------------------------------------------- */
-    var listEl = document.getElementById('structList');
-    var countEl = document.getElementById('listCount');
-    var checkSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
-
-    function renderList() {
-        var visible = STRUCTURES.filter(passesFilter);
-        countEl.textContent = visible.length + ' of ' + STRUCTURES.length + ' structures';
-        listEl.innerHTML = '';
-        if (!visible.length) {
-            listEl.innerHTML = '<div class="empty-list">No structures match these filters.</div>';
-            return;
-        }
-        visible.forEach(function (s) {
-            var tier = bciTier(s.bci_av);
-            var li = document.createElement('li');
-            li.className = 'struct-row' + (routeMode && state.selected.indexOf(s.id) > -1 ? ' selected' : '');
-            li.innerHTML =
-                '<div class="chk">' + checkSvg + '</div>' +
-                '<div class="band-dot" style="background:' + tier.color + '"></div>' +
-                '<div class="sr-main"><div class="sr-name">' + s.name + '</div><div class="sr-sub">' + (s.location || typeLabel(s.type)) + ' · ' + typeLabel(s.type) + '</div></div>' +
-                dueTag(s.dueMonths);
-            li.addEventListener('click', function () {
-                if (routeMode) { toggleSelect(s.id); return; }
-                map.setView([s.latitude, s.longitude], 15);
-                var m = markerById[s.id];
-                if (m) m.openPopup();
-            });
-            listEl.appendChild(li);
+    function wireSubmenuToggle(linkId, submenuId) {
+        var link = document.getElementById(linkId);
+        if (!link) return;
+        link.addEventListener('click', function (e) {
+            e.preventDefault();
+            var submenu = document.getElementById(submenuId);
+            if (submenu) submenu.classList.toggle('active');
         });
     }
+    wireSubmenuToggle('viewLink', 'viewOptions');
+    wireSubmenuToggle('typeLink', 'typeOptions');
+    wireSubmenuToggle('conditionLink', 'conditionOptions');
+
+    // core's "Good / Very Good" checkbox covers both of this file's separate
+    // 'good'/'excellent' bands (see BANDS above); "uninspected" has no band
+    // of its own in bciTier() (a null BCI already reads as 'fair' there -
+    // pre-existing behavior, not new here), so it rides along with 'fair'.
+    var CONDITION_CHECKBOX_TO_BANDS = { good: ['good', 'excellent'], fair: ['fair'], poor: ['poor'], critical: ['critical'], uninspected: ['fair'] };
+
+    document.querySelectorAll('#typeOptions input[name="structureType"]').forEach(function (cb) {
+        cb.addEventListener('change', function () {
+            if (cb.checked) state.types.add(cb.value); else state.types.delete(cb.value);
+            renderAll();
+        });
+    });
+    document.querySelectorAll('#conditionOptions input[name="conditionFilter"]').forEach(function (cb) {
+        cb.addEventListener('change', function () {
+            (CONDITION_CHECKBOX_TO_BANDS[cb.value] || []).forEach(function (band) {
+                if (cb.checked) state.bands.add(band); else state.bands.delete(band);
+            });
+            renderAll();
+        });
+    });
 
     /* ---------------------------------------------------------
        MAP (Leaflet) - same tile choices as map.js
        --------------------------------------------------------- */
     var map = L.map('routeMap', { zoomControl: false }).setView([54.0, -2.0], 6);
-    L.control.zoom({ position: 'topright' }).addTo(map);
+    // 'bottomright', not 'topright' - the map-type/route-planning toolbar
+    // (see .map-toolbar in author/map.html) already owns that corner.
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
     L.control.scale({ metric: true, imperial: false, position: 'bottomleft' }).addTo(map);
 
     var openStreetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -310,13 +266,9 @@
         STRUCTURES.forEach(function (s) {
             var marker = L.marker([s.latitude, s.longitude], { icon: pinIcon(s, -1) });
             marker.bindTooltip(s.name, { direction: 'top', offset: [0, -14] });
-            marker.bindPopup(popupHtml(s), { closeButton: false });
-            // bindPopup wires its own click-to-open handler - remove it so
-            // click behavior can be driven manually by routeMode below.
-            marker.off('click');
             marker.on('click', function () {
                 if (routeMode) { toggleSelect(s.id); return; }
-                marker.openPopup();
+                openStructureModal(s);
             });
             marker.addTo(markersLayer);
             markerById[s.id] = marker;
@@ -394,9 +346,8 @@
 
     function setRouteMode(on) {
         routeMode = on;
-        routeModeBtn.innerHTML = on
-            ? '<i class="fas fa-xmark"></i>&nbsp;Exit route mode'
-            : '<i class="fas fa-route"></i>&nbsp;Plan a route';
+        routeModeBtn.classList.toggle('active', on);
+        routeModeBtn.setAttribute('data-tip', on ? 'Exit route mode' : 'Plan a route');
         routeRailEl.style.display = on ? 'flex' : 'none';
         selectToolsEl.style.display = on ? 'flex' : 'none';
         mapSummaryEl.style.display = on ? 'flex' : 'none';
@@ -520,11 +471,34 @@
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
     }
 
-    function renderAll() { renderList(); renderPins(); renderRoute(); }
+    function renderAll() { renderPins(); renderRoute(); }
+
+    /* ---------------------------------------------------------
+       STRUCTURE DETAIL MODAL - close button + New Inspection, same
+       behavior as map.js's fixModalCloseButtons()/addInspection handler.
+       --------------------------------------------------------- */
+    var bridgeModalEl = document.getElementById('bridgeModal');
+    if (bridgeModalEl) {
+        var modalCloseBtn = bridgeModalEl.querySelector('.close');
+        if (modalCloseBtn) modalCloseBtn.addEventListener('click', function () { bridgeModalEl.style.display = 'none'; });
+        bridgeModalEl.addEventListener('click', function (e) { if (e.target === bridgeModalEl) bridgeModalEl.style.display = 'none'; });
+    }
+    var addInspectionBtn = document.getElementById('addInspection');
+    if (addInspectionBtn) {
+        addInspectionBtn.addEventListener('click', function () {
+            // Same stale-session cleanup as map.js's own handler - without
+            // this, leftover defects/photos from whatever inspection was
+            // last open get picked up by inspection.js's session restore.
+            ['inspectionMode', 'inspectionData', 'inspectionDate', 'inspectionStructureNumber',
+             'defects', 'photoData', 'selectedSpan', 'copiedDefectIds'].forEach(function (k) { sessionStorage.removeItem(k); });
+            window.location.href = '../inspection1/inspection1.html';
+        });
+    }
 
     /* ---------------------------------------------------------
        LOAD DATA
        --------------------------------------------------------- */
+    var fuse = null;
     fetch(API_BASE + '/api/bridges')
         .then(function (r) { if (!r.ok) throw new Error('Network response was not ok'); return r.json(); })
         .then(function (data) {
@@ -536,11 +510,161 @@
                     return b;
                 });
             byId = {}; STRUCTURES.forEach(function (s) { byId[s.id] = s; });
+            fuse = new Fuse(STRUCTURES, { keys: ['name', 'location', 'id'], threshold: 0.3 });
             initMarkers();
             renderAll();
         })
         .catch(function (err) {
-            countEl.textContent = 'Could not load structures';
-            console.error('Route planner: failed to load /api/bridges', err);
+            console.error('Author map: failed to load /api/bridges', err);
         });
+
+    /* ---------------------------------------------------------
+       NAVBAR SEARCH - same Fuse-powered jump-to-structure dropdown as
+       core map/map.js's, using this file's own STRUCTURES/fuse instead of
+       core's bridgeData.
+       --------------------------------------------------------- */
+    var searchInput = document.getElementById('searchInput');
+    var searchResults = document.getElementById('searchResults');
+    if (searchInput && searchResults) {
+        searchInput.addEventListener('input', function () {
+            var query = searchInput.value.trim();
+            if (!query || !fuse) { searchResults.style.display = 'none'; return; }
+            var results = fuse.search(query).slice(0, 5);
+            searchResults.innerHTML = results.map(function (r) {
+                return '<div data-lat="' + r.item.latitude + '" data-lng="' + r.item.longitude + '">' + r.item.id + ' - ' + r.item.name + '</div>';
+            }).join('');
+            searchResults.style.display = results.length ? 'block' : 'none';
+        });
+        searchResults.addEventListener('click', function (e) {
+            if (e.target.tagName === 'DIV') {
+                var lat = parseFloat(e.target.getAttribute('data-lat'));
+                var lng = parseFloat(e.target.getAttribute('data-lng'));
+                map.setView([lat, lng], 15);
+                searchResults.style.display = 'none';
+                searchInput.value = '';
+            }
+        });
+        document.addEventListener('click', function (e) {
+            if (!searchResults.contains(e.target) && e.target !== searchInput) searchResults.style.display = 'none';
+        });
+    }
+
+    /* ---------------------------------------------------------
+       CHAT - same widget/logic as core map/map.js's (local keyword FAQ,
+       falling through to POST /api/chat for anything it doesn't confidently
+       match). Self-contained: no author-specific data dependency.
+       --------------------------------------------------------- */
+    (function () {
+        var chatToggle = document.querySelector('.chat-toggle');
+        var chatBox = document.querySelector('.chat-box');
+        var chatClose = document.querySelector('.chat-close');
+
+        function openChat() {
+            chatBox.classList.add('active');
+            chatToggle.style.setProperty('display', 'none', 'important');
+        }
+        function closeChat() {
+            chatBox.classList.remove('active');
+            chatToggle.style.removeProperty('display');
+        }
+        if (chatToggle && chatBox) chatToggle.addEventListener('click', openChat);
+        if (chatClose && chatBox) chatClose.addEventListener('click', closeChat);
+        if (chatBox && chatToggle) {
+            document.addEventListener('click', function (e) {
+                if (chatBox.classList.contains('active') && !chatBox.contains(e.target) && !chatToggle.contains(e.target)) closeChat();
+            });
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && chatBox.classList.contains('active')) closeChat();
+            });
+        }
+
+        var greetingEl = document.getElementById('chatGreeting');
+        if (greetingEl) {
+            var setGreeting = function (name) { greetingEl.textContent = 'Hello ' + name + ', how can I help you today?'; };
+            try {
+                var cached = JSON.parse(localStorage.getItem('spansenseUserGreetingCache') || 'null');
+                if (cached && cached.displayName) setGreeting(cached.displayName);
+            } catch (e) { /* malformed cache - the /api/me fetch below will fix it */ }
+            fetch(API_BASE + '/api/me')
+                .then(function (res) { return res.ok ? res.json() : null; })
+                .then(function (data) {
+                    var fullName = data && (data.full_name || data.username);
+                    if (fullName) setGreeting(fullName.trim().split(/\s+/)[0]);
+                })
+                .catch(function (err) { console.error('Chat greeting: failed to load profile', err); });
+        }
+
+        var chatInput = document.querySelector('.chat-input input');
+        var chatSend = document.querySelector('.chat-send');
+        var CHAT_FAQ = [
+            { keywords: ['inspection', 'start', 'new inspection', 'run', 'begin'],
+              answer: 'To run a new inspection: click a structure marker on the map, then "New Inspection" on its card. Step 1 sets the inspection type (GI/PI/SI), date and inspector; step 2 walks through each element so you can log defects.' },
+            { keywords: ['defect', 'severity', 'extent', 'add defect'],
+              answer: 'When logging a defect, set Severity (1 Minor to 5 Emergency) and Extent (A isolated to E extensive). A live BCI impact preview shows how your change affects the score before you save, and a Severity Guide explains what separates each level.' },
+            { keywords: ['bci avg', 'bci crit', 'vs crit', 'vs avg', 'difference between avg', 'difference between crit', 'difference between bci'],
+              answer: "BCI avg is the condition across every inspected element, weighted by importance. BCI crit is narrower: it's based only on a fixed set of critical elements (like main girders or bearings) for that structure type, so a defect on a minor element won't move it." },
+            { keywords: ['map', 'search', 'find structure', 'marker'],
+              answer: 'Use the search bar at the top of the Map to jump to a structure by name, or the sidebar filters to narrow by type or condition. Click any marker to open its structure card.' },
+            { keywords: ['report', 'export', 'pdf', 'proforma', 'download'],
+              answer: 'You can generate an inspection PDF or BCI Proforma from the structure card once it has inspections recorded.' },
+            { keywords: ['plan', 'schedule', 'gantt', 'due', 'calendar'],
+              answer: 'Planning shows every client\'s due/overdue structures alongside your programme, and lets you assign an inspector, date and any traffic-management details for each visit.' },
+            { keywords: ['dashboard', 'pending review', 'overview'],
+              answer: 'The Dashboard gives a per-client view: structures managed, overdue/due-soon counts, report status, and recent activity across all your clients.' },
+            { keywords: ['account', 'password', 'night mode', 'dark mode', 'profile'],
+              answer: 'Open Account from any navbar to update your profile or change your password. Night mode can be toggled from the moon icon on any page and your choice is remembered.' },
+            { keywords: ['help', 'contact', 'support', 'stuck'],
+              answer: "If this doesn't cover it, use Contact Us from any navbar and someone will get back to you." }
+        ];
+        var CHAT_FALLBACK = "I'm not sure about that yet. Try asking about inspections, BCI scores, the map, planning, reports, or your account.";
+
+        function findChatAnswer(userText) {
+            var text = userText.toLowerCase();
+            var best = null, bestScore = 0;
+            CHAT_FAQ.forEach(function (entry) {
+                var score = 0;
+                entry.keywords.forEach(function (kw) {
+                    var matched = kw.indexOf(' ') > -1
+                        ? text.indexOf(kw) > -1
+                        : new RegExp('\\b' + kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b').test(text);
+                    if (matched) score++;
+                });
+                if (score > bestScore) { bestScore = score; best = entry; }
+            });
+            return best ? best.answer : CHAT_FALLBACK;
+        }
+        function appendChatMessage(role, text) {
+            var messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', role);
+            messageDiv.textContent = text;
+            var messagesContainer = document.querySelector('.chat-messages');
+            if (!messagesContainer) return messageDiv;
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            return messageDiv;
+        }
+        function sendChatMessage() {
+            if (!chatInput) return;
+            var message = chatInput.value.trim();
+            if (!message) return;
+            appendChatMessage('user', message);
+            chatInput.value = '';
+            var localAnswer = findChatAnswer(message);
+            if (localAnswer !== CHAT_FALLBACK) {
+                setTimeout(function () { appendChatMessage('bot', localAnswer); }, 400);
+                return;
+            }
+            var typingEl = appendChatMessage('bot', '…');
+            fetch(API_BASE + '/api/chat', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: message })
+            })
+                .then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
+                .then(function (res) { typingEl.textContent = (res.ok && res.data.answer) ? res.data.answer : CHAT_FALLBACK; })
+                .catch(function () { typingEl.textContent = CHAT_FALLBACK; });
+        }
+        if (chatSend && chatInput) {
+            chatSend.addEventListener('click', sendChatMessage);
+            chatInput.addEventListener('keypress', function (e) { if (e.key === 'Enter') sendChatMessage(); });
+        }
+    })();
 })();
