@@ -1,0 +1,21 @@
+/* Replaces Font Awesome's solid fa-sun glyph on the night-mode toggle with a
+   custom line-drawn sun (matching the moon's visual weight - see fa-moon,
+   left untouched since the solid FA moon glyph already reads well). Scoped
+   to .fa-sun only; every other Font Awesome icon in the app is unaffected. */
+.fa-sun {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    background-color: currentColor;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2024%2024'%3E%3Ccircle%20cx%3D'12'%20cy%3D'12'%20r%3D'4.6'%20fill%3D'black'%2F%3E%3Cg%20stroke%3D'black'%20stroke-width%3D'2.8'%20stroke-linecap%3D'round'%3E%3Cline%20x1%3D'12'%20y1%3D'1'%20x2%3D'12'%20y2%3D'4'%2F%3E%3Cline%20x1%3D'12'%20y1%3D'20'%20x2%3D'12'%20y2%3D'23'%2F%3E%3Cline%20x1%3D'1'%20y1%3D'12'%20x2%3D'4'%20y2%3D'12'%2F%3E%3Cline%20x1%3D'20'%20y1%3D'12'%20x2%3D'23'%20y2%3D'12'%2F%3E%3Cline%20x1%3D'4.2'%20y1%3D'4.2'%20x2%3D'6.3'%20y2%3D'6.3'%2F%3E%3Cline%20x1%3D'17.7'%20y1%3D'17.7'%20x2%3D'19.8'%20y2%3D'19.8'%2F%3E%3Cline%20x1%3D'4.2'%20y1%3D'19.8'%20x2%3D'6.3'%20y2%3D'17.7'%2F%3E%3Cline%20x1%3D'17.7'%20y1%3D'6.3'%20x2%3D'19.8'%20y2%3D'4.2'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2024%2024'%3E%3Ccircle%20cx%3D'12'%20cy%3D'12'%20r%3D'4.6'%20fill%3D'black'%2F%3E%3Cg%20stroke%3D'black'%20stroke-width%3D'2.8'%20stroke-linecap%3D'round'%3E%3Cline%20x1%3D'12'%20y1%3D'1'%20x2%3D'12'%20y2%3D'4'%2F%3E%3Cline%20x1%3D'12'%20y1%3D'20'%20x2%3D'12'%20y2%3D'23'%2F%3E%3Cline%20x1%3D'1'%20y1%3D'12'%20x2%3D'4'%20y2%3D'12'%2F%3E%3Cline%20x1%3D'20'%20y1%3D'12'%20x2%3D'23'%20y2%3D'12'%2F%3E%3Cline%20x1%3D'4.2'%20y1%3D'4.2'%20x2%3D'6.3'%20y2%3D'6.3'%2F%3E%3Cline%20x1%3D'17.7'%20y1%3D'17.7'%20x2%3D'19.8'%20y2%3D'19.8'%2F%3E%3Cline%20x1%3D'4.2'%20y1%3D'19.8'%20x2%3D'6.3'%20y2%3D'17.7'%2F%3E%3Cline%20x1%3D'17.7'%20y1%3D'6.3'%20x2%3D'19.8'%20y2%3D'4.2'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+}
+.fa-sun::before {
+    content: "" !important;
+}
