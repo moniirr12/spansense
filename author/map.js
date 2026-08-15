@@ -1,10 +1,11 @@
 // ============================================
-// spanSense - Author - Route Planner
-// Loads as an ordinary browsable structure map (click a marker/row for an
-// info popup); "Plan a route" switches it into selection mode to multi-
-// select structures and order them into an inspection route. Reuses
-// map.js's own condition-band thresholds/colors and marker icon language
-// so this reads as the same product's map, not a new one.
+// spanSense - Author Map
+// Loads as an ordinary browsable structure map - click a marker/row to open
+// the same structure detail modal core map.html uses (see bcirep.js,
+// loaded before this file). "Plan a route" switches it into selection mode
+// to multi-select structures and order them into an inspection route.
+// Reuses map.js's own condition-band thresholds/colors and marker icon
+// language so this reads as the same product's map, not a new one.
 // API_BASE / formatDate come from ../test.js (loaded before this file).
 // ============================================
 (function () {
@@ -55,6 +56,10 @@
         if (bci >= 40) return { band: 'poor', label: 'Poor', color: '#f97316' };
         return { band: 'critical', label: 'Very Poor', color: '#ef4444' };
     }
+    // bcirep.js's updateBridgeModalData() calls bciTier() expecting it to be
+    // global (that's how map.js exposes its own copy) - this one is scoped
+    // inside this file's IIFE, so it needs an explicit window export.
+    window.bciTier = bciTier;
 
     var typeIcons = {
         bridge: function (sz) { return '<svg viewBox="0 0 20 20" width="' + sz + '" height="' + sz + '" stroke="white" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-width="1.9"><line x1="2" y1="6" x2="18" y2="6"/><line x1="5" y1="6" x2="5" y2="13"/><line x1="10" y1="6" x2="10" y2="13"/><line x1="15" y1="6" x2="15" y2="13"/><path d="M1 16 Q5 13.5 9 16 T17 16"/></svg>'; },
@@ -69,15 +74,27 @@
     };
     function typeLabel(id) { var t = TYPES.filter(function (t) { return t.id === id; })[0]; return t ? t.label : id; }
 
-    // Browse-mode click popup - short info card, same fields as map.js's
-    // marker popup, shown until route mode takes over marker clicks.
-    function popupHtml(s) {
-        var tier = bciTier(s.bci_av);
-        return '<b>' + s.name + '</b><br>' +
-            (s.location ? 'Location: ' + s.location + '<br>' : '') +
-            'Type: ' + typeLabel(s.type) + '<br>' +
-            'Condition: <span style="color:' + tier.color + ';font-weight:700;">' + tier.label + '</span>' +
-            (s.bci_av != null ? ' (' + Math.round(s.bci_av) + ')' : '');
+    // Browse-mode click opens the same structure detail modal core
+    // map.html uses (see #bridgeModal in author/map.html and bcirep.js,
+    // loaded before this file) - not just a short popup, so a consultancy
+    // user gets the real photo/BCI/quick-info/New Inspection actions.
+    function fetchBridgePhoto(bridgeId) {
+        fetch(API_BASE + '/getBridgePhoto?bridgeId=' + bridgeId)
+            .then(function (r) { if (!r.ok) throw new Error('Network response was not ok'); return r.json(); })
+            .then(function (data) {
+                var img = document.getElementById('bridgePhoto');
+                if (img && data.photo_url) img.src = data.photo_url;
+            })
+            .catch(function (err) { console.error('Error fetching bridge photo:', err); });
+    }
+    function openStructureModal(s) {
+        sessionStorage.setItem('structureId', s.id);
+        sessionStorage.setItem('structureName', s.name);
+        sessionStorage.setItem('structureType', s.type);
+        var modal = document.getElementById('bridgeModal');
+        if (modal) modal.style.display = 'block';
+        updateModalTitle(); // bcirep.js - reads sessionStorage, fills in the modal
+        fetchBridgePhoto(s.id);
     }
 
     /* ---------------------------------------------------------
@@ -248,8 +265,7 @@
             li.addEventListener('click', function () {
                 if (routeMode) { toggleSelect(s.id); return; }
                 map.setView([s.latitude, s.longitude], 15);
-                var m = markerById[s.id];
-                if (m) m.openPopup();
+                openStructureModal(s);
             });
             listEl.appendChild(li);
         });
@@ -310,13 +326,9 @@
         STRUCTURES.forEach(function (s) {
             var marker = L.marker([s.latitude, s.longitude], { icon: pinIcon(s, -1) });
             marker.bindTooltip(s.name, { direction: 'top', offset: [0, -14] });
-            marker.bindPopup(popupHtml(s), { closeButton: false });
-            // bindPopup wires its own click-to-open handler - remove it so
-            // click behavior can be driven manually by routeMode below.
-            marker.off('click');
             marker.on('click', function () {
                 if (routeMode) { toggleSelect(s.id); return; }
-                marker.openPopup();
+                openStructureModal(s);
             });
             marker.addTo(markersLayer);
             markerById[s.id] = marker;
@@ -521,6 +533,28 @@
     }
 
     function renderAll() { renderList(); renderPins(); renderRoute(); }
+
+    /* ---------------------------------------------------------
+       STRUCTURE DETAIL MODAL - close button + New Inspection, same
+       behavior as map.js's fixModalCloseButtons()/addInspection handler.
+       --------------------------------------------------------- */
+    var bridgeModalEl = document.getElementById('bridgeModal');
+    if (bridgeModalEl) {
+        var modalCloseBtn = bridgeModalEl.querySelector('.close');
+        if (modalCloseBtn) modalCloseBtn.addEventListener('click', function () { bridgeModalEl.style.display = 'none'; });
+        bridgeModalEl.addEventListener('click', function (e) { if (e.target === bridgeModalEl) bridgeModalEl.style.display = 'none'; });
+    }
+    var addInspectionBtn = document.getElementById('addInspection');
+    if (addInspectionBtn) {
+        addInspectionBtn.addEventListener('click', function () {
+            // Same stale-session cleanup as map.js's own handler - without
+            // this, leftover defects/photos from whatever inspection was
+            // last open get picked up by inspection.js's session restore.
+            ['inspectionMode', 'inspectionData', 'inspectionDate', 'inspectionStructureNumber',
+             'defects', 'photoData', 'selectedSpan', 'copiedDefectIds'].forEach(function (k) { sessionStorage.removeItem(k); });
+            window.location.href = '../inspection1/inspection1.html';
+        });
+    }
 
     /* ---------------------------------------------------------
        LOAD DATA

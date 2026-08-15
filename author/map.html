@@ -8,7 +8,7 @@
 <script src="/roleBadge.js"></script>
 <script>(function(){var nm=localStorage.getItem('nightMode');var dark=nm==='on'||(nm===null&&!(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches));if(dark)document.documentElement.classList.add('nm-preload');})();</script>
 <style>html.nm-preload,html.nm-preload body{background-color:#1a2428!important;}</style>
-<title>spanSense · Route Planner</title>
+<title>spanSense · Author Map</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,500&display=swap" rel="stylesheet">
@@ -16,6 +16,13 @@
 <link rel="stylesheet" href="../assets/sunIcon.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Structure detail modal (bridgeModal below) reuses map/map.css's rules
+     (.modal/.bridge-modal/.stat-pill/.action-btn/etc.) rather than
+     duplicating ~200 lines of modal CSS by hand. Loaded before this page's
+     own <style> block, so on the couple of shared names (.btn-close-modal
+     doesn't clash with this page's .btn) this page's own rules still win
+     the cascade if they ever need to. -->
+<link rel="stylesheet" href="../map/map.css">
 <style>
 :root{
   --teal:#5b8c8a; --teal-dark:#2c5a57; --green-dark:#2c4a48;
@@ -309,11 +316,13 @@ a{color:inherit;}
 <nav class="navbar">
     <div class="left">
         <div class="logo">spanSense</div>
+        <!-- Author's own nav, not core's - Dashboard/Planning get their own
+             Author-specific pages later (reports/documents/clients focused,
+             not core's portfolio-BCI ones), so they're left off here rather
+             than linking somewhere misleading in the meantime. -->
         <div class="menu">
-            <a href="../map/map.html"><i class="fas fa-map"></i>Map</a>
-            <a href="../dashboard/dashboard.html"><i class="fas fa-chart-pie"></i>Dashboard</a>
-            <a href="../author/author.html"><i class="fas fa-feather-pointed"></i>Author</a>
-            <a href="../author/route-planner.html" class="active"><i class="fas fa-route"></i>Route Planner</a>
+            <a href="map.html" class="active"><i class="fas fa-map"></i>Map</a>
+            <a href="author.html"><i class="fas fa-feather-pointed"></i>Author</a>
         </div>
     </div>
     <div class="right">
@@ -351,6 +360,71 @@ a{color:inherit;}
     </div>
 
     <div class="map-hint" id="mapHint">Route distances are straight-line, for planning only</div>
+</div>
+
+<!-- ============ STRUCTURE DETAIL MODAL (browse-mode click - see map/map.html, this is the same markup so it reuses map.css's styling unmodified) ============ -->
+<div id="bridgeModal" class="modal bridge-modal">
+    <div class="modal-content bridge-modal-content bridge-card">
+        <div class="card-header">
+            <div class="header-main">
+                <div class="bridge-avatar" id="modalBridgeAvatar">GM</div>
+                <div class="header-text">
+                    <h2>Structure ID: <span id="assetId"></span></h2>
+                    <div class="bridge-name" id="modalTitle">Gateshead Millennium Bridge</div>
+                </div>
+            </div>
+            <span class="close"><i class="fas fa-times"></i></span>
+        </div>
+
+        <div class="photo-section">
+            <img id="bridgePhoto" class="bridge-img" src="" alt="Bridge Photo">
+            <div class="photo-badge"><i class="fas fa-map-marker-alt"></i> <span id="modalLocation">--</span></div>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-pill">
+                <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">BCI<sub>avg</sub> Score</span>
+                    <strong id="bciScore" class="stat-value">--</strong>
+                </div>
+            </div>
+            <div class="stat-pill">
+                <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">Last Inspected</span>
+                    <strong id="lastInspected" class="stat-value">--</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-item"><span class="info-label"><i class="fas fa-layer-group"></i> Type</span><strong id="modalType">--</strong></div>
+            <div class="info-item"><span class="info-label"><i class="fas fa-ruler-combined"></i> Length</span><strong id="modalLength">--</strong></div>
+            <div class="info-item"><span class="info-label"><i class="fas fa-ruler-horizontal"></i> Width</span><strong id="modalWidth">--</strong></div>
+            <div class="info-item"><span class="info-label"><i class="fas fa-weight-hanging"></i> Load Capacity</span><strong id="modalLoadCapacity">--</strong></div>
+            <div class="info-item"><span class="info-label"><i class="fas fa-calendar-alt"></i> Built</span><strong id="modalBuilt">--</strong></div>
+            <div class="info-item"><span class="info-label"><i class="fas fa-calendar-check"></i> Inspection Cycle</span><strong id="modalCycle">--</strong></div>
+        </div>
+
+        <div class="actions-section">
+            <button id="addInspection" class="action-btn btn-primary">
+                <i class="fas fa-plus-circle"></i> New Inspection
+            </button>
+            <div class="btn-secondary-row">
+                <!-- Previous Inspections / Documents reuse core map.html's full
+                     modal-and-file-explorer flow, which is substantial enough
+                     (~400 lines across map.js) that it's deliberately not
+                     ported in this first pass - see data-tip. -->
+                <button id="seeDocuments" class="action-btn btn-secondary" data-tip="Coming soon to Author">
+                    <i class="fas fa-folder-open"></i> Previous Inspections
+                </button>
+                <button id="docs" class="action-btn btn-secondary" data-tip="Coming soon to Author">
+                    <i class="fas fa-file-alt"></i> Documents
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- ============ "Plan a route" toggle - floats under the sticky navbar, left ============ -->
@@ -416,6 +490,7 @@ a{color:inherit;}
 </div>
 
 <script src="../test.js"></script>
-<script src="route-planner.js"></script>
+<script src="../map/bcirep.js"></script>
+<script src="map.js"></script>
 </body>
 </html>
