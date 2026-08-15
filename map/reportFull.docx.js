@@ -599,9 +599,15 @@ async function buildFullInspectionReportDocx(doc) {
             elIdxInCat += 1;
             children.push(reportPara(d, '3.' + catIdx + '.' + elIdxInCat + ' ' + el.name, { bold: true, after: 40 }));
 
-            var elementDefects = defectsData.filter(function(dd) { return dd.elementNumber === el.elementNo && dd.spanNumber === spanNum; });
+            var elRows = defectsData.filter(function(dd) { return dd.elementNumber === el.elementNo && dd.spanNumber === spanNum; });
+            // '0.0'/'0.1' are element-status markers (No Defects / Not Inspected),
+            // not real defects - see inspection/spans.js's isRealDefect. Excluded
+            // here so they read as "No defects recorded"/"Not inspected" text
+            // rather than a bare "0.0"/"0.1" defect paragraph.
+            var elementDefects = elRows.filter(function(dd) { return dd.defectId !== '0.0' && dd.defectId !== '0.1'; });
             if (elementDefects.length === 0) {
-                children.push(reportPara(d, 'No defects recorded', { italics: true, color: REPORT_COLORS.muted, size: 18 }));
+                var notInspected = elRows.some(function(dd) { return dd.defectId === '0.1'; });
+                children.push(reportPara(d, notInspected ? 'Not inspected' : 'No defects recorded', { italics: true, color: REPORT_COLORS.muted, size: 18 }));
             } else {
                 elementDefects.forEach(function(def) {
                     children.push(reportPara(d, def.defectId + '. Severity: ' + (def.severity || '?') + '. Extent: ' + (def.extent || '?'), { size: 18, after: 40 }));

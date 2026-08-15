@@ -131,13 +131,10 @@ var HTML_DEFECT_TYPE_LABEL = {
     15: { 1: 'Cracking or displacement' },
     16: { 1: 'Damage', 2: 'Section loss' }
 };
-var HTML_SEVERITY_LABEL = { 1: 'Minor', 2: 'Moderate', 3: 'Severe', 4: 'Critical', 5: 'Emergency' };
-
 function htmlDefectTypeLabel(defectType, defectNumber) {
     var byType = HTML_DEFECT_TYPE_LABEL[Number(defectType)];
     return (byType && byType[Number(defectNumber)]) || null;
 }
-function htmlSeverityLabel(sev) { return HTML_SEVERITY_LABEL[Number(sev)] || null; }
 function htmlBCICategory(score) {
     if (score >= 90) return { text: 'Very Good', band: 'vgood' };
     if (score >= 80) return { text: 'Good', band: 'good' };
@@ -211,7 +208,7 @@ function htmlPriorityMix(counts) {
 
 function htmlClearElementsTable(items) {
     return '<table class="elist"><tbody>' + items.map(function (it) {
-        return '<tr class="elist-row"><td class="en">' + it.no + '</td><td class="nm">' + esc(it.name) + '</td><td class="st"><span class="chip ok">No defects</span></td></tr>';
+        return '<tr class="elist-row"><td class="en">' + it.no + '</td><td class="nm">' + esc(it.name) + '</td><td class="st"><span class="chip ok">' + esc(it.status || 'No defects') + '</span></td></tr>';
     }).join('') + '</tbody></table>';
 }
 
@@ -220,7 +217,7 @@ function htmlDefectCard(d, photoNumbers) {
     var typeLabel = htmlDefectTypeLabel(parts[0], parts[1]);
     var heading = esc(d.defectId) + (typeLabel ? ' &middot; ' + esc(typeLabel.toUpperCase()) : '');
     var priCls = htmlPriorityClass(d.priority);
-    var sevText = htmlSeverityLabel(d.severity) || (d.severity ? ('Level ' + d.severity) : '—');
+    var sevText = (d.severity != null && d.severity !== '') ? String(d.severity) : '—';
     var worksRequired = d.worksRequired === 'Y' ? 'Yes' : d.worksRequired === 'M' ? 'Possibly' : 'No';
     var cost = d.cost != null ? parseFloat(d.cost) : NaN;
 
@@ -490,9 +487,15 @@ async function buildFullInspectionReportHtml(doc) {
                 catIdx += 1;
                 section3Html += (spanIdx === 0 ? ('<a id="section3_' + catIdx + '"></a>') : '') + htmlSubhead('3.' + catIdx + ' ' + currentCategory);
             }
-            var elDefects = defectsData.filter(function (d) { return d.elementNumber === el.elementNo && d.spanNumber === spanNum; });
+            var elRows = defectsData.filter(function (d) { return d.elementNumber === el.elementNo && d.spanNumber === spanNum; });
+            // '0.0'/'0.1' are element-status markers (No Defects / Not Inspected),
+            // not real defects - see inspection/spans.js's isRealDefect. Fold them
+            // into the same clear-elements table as an element with no rows at
+            // all, rather than rendering a bare "0.0"/"0.1" defect card.
+            var elDefects = elRows.filter(function (d) { return d.defectId !== '0.0' && d.defectId !== '0.1'; });
             if (elDefects.length === 0) {
-                pending.push({ no: el.elementNo, name: el.name });
+                var notInspected = elRows.some(function (d) { return d.defectId === '0.1'; });
+                pending.push({ no: el.elementNo, name: el.name, status: notInspected ? 'Not inspected' : 'No defects' });
             } else {
                 flush();
                 section3Html += '<h4 class="elhead">' + el.subNumber.replace('4.', '3.') + ' ' + esc(el.name) + '</h4>';

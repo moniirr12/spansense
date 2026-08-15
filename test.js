@@ -368,16 +368,9 @@ const DEFECT_TYPE_LABEL = {
     16: { 1: "Damage", 2: "Section loss" }
 };
 
-// Same severity wording as inspection/spans.js's getSeverityLabel.
-const SEVERITY_LABEL = { 1: 'Minor', 2: 'Moderate', 3: 'Severe', 4: 'Critical', 5: 'Emergency' };
-
 function defectTypeLabel(defectType, defectNumber) {
     const byType = DEFECT_TYPE_LABEL[Number(defectType)];
     return (byType && byType[Number(defectNumber)]) || null;
-}
-
-function severityLabel(sev) {
-    return SEVERITY_LABEL[Number(sev)] || null;
 }
 
 function getBCICategory(score) {
@@ -577,7 +570,7 @@ function clearElementsTable(items) {
                 return [
                     { text: String(it.no), fontSize: 9.5, color: NARR_COLORS.muted, alignment: 'right' },
                     { text: it.name, fontSize: 9.5, color: '#5b6c70' },
-                    { text: 'No defects', fontSize: 8, bold: true, color: '#9fb0ab', alignment: 'right' }
+                    { text: it.status || 'No defects', fontSize: 8, bold: true, color: '#9fb0ab', alignment: 'right' }
                 ];
             })
         },
@@ -601,7 +594,7 @@ function buildDefectCardContent(d, photoNumbers) {
     const typeLabel = defectTypeLabel(defType, defNum);
     const defectHeading = d.defectId + (typeLabel ? '   ·   ' + typeLabel.toUpperCase() : '');
     const pri = priorityColors(d.priority);
-    const sevText = severityLabel(d.severity) || (d.severity ? ('Level ' + d.severity) : '—');
+    const sevText = (d.severity != null && d.severity !== '') ? String(d.severity) : '—';
     const worksRequired = d.worksRequired === 'Y' ? 'Yes' : d.worksRequired === 'M' ? 'Possibly' : 'No';
 
     const facts = [
@@ -1241,9 +1234,16 @@ function buildInspectionReportDocDefinition(ctx) {
                 catIdx += 1;
                 section3.push(subhead('3.' + catIdx + ' ' + currentCategory, spanIdx === 0 ? ('section3_' + catIdx) : undefined));
             }
-            const elDefects = defectsData.filter(d => d.elementNumber === el.elementNo && d.spanNumber === spanNum);
+            const elRows = defectsData.filter(d => d.elementNumber === el.elementNo && d.spanNumber === spanNum);
+            // '0.0'/'0.1' are element-status markers (No Defects / Not Inspected),
+            // not real defects - see inspection/spans.js's isRealDefect. Showing
+            // them as a defect card would render a bare "0.0"/"0.1" heading with
+            // no real severity/extent, so they fold into the same clear-elements
+            // table as an element with no rows at all.
+            const elDefects = elRows.filter(d => d.defectId !== '0.0' && d.defectId !== '0.1');
             if (elDefects.length === 0) {
-                pending.push({ no: el.elementNo, name: el.name });
+                const notInspected = elRows.some(d => d.defectId === '0.1');
+                pending.push({ no: el.elementNo, name: el.name, status: notInspected ? 'Not inspected' : 'No defects' });
             } else {
                 flush();
                 section3.push({ text: el.subNumber.replace('4.', '3.') + ' ' + el.name, bold: true, fontSize: 10.5, color: RC.ink, margin: [0, 12, 0, 6] });
