@@ -28,6 +28,29 @@
     });
 
     /* ---------------------------------------------------------
+       MOBILE SIDEBAR TOGGLE - see the button's own comment in
+       author/map.html for why this needs to exist at all.
+       --------------------------------------------------------- */
+    var mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
+    var sidebarEl = document.getElementById('sidebar');
+    if (mobileSidebarToggle && sidebarEl) {
+        mobileSidebarToggle.addEventListener('click', function (e) {
+            e.stopPropagation();
+            sidebarEl.classList.toggle('expanded');
+        });
+        // Tapping a nav link or filter closes it back up; tapping anywhere
+        // else outside the open sidebar does too.
+        document.addEventListener('click', function (e) {
+            if (sidebarEl.classList.contains('expanded') && !sidebarEl.contains(e.target) && e.target !== mobileSidebarToggle) {
+                sidebarEl.classList.remove('expanded');
+            }
+        });
+        sidebarEl.querySelectorAll('a[href$=".html"]').forEach(function (link) {
+            link.addEventListener('click', function () { sidebarEl.classList.remove('expanded'); });
+        });
+    }
+
+    /* ---------------------------------------------------------
        TYPE / CONDITION-BAND DEFINITIONS
        Kept identical to map.js (map/map.js) so a structure reads the
        same colour/icon on both pages.

@@ -232,13 +232,28 @@ a{color:inherit;}
 :focus-visible{ outline:2px solid var(--teal); outline-offset:2px; }
 @media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
 
+.mobile-only{ display:none; }
+
 @media (max-width:900px){
   .route-rail{ width:260px; }
 }
-@media (max-width:760px){
+@media (max-width:768px){
+  /* map.css's own mobile .navbar rule (left/right:10px) assumes no
+     transform - it was written for core map.html's plain edge-anchored
+     navbar, not this page's centered pill (left:50%+translateX(-50%)).
+     Left stacked, the two together shove the whole navbar ~120px off-
+     screen to the left. Cancel the transform now that left/right:10px
+     already positions it without needing centering math. */
+  .navbar{ transform:none !important; }
   .route-rail{ top:auto; bottom:16px; left:12px; right:12px; width:auto; max-height:50vh; }
-  .map-toolbar{ top:90px; right:12px; }
-  .map-summary-chip{ top:90px; padding:6px 12px; gap:8px; font-size:.68rem; }
+  .map-toolbar{ top:76px; right:12px; }
+  .map-summary-chip{ top:76px; padding:6px 12px; gap:8px; font-size:.68rem; }
+  .mobile-only{
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    width:30px; height:30px; border-radius:50%; border:none; cursor:pointer;
+    background:rgba(91,140,138,.12); color:var(--text-mute); font-size:14px;
+  }
+  .night-mode .mobile-only{ background:rgba(138,180,176,.15); color:#9ab0b8; }
 }
 </style>
 </head>
@@ -247,15 +262,18 @@ a{color:inherit;}
 
 <nav class="navbar">
     <div class="left">
+        <!-- Mobile-only sidebar toggle - at <=768px map.css collapses
+             .sidebar to width:0/visibility:hidden and only reveals it via
+             :hover or .expanded; :hover doesn't fire reliably on touch, and
+             there's no button anywhere in core map.html/map.js that ever
+             adds .expanded either, so on a phone the sidebar (and with it,
+             all navigation) was permanently unreachable. This button is the
+             fix - lives inside the navbar's own flex row (not floated
+             separately) specifically so it can't collide with map.css's
+             mobile .navbar repositioning; hidden above 768px via
+             .mobile-only. -->
+        <button class="mobile-only" id="mobileSidebarToggle" aria-label="Menu"><i class="fas fa-bars"></i></button>
         <div class="logo">spanSense</div>
-        <!-- Author's own nav, not core's. -->
-        <div class="menu">
-            <a href="map.html" class="active"><i class="fas fa-map"></i>Map</a>
-            <a href="dashboard.html"><i class="fas fa-chart-pie"></i>Dashboard</a>
-            <a href="planning.html"><i class="fas fa-calendar-check"></i>Planning</a>
-            <a href="clients.html"><i class="fas fa-users"></i>Clients</a>
-            <a href="author.html"><i class="fas fa-feather-pointed"></i>Author</a>
-        </div>
     </div>
     <div class="search-bar">
         <input type="text" id="searchInput" placeholder="Search structures...">
@@ -270,12 +288,14 @@ a{color:inherit;}
     </div>
 </nav>
 
-<!-- ============ SIDEBAR - same View > Type > Condition filters as core map/map.html's
-     (reuses map.css's .sidebar rules unmodified). The Dashboard/Database/Planning/
-     twinView links core's sidebar also has are left out - Author already has its own
-     top navbar for that, and Database/twinView have no Author equivalent. ============ -->
+<!-- ============ SIDEBAR - same structure as core map/map.html's: View > Type >
+     Condition filters, then Author's own nav links below (core has Dashboard/
+     Database/Planning/twinView in the same spot) - reuses map.css's .sidebar
+     rules unmodified. Nav lives here, not in the navbar's .menu, to match core
+     exactly - a navbar-.menu approach crowds out at narrow/mobile widths since
+     the 280px search-bar alone doesn't leave room for 5 nav links too. ============ -->
 <div id="sidebar" class="sidebar">
-    <div class="sidebar-header"><h3>Filters</h3></div>
+    <div class="sidebar-header"><h3>Navigation</h3></div>
     <ul>
         <li>
             <a href="#" id="viewLink">
@@ -314,6 +334,11 @@ a{color:inherit;}
                 </div>
             </ul>
         </li>
+        <li><a href="map.html" class="active"><i class="fas fa-map"></i><span>Map</span></a></li>
+        <li><a href="dashboard.html"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a></li>
+        <li><a href="planning.html"><i class="fas fa-calendar-check"></i><span>Planning</span></a></li>
+        <li><a href="clients.html"><i class="fas fa-users"></i><span>Clients</span></a></li>
+        <li><a href="author.html"><i class="fas fa-feather-pointed"></i><span>Author</span></a></li>
     </ul>
 </div>
 
