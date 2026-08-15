@@ -112,8 +112,9 @@ body {
     gap: 8px;
     padding: 8px 18px;
     border-radius: 30px;
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(12px);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(238, 244, 242, 0.62));
+    backdrop-filter: blur(12px) saturate(160%);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
     border: 1px solid rgba(138, 180, 176, 0.3);
     color: #5b8c8a;
     font-size: 0.85rem;
@@ -180,9 +181,11 @@ body {
 }
 
 .metric {
-    background: white;
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.88), rgba(244, 248, 247, 0.72));
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
     border-radius: 24px;
-    border: 1px solid #e9edf2;
+    border: 1px solid rgba(138, 180, 176, 0.28);
     padding: 20px;
     display: flex;
     align-items: center;
@@ -351,11 +354,13 @@ body {
 }
 
 .chart-card {
-    background: white;
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.88), rgba(244, 248, 247, 0.72));
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
     border-radius: 28px;
-    border: 1px solid #e9edf2;
+    border: 1px solid rgba(138, 180, 176, 0.28);
     overflow: hidden;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+    box-shadow: 0 10px 28px rgba(44, 90, 87, 0.1);
 }
 
 .chart-header {
@@ -555,12 +560,17 @@ body {
    the one number that answers "is the portfolio as a whole getting worse,"
    which matters more than any individual row. */
 .fc-portfolio-card {
-    background: white;
-    border: 1px solid #cbd5df;
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.88), rgba(244, 248, 247, 0.72));
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid rgba(138, 180, 176, 0.28);
     border-radius: 20px;
     padding: 22px 26px 18px;
 }
-.night-mode .fc-portfolio-card { background: #232e34; border-color: #2f3e45; }
+.night-mode .fc-portfolio-card {
+    background: linear-gradient(160deg, rgba(51, 68, 79, 0.88), rgba(36, 48, 56, 0.72));
+    border-color: rgba(255, 255, 255, 0.1);
+}
 
 .fc-portfolio-graph { margin-bottom: 18px; position: relative; }
 .fc-portfolio-graph .fc-hit { cursor: crosshair; }
@@ -1006,12 +1016,12 @@ body {
     transform: translateY(-50%);
     width: 10px;
     height: 55vh;
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(238, 244, 242, 0.5));
+    backdrop-filter: blur(8px) saturate(160%);
+    -webkit-backdrop-filter: blur(8px) saturate(160%);
     border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(138, 180, 176, 0.3);
+    box-shadow: 0 4px 16px rgba(44, 90, 87, 0.12);
     z-index: 1000;
     overflow: hidden;
     cursor: default;
@@ -1076,13 +1086,14 @@ body {
 
 .night-mode .metric,
 .night-mode .chart-card {
-    background: #232e34;
-    border-color: #2f3e45;
+    background: linear-gradient(160deg, rgba(51, 68, 79, 0.88), rgba(36, 48, 56, 0.72));
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
 }
 
 .night-mode .back-button {
-    background: rgba(35, 46, 52, 0.8);
-    border-color: rgba(138, 180, 176, 0.3);
+    background: linear-gradient(135deg, rgba(51, 68, 79, 0.82), rgba(36, 48, 56, 0.68));
+    border-color: rgba(255, 255, 255, 0.12);
     color: #8ab4b0;
 }
 
@@ -1263,9 +1274,9 @@ body {
 /* Glass scrollbar night mode */
 body.night-mode .glass-scrollbar,
 html.night-mode .glass-scrollbar {
-    background: rgba(35, 46, 52, 0.7) !important;
-    border-color: rgba(58, 75, 83, 0.5) !important;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+    background: linear-gradient(180deg, rgba(51, 68, 79, 0.75), rgba(35, 46, 52, 0.65)) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
 }
 
 body.night-mode .glass-scrollbar .thumb,
@@ -1588,17 +1599,18 @@ html.night-mode .glass-scrollbar .thumb {
     pointer-events: auto;
 }
 .modal-card {
-    background: #ffffff;
+    background: linear-gradient(135deg, rgba(244, 248, 247, 0.92) 0%, rgba(255, 255, 255, 0.85) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-radius: 32px;
     padding: 36px 40px;
     width: 90%;
     max-width: 400px;
     text-align: center;
-    border: 1px solid #e4ebe9;
+    border: 1px solid rgba(138, 180, 176, 0.32);
     box-shadow:
-        0 2px 4px rgba(91, 140, 138, 0.03),
-        0 8px 24px rgba(91, 140, 138, 0.06),
-        0 24px 48px rgba(0, 0, 0, 0.04);
+        0 8px 24px rgba(44, 90, 87, 0.08),
+        0 24px 48px rgba(44, 90, 87, 0.12);
     transform: scale(0.96) translateY(16px);
     transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -1707,9 +1719,9 @@ html.night-mode .glass-scrollbar .thumb {
 
 .night-mode .modal-overlay { background: rgba(15, 24, 28, 0.5); }
 .night-mode .modal-card {
-    background: #232e34;
-    border-color: #2f3e45;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 24px 48px rgba(0, 0, 0, 0.15);
+    background: linear-gradient(135deg, rgba(51, 68, 79, 0.92) 0%, rgba(35, 46, 52, 0.86) 100%);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 24px 48px rgba(0, 0, 0, 0.3);
 }
 .night-mode .modal-title { color: #d4dfe3; }
 .night-mode .modal-message { color: #a8b8bf; }
