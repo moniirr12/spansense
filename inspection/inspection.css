@@ -163,11 +163,13 @@ body {
 
 
 .stat-card {
-    background: white;
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.88), rgba(244, 248, 247, 0.72));
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
     border-radius: 22px;
     padding: 14px 12px;
     text-align: center;
-    border: 1px solid #e9edf2;
+    border: 1px solid rgba(138, 180, 176, 0.28);
     transition: all 0.2s ease;
     display: flex;
     flex-direction: column;
@@ -1483,13 +1485,15 @@ body {
 .modal.active, .modal-overlay-photo.active, .split-modal-overlay.active { display: flex; }
 
 .modal-content, .modal-photo {
-    background: white;
+    background: linear-gradient(135deg, rgba(244, 248, 247, 0.92) 0%, rgba(255, 255, 255, 0.85) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-radius: 24px;
     width: 90%;
     max-width: 550px;
     max-height: calc(80vh - 60px);
-    border: 1px solid #e9edf2;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(138, 180, 176, 0.32);
+    box-shadow: 0 24px 48px rgba(44, 90, 87, 0.16);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -1579,10 +1583,12 @@ body {
     display: none;
     flex-direction: column;
     gap: 4px;
-    background: white;
+    background: linear-gradient(135deg, rgba(244, 248, 247, 0.92) 0%, rgba(255, 255, 255, 0.85) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-radius: 20px;
-    border: 1px solid #e9edf2;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(138, 180, 176, 0.32);
+    box-shadow: 0 20px 40px rgba(44, 90, 87, 0.16);
     padding: 14px 18px;
     flex-shrink: 0;
 }
@@ -1606,7 +1612,10 @@ body {
 .bci-impact-body i.fa-arrow-right { font-size: 0.75rem; color: #b8c4cc; }
 .bci-impact-panel.worse .bci-impact-body #bciPreviewAfter { color: #c0392b; }
 .bci-impact-panel.better .bci-impact-body #bciPreviewAfter { color: #2d7a6e; }
-.night-mode .bci-impact-panel { background: #232e34; border-color: #2f3e45; }
+.night-mode .bci-impact-panel {
+    background: linear-gradient(135deg, rgba(51, 68, 79, 0.92) 0%, rgba(35, 46, 52, 0.86) 100%);
+    border-color: rgba(255, 255, 255, 0.12);
+}
 .night-mode .bci-impact-header { color: #8ab4b0; }
 .night-mode .bci-impact-body { color: #d4dfe3; }
 .night-mode .bci-impact-panel.worse .bci-impact-body #bciPreviewAfter { color: #e07070; }
@@ -1617,10 +1626,12 @@ body {
     flex-direction: column;
     width: 100%;
     max-height: calc(80vh - 60px);
-    background: white;
+    background: linear-gradient(135deg, rgba(244, 248, 247, 0.92) 0%, rgba(255, 255, 255, 0.85) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-radius: 24px;
-    border: 1px solid #e9edf2;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(138, 180, 176, 0.32);
+    box-shadow: 0 20px 40px rgba(44, 90, 87, 0.16);
     overflow: hidden;
     flex-shrink: 0;
 }
@@ -1709,8 +1720,8 @@ body {
 }
 
 .night-mode .defect-guidance-panel {
-    background: #1e2a2f;
-    border-color: #2f3e45;
+    background: linear-gradient(135deg, rgba(51, 68, 79, 0.92) 0%, rgba(35, 46, 52, 0.86) 100%);
+    border-color: rgba(255, 255, 255, 0.12);
 }
 .night-mode .dgp-header { color: #8ab4b0; }
 .night-mode .dgp-subtitle { color: #6a8682; border-color: #2f3e45; }
@@ -2348,13 +2359,19 @@ body {
 
 .notes-panel {
     position: fixed; right: 24px; top: 50%; transform: translateY(-50%) translateX(440px);
-    z-index: 1002; width: 340px; max-height: 78vh; background: white; border: 1px solid #e9edf2;
-    border-radius: 24px; box-shadow: 0 20px 44px rgba(0,0,0,0.16); overflow: hidden;
+    z-index: 1002; width: 340px; max-height: 78vh;
+    background: linear-gradient(135deg, rgba(244, 248, 247, 0.92) 0%, rgba(255, 255, 255, 0.85) 100%);
+    backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(138, 180, 176, 0.32);
+    border-radius: 24px; box-shadow: 0 20px 44px rgba(44, 90, 87, 0.16); overflow: hidden;
     display: flex; flex-direction: column; opacity: 0;
     transition: transform 0.24s cubic-bezier(.2,.8,.2,1), opacity 0.2s ease;
 }
 .notes-panel.open { transform: translateY(-50%) translateX(0); opacity: 1; }
-.night-mode .notes-panel { background: #1e2a2f; border-color: #2f3e45; }
+.night-mode .notes-panel {
+    background: linear-gradient(135deg, rgba(51, 68, 79, 0.92) 0%, rgba(35, 46, 52, 0.86) 100%);
+    border-color: rgba(255, 255, 255, 0.12);
+}
 
 .notes-panel-hdr {
     display: flex; align-items: center; justify-content: space-between; gap: 8px;
@@ -2418,9 +2435,12 @@ body {
     height: 67vh;
 }
 .conclusions-modal, .defects-panel-modal {
-    background: white;
+    background: linear-gradient(135deg, rgba(244, 248, 247, 0.92) 0%, rgba(255, 255, 255, 0.85) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-radius: 28px;
-    border: 1px solid #e9edf2;
+    border: 1px solid rgba(138, 180, 176, 0.32);
+    box-shadow: 0 20px 44px rgba(44, 90, 87, 0.16);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -2518,13 +2538,24 @@ body {
 .night-mode .night-mode-toggle { background: #2f3e45; color: #9ab0b8; }
 .night-mode .night-mode-toggle:hover { background: #3a4b53; color: #8ab4b0; }
 
-.night-mode .stat-card, .night-mode .span-toggle,
+.night-mode .span-toggle,
 .night-mode .table-container, .night-mode #inspectionElementsTable,
-.night-mode .modal-content, .night-mode .modal-photo,
-.night-mode .conclusions-modal, .night-mode .defects-panel-modal,
 .night-mode .conclusions-bar {
     background: #232e34;
     border-color: #2f3e45;
+}
+
+.night-mode .stat-card,
+.night-mode .modal-content, .night-mode .modal-photo {
+    background: linear-gradient(160deg, rgba(51, 68, 79, 0.88), rgba(36, 48, 56, 0.72));
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
+}
+
+.night-mode .conclusions-modal, .night-mode .defects-panel-modal {
+    background: linear-gradient(160deg, rgba(51, 68, 79, 0.88), rgba(36, 48, 56, 0.72));
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 20px 44px rgba(0, 0, 0, 0.35);
 }
 
 /* Night mode — transparent span-content so body bg shows through gaps */
@@ -2733,12 +2764,12 @@ html::-webkit-scrollbar { display: none; }
     transform: translateY(-50%);
     width: 10px;
     height: 55vh;
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(238, 244, 242, 0.5));
+    backdrop-filter: blur(8px) saturate(160%);
+    -webkit-backdrop-filter: blur(8px) saturate(160%);
     border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(138, 180, 176, 0.3);
+    box-shadow: 0 4px 16px rgba(44, 90, 87, 0.12);
     z-index: 1000;
     overflow: hidden;
     cursor: default;
@@ -2766,9 +2797,9 @@ html::-webkit-scrollbar { display: none; }
 /* ========== NIGHT MODE (both body and html variants) ========== */
 body.night-mode .glass-scrollbar,
 html.night-mode .glass-scrollbar {
-    background: rgba(35, 46, 52, 0.7) !important;
-    border-color: rgba(58, 75, 83, 0.5) !important;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255,255,255,0.03) !important;
+    background: linear-gradient(180deg, rgba(51, 68, 79, 0.75), rgba(35, 46, 52, 0.65)) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255,255,255,0.03) !important;
 }
 
 body.night-mode .glass-scrollbar .thumb,
@@ -4453,17 +4484,18 @@ body.night-mode.contracted-rows #inspectionElementsTable tr.expandable-row .grid
     pointer-events: auto;
 }
 .modal-card {
-    background: #ffffff;
+    background: linear-gradient(135deg, rgba(244, 248, 247, 0.92) 0%, rgba(255, 255, 255, 0.85) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-radius: 32px;
     padding: 44px 40px 36px;
     width: 90%;
     max-width: 400px;
     text-align: center;
-    border: 1px solid #e4ebe9;
+    border: 1px solid rgba(138, 180, 176, 0.32);
     box-shadow:
-        0 2px 4px rgba(91, 140, 138, 0.03),
-        0 8px 24px rgba(91, 140, 138, 0.06),
-        0 24px 48px rgba(0, 0, 0, 0.04);
+        0 8px 24px rgba(44, 90, 87, 0.08),
+        0 24px 48px rgba(44, 90, 87, 0.12);
     transform: scale(0.96) translateY(16px);
     transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -4562,9 +4594,9 @@ body.night-mode.contracted-rows #inspectionElementsTable tr.expandable-row .grid
 }
 .night-mode .modal-overlay { background: rgba(15, 24, 28, 0.5); }
 .night-mode .modal-card {
-    background: #232e34;
-    border-color: #2f3e45;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 24px 48px rgba(0, 0, 0, 0.15);
+    background: linear-gradient(135deg, rgba(51, 68, 79, 0.92) 0%, rgba(35, 46, 52, 0.86) 100%);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 24px 48px rgba(0, 0, 0, 0.3);
 }
 .night-mode .modal-title { color: #d4dfe3; }
 .night-mode .modal-message { color: #a8b8bf; }
@@ -4649,10 +4681,12 @@ body.night-mode.contracted-rows #inspectionElementsTable tr.expandable-row .grid
     transform: translateY(-50%);
     width: 240px;
     max-height: calc(72vh - 54px);
-    background: white;
+    background: linear-gradient(135deg, rgba(244, 248, 247, 0.92) 0%, rgba(255, 255, 255, 0.85) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-radius: 24px;
-    border: 1px solid #e9edf2;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.10);
+    border: 1px solid rgba(138, 180, 176, 0.32);
+    box-shadow: 0 20px 40px rgba(44, 90, 87, 0.16);
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -4660,7 +4694,10 @@ body.night-mode.contracted-rows #inspectionElementsTable tr.expandable-row .grid
     transition: width 0.22s ease;
 }
 .prev-defects-panel.prev-collapsed { width: 48px; }
-.night-mode .prev-defects-panel { background: #1e2a2f; border-color: #2f3e45; }
+.night-mode .prev-defects-panel {
+    background: linear-gradient(135deg, rgba(51, 68, 79, 0.92) 0%, rgba(35, 46, 52, 0.86) 100%);
+    border-color: rgba(255, 255, 255, 0.12);
+}
 
 /* Header */
 .prev-hdr {

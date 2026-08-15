@@ -170,11 +170,13 @@
 
         /* ---------- PROFILE HERO CARD ---------- */
         .profile-hero {
-            background: white;
+            background: linear-gradient(160deg, rgba(255, 255, 255, 0.88), rgba(244, 248, 247, 0.72));
+            backdrop-filter: blur(20px) saturate(160%);
+            -webkit-backdrop-filter: blur(20px) saturate(160%);
             border-radius: 28px;
-            border: 1px solid #e9edf2;
+            border: 1px solid rgba(138, 180, 176, 0.28);
             padding: 32px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+            box-shadow: 0 10px 28px rgba(44, 90, 87, 0.1);
             margin-bottom: 24px;
             display: flex;
             align-items: center;
@@ -316,11 +318,13 @@
 
         /* Card base */
         .account-card {
-            background: white;
+            background: linear-gradient(160deg, rgba(255, 255, 255, 0.88), rgba(244, 248, 247, 0.72));
+            backdrop-filter: blur(20px) saturate(160%);
+            -webkit-backdrop-filter: blur(20px) saturate(160%);
             border-radius: 28px;
-            border: 1px solid #e9edf2;
+            border: 1px solid rgba(138, 180, 176, 0.28);
             padding: 28px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+            box-shadow: 0 10px 28px rgba(44, 90, 87, 0.1);
         }
         .account-card h2 {
             font-size: 1.1rem;
@@ -473,11 +477,13 @@
 
         /* Activity / history card (full width) */
         .activity-card {
-            background: white;
+            background: linear-gradient(160deg, rgba(255, 255, 255, 0.88), rgba(244, 248, 247, 0.72));
+            backdrop-filter: blur(20px) saturate(160%);
+            -webkit-backdrop-filter: blur(20px) saturate(160%);
             border-radius: 28px;
-            border: 1px solid #e9edf2;
+            border: 1px solid rgba(138, 180, 176, 0.28);
             padding: 28px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+            box-shadow: 0 10px 28px rgba(44, 90, 87, 0.1);
             margin-bottom: 24px;
         }
         .activity-card h2 {
@@ -632,11 +638,13 @@
             gap: 10px;
         }
         .toast {
-            background: white;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(238, 244, 242, 0.7));
+            backdrop-filter: blur(16px) saturate(160%);
+            -webkit-backdrop-filter: blur(16px) saturate(160%);
             border-radius: 16px;
             padding: 16px 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-            border: 1px solid #e9edf2;
+            box-shadow: 0 10px 30px rgba(44, 90, 87, 0.14);
+            border: 1px solid rgba(138, 180, 176, 0.3);
             display: flex;
             align-items: center;
             gap: 12px;
@@ -668,12 +676,15 @@
         }
         .confirm-modal-overlay.active { display: flex; }
         .confirm-modal-card {
-            background: white;
+            background: linear-gradient(135deg, rgba(244, 248, 247, 0.92) 0%, rgba(255, 255, 255, 0.85) 100%);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid rgba(138, 180, 176, 0.32);
             border-radius: 24px;
             width: 90%; max-width: 360px;
             padding: 32px 28px 24px;
             text-align: center;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 24px 48px rgba(44, 90, 87, 0.16);
             animation: confirmModalIn 0.25s ease;
         }
         @keyframes confirmModalIn {
@@ -702,7 +713,11 @@
         .confirm-modal-btn.secondary:hover { background: #e4ecf2; }
         .confirm-modal-btn.danger { background: #c0392b; color: white; }
         .confirm-modal-btn.danger:hover { background: #a93226; }
-        .night-mode .confirm-modal-card { background: #232e34; }
+        .night-mode .confirm-modal-card {
+            background: linear-gradient(135deg, rgba(51, 68, 79, 0.92) 0%, rgba(35, 46, 52, 0.86) 100%);
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.35);
+        }
         .night-mode .confirm-modal-icon { background: #3a3020; color: #e8a87c; }
         .night-mode .confirm-modal-title { color: #d4dfe3; }
         .night-mode .confirm-modal-message { color: #a8b8bf; }
@@ -754,10 +769,15 @@
         }
         .night-mode .profile-hero,
         .night-mode .account-card,
-        .night-mode .activity-card,
+        .night-mode .activity-card {
+            background: linear-gradient(160deg, rgba(51, 68, 79, 0.88), rgba(36, 48, 56, 0.72));
+            border-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
+        }
         .night-mode .toast {
-            background: #232e34;
-            border-color: #2f3e45;
+            background: linear-gradient(135deg, rgba(51, 68, 79, 0.88), rgba(36, 48, 56, 0.78));
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
         }
         .night-mode .profile-info .name,
         .night-mode .account-card h2,
@@ -827,12 +847,12 @@
             transform: translateY(-50%);
             width: 10px;
             height: 55vh;
-            background: rgba(255, 255, 255, 0.6);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(238, 244, 242, 0.5));
+            backdrop-filter: blur(8px) saturate(160%);
+            -webkit-backdrop-filter: blur(8px) saturate(160%);
             border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(138, 180, 176, 0.3);
+            box-shadow: 0 4px 16px rgba(44, 90, 87, 0.12);
             z-index: 1000;
             overflow: hidden;
             cursor: default;
@@ -853,9 +873,9 @@
         }
         .glass-scrollbar .thumb:active { cursor: grabbing; }
         .night-mode .glass-scrollbar {
-            background: rgba(35, 46, 52, 0.7) !important;
-            border-color: rgba(58, 75, 83, 0.5) !important;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255,255,255,0.03) !important;
+            background: linear-gradient(180deg, rgba(51, 68, 79, 0.75), rgba(35, 46, 52, 0.65)) !important;
+            border-color: rgba(255, 255, 255, 0.12) !important;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255,255,255,0.03) !important;
         }
         .night-mode .glass-scrollbar .thumb {
             background: linear-gradient(180deg, #ff6b6b, #c0392b) !important;

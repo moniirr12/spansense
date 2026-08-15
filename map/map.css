@@ -170,14 +170,16 @@ body {
     height: auto;
     max-height: calc(100vh - 120px);
     width: 68px;
-    background: white;
+    background: linear-gradient(135deg, rgba(238, 244, 242, 0.75), rgba(255, 255, 255, 0.45));
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-radius: 28px;
-    box-shadow: 0 8px 28px rgba(0,0,0,0.08);
+    box-shadow: 0 8px 28px rgba(44, 90, 87, 0.12);
     z-index: 999;
     transition: width 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
     overflow-x: hidden;
     overflow-y: auto;
-    border: 1px solid #e9edf2;
+    border: 1px solid rgba(138, 180, 176, 0.35);
 }
 
 .sidebar:hover {
@@ -460,9 +462,8 @@ body {
    ============================================ */
 
 .night-mode .sidebar {
-    background: #2f3e48;
-    border: 1px solid #3e525e;
-    box-shadow: 0 8px 28px rgba(0,0,0,0.2);
+    background: rgba(47, 62, 72, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .night-mode .sidebar > ul > li > a {
@@ -687,16 +688,28 @@ body {
 }
 
 #dashboard .chart-container {
-    background: white;
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.88), rgba(244, 248, 247, 0.72));
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
     border-radius: 20px;
-    border: 1px solid #e9edf2;
+    border: 1px solid rgba(138, 180, 176, 0.28);
     padding: 24px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    box-shadow: 0 10px 28px rgba(44, 90, 87, 0.12);
     transition: all 0.2s;
 }
 
 #dashboard .chart-container:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    box-shadow: 0 16px 38px rgba(44, 90, 87, 0.16);
+}
+
+.night-mode #dashboard .chart-container {
+    background: linear-gradient(160deg, rgba(51, 68, 79, 0.88), rgba(36, 48, 56, 0.72));
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
+}
+
+.night-mode #dashboard .chart-container:hover {
+    box-shadow: 0 16px 38px rgba(0, 0, 0, 0.36);
 }
 
 #dashboard .chart-container canvas {
@@ -790,14 +803,15 @@ body.modal-open {
    classes/components elsewhere in this stylesheet.
    ============================================ */
 #bridgeModal .bridge-card {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
+    background: linear-gradient(135deg, rgba(244, 248, 247, 0.92) 0%, rgba(255, 255, 255, 0.85) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-radius: 24px;
     box-shadow:
-        0 24px 80px rgba(0, 0, 0, 0.14),
-        0 8px 24px rgba(0, 0, 0, 0.07),
+        0 24px 80px rgba(44, 90, 87, 0.16),
+        0 8px 24px rgba(44, 90, 87, 0.08),
         inset 0 1px 0 rgba(255, 255, 255, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(138, 180, 176, 0.32);
     display: flex;
     flex-direction: column;
 }
@@ -1076,11 +1090,11 @@ body.modal-open {
 
 /* Night mode */
 .night-mode #bridgeModal .bridge-card {
-    background: rgba(35, 46, 52, 0.95);
-    border-color: rgba(255, 255, 255, 0.08);
+    background: linear-gradient(135deg, rgba(51, 68, 79, 0.92) 0%, rgba(35, 46, 52, 0.86) 100%);
+    border-color: rgba(255, 255, 255, 0.12);
     box-shadow:
-        0 24px 80px rgba(0, 0, 0, 0.3),
-        0 8px 24px rgba(0, 0, 0, 0.15);
+        0 24px 80px rgba(0, 0, 0, 0.35),
+        0 8px 24px rgba(0, 0, 0, 0.18);
 }
 .night-mode #bridgeModal .card-header {
     background: linear-gradient(135deg, rgba(30,42,47,0.8) 0%, rgba(35,46,52,0.6) 100%);
@@ -1808,13 +1822,14 @@ body.modal-open {
     padding: 0;
     border-radius: 24px;
     overflow: hidden;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
+    background: linear-gradient(135deg, rgba(244, 248, 247, 0.92) 0%, rgba(255, 255, 255, 0.85) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     box-shadow:
-        0 24px 80px rgba(0, 0, 0, 0.14),
-        0 8px 24px rgba(0, 0, 0, 0.07),
+        0 24px 80px rgba(44, 90, 87, 0.16),
+        0 8px 24px rgba(44, 90, 87, 0.08),
         inset 0 1px 0 rgba(255, 255, 255, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(138, 180, 176, 0.32);
 }
 
 .file-explorer-modal .modal-header {
@@ -2118,9 +2133,9 @@ body.modal-open {
 
 /* Make chat toggle match navbar style */
 .chat-toggle {
-    background: rgba(255, 255, 255, 0.85) !important;
-    backdrop-filter: blur(20px) !important;
-    -webkit-backdrop-filter: blur(20px) !important;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(238, 244, 242, 0.5)) !important;
+    backdrop-filter: blur(16px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(160%) !important;
     width: 44px !important;
     height: 44px !important;
     border-radius: 50% !important;
@@ -2128,9 +2143,9 @@ body.modal-open {
     align-items: center !important;
     justify-content: center !important;
     cursor: pointer !important;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 10px 30px rgba(44, 90, 87, 0.14) !important;
     transition: all 0.3s ease !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    border: 1px solid rgba(138, 180, 176, 0.3) !important;
 }
 
 .chat-toggle i {
@@ -2140,7 +2155,7 @@ body.modal-open {
 
 .chat-toggle:hover {
     transform: scale(1.05) !important;
-    background: rgba(255, 255, 255, 0.95) !important;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.85), rgba(238, 244, 242, 0.65)) !important;
 }
 
 /* Chat box glassy */
@@ -2149,16 +2164,16 @@ body.modal-open {
     bottom: 0 !important;
     right: 0 !important;
     width: 360px !important;
-    background: rgba(255, 255, 255, 0.95) !important;
-    backdrop-filter: blur(20px) !important;
-    -webkit-backdrop-filter: blur(20px) !important;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(238, 244, 242, 0.62)) !important;
+    backdrop-filter: blur(20px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
     border-radius: 24px !important;
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 10px 30px rgba(44, 90, 87, 0.16) !important;
     opacity: 0 !important;
     transform: translateY(20px) !important;
     transition: all 0.3s ease !important;
     display: none !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    border: 1px solid rgba(138, 180, 176, 0.3) !important;
     overflow: hidden !important;
 }
 
@@ -2278,8 +2293,9 @@ body.modal-open {
 }
 
 .night-mode .chat-box {
-    background: rgba(47, 62, 72, 0.95) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background: linear-gradient(135deg, rgba(51, 68, 79, 0.82), rgba(36, 48, 56, 0.68)) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
 }
 
 .night-mode .chat-header {
@@ -2350,7 +2366,10 @@ body.modal-open {
     bottom: 30px;
     left: 50%;
     transform: translateX(-50%);
-    background: #2c3e44;
+    background: linear-gradient(135deg, rgba(44, 62, 68, 0.92), rgba(30, 44, 50, 0.88));
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.14);
     color: white;
     padding: 12px 24px;
     border-radius: 12px;
@@ -2358,7 +2377,7 @@ body.modal-open {
     font-weight: 500;
     z-index: 2000;
     display: none;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
 }
 
 /* ============================================
@@ -2602,9 +2621,9 @@ body.modal-open {
 
 /* File explorer night mode - same glass treatment as #bridgeModal/.ss-modal */
 .night-mode .file-explorer-modal .modal-content {
-    background: rgba(35, 46, 52, 0.95);
-    border-color: rgba(255, 255, 255, 0.08);
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.15);
+    background: linear-gradient(135deg, rgba(51, 68, 79, 0.92) 0%, rgba(35, 46, 52, 0.86) 100%);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.18);
 }
 
 .night-mode .file-explorer-modal .modal-header {
@@ -2781,9 +2800,10 @@ body.modal-open {
 
 /* Toast night mode */
 .night-mode .toast {
-    background: #2f3e48;
+    background: linear-gradient(135deg, rgba(51, 68, 79, 0.92), rgba(36, 48, 56, 0.88));
     color: #d0dce2;
-    border: 1px solid #4a6070;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 
 /* Button helpers night mode */
@@ -3257,13 +3277,15 @@ body.modal-open {
 .leaflet-control-zoom {
     border: none !important;
     border-radius: 48px !important;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 10px 30px rgba(44, 90, 87, 0.14) !important;
     overflow: hidden !important;
     margin: 100px 20px 8px 20px !important;  /* Reduced bottom margin */
 }
 
 .leaflet-control-zoom a {
-    background: white !important;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(238, 244, 242, 0.62)) !important;
+    backdrop-filter: blur(16px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(160%) !important;
     color: #5b8c8a !important;
     width: 44px !important;
     height: 44px !important;
@@ -3275,13 +3297,13 @@ body.modal-open {
 }
 
 .leaflet-control-zoom a:hover {
-    background: #eef4f2 !important;
+    background: linear-gradient(135deg, rgba(238, 244, 242, 0.9), rgba(238, 244, 242, 0.75)) !important;
     color: #2c5a57 !important;
     transform: scale(0.98);
 }
 
 .leaflet-control-zoom-in {
-    border-bottom: 1px solid #f0f4f8 !important;
+    border-bottom: 1px solid rgba(138, 180, 176, 0.25) !important;
     border-radius: 48px 48px 0 0 !important;
 }
 
@@ -3291,15 +3313,17 @@ body.modal-open {
 
 /* Custom Layer Control - Pill shaped, closer to zoom */
 .leaflet-control-layers {
-    border: none !important;
+    border: 1px solid rgba(138, 180, 176, 0.3) !important;
     border-radius: 48px !important;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08) !important;
-    background: white !important;
+    box-shadow: 0 10px 30px rgba(44, 90, 87, 0.14) !important;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(238, 244, 242, 0.62)) !important;
+    backdrop-filter: blur(16px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(160%) !important;
     margin: 8px 20px 20px 20px !important;  /* Reduced top margin */
 }
 
 .leaflet-control-layers-toggle {
-    background-color: white !important;
+    background-color: rgba(255, 255, 255, 0.55) !important;
     width: 44px !important;
     height: 44px !important;
     border-radius: 48px !important;
@@ -3311,16 +3335,19 @@ body.modal-open {
 }
 
 .leaflet-control-layers-toggle:hover {
-    background-color: #eef4f2 !important;
+    background-color: rgba(238, 244, 242, 0.85) !important;
     transform: scale(0.95);
 }
 
 .leaflet-control-layers-expanded {
     padding: 12px !important;
-    background: white !important;
+    background: linear-gradient(135deg, rgba(244, 248, 247, 0.92) 0%, rgba(255, 255, 255, 0.85) 100%) !important;
+    backdrop-filter: blur(20px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+    border: 1px solid rgba(138, 180, 176, 0.32) !important;
     border-radius: 20px !important;
     min-width: 160px !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 20px 40px rgba(44, 90, 87, 0.16) !important;
     margin-bottom: 12px !important;
 }
 
@@ -3357,14 +3384,16 @@ body.modal-open {
 
 /* Attribution - also rounded */
 .leaflet-control-attribution {
-    background: rgba(255, 255, 255, 0.85) !important;
-    backdrop-filter: blur(8px) !important;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.75), rgba(238, 244, 242, 0.55)) !important;
+    backdrop-filter: blur(8px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(8px) saturate(160%) !important;
+    border: 1px solid rgba(138, 180, 176, 0.25) !important;
     border-radius: 24px !important;
     padding: 6px 14px !important;
     font-size: 10px !important;
     color: #5f6b73 !important;
     margin: 12px !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+    box-shadow: 0 4px 14px rgba(44, 90, 87, 0.1) !important;
 }
 
 .leaflet-control-attribution a {
@@ -3380,8 +3409,12 @@ body.modal-open {
    NIGHT MODE - ROUNDED CONTROLS
    ============================================ */
 
+.night-mode .leaflet-control-zoom {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
+}
+
 .night-mode .leaflet-control-zoom a {
-    background: #2f3e48 !important;
+    background: linear-gradient(135deg, rgba(51, 68, 79, 0.82), rgba(36, 48, 56, 0.62)) !important;
     color: #8ab4b0 !important;
 }
 
@@ -3391,15 +3424,17 @@ body.modal-open {
 }
 
 .night-mode .leaflet-control-zoom-in {
-    border-bottom-color: #3e525e !important;
+    border-bottom-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 .night-mode .leaflet-control-layers {
-    background: #2f3e48 !important;
+    background: linear-gradient(135deg, rgba(51, 68, 79, 0.82), rgba(36, 48, 56, 0.62)) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
 }
 
 .night-mode .leaflet-control-layers-toggle {
-    background-color: #2f3e48 !important;
+    background-color: rgba(51, 68, 79, 0.65) !important;
     background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%238ab4b0" width="20px" height="20px"><path d="M0 0h24v24H0z" fill="none"/><path d="M3 3h18v2H3V3zm0 16h18v2H3v-2zm0-8h18v2H3v-2z"/></svg>') !important;
 }
 
@@ -3408,7 +3443,9 @@ body.modal-open {
 }
 
 .night-mode .leaflet-control-layers-expanded {
-    background: #2f3e48 !important;
+    background: linear-gradient(135deg, rgba(51, 68, 79, 0.92) 0%, rgba(35, 46, 52, 0.86) 100%) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35) !important;
 }
 
 .night-mode .leaflet-control-layers-expanded label {
@@ -3425,8 +3462,10 @@ body.modal-open {
 }
 
 .night-mode .leaflet-control-attribution {
-    background: rgba(30, 40, 45, 0.85) !important;
-    backdrop-filter: blur(8px) !important;
+    background: linear-gradient(135deg, rgba(51, 68, 79, 0.72), rgba(36, 48, 56, 0.55)) !important;
+    backdrop-filter: blur(8px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(8px) saturate(160%) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
     color: #a8b8bf !important;
 }
 
@@ -3999,9 +4038,10 @@ body.modal-open {
 }
 
 .ss-modal {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: linear-gradient(135deg, rgba(244, 248, 247, 0.92) 0%, rgba(255, 255, 255, 0.85) 100%);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(138, 180, 176, 0.32);
   border-radius: 24px;
   width: 100%;
   max-width: 720px;
@@ -4011,7 +4051,7 @@ body.modal-open {
   max-height: min(490px, 85vh);
   display: flex;
   flex-direction: column;
-  box-shadow: 0 24px 80px rgba(0,0,0,0.14), 0 8px 24px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.6);
+  box-shadow: 0 24px 80px rgba(44,90,87,0.16), 0 8px 24px rgba(44,90,87,0.08), inset 0 1px 0 rgba(255,255,255,0.6);
   overflow: hidden;
   animation: ssModalUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -4266,9 +4306,9 @@ body.modal-open {
 
 /* Night mode - same glass treatment as #bridgeModal/.file-explorer-modal in dark mode */
 .night-mode .ss-modal {
-  background: rgba(35, 46, 52, 0.95);
-  border-color: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(135deg, rgba(51, 68, 79, 0.92) 0%, rgba(35, 46, 52, 0.86) 100%);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.18);
 }
 .night-mode .ss-modal-hdr { background: linear-gradient(135deg, rgba(30,42,47,0.8) 0%, rgba(35,46,52,0.6) 100%); border-bottom-color: rgba(47, 62, 69, 0.6); }
 .night-mode .ss-close-btn { color: #9ab0b8; }
@@ -4326,12 +4366,12 @@ body.modal-open {
     bottom: 22px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(255,255,255,0.92);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(233,237,242,0.9);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(238, 244, 242, 0.62));
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    border: 1px solid rgba(138, 180, 176, 0.3);
     border-radius: 20px;
-    box-shadow: 0 4px 18px rgba(0,0,0,0.10);
+    box-shadow: 0 10px 30px rgba(44, 90, 87, 0.14);
     padding: 10px 20px;
     z-index: 998;
     display: flex;
@@ -4363,9 +4403,9 @@ body.modal-open {
 }
 
 .night-mode .map-legend {
-    background: rgba(36,48,56,0.95);
-    border-color: #3e525e;
-    box-shadow: 0 4px 18px rgba(0,0,0,0.28);
+    background: linear-gradient(135deg, rgba(51, 68, 79, 0.82), rgba(36, 48, 56, 0.68));
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.32);
 }
 
 .night-mode .leg-label {
@@ -4396,17 +4436,18 @@ body.modal-open {
     pointer-events: auto;
 }
 .modal-card {
-    background: #ffffff;
+    background: linear-gradient(135deg, rgba(244, 248, 247, 0.92) 0%, rgba(255, 255, 255, 0.85) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-radius: 32px;
     padding: 44px 40px 36px;
     width: 90%;
     max-width: 400px;
     text-align: center;
-    border: 1px solid #e4ebe9;
+    border: 1px solid rgba(138, 180, 176, 0.32);
     box-shadow:
-        0 2px 4px rgba(91, 140, 138, 0.03),
-        0 8px 24px rgba(91, 140, 138, 0.06),
-        0 24px 48px rgba(0, 0, 0, 0.04);
+        0 8px 24px rgba(44, 90, 87, 0.08),
+        0 24px 48px rgba(44, 90, 87, 0.12);
     transform: scale(0.96) translateY(16px);
     transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -4505,9 +4546,9 @@ body.modal-open {
 }
 .night-mode .modal-overlay { background: rgba(15, 24, 28, 0.5); }
 .night-mode .modal-card {
-    background: #232e34;
-    border-color: #2f3e45;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 24px 48px rgba(0, 0, 0, 0.15);
+    background: linear-gradient(135deg, rgba(51, 68, 79, 0.92) 0%, rgba(35, 46, 52, 0.86) 100%);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 24px 48px rgba(0, 0, 0, 0.3);
 }
 .night-mode .modal-title { color: #d4dfe3; }
 .night-mode .modal-message { color: #a8b8bf; }

@@ -142,12 +142,14 @@ body {
 }
 
 .sidebar-card {
-    background: white;
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.88), rgba(244, 248, 247, 0.72));
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
     border-radius: 28px;
-    border: 1px solid #e9edf2;
+    border: 1px solid rgba(138, 180, 176, 0.28);
     padding: 20px;
     margin-bottom: 24px;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.03);
+    box-shadow: 0 10px 28px rgba(44, 90, 87, 0.1);
     transition: all 0.2s;
 }
 
@@ -308,11 +310,13 @@ body {
 }
 
 .info-card {
-    background: white;
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.88), rgba(244, 248, 247, 0.72));
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
     border-radius: 22px;
     padding: 18px 12px;
     text-align: center;
-    border: 1px solid #e9edf2;
+    border: 1px solid rgba(138, 180, 176, 0.28);
     transition: 0.2s;
     display: flex;
     flex-direction: column;
@@ -490,10 +494,12 @@ body {
 }
 
 #form-content {
-    background: white;
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.88), rgba(244, 248, 247, 0.72));
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
     border-radius: 28px;
     padding: 28px;
-    border: 1px solid #e9edf2;
+    border: 1px solid rgba(138, 180, 176, 0.28);
     margin-bottom: 24px;
     flex: 1;
     min-width: 0;
@@ -554,8 +560,10 @@ body {
     opacity: 0;
     overflow: hidden;
     flex-shrink: 0;
-    background: white;
-    border: 1px solid #e9edf2;
+    background: linear-gradient(135deg, rgba(244, 248, 247, 0.92) 0%, rgba(255, 255, 255, 0.85) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(138, 180, 176, 0.32);
     border-radius: 22px;
     margin-bottom: 24px;
     transition: width 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
@@ -1033,8 +1041,9 @@ textarea,
 
 /* Sidebar */
 .night-mode .sidebar-card {
-    background: #232e34;
-    border-color: #2f3e45;
+    background: linear-gradient(160deg, rgba(51, 68, 79, 0.88), rgba(36, 48, 56, 0.72));
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
 }
 
 .night-mode .bridge-name,
@@ -1073,8 +1082,9 @@ textarea,
 
 /* Info Cards */
 .night-mode .info-card {
-    background: #232e34;
-    border-color: #2f3e45;
+    background: linear-gradient(160deg, rgba(51, 68, 79, 0.88), rgba(36, 48, 56, 0.72));
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
 }
 
 .night-mode .info-label {
@@ -1127,8 +1137,9 @@ textarea,
 
 /* Form Content */
 .night-mode #form-content {
-    background: #232e34;
-    border-color: #2f3e45;
+    background: linear-gradient(160deg, rgba(51, 68, 79, 0.88), rgba(36, 48, 56, 0.72));
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
 }
 
 /* Bridge Info Panel */
@@ -1143,8 +1154,8 @@ textarea,
 }
 
 .night-mode .bridge-info-panel {
-    background: #232e34;
-    border-color: #2f3e45;
+    background: linear-gradient(135deg, rgba(51, 68, 79, 0.92) 0%, rgba(35, 46, 52, 0.86) 100%);
+    border-color: rgba(255, 255, 255, 0.12);
 }
 
 .night-mode .info-panel-title {
@@ -1377,12 +1388,12 @@ html::-webkit-scrollbar { display: none; }
     transform: translateY(-50%);
     width: 10px;
     height: 55vh;
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(238, 244, 242, 0.5));
+    backdrop-filter: blur(8px) saturate(160%);
+    -webkit-backdrop-filter: blur(8px) saturate(160%);
     border-radius: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(138, 180, 176, 0.3);
+    box-shadow: 0 4px 16px rgba(44, 90, 87, 0.12);
     z-index: 1000;
     overflow: hidden;
     cursor: default;
@@ -1410,9 +1421,9 @@ html::-webkit-scrollbar { display: none; }
 /* ========== NIGHT MODE (both body and html variants) ========== */
 body.night-mode .glass-scrollbar,
 html.night-mode .glass-scrollbar {
-    background: rgba(35, 46, 52, 0.7) !important;
-    border-color: rgba(58, 75, 83, 0.5) !important;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255,255,255,0.03) !important;
+    background: linear-gradient(180deg, rgba(51, 68, 79, 0.75), rgba(35, 46, 52, 0.65)) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255,255,255,0.03) !important;
 }
 
 body.night-mode .glass-scrollbar .thumb,
@@ -1464,17 +1475,18 @@ html.night-mode .glass-scrollbar .thumb {
 }
 
 .modal-card {
-    background: #ffffff;
+    background: linear-gradient(135deg, rgba(244, 248, 247, 0.92) 0%, rgba(255, 255, 255, 0.85) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-radius: 32px;
     padding: 44px 40px 36px;
     width: 90%;
     max-width: 400px;
     text-align: center;
-    border: 1px solid #e4ebe9;
+    border: 1px solid rgba(138, 180, 176, 0.32);
     box-shadow:
-        0 2px 4px rgba(91, 140, 138, 0.03),
-        0 8px 24px rgba(91, 140, 138, 0.06),
-        0 24px 48px rgba(0, 0, 0, 0.04);
+        0 8px 24px rgba(44, 90, 87, 0.08),
+        0 24px 48px rgba(44, 90, 87, 0.12);
     transform: scale(0.96) translateY(16px);
     transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -1601,11 +1613,11 @@ html.night-mode .glass-scrollbar .thumb {
 }
 
 .night-mode .modal-card {
-    background: #232e34;
-    border-color: #2f3e45;
+    background: linear-gradient(135deg, rgba(51, 68, 79, 0.92) 0%, rgba(35, 46, 52, 0.86) 100%);
+    border-color: rgba(255, 255, 255, 0.12);
     box-shadow:
         0 8px 24px rgba(0, 0, 0, 0.2),
-        0 24px 48px rgba(0, 0, 0, 0.15);
+        0 24px 48px rgba(0, 0, 0, 0.3);
 }
 
 .night-mode .modal-title {
