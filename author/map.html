@@ -148,9 +148,22 @@ a{color:inherit;}
    and its body (incl. the box-select pointer/box tools) only expands once
    route mode is on, capped so it can never grow down into the chat icon. */
 #routeModeBtn.active{ background:var(--teal); color:#fff; border-color:transparent; }
-.route-tools{ display:flex; gap:6px; padding:11px 15px; border-bottom:1px solid var(--border2); }
+.route-tools{ display:flex; align-items:center; gap:6px; padding:11px 15px; border-bottom:1px solid var(--border2); }
 .night-mode .route-tools{ border-color:#2f3e45; }
 .route-tools .icon-btn.active{ background:var(--teal); color:#fff; border-color:transparent; }
+.route-tools .icon-btn.active .beta-dot{ border-color:#fff; }
+.route-tools-div{ width:1px; height:18px; background:var(--border2); flex-shrink:0; }
+.night-mode .route-tools-div{ background:#2f3e45; }
+/* Small "beta" marker on the parking toggle - this is a new, unreviewed
+   data source (OpenStreetMap parking tags via Overpass), not yet as
+   trustworthy as the rest of the panel. */
+#toolParking{ position:relative; }
+.beta-dot{
+  position:absolute; top:-5px; right:-5px; width:15px; height:15px; border-radius:50%;
+  background:var(--ai); color:#fff; font-size:.55rem; font-weight:800; font-style:italic;
+  display:flex; align-items:center; justify-content:center; border:1.5px solid #fff; line-height:1;
+}
+.night-mode .beta-dot{ border-color:#212f33; }
 .route-body{ display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
 
 .map-summary-chip{
@@ -484,6 +497,11 @@ a{color:inherit;}
     <div class="route-tools">
       <button type="button" class="icon-btn active" id="toolPointer" data-tip="Select"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg></button>
       <button type="button" class="icon-btn" id="toolBox" data-tip="Box-select multiple (drag on map)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 3"><rect x="4" y="4" width="16" height="16" rx="2"/></svg></button>
+      <span class="route-tools-div"></span>
+      <button type="button" class="icon-btn" id="toolParking" data-tip="Show nearest parking (Beta)" aria-label="Show nearest parking">
+        <i class="fas fa-square-parking"></i>
+        <span class="beta-dot">β</span>
+      </button>
     </div>
     <div class="route-summary">
       <div class="rs-figure" id="rsFigure">0.0<small>km total</small></div>

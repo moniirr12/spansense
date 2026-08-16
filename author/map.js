@@ -220,7 +220,8 @@
     var state = {
         types: new Set(TYPES.map(function (t) { return t.id; })),
         bands: new Set(BANDS.map(function (b) { return b.id; })),
-        selected: []
+        selected: [],
+        showParking: false
     };
     var today = new Date();
 
@@ -349,6 +350,65 @@
     var markerById = {};
     var routeLine = L.polyline([], { color: '#2c5a57', weight: 2.6, dashArray: '1 8', lineCap: 'round' }).addTo(map);
 
+    /* ---------------------------------------------------------
+       NEAREST PARKING (Beta) - one Overpass lookup per selected stop,
+       cached by structure id so re-toggling or reordering the route
+       doesn't re-fetch stops already looked up this session.
+       --------------------------------------------------------- */
+    var OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
+    var PARKING_RADIUS_M = 600;
+    var parkingLayer = L.layerGroup().addTo(map);
+    var parkingCache = {}; // structure id -> Promise<{lat,lon,distKm,name}|null>
+    var parkingToken = 0;
+
+    function parkingIcon() {
+        return L.divIcon({
+            html: '<div style="width:22px;height:22px;border-radius:50%;background:#2563eb;border:2px solid #fff;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.3);">P</div>',
+            iconSize: [22, 22], iconAnchor: [11, 20], popupAnchor: [0, -18], className: ''
+        });
+    }
+    // Overpass has no "nearest to a point" primitive, so this pulls every
+    // parking node/way within PARKING_RADIUS_M and picks the closest
+    // client-side via the same haversine used elsewhere on this page.
+    function fetchNearestParking(lat, lon) {
+        var q = '[out:json][timeout:15];(node["amenity"="parking"](around:' + PARKING_RADIUS_M + ',' + lat + ',' + lon + ');way["amenity"="parking"](around:' + PARKING_RADIUS_M + ',' + lat + ',' + lon + '););out center 20;';
+        return fetch(OVERPASS_URL, {
+            method: 'POST', credentials: 'omit',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'data=' + encodeURIComponent(q)
+        })
+            .then(function (r) { if (!r.ok) throw new Error('overpass request failed'); return r.json(); })
+            .then(function (data) {
+                var here = { latitude: lat, longitude: lon };
+                var best = null;
+                (data.elements || []).forEach(function (el) {
+                    var plat = el.lat !== undefined ? el.lat : (el.center && el.center.lat);
+                    var plon = el.lon !== undefined ? el.lon : (el.center && el.center.lon);
+                    if (plat === undefined || plon === undefined) return;
+                    var d = haversineKm(here, { latitude: plat, longitude: plon });
+                    if (!best || d < best.distKm) best = { lat: plat, lon: plon, distKm: d, name: (el.tags && el.tags.name) || 'Parking' };
+                });
+                return best;
+            });
+    }
+    function refreshParkingMarkers() {
+        var token = ++parkingToken;
+        parkingLayer.clearLayers();
+        if (!state.showParking) return;
+        state.selected.forEach(function (id) {
+            var s = byId[id];
+            if (!parkingCache[id]) {
+                parkingCache[id] = fetchNearestParking(s.latitude, s.longitude).catch(function () { return null; });
+            }
+            parkingCache[id].then(function (spot) {
+                if (token !== parkingToken || !spot) return;
+                L.marker([spot.lat, spot.lon], { icon: parkingIcon() })
+                    .bindTooltip('Parking near ' + s.name + ' · ' + Math.round(spot.distKm * 1000) + 'm', { direction: 'top', offset: [0, -18] })
+                    .addTo(parkingLayer);
+            });
+        });
+    }
+
     function pinIcon(s, selIdx) {
         if (selIdx > -1) {
             return L.divIcon({ html: '<div class="rp-pin-num">' + (selIdx + 1) + '</div>', iconSize: [26, 26], iconAnchor: [13, 13], popupAnchor: [0, -13], className: '' });
@@ -404,6 +464,14 @@
         toolPointer.classList.toggle('active', !on);
         if (on) map.dragging.disable(); else map.dragging.enable();
     }
+
+    var toolParking = document.getElementById('toolParking');
+    toolParking.addEventListener('click', function (e) {
+        e.preventDefault();
+        state.showParking = !state.showParking;
+        toolParking.classList.toggle('active', state.showParking);
+        refreshParkingMarkers();
+    });
 
     var boxStart = null, boxRectEl = null;
     var mapContainer = map.getContainer();
@@ -475,7 +543,7 @@
         exportBtn.style.display = on ? 'flex' : 'none';
         mapSummaryEl.style.display = on ? 'flex' : 'none';
         mapHintEl.style.display = on ? 'block' : 'none';
-        if (!on) setBoxSelectMode(false);
+        if (!on) { setBoxSelectMode(false); parkingLayer.clearLayers(); }
         map.closePopup();
         renderPins();
         repositionRouteRail();
@@ -636,7 +704,7 @@
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
     }
 
-    function renderAll() { renderPins(); renderRoute(); }
+    function renderAll() { renderPins(); renderRoute(); refreshParkingMarkers(); }
 
     /* ---------------------------------------------------------
        STRUCTURE DETAIL MODAL - close button + New Inspection, same
