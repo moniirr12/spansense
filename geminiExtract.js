@@ -114,7 +114,7 @@ ${text}
 
 // Structure identification facts (name, location, dimensions, materials,
 // built year) out of an uploaded BCI Pro forma or inspection report cover
-// sheet - for structure/add-structure.html's "Extract from document"
+// sheet - for author/addStructure.html's "Extract from document"
 // option, prefilling the form for a structure that doesn't exist in
 // spanSense yet (unlike extractElementsWithGemini above, which matches
 // against an existing structure's element list). Deliberately never asked

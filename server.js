@@ -1128,7 +1128,7 @@ async function replaceBridgeSpans(bridgeId, spans) {
     );
 }
 
-// Create a new structure - structure/add-structure.html's "Create Structure"
+// Create a new structure - author/addStructure.html's "Create Structure"
 // posts here. Engineer/admin only, same gating as schedule edits above -
 // this adds a record everyone else sees on Map/Database/Planning.
 // client_id is optional and only ever sent by Author's own "Add structure"
@@ -3328,7 +3328,7 @@ app.post('/api/author/extract-previous-inspection', requireAuth, upload.single('
     }
 });
 
-// structure/add-structure.html's "Extract from document" option - pulls
+// author/addStructure.html's "Extract from document" option - pulls
 // structure identification facts (name, location, dimensions, materials,
 // built year) out of an uploaded BCI Pro forma or inspection report cover
 // sheet, to prefill the Add Structure form for review rather than typing

@@ -179,10 +179,10 @@ document.addEventListener('click', function(e){
 // doesn't exist yet instead of an inspection that already does.
 document.getElementById('addStructureBtn').addEventListener('click', function(){
   sessionStorage.setItem('addStructureReturnTo', window.location.href);
-  window.location.href = '../structure/add-structure.html';
+  window.location.href = 'addStructure.html';
 });
 
-// If we're arriving back from add-structure.html having just created a
+// If we're arriving back from addStructure.html having just created a
 // structure, select it once loadStructures() has it in the list - same
 // consume-once pattern as resumeAuthorReturn() below.
 async function resumeNewStructure(){

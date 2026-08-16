@@ -1,5 +1,5 @@
 // Client-side photo compression, shared by every place spanSense uploads a
-// structure/inspection photo (inspection/photo.js, structure/add-structure.html,
+// structure/inspection photo (inspection/photo.js, author/addStructure.html,
 // field/js/app.js) - Field previously pushed the raw camera File straight
 // into IndexedDB with no size check at all, only failing once it tried to
 // sync against the server's upload ceiling. Compressing at capture/pick time

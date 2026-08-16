@@ -53,11 +53,11 @@
 
     /* ---------------------------------------------------------
        ADD STRUCTURE - same "go there, come back" round trip as
-       author.js's own addStructureBtn wiring, reusing core's actual
-       structure/add-structure.html form rather than rebuilding it here.
-       authorAddStructure additionally tells that form to show a Client
-       picker (see its own script) - without a client_id a structure
-       created from core wouldn't show up anywhere else in Author (Dashboard/
+       author.js's own addStructureBtn wiring, reusing addStructure.html's
+       form (lives in author/ alongside this file) rather than rebuilding
+       it here. authorAddStructure additionally tells that form to show a
+       Client picker (see its own script) - without a client_id a
+       structure wouldn't show up anywhere else in Author (Dashboard/
        Planning both filter on it). resumeNewStructure() below closes the
        loop once STRUCTURES has reloaded.
        --------------------------------------------------------- */
@@ -65,7 +65,7 @@
         e.preventDefault(); // plain nav-link markup (href="#") to blend in with the real links around it
         sessionStorage.setItem('addStructureReturnTo', window.location.href);
         sessionStorage.setItem('authorAddStructure', '1');
-        window.location.href = '../structure/add-structure.html';
+        window.location.href = 'addStructure.html';
     });
 
     /* ---------------------------------------------------------
@@ -785,7 +785,7 @@
             console.error('Author map: failed to load /api/bridges', err);
         });
 
-    // Arriving back from add-structure.html (see addStructureBtn above) -
+    // Arriving back from addStructure.html (see addStructureBtn above) -
     // pan to and open the structure that was just created, same consume-
     // once pattern as author.js's own resumeNewStructure(). A structure
     // created without coordinates (lat/lng are optional on that form)
