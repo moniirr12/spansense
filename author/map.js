@@ -254,43 +254,15 @@
     var satelliteMap = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
         maxZoom: 20, subdomains: ['mt0', 'mt1', 'mt2', 'mt3'], attribution: '&copy; Google Maps'
     });
+    // Same CARTO dark basemap as core map/map.js - was missing here simply
+    // because this page's layer switcher was never given a third option.
+    var darkMap = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    });
     // The "type of map" selector - core's own native Leaflet layer switcher,
     // not a custom satellite-only button, so it gets map.css's real styling
     // and stacks under zoom for free.
-    L.control.layers({ 'Street': openStreetMap, 'Satellite': satelliteMap }, null, { position: 'topright' }).addTo(map);
-
-    // Route-planning toggle - a real Leaflet control (see the CSS above)
-    // so it stacks under zoom/the layer switcher instead of needing its
-    // own guessed offset.
-    var RouteToggleControl = L.Control.extend({
-        options: { position: 'topright' },
-        onAdd: function () {
-            var container = L.DomUtil.create('div', 'leaflet-control-route-toggle');
-            container.innerHTML = '<a href="#" id="routeModeBtn" data-tip="Plan a route" role="button" aria-label="Plan a route">' +
-                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0 0 21 18.382V7.618a1 1 0 0 0-.553-.894L15 4m0 13V4m0 0L9 7"/></svg></a>';
-            L.DomEvent.disableClickPropagation(container);
-            return container;
-        }
-    });
-    map.addControl(new RouteToggleControl());
-
-    // Box-select tools - only meaningful once route mode is on, so this
-    // control starts hidden (see .leaflet-control-select-tools.show) and
-    // just occupies no space until then, rather than needing its own
-    // separate floating position.
-    var SelectToolsControl = L.Control.extend({
-        options: { position: 'topright' },
-        onAdd: function () {
-            var container = L.DomUtil.create('div', 'leaflet-control-select-tools');
-            container.id = 'selectTools';
-            container.innerHTML =
-                '<a href="#" id="toolPointer" class="active" data-tip="Select"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg></a>' +
-                '<a href="#" id="toolBox" data-tip="Box-select multiple (drag on map)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 3"><rect x="4" y="4" width="16" height="16" rx="2"/></svg></a>';
-            L.DomEvent.disableClickPropagation(container);
-            return container;
-        }
-    });
-    map.addControl(new SelectToolsControl());
+    L.control.layers({ 'Street': openStreetMap, 'Satellite': satelliteMap, 'Dark Mode': darkMap }, null, { position: 'topright' }).addTo(map);
 
     var markersLayer = L.layerGroup().addTo(map);
     var markerById = {};
@@ -399,24 +371,30 @@
        building UI; everything selection-related stays hidden until then.
        --------------------------------------------------------- */
     var routeModeBtn = document.getElementById('routeModeBtn');
-    var routeRailEl = document.getElementById('routeRail');
-    var selectToolsEl = document.getElementById('selectTools');
+    var routeBodyEl = document.getElementById('routeBody');
+    var autoSelectBtn = document.getElementById('autoSelectBtn');
+    var exportBtn = document.getElementById('exportBtn');
     var mapSummaryEl = document.getElementById('mapSummary');
     var mapHintEl = document.getElementById('mapHint');
 
+    // The route-rail panel (author/map.html) is always docked under the
+    // layer switcher now - only its body (box-select tools, summary,
+    // itinerary) expands/collapses here, so it reads as one div "opening
+    // up" rather than a separate toggle plus a disconnected panel.
     function setRouteMode(on) {
         routeMode = on;
         routeModeBtn.classList.toggle('active', on);
         routeModeBtn.setAttribute('data-tip', on ? 'Exit route mode' : 'Plan a route');
-        routeRailEl.style.display = on ? 'flex' : 'none';
-        selectToolsEl.style.display = on ? 'flex' : 'none';
+        routeBodyEl.style.display = on ? 'flex' : 'none';
+        autoSelectBtn.disabled = !on;
+        exportBtn.disabled = !on;
         mapSummaryEl.style.display = on ? 'flex' : 'none';
         mapHintEl.style.display = on ? 'block' : 'none';
         if (!on) setBoxSelectMode(false);
         map.closePopup();
         renderPins();
     }
-    routeModeBtn.addEventListener('click', function (e) { e.preventDefault(); setRouteMode(!routeMode); });
+    routeModeBtn.addEventListener('click', function () { setRouteMode(!routeMode); });
     setRouteMode(false);
 
     /* ---------------------------------------------------------

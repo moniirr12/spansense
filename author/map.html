@@ -136,40 +136,25 @@ a{color:inherit;}
 .panel-head h2 svg{ width:15px; height:15px; color:var(--teal); }
 
 /* ---------- MAP OVERLAY CONTROLS ----------
-   Zoom and the layer switcher ("type of map") are genuine Leaflet controls,
-   both 'topright' - map.css already styles+positions those (glass pill,
-   margin:100px 20px 8px 20px on zoom, 8px 20px 20px 20px on the layer
-   switcher, so they stack with an 8px gap, clear of the navbar). The old
-   version of this toolbar was a plain fixed div guessing the same 100px/
-   20px offset independently, which was the actual bug - it and the real
-   Leaflet zoom control ended up in the exact same box, zoom on top,
-   silently eating every click. Genuine Leaflet controls (below) stack
-   automatically instead, so this can't happen again. */
-.leaflet-control-route-toggle,
-.leaflet-control-select-tools{
-  background:linear-gradient(135deg, rgba(255,255,255,.82), rgba(238,244,242,.62)) !important;
-  backdrop-filter:blur(16px) saturate(160%) !important; -webkit-backdrop-filter:blur(16px) saturate(160%) !important;
-  border-radius:48px !important; box-shadow:0 10px 30px rgba(44,90,87,.14) !important;
-  border:1px solid rgba(138,180,176,.3) !important;
-  margin:8px 20px 20px 20px !important;
-}
-.night-mode .leaflet-control-route-toggle,
-.night-mode .leaflet-control-select-tools{
-  background:linear-gradient(135deg, rgba(33,47,51,.88), rgba(33,47,51,.72)) !important;
-  border-color:rgba(255,255,255,.12) !important;
-}
-.leaflet-control-route-toggle a, .leaflet-control-select-tools a{
-  width:44px; height:44px; display:flex; align-items:center; justify-content:center;
-  color:#5b8c8a; cursor:pointer; text-decoration:none;
-}
-.night-mode .leaflet-control-route-toggle a, .night-mode .leaflet-control-select-tools a{ color:#8ab4b0; }
-.leaflet-control-route-toggle a svg, .leaflet-control-select-tools a svg{ width:18px; height:18px; }
-.leaflet-control-route-toggle a:hover, .leaflet-control-select-tools a:hover{ color:#2c5a57; }
-.leaflet-control-route-toggle a.active{ background:var(--teal); color:#fff !important; border-radius:48px; }
-.leaflet-control-select-tools{ display:none; flex-direction:column; }
-.leaflet-control-select-tools a{ width:38px; height:38px; }
-.leaflet-control-select-tools a.active{ background:var(--teal); color:#fff !important; border-radius:48px; }
-.leaflet-control-select-tools a:first-child{ border-bottom:1px solid rgba(138,180,176,.25); }
+   Zoom and the layer switcher ("type of map") are the only genuine Leaflet
+   controls, both 'topright' - map.css already styles+positions those (glass
+   pill, margin:100px 20px 8px 20px on zoom, 8px 20px 20px 20px on the layer
+   switcher, so they stack with an 8px gap, clear of the navbar). Route
+   planning used to be two more things stacked below that - a separate
+   floating toggle circle, then a gap, then the itinerary panel - which is
+   why it looked "different" and could drift into the chat button. It's now
+   a single div (.route-rail below) docked directly under the layer
+   switcher: the toggle/auto-select/export icons live in its own header,
+   and its body (incl. the box-select pointer/box tools) only expands once
+   route mode is on, capped so it can never grow down into the chat icon. */
+.icon-btn:disabled{ opacity:.4; cursor:not-allowed; }
+.icon-btn:disabled:hover{ border-color:var(--border); color:var(--text-mute); }
+.night-mode .icon-btn:disabled:hover{ border-color:#3a4b53; color:#9ab0b8; }
+#routeModeBtn.active{ background:var(--teal); color:#fff; border-color:transparent; }
+.route-tools{ display:flex; gap:6px; padding:11px 15px; border-bottom:1px solid var(--border2); }
+.night-mode .route-tools{ border-color:#2f3e45; }
+.route-tools .icon-btn.active{ background:var(--teal); color:#fff; border-color:transparent; }
+.route-body{ display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
 
 .map-summary-chip{
   position:fixed; top:100px; left:50%; transform:translateX(-50%); z-index:401;
@@ -196,10 +181,14 @@ a{color:inherit;}
 .rp-pin-num{ width:26px; height:26px; border-radius:50%; background:var(--teal-dark); border:2.5px solid #fff; color:#fff; font-size:.7rem; font-weight:800; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,.25); font-variant-numeric:tabular-nums; }
 .night-mode .rp-pin-num{ border-color:#212f33; }
 
-/* ---------- ROUTE RAIL (floating, right, route mode only) ---------- */
-/* Clears the stacked zoom/layers/route-toggle/select-tools Leaflet controls
-   above it rather than overlapping them. */
-.route-rail{ position:fixed; top:445px; right:20px; width:330px; max-height: calc(100vh - 465px); z-index:500; }
+/* ---------- ROUTE RAIL (floating, right, always docked under the layer
+   switcher; its body only shows once route mode is on) ---------- */
+/* Top clears zoom+layers (100+88+8+46 = ~262px); max-height is capped so
+   an expanded, full-length itinerary list still ends above the chat
+   toggle (fixed bottom:65px/height:44px on desktop, bottom:70px/height:48px
+   on mobile - see map.css) with a clear gap, instead of growing down over
+   it the way the old bottom-anchored mobile layout could. */
+.route-rail{ position:fixed; top:262px; right:20px; width:330px; max-height: calc(100vh - 262px - 125px); z-index:500; }
 .route-rail-head{ padding:13px 15px; border-bottom:1px solid var(--border2); display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .night-mode .route-rail-head{ border-color:#2f3e45; }
 .route-rail-head .rail-head-text{ min-width:0; }
@@ -259,7 +248,11 @@ a{color:inherit;}
      screen to the left. Cancel the transform now that left/right:10px
      already positions it without needing centering math. */
   .navbar{ transform:none !important; }
-  .route-rail{ top:auto; bottom:16px; left:12px; right:12px; width:auto; max-height:50vh; }
+  /* Stays top-docked under zoom/layers rather than switching to a bottom
+     sheet - a bottom anchor is what let it drift down over the chat
+     button on narrow screens; top-anchored + the capped max-height above
+     keeps it clear at every width. */
+  .route-rail{ left:12px; right:12px; width:auto; max-height: calc(100vh - 262px - 134px); }
   .map-summary-chip{ top:76px; padding:6px 12px; gap:8px; font-size:.68rem; }
   .mobile-only{
     display:flex; align-items:center; justify-content:center; flex-shrink:0;
@@ -356,11 +349,11 @@ a{color:inherit;}
 </div>
 
 <!-- ============ FULL-SCREEN MAP (behind the navbar, like map.html) ============ -->
-<!-- Zoom, the map-type (layer) switcher, the route-planning toggle, and
-     (route mode only) the box-select tools are all added as genuine
-     Leaflet controls in map.js, stacked in the 'topright' corner - see
-     that file's map-init section and this page's .leaflet-control-*
-     CSS above. Nothing to put in the markup here. -->
+<!-- Zoom and the map-type (layer) switcher are genuine Leaflet controls,
+     added in map.js's map-init section, stacked in the 'topright' corner.
+     Route planning (toggle, auto-select/export, box-select tools, the
+     itinerary) all lives in the single .route-rail div below instead of
+     more floating controls - see that div's own comment. -->
 <div class="map-stage" id="mapStage">
     <div id="routeMap"></div>
 
@@ -440,31 +433,46 @@ a{color:inherit;}
     </div>
 </div>
 
-<!-- ============ FLOATING RIGHT: ROUTE ITINERARY (route mode only) ============ -->
+<!-- ============ FLOATING RIGHT: ROUTE PLANNING ============
+     One div for the whole feature - docked under zoom/the layer switcher.
+     The header (toggle + auto-select + export) is always visible; the body
+     (box-select tools + summary + actions + itinerary list) only expands
+     once #routeModeBtn turns route mode on, so this reads as a single
+     panel "opening up" rather than a separate floating toggle plus a
+     disconnected panel further down. -->
 <div class="panel route-rail" id="routeRail">
   <div class="route-rail-head">
     <div class="rail-head-text">
       <div class="eyebrow">Plan</div>
-      <h2><i class="fas fa-route"></i> Today's Route</h2>
+      <h2><i class="fas fa-route"></i> Route Planning</h2>
     </div>
     <div class="rail-head-actions">
-      <button class="icon-btn" id="autoSelectBtn" data-tip="Select due this month"><i class="fas fa-bolt"></i></button>
-      <button class="icon-btn primary" id="exportBtn" data-tip="Export route (CSV)"><i class="fas fa-file-export"></i></button>
+      <button type="button" class="icon-btn" id="routeModeBtn" data-tip="Plan a route" aria-label="Plan a route">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0 0 21 18.382V7.618a1 1 0 0 0-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+      </button>
+      <button type="button" class="icon-btn" id="autoSelectBtn" data-tip="Select due this month" disabled><i class="fas fa-bolt"></i></button>
+      <button type="button" class="icon-btn primary" id="exportBtn" data-tip="Export route (CSV)" disabled><i class="fas fa-file-export"></i></button>
     </div>
   </div>
-  <div class="route-summary">
-    <div class="rs-figure" id="rsFigure">0.0<small>km total</small></div>
-    <div class="rs-meta">
-      <span><b id="rsStops">0</b> stops</span>
-      <span><b id="rsTime">0h 00m</b> drive</span>
+  <div class="route-body" id="routeBody" style="display:none;">
+    <div class="route-tools">
+      <button type="button" class="icon-btn active" id="toolPointer" data-tip="Select"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg></button>
+      <button type="button" class="icon-btn" id="toolBox" data-tip="Box-select multiple (drag on map)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 3"><rect x="4" y="4" width="16" height="16" rx="2"/></svg></button>
     </div>
+    <div class="route-summary">
+      <div class="rs-figure" id="rsFigure">0.0<small>km total</small></div>
+      <div class="rs-meta">
+        <span><b id="rsStops">0</b> stops</span>
+        <span><b id="rsTime">0h 00m</b> drive</span>
+      </div>
+    </div>
+    <div class="route-actions">
+      <button class="btn" id="optimizeBtn" disabled><i class="fas fa-route"></i>&nbsp;Optimize</button>
+      <button class="btn" id="clearBtn" disabled><i class="fas fa-trash-can"></i>&nbsp;Clear</button>
+    </div>
+    <ul class="route-list" id="routeList"></ul>
+    <div class="route-footnote">Route order is editable — drag stops to reorder.</div>
   </div>
-  <div class="route-actions">
-    <button class="btn" id="optimizeBtn" disabled><i class="fas fa-route"></i>&nbsp;Optimize</button>
-    <button class="btn" id="clearBtn" disabled><i class="fas fa-trash-can"></i>&nbsp;Clear</button>
-  </div>
-  <ul class="route-list" id="routeList"></ul>
-  <div class="route-footnote">Route order is editable — drag stops to reorder.</div>
 </div>
 
 <!-- ============ CHAT (same widget as core map/map.html, reuses map.css unmodified) ============ -->
