@@ -388,6 +388,7 @@
         routeMode = on;
         routeModeBtn.classList.toggle('active', on);
         routeModeBtn.setAttribute('data-tip', on ? 'Exit route mode' : 'Plan a route');
+        routeRailEl.classList.toggle('expanded', on);
         routeBodyEl.style.display = on ? 'flex' : 'none';
         autoSelectBtn.style.display = on ? 'flex' : 'none';
         exportBtn.style.display = on ? 'flex' : 'none';

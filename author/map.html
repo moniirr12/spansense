@@ -186,6 +186,14 @@ a{color:inherit;}
    on mobile - see map.css) with a clear gap, instead of growing down over
    it the way the old bottom-anchored mobile layout could. */
 .route-rail{ position:fixed; top:262px; right:20px; width:330px; max-height: calc(100vh - 262px - 125px); z-index:500; }
+/* Retracted (no .expanded), the panel sheds its card chrome entirely so
+   only the toggle icon itself shows - matching the plain zoom/layers
+   control look - instead of a wide bar with a "Plan / Route Planning"
+   label that has nothing yet to label. */
+.route-rail:not(.expanded){ width:auto; background:transparent; border:none; box-shadow:none; }
+.route-rail:not(.expanded) .route-rail-head{ padding:0; border-bottom:none; }
+.night-mode .route-rail:not(.expanded){ background:transparent; }
+.route-rail:not(.expanded) .rail-head-text{ display:none; }
 .route-rail-head{ padding:13px 15px; border-bottom:1px solid var(--border2); display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .night-mode .route-rail-head{ border-color:#2f3e45; }
 .route-rail-head .rail-head-text{ min-width:0; }
@@ -248,8 +256,12 @@ a{color:inherit;}
   /* Stays top-docked under zoom/layers rather than switching to a bottom
      sheet - a bottom anchor is what let it drift down over the chat
      button on narrow screens; top-anchored + the capped max-height above
-     keeps it clear at every width. */
-  .route-rail{ left:12px; right:12px; width:auto; max-height: calc(100vh - 262px - 134px); }
+     keeps it clear at every width. Retracted, only `right` is set so it
+     hugs the toggle icon's own width instead of `left` forcing it to
+     stretch full-width with nothing in it yet; expanded, it spans the
+     same way the desktop panel's fixed width reads on a narrow screen. */
+  .route-rail{ right:12px; width:auto; max-height: calc(100vh - 262px - 134px); }
+  .route-rail.expanded{ left:12px; }
   .map-summary-chip{ top:76px; padding:6px 12px; gap:8px; font-size:.68rem; }
   .mobile-only{
     display:flex; align-items:center; justify-content:center; flex-shrink:0;
