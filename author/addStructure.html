@@ -11,7 +11,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>spanSense · Add Structure</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="../assets/sunIcon.css">
     <base target="_self">
@@ -19,12 +19,22 @@
 /* ============================================
    SPANSENSE - ADD STRUCTURE
    ============================================ */
+:root{
+  --teal:#5b8c8a; --teal-dark:#2c5a57; --green-dark:#2c4a48;
+  --text:#2c3e44; --text-mute:#5f6b73; --text-mute2:#4d5960;
+  --border:#e2e8f0; --border2:#e9edf2;
+  --bg-soft:#fafbfc; --bg-mint:#eef4f2;
+  --ok:#2d7a6e; --ok-bg:#e8f5f0; --ok-border:#b8dcc8;
+  --amber:#BA7517; --amber-bg:#fff8ee; --amber-border:#e8d4b8;
+  --red:#c0392b; --red-bg:#fdecea; --red-border:#f0c4be;
+  --font-display:'Source Serif 4', Georgia, serif;
+}
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
     font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f5f7fb;
-    color: #2c3e44;
+    color: var(--text);
     transition: background 0.3s ease, color 0.3s ease;
     overflow-x: hidden;
 }
@@ -109,114 +119,90 @@ body {
 
 /* ---------- MAIN WRAPPER ---------- */
 .page-wrapper {
-    max-width: 75%;
+    max-width: 900px;
     margin: 0 auto;
-    padding: 120px 0 80px 0;
+    padding: 112px 28px 60px;
 }
 
-/* ---------- BACK PILL ---------- */
-.back-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 18px;
-    border-radius: 30px;
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(138, 180, 176, 0.3);
-    color: #5b8c8a;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 12px rgba(91, 140, 138, 0.1);
-    user-select: none;
-}
-.back-pill:hover { background: #5b8c8a; color: white; border-color: #5b8c8a; transform: translateX(-4px); box-shadow: 0 4px 20px rgba(91, 140, 138, 0.25); }
-.back-pill:active { transform: translateX(-2px) scale(0.98); }
-.back-pill i { font-size: 0.8rem; transition: transform 0.3s ease; }
-.back-pill:hover i { transform: translateX(-3px); }
+/* ---------- BACK BUTTON - reuses .btn (see below) rather than its own
+   bespoke pill, so it reads as the same component as every other button
+   on the page instead of a one-off. ---------- */
+.back-pill { margin-bottom: 20px; }
 
-/* ---------- PAGE HEADER ---------- */
+/* ---------- PAGE HEADER - matches every other Author page's .page-head:
+   Source Serif display face, var(--green-dark), no icon/accent-bar. ---------- */
 .page-header { margin-bottom: 28px; }
 .page-header h1 {
-    font-size: 1.6rem;
+    font-family: var(--font-display);
+    font-size: 1.9rem;
     font-weight: 600;
-    color: #2c5a57;
-    border-left: 4px solid #8ab4b0;
-    padding-left: 14px;
-    margin-bottom: 8px;
+    color: var(--green-dark);
+    margin-bottom: 6px;
 }
-.page-header p { color: #5f6b73; font-size: 0.9rem; padding-left: 18px; max-width: 62ch; line-height: 1.5; }
+.page-header p { color: var(--text-mute); font-size: 0.9rem; max-width: 62ch; line-height: 1.5; }
 
-/* ---------- FORM SECTIONS ---------- */
+/* ---------- FORM SECTIONS - same card chrome as .panel elsewhere in
+   Author (dashboard/planning/clients): solid surface, var(--border2),
+   16px radius, no glass/gradient. ---------- */
 .form-section {
-    background: linear-gradient(160deg, rgba(255, 255, 255, 0.88), rgba(244, 248, 247, 0.72));
-    backdrop-filter: blur(20px) saturate(160%);
-    -webkit-backdrop-filter: blur(20px) saturate(160%);
-    border-radius: 22px;
-    border: 1px solid rgba(138, 180, 176, 0.28);
-    padding: 24px 26px;
-    margin-bottom: 18px;
+    background: #fff;
+    border-radius: 16px;
+    border: 1px solid var(--border2);
+    box-shadow: 0 6px 20px rgba(44,90,87,.05);
+    padding: 22px 24px;
+    margin-bottom: 16px;
 }
 .form-section h2 {
-    font-size: 0.95rem;
+    font-family: var(--font-display);
+    font-size: 1.05rem;
     font-weight: 600;
-    color: #2c4a48;
+    color: var(--green-dark);
     margin-bottom: 4px;
     display: flex;
     align-items: center;
     gap: 9px;
 }
-.form-section h2 i { color: #8ab4b0; font-size: 0.9rem; }
+.form-section h2 i { color: var(--teal); font-size: 0.9rem; }
 .form-section .section-sub {
     font-size: 0.78rem;
-    color: #5f6b73;
+    color: var(--text-mute);
     margin-bottom: 18px;
     line-height: 1.5;
 }
 
 /* ---------- EXTRACT FROM DOCUMENT ---------- */
-.extract-section { border-color: rgba(138, 180, 176, 0.4); background: rgba(91, 140, 138, 0.04); }
+.extract-section { border-color: var(--border2); background: var(--bg-mint); }
 .extract-section .section-sub { margin-bottom: 14px; }
 .extract-upload-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-.btn-extract {
-    padding: 10px 22px; border: none; border-radius: 30px;
-    background: linear-gradient(135deg, #5b8c8a 0%, #7ba8a5 100%);
-    color: white; font-weight: 600; font-size: 0.82rem; cursor: pointer;
-    transition: all 0.2s; display: flex; align-items: center; gap: 8px;
-    font-family: inherit; flex-shrink: 0;
-}
-.btn-extract:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(91, 140, 138, 0.3); }
-.btn-extract:disabled { opacity: 0.65; cursor: not-allowed; transform: none; box-shadow: none; }
-.extract-status { font-size: 0.78rem; color: #5f6b73; line-height: 1.4; }
-.extract-status.success { color: #2d7a6e; }
-.extract-status.error { color: #c47070; }
+.extract-status { font-size: 0.78rem; color: var(--text-mute); line-height: 1.4; }
+.extract-status.success { color: var(--ok); }
+.extract-status.error { color: var(--red); }
 
-/* ---------- FORM FIELDS ---------- */
+/* ---------- FORM FIELDS - matches Planning's assign-modal .field
+   convention: uppercase letter-spaced label, var(--bg-soft) fill. ---------- */
 .form-group { margin-bottom: 16px; }
 .form-group:last-child { margin-bottom: 0; }
 .form-group label {
     display: block;
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: #4a5b6e;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-mute);
     margin-bottom: 6px;
 }
-.form-group label .opt { color: #a7b4bd; font-weight: 400; }
+.form-group label .opt { text-transform: none; color: #a7b4bd; font-weight: 400; }
 .form-group input,
 .form-group select,
 .form-group textarea {
     width: 100%;
-    padding: 12px 16px;
-    border: 1px solid #e2e8f0;
-    border-radius: 14px;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
     font-size: 0.85rem;
     font-family: inherit;
-    color: #2c4a48;
-    background: white;
+    color: var(--text);
+    background: var(--bg-soft);
     transition: all 0.2s;
     outline: none;
 }
@@ -224,7 +210,7 @@ body {
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
-    border-color: #8ab4b0;
+    border-color: var(--teal);
     box-shadow: 0 0 0 3px rgba(138, 180, 176, 0.15);
 }
 .form-group .hint { font-size: 0.72rem; color: #a7b4bd; margin-top: 6px; line-height: 1.4; }
@@ -236,13 +222,13 @@ body {
 .type-pill {
     flex: 1 1 auto;
     min-width: 108px;
-    border: 1px solid #e2e8f0;
-    background: #fafbfc;
-    color: #4d5960;
+    border: 1px solid var(--border);
+    background: var(--bg-soft);
+    color: var(--text-mute2);
     font-size: 0.78rem;
     font-weight: 600;
     padding: 10px 12px;
-    border-radius: 14px;
+    border-radius: 10px;
     text-align: center;
     cursor: pointer;
     transition: all 0.15s;
@@ -253,7 +239,7 @@ body {
     font-family: inherit;
 }
 .type-pill i { font-size: 0.85rem; }
-.type-pill:hover { border-color: #8ab4b0; color: #5b8c8a; }
+.type-pill:hover { border-color: var(--teal); color: var(--teal); }
 .type-pill.sel { color: white; border-color: transparent; }
 .type-pill[data-type="bridge"].sel { background: #2c645c; }
 .type-pill[data-type="footbridge"].sel { background: #4f9088; }
@@ -266,9 +252,9 @@ body {
 .stepper button {
     width: 34px; height: 34px;
     border-radius: 50%;
-    border: 1px solid #e2e8f0;
-    background: white;
-    color: #5b8c8a;
+    border: 1px solid var(--border);
+    background: var(--bg-soft);
+    color: var(--teal);
     font-size: 1rem;
     font-weight: 700;
     cursor: pointer;
@@ -276,28 +262,28 @@ body {
     transition: all 0.2s;
     font-family: inherit;
 }
-.stepper button:hover { background: #eef4f2; border-color: #8ab4b0; }
+.stepper button:hover { background: var(--bg-mint); border-color: var(--teal); }
 .stepper button:active { transform: scale(0.94); }
-.stepper span { font-size: 1rem; font-weight: 700; color: #2c4a48; min-width: 22px; text-align: center; }
+.stepper span { font-size: 1rem; font-weight: 700; color: var(--text); min-width: 22px; text-align: center; }
 
 /* ---------- PER-SPAN BREAKDOWN ---------- */
-.span-row { border: 1px solid #eef2f6; border-radius: 16px; padding: 16px 18px; margin-bottom: 12px; }
+.span-row { border: 1px solid var(--border2); border-radius: 12px; padding: 16px 18px; margin-bottom: 12px; }
 .span-row:last-child { margin-bottom: 0; }
-.span-row-head { font-size: 0.82rem; font-weight: 700; color: #2c645c; margin-bottom: 14px; }
+.span-row-head { font-size: 0.82rem; font-weight: 700; color: var(--teal-dark); margin-bottom: 14px; }
 .span-row .form-row { margin-bottom: 12px; }
 .span-row .form-row:last-child { margin-bottom: 0; }
 .span-row .form-group { margin-bottom: 0; }
-.span-row .form-group label { font-size: 0.74rem; }
+.span-row .form-group label { font-size: 0.66rem; }
 
 /* ---------- ADVANCED (COLLAPSIBLE) ---------- */
 .adv-toggle {
     display: flex; align-items: center; justify-content: space-between;
     cursor: pointer; user-select: none;
 }
-.adv-toggle i.chev { transition: transform 0.2s; color: #5f6b73; }
+.adv-toggle i.chev { transition: transform 0.2s; color: var(--text-mute); }
 .form-section.collapsed .adv-toggle i.chev { transform: rotate(-90deg); }
 .form-section.collapsed .adv-body { display: none; }
-.adv-body { margin-top: 18px; padding-top: 18px; border-top: 1px solid #eef2f6; }
+.adv-body { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border2); }
 
 /* ---------- PHOTO GRID (reused from inspection.html's photo widget) ---------- */
 .photo-grid {
@@ -309,16 +295,16 @@ body {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     aspect-ratio: 1;
     border: 2px dashed rgba(91, 140, 138, 0.3);
-    border-radius: 14px;
-    background: rgba(91, 140, 138, 0.03);
+    border-radius: 10px;
+    background: var(--bg-mint);
     cursor: pointer;
     transition: all 0.3s ease;
 }
-.add-photo-card:hover { border-color: rgba(91, 140, 138, 0.6); background: rgba(91, 140, 138, 0.08); transform: translateY(-2px); }
-.plus-sign { font-size: 32px; font-weight: 300; color: #5b8c8a; line-height: 1; margin-bottom: 4px; }
-.add-text { font-size: 11px; color: #5b8c8a; font-weight: 500; letter-spacing: 0.3px; text-align: center; padding: 0 6px; }
+.add-photo-card:hover { border-color: var(--teal); background: rgba(91, 140, 138, 0.08); transform: translateY(-2px); }
+.plus-sign { font-size: 32px; font-weight: 300; color: var(--teal); line-height: 1; margin-bottom: 4px; }
+.add-text { font-size: 11px; color: var(--teal); font-weight: 500; letter-spacing: 0.3px; text-align: center; padding: 0 6px; }
 .preview-item-photo {
-    position: relative; border-radius: 14px; overflow: hidden; background: white;
+    position: relative; border-radius: 10px; overflow: hidden; background: white;
     box-shadow: 0 2px 10px rgba(0,0,0,0.06); transition: all 0.25s ease;
     aspect-ratio: 1; display: flex; flex-direction: column;
 }
@@ -345,45 +331,40 @@ body {
     padding: 3px 8px; border-radius: 20px; letter-spacing: 0.03em;
 }
 
-/* ---------- ACTION BAR ---------- */
+/* ---------- BUTTONS - same .btn/.btn.primary component as every other
+   Author page (Planning's modal, Map's route panel, etc). .btn-cancel/
+   .btn-create/.btn-extract keep their own class names (harmless, .btn-
+   create is queried by JS) but carry no styling of their own any more -
+   the markup below also carries "btn"/"btn primary" so this is what
+   actually renders. ---------- */
+.btn{ font-family:inherit; font-size:.85rem; font-weight:600; cursor:pointer; border-radius:11px; padding:10px 18px; display:inline-flex; align-items:center; gap:8px; border:1px solid var(--border); background:#fff; color:var(--text-mute); transition: all .15s; white-space:nowrap; }
+.btn:hover{ border-color:var(--teal); color:var(--teal-dark); }
+.btn.primary{ background:linear-gradient(135deg,var(--teal),var(--teal-dark)); color:#fff; border-color:transparent; box-shadow:0 4px 14px rgba(91,140,138,.28); }
+.btn.primary:hover{ filter:brightness(1.06); color:#fff; }
+.btn:disabled{ opacity:.6; cursor:not-allowed; }
+
 .form-actions {
     display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px;
 }
-.btn-cancel {
-    padding: 12px 24px; border: 1px solid #e2e8f0; border-radius: 30px;
-    background: white; color: #4d5960; font-weight: 600; font-size: 0.85rem;
-    cursor: pointer; font-family: inherit; transition: all 0.2s;
-}
-.btn-cancel:hover { border-color: #cbd5df; color: #2c4a48; }
-.btn-create {
-    padding: 12px 32px; border: none; border-radius: 30px;
-    background: linear-gradient(135deg, #5b8c8a 0%, #7ba8a5 100%);
-    color: white; font-weight: 600; font-size: 0.9rem; cursor: pointer;
-    transition: all 0.3s; display: flex; align-items: center; gap: 10px;
-    font-family: inherit; box-shadow: 0 4px 14px rgba(91, 140, 138, 0.3);
-}
-.btn-create:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(91, 140, 138, 0.4); }
-.btn-create:active { transform: translateY(0); }
-.btn-create:disabled { opacity: 0.7; cursor: not-allowed; transform: none; box-shadow: 0 4px 14px rgba(91, 140, 138, 0.3); }
 
-/* ---------- TOAST ---------- */
+/* ---------- TOAST - same solid card chrome as .panel, not its own
+   glass treatment. ---------- */
 .toast-container { position: fixed; bottom: 30px; right: 30px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; }
 .toast {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(238, 244, 242, 0.7));
-    backdrop-filter: blur(16px) saturate(160%); -webkit-backdrop-filter: blur(16px) saturate(160%);
-    border-radius: 16px; padding: 16px 20px; box-shadow: 0 10px 30px rgba(44, 90, 87, 0.14);
-    border: 1px solid rgba(138, 180, 176, 0.3); display: flex; align-items: center; gap: 12px; min-width: 300px;
+    background: #fff;
+    border-radius: 14px; padding: 16px 20px; box-shadow: 0 10px 30px rgba(44, 90, 87, 0.14);
+    border: 1px solid var(--border2); display: flex; align-items: center; gap: 12px; min-width: 300px;
     transform: translateX(120%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 .toast.show { transform: translateX(0); }
 .toast-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
-.toast-icon.success { background: #e8f5f0; color: #2d7a6e; }
-.toast-icon.error { background: #fdf2f2; color: #c47070; }
+.toast-icon.success { background: var(--ok-bg); color: var(--ok); }
+.toast-icon.error { background: var(--red-bg); color: var(--red); }
 .toast-content { flex: 1; }
-.toast-content .toast-title { font-size: 0.9rem; font-weight: 600; color: #2c4a48; margin-bottom: 2px; }
-.toast-content .toast-msg { font-size: 0.8rem; color: #5f6b73; }
-.toast-close { width: 28px; height: 28px; border-radius: 50%; border: none; background: #f8fafc; color: #5f6b73; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-.toast-close:hover { background: #e9ecef; color: #4a5b6e; }
+.toast-content .toast-title { font-size: 0.9rem; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+.toast-content .toast-msg { font-size: 0.8rem; color: var(--text-mute); }
+.toast-close { width: 28px; height: 28px; border-radius: 50%; border: none; background: var(--bg-soft); color: var(--text-mute); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+.toast-close:hover { background: #e9ecef; color: var(--text); }
 
 /* ---------- RESPONSIVE ---------- */
 @media (max-width: 1100px) { .navbar { width: 78%; } }
@@ -395,13 +376,19 @@ body {
 }
 @media (max-width: 600px) {
     .form-actions { flex-direction: column-reverse; }
-    .btn-cancel, .btn-create { width: 100%; justify-content: center; }
+    .form-actions .btn { width: 100%; justify-content: center; }
 }
 
 /* ============================================
    NIGHT MODE
    ============================================ */
-.night-mode { background-color: #1a2428 !important; color: #d4dfe3; }
+/* Same token overrides + body background as every other Author page. */
+.night-mode {
+  --text:#d4dfe3; --text-mute:#a8b8bf; --text-mute2:#bcc8ce;
+  --border:#2f3e45; --border2:#28353b;
+  --bg-soft:#1e2a2f; --bg-mint:#1e3a38;
+}
+body.night-mode { background: #151f1d; color: var(--text); }
 .night-mode .navbar { background: rgba(47, 62, 72, 0.85) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; }
 .night-mode .navbar .logo { background: linear-gradient(135deg, #8ab4b0 0%, #a0c8c4 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 .night-mode .navbar .menu a { color: #9ab0b8; }
@@ -411,31 +398,25 @@ body {
 .night-mode .night-mode-toggle { background: #2f3e45; color: #9ab0b8; }
 .night-mode .night-mode-toggle:hover { background: #3a4b53; color: #8ab4b0; }
 
-.night-mode .back-pill { background: rgba(35, 46, 52, 0.8) !important; border-color: rgba(138, 180, 176, 0.3) !important; color: #8ab4b0 !important; box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2) !important; }
-.night-mode .back-pill:hover { background: #5b8c8a !important; color: white !important; border-color: #5b8c8a !important; box-shadow: 0 4px 20px rgba(91, 140, 138, 0.3) !important; }
+.night-mode .btn{ background:#212f33; border-color:#2f3e45; color:#9ab0b8; }
+.night-mode .btn:hover{ border-color:#8ab4b0; color:#a0c8c4; }
 
-.night-mode .page-header h1 { color: #8ab4b0; }
-.night-mode .page-header p { color: #a8b8bf; }
+.night-mode .page-header h1 { color: #d4dfe3; }
 
 .night-mode .form-section {
-    background: linear-gradient(160deg, rgba(51, 68, 79, 0.88), rgba(36, 48, 56, 0.72));
-    border-color: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
+    background: #1c2826;
+    border-color: #2f3e45;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 .night-mode .form-section h2 { color: #d4dfe3; }
-.night-mode .form-section .section-sub { color: #a8b8bf; }
-.night-mode .extract-section { border-color: rgba(138, 180, 176, 0.3); background: rgba(138, 180, 176, 0.06); }
-.night-mode .extract-status { color: #a8b8bf; }
+.night-mode .extract-section { background: #1e3a38; }
 .night-mode .extract-status.success { color: #7fc9ba; }
 .night-mode .extract-status.error { color: #e08a8a; }
-.night-mode .adv-body { border-color: #2f3e45; }
 .night-mode .adv-toggle i.chev { color: #a8b8bf; }
 
-.night-mode .form-group label { color: #9ab0b8; }
-.night-mode .form-group label .opt { color: #647680; }
 .night-mode .form-group input,
 .night-mode .form-group select,
-.night-mode .form-group textarea { background: #1e2a2f; border-color: #3a4b53; color: #d4dfe3; }
+.night-mode .form-group textarea { background: #182320; border-color: #3a4b53; color: #d4dfe3; }
 .night-mode .form-group input:focus,
 .night-mode .form-group select:focus,
 .night-mode .form-group textarea:focus { border-color: #6e9c98; box-shadow: 0 0 0 3px rgba(138, 180, 176, 0.12); }
@@ -443,34 +424,26 @@ body {
 .night-mode .form-group input::placeholder,
 .night-mode .form-group textarea::placeholder { color: #647680; }
 
-.night-mode .type-pill { background: #1e2a2f; border-color: #3a4b53; color: #9ab0b8; }
+.night-mode .type-pill { background: #182320; border-color: #3a4b53; color: #9ab0b8; }
 .night-mode .type-pill:hover { border-color: #6e9c98; color: #8ab4b0; }
 
-.night-mode .stepper button { background: #1e2a2f; border-color: #3a4b53; color: #8ab4b0; }
+.night-mode .stepper button { background: #182320; border-color: #3a4b53; color: #8ab4b0; }
 .night-mode .stepper button:hover { background: #2f4a48; border-color: #6e9c98; }
 .night-mode .stepper span { color: #d4dfe3; }
 
-.night-mode .span-row { border-color: #2f3e45; }
 .night-mode .span-row-head { color: #8ab4b0; }
 
 .night-mode .add-photo-card { background: rgba(138, 180, 176, 0.05); border-color: rgba(138, 180, 176, 0.3); }
 .night-mode .add-photo-card:hover { background: rgba(138, 180, 176, 0.1); border-color: rgba(138, 180, 176, 0.55); }
-.night-mode .preview-item-photo { background: #1e2a2f; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
-.night-mode .photo-description-input { background: rgba(30, 42, 47, 0.95); border-color: #2f3e45; color: #c5d3d9; }
-.night-mode .photo-description-input:focus { background: #1e2a2f; }
+.night-mode .preview-item-photo { background: #182320; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+.night-mode .photo-description-input { background: rgba(24, 35, 32, 0.95); border-color: #2f3e45; color: #c5d3d9; }
+.night-mode .photo-description-input:focus { background: #182320; }
 .night-mode .photo-description-input::placeholder { color: #647680; }
 
-.night-mode .btn-cancel { background: #1e2a2f; border-color: #3a4b53; color: #9ab0b8; }
-.night-mode .btn-cancel:hover { border-color: #6e9c98; color: #d4dfe3; }
-
-.night-mode .toast {
-    background: linear-gradient(135deg, rgba(51, 68, 79, 0.88), rgba(36, 48, 56, 0.78));
-    border-color: rgba(255, 255, 255, 0.12);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-}
+.night-mode .toast { background: #1c2826; border-color: #2f3e45; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35); }
 .night-mode .toast-content .toast-title { color: #d4dfe3; }
 .night-mode .toast-content .toast-msg { color: #a8b8bf; }
-.night-mode .toast-close { background: #1e2a2f; color: #a8b8bf; }
+.night-mode .toast-close { background: #182320; color: #a8b8bf; }
 .night-mode .toast-close:hover { background: #2a3a40; color: #d4dfe3; }
 </style>
 </head>
@@ -487,6 +460,7 @@ body {
             <a href="planning.html"><i class="fas fa-calendar-check"></i>Planning</a>
             <a href="clients.html"><i class="fas fa-users"></i>Clients</a>
             <a href="author.html"><i class="fas fa-feather-pointed"></i>Author</a>
+            <a href="addStructure.html" class="active"><i class="fas fa-plus"></i>Add Structure</a>
         </div>
     </div>
     <div class="right">
@@ -501,13 +475,12 @@ body {
 <!-- MAIN WRAPPER -->
 <div class="page-wrapper">
 
-    <div class="back-pill" onclick="history.back()">
-        <i class="fas fa-arrow-left"></i>
-        <span>Back</span>
-    </div>
+    <button type="button" class="btn back-pill" onclick="history.back()">
+        <i class="fas fa-arrow-left"></i> Back
+    </button>
 
     <div class="page-header">
-        <h1><i class="fas fa-plus" style="font-size:0.9em;"></i> Add Structure</h1>
+        <h1>Add Structure</h1>
         <p>Create a new structure record. Everything here maps onto the same <code>bridges</code> table used by Map, Database and Planning — fill in what you know now, the rest can always be added later from the structure's own page.</p>
     </div>
 
@@ -515,7 +488,7 @@ body {
         <h2><i class="fas fa-wand-magic-sparkles"></i> Extract from document <span class="opt">(optional)</span></h2>
         <p class="section-sub">Upload a BCI Pro forma or inspection report and spanSense will try to pull the structure's name, location, dimensions, materials and build year into the form below — condition scores and defects aren't read, and everything extracted is still yours to review before creating.</p>
         <div class="extract-upload-row">
-            <button type="button" class="btn-extract" id="extractBtn"><i class="fas fa-file-arrow-up"></i> Upload document</button>
+            <button type="button" class="btn-extract btn primary" id="extractBtn"><i class="fas fa-file-arrow-up"></i> Upload document</button>
             <input type="file" id="extractFileInput" accept=".pdf,.doc,.docx" style="display:none;">
             <span class="extract-status" id="extractStatus"></span>
         </div>
@@ -711,8 +684,8 @@ body {
         </div>
 
         <div class="form-actions">
-            <button type="button" class="btn-cancel" onclick="history.back()">Cancel</button>
-            <button type="submit" class="btn-create"><i class="fas fa-check"></i> Create Structure</button>
+            <button type="button" class="btn-cancel btn" onclick="history.back()">Cancel</button>
+            <button type="submit" class="btn-create btn primary"><i class="fas fa-check"></i> Create Structure</button>
         </div>
     </form>
 </div>
