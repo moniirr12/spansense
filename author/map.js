@@ -236,9 +236,16 @@
        MAP (Leaflet) - same tile choices as map.js
        --------------------------------------------------------- */
     var map = L.map('routeMap', { zoomControl: false }).setView([54.0, -2.0], 6);
-    // 'bottomright', not 'topright' - the map-type/route-planning toolbar
-    // (see .map-toolbar in author/map.html) already owns that corner.
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
+    // 'topright', matching core map/map.html - map.css gives the real
+    // Leaflet zoom control a 100px top margin there specifically to clear
+    // this app's floating navbar. An earlier version of this page also
+    // guessed that exact same 100px/20px offset for a hand-built toolbar
+    // div, which put it in the literal same box as this control with zoom
+    // rendering on top - every click silently swallowed. Letting the
+    // route-toggle/select-tools controls below be genuine Leaflet controls
+    // too (not another guessed fixed div) means they stack under this
+    // automatically and that class of bug can't happen again.
+    L.control.zoom({ position: 'topright' }).addTo(map);
     L.control.scale({ metric: true, imperial: false, position: 'bottomleft' }).addTo(map);
 
     var openStreetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -247,13 +254,43 @@
     var satelliteMap = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
         maxZoom: 20, subdomains: ['mt0', 'mt1', 'mt2', 'mt3'], attribution: '&copy; Google Maps'
     });
-    var onSatellite = false;
-    document.getElementById('toolSat').addEventListener('click', function (e) {
-        onSatellite = !onSatellite;
-        if (onSatellite) { map.removeLayer(openStreetMap); satelliteMap.addTo(map); }
-        else { map.removeLayer(satelliteMap); openStreetMap.addTo(map); }
-        e.currentTarget.classList.toggle('active', onSatellite);
+    // The "type of map" selector - core's own native Leaflet layer switcher,
+    // not a custom satellite-only button, so it gets map.css's real styling
+    // and stacks under zoom for free.
+    L.control.layers({ 'Street': openStreetMap, 'Satellite': satelliteMap }, null, { position: 'topright' }).addTo(map);
+
+    // Route-planning toggle - a real Leaflet control (see the CSS above)
+    // so it stacks under zoom/the layer switcher instead of needing its
+    // own guessed offset.
+    var RouteToggleControl = L.Control.extend({
+        options: { position: 'topright' },
+        onAdd: function () {
+            var container = L.DomUtil.create('div', 'leaflet-control-route-toggle');
+            container.innerHTML = '<a href="#" id="routeModeBtn" data-tip="Plan a route" role="button" aria-label="Plan a route">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0 0 21 18.382V7.618a1 1 0 0 0-.553-.894L15 4m0 13V4m0 0L9 7"/></svg></a>';
+            L.DomEvent.disableClickPropagation(container);
+            return container;
+        }
     });
+    map.addControl(new RouteToggleControl());
+
+    // Box-select tools - only meaningful once route mode is on, so this
+    // control starts hidden (see .leaflet-control-select-tools.show) and
+    // just occupies no space until then, rather than needing its own
+    // separate floating position.
+    var SelectToolsControl = L.Control.extend({
+        options: { position: 'topright' },
+        onAdd: function () {
+            var container = L.DomUtil.create('div', 'leaflet-control-select-tools');
+            container.id = 'selectTools';
+            container.innerHTML =
+                '<a href="#" id="toolPointer" class="active" data-tip="Select"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg></a>' +
+                '<a href="#" id="toolBox" data-tip="Box-select multiple (drag on map)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 3"><rect x="4" y="4" width="16" height="16" rx="2"/></svg></a>';
+            L.DomEvent.disableClickPropagation(container);
+            return container;
+        }
+    });
+    map.addControl(new SelectToolsControl());
 
     var markersLayer = L.layerGroup().addTo(map);
     var markerById = {};
@@ -306,8 +343,8 @@
     var boxSelectMode = false;
     var toolPointer = document.getElementById('toolPointer');
     var toolBox = document.getElementById('toolBox');
-    toolPointer.addEventListener('click', function () { setBoxSelectMode(false); });
-    toolBox.addEventListener('click', function () { setBoxSelectMode(!boxSelectMode); });
+    toolPointer.addEventListener('click', function (e) { e.preventDefault(); setBoxSelectMode(false); });
+    toolBox.addEventListener('click', function (e) { e.preventDefault(); setBoxSelectMode(!boxSelectMode); });
     function setBoxSelectMode(on) {
         boxSelectMode = on;
         toolBox.classList.toggle('active', on);
@@ -379,7 +416,7 @@
         map.closePopup();
         renderPins();
     }
-    routeModeBtn.addEventListener('click', function () { setRouteMode(!routeMode); });
+    routeModeBtn.addEventListener('click', function (e) { e.preventDefault(); setRouteMode(!routeMode); });
     setRouteMode(false);
 
     /* ---------------------------------------------------------
