@@ -250,6 +250,7 @@
     var LANE_LABEL = { none: null, partial: 'Partial closure', full: 'Full closure' };
     function renderAgenda() {
         document.getElementById('agendaCount').textContent = assignments.length ? assignments.length + ' scheduled' : '';
+        renderCalendar();
         var el = document.getElementById('agenda');
         if (!assignments.length) {
             el.innerHTML = '<div class="empty-state"><i class="fas fa-route"></i>Nothing scheduled yet. Pick something from Unscheduled to get started.</div>';
@@ -311,6 +312,77 @@
             fetchFloodCount(b.latitude, b.longitude).then(function (count) {
                 var el2 = document.getElementById('ar-live-' + a.id);
                 if (el2) el2.insertAdjacentHTML('beforeend', floodChipHtml(count));
+            });
+        });
+    }
+
+    /* ---------------------------------------------------------
+       CALENDAR VIEW - same Programme data as the agenda, laid out as a
+       month grid instead of a chronological list. Bank holidays get their
+       own marker; each day's assignments show as small pills (clicking one
+       opens the same edit modal as the list view's pencil icon). Kept in
+       sync with the agenda for free - renderAgenda() calls this every time
+       it re-renders, regardless of which view is currently showing, since
+       it's all local data (no extra network calls) and cheap to keep
+       current so switching views never shows stale data.
+       --------------------------------------------------------- */
+    var currentView = 'list';
+    var calendarDate = new Date(); calendarDate.setDate(1);
+    var WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+    function setView(view) {
+        currentView = view;
+        document.getElementById('agenda').style.display = view === 'list' ? 'block' : 'none';
+        document.getElementById('calendarView').style.display = view === 'calendar' ? 'block' : 'none';
+        document.getElementById('viewListBtn').classList.toggle('active', view === 'list');
+        document.getElementById('viewCalendarBtn').classList.toggle('active', view === 'calendar');
+    }
+    document.getElementById('viewListBtn').addEventListener('click', function () { setView('list'); });
+    document.getElementById('viewCalendarBtn').addEventListener('click', function () { setView('calendar'); });
+    document.getElementById('calPrev').addEventListener('click', function () { calendarDate.setMonth(calendarDate.getMonth() - 1); renderCalendar(); });
+    document.getElementById('calNext').addEventListener('click', function () { calendarDate.setMonth(calendarDate.getMonth() + 1); renderCalendar(); });
+    document.getElementById('calToday').addEventListener('click', function () { calendarDate = new Date(); calendarDate.setDate(1); renderCalendar(); });
+
+    function isoDate(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+
+    function renderCalendar() {
+        var year = calendarDate.getFullYear(), month = calendarDate.getMonth();
+        document.getElementById('calMonthLabel').textContent = calendarDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+
+        var byDate = {};
+        assignments.forEach(function (a) {
+            var d = a.scheduled_date.slice(0, 10);
+            (byDate[d] = byDate[d] || []).push(a);
+        });
+
+        var firstOfMonth = new Date(year, month, 1);
+        var startOffset = (firstOfMonth.getDay() + 6) % 7; // Monday-start grid
+        var gridStart = new Date(year, month, 1 - startOffset);
+        var todayStr = isoDate(new Date());
+
+        var html = WEEKDAY_LABELS.map(function (d) { return '<div class="cal-dow">' + d + '</div>'; }).join('');
+        for (var i = 0; i < 42; i++) {
+            var cellDate = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i);
+            var dStr = isoDate(cellDate);
+            var inMonth = cellDate.getMonth() === month;
+            var dayAssignments = byDate[dStr] || [];
+            var holidayTitle = bankHolidays[dStr];
+            var pills = dayAssignments.slice(0, 3).map(function (a) {
+                return '<div class="cal-pill" data-assign-id="' + a.id + '" data-tip="' + escapeHtml(a.bridge_name) + ' &middot; ' + escapeHtml(a.inspector_name || a.inspector_username) + '">' + escapeHtml(a.bridge_name) + '</div>';
+            }).join('');
+            var more = dayAssignments.length > 3 ? '<div class="cal-more">+' + (dayAssignments.length - 3) + ' more</div>' : '';
+            html += '<div class="cal-cell' + (inMonth ? '' : ' other-month') + (dStr === todayStr ? ' today' : '') + '">' +
+                '<div class="cal-cell-head"><span class="cal-day-num">' + cellDate.getDate() + '</span>' +
+                (holidayTitle ? '<span class="cal-holiday" data-tip="' + escapeHtml(holidayTitle) + '"><i class="fas fa-calendar-day"></i></span>' : '') +
+                '</div>' + pills + more + '</div>';
+        }
+        var grid = document.getElementById('calGrid');
+        grid.innerHTML = html;
+        Array.prototype.forEach.call(grid.querySelectorAll('.cal-pill'), function (pill) {
+            pill.addEventListener('click', function () {
+                var id = Number(pill.dataset.assignId);
+                var a = assignments.filter(function (x) { return x.id === id; })[0];
+                if (a) openAssignModal({ assignment: a });
             });
         });
     }
