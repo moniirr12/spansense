@@ -122,7 +122,9 @@ body.night-mode { background: #151f1d; }
 .night-mode .agenda-row .ar-title{ color:#d4dfe3; }
 .agenda-row .ar-sub{ font-size:.72rem; color:var(--text-mute); margin-top:2px; }
 .agenda-row .ar-tm{ display:flex; gap:6px; margin-top:7px; flex-wrap:wrap; }
-.tm-chip{ font-size:.64rem; font-weight:700; padding:2px 8px; border-radius:20px; background:var(--bg-soft); color:var(--text-mute); border:1px solid var(--border2); }
+.ar-live{ display:contents; }
+.tm-chip{ font-size:.64rem; font-weight:700; padding:2px 8px; border-radius:20px; background:var(--bg-soft); color:var(--text-mute); border:1px solid var(--border2); white-space:nowrap; }
+.tm-chip i{ margin-right:3px; }
 .tm-chip.full{ background:var(--red-bg); color:var(--red); border-color:var(--red-border); }
 .tm-chip.partial{ background:var(--amber-bg); color:var(--amber); border-color:var(--amber-border); }
 .tm-chip.night{ background:#eef0fb; color:#4a4fb0; border-color:#d5d8f5; }
@@ -130,6 +132,16 @@ body.night-mode { background: #151f1d; }
 .night-mode .tm-chip.full{ background:rgba(192,57,43,.22); color:#e0645a; border-color:transparent; }
 .night-mode .tm-chip.partial{ background:rgba(186,117,23,.22); color:#e0a94a; border-color:transparent; }
 .night-mode .tm-chip.night{ background:rgba(108,92,231,.22); color:#b0a8f0; border-color:transparent; }
+/* Small "beta" marker, same purple dot used on Author Map's parking
+   toggle - both are new, unreviewed third-party data sources. */
+.beta-dot{
+  display:inline-flex; align-items:center; justify-content:center; width:13px; height:13px; border-radius:50%;
+  background:#6c5ce7; color:#fff; font-size:.5rem; font-weight:800; font-style:italic; margin-left:5px; vertical-align:2px;
+}
+.ur-access{ display:inline-block; margin-top:5px; margin-left:5px; font-size:.64rem; font-weight:700; padding:2px 8px; border-radius:20px; background:var(--bg-soft); color:var(--text-mute); border:1px solid var(--border2); }
+.ur-access.warn{ background:var(--amber-bg); color:var(--amber); border-color:var(--amber-border); }
+.night-mode .ur-access{ background:#212f33; border-color:#2f3e45; color:#9ab0b8; }
+.night-mode .ur-access.warn{ background:rgba(186,117,23,.22); color:#e0a94a; border-color:transparent; }
 .agenda-row .ar-actions{ display:flex; gap:6px; flex-shrink:0; }
 .icon-btn{ width:28px; height:28px; border-radius:8px; border:1px solid var(--border); background:#fff; color:var(--text-mute); display:flex; align-items:center; justify-content:center; cursor:pointer; transition: all .15s; }
 .icon-btn:hover{ border-color:var(--teal); color:var(--teal-dark); }

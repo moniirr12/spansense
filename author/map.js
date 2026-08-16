@@ -18,14 +18,38 @@
     toggleBtn.innerHTML = document.body.classList.contains('night-mode') ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
     toggleBtn.addEventListener('click', function () {
         document.body.classList.toggle('night-mode');
-        if (document.body.classList.contains('night-mode')) {
-            toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
-            localStorage.setItem('nightMode', 'on');
-        } else {
-            toggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
-            localStorage.setItem('nightMode', 'off');
-        }
+        var isNight = document.body.classList.contains('night-mode');
+        toggleBtn.innerHTML = isNight ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+        localStorage.setItem('nightMode', isNight ? 'on' : 'off');
+        // Keeps the basemap in sync with the UI theme - see syncMapLayerToTheme
+        // further down (map/tile layers don't exist yet at this point in the
+        // script, but this only ever runs from a later click, by which time
+        // they do).
+        syncMapLayerToTheme(isNight);
     });
+
+    /* ---------------------------------------------------------
+       MOBILE SIDEBAR TOGGLE - see the button's own comment in
+       author/map.html for why this needs to exist at all.
+       --------------------------------------------------------- */
+    var mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
+    var sidebarEl = document.getElementById('sidebar');
+    if (mobileSidebarToggle && sidebarEl) {
+        mobileSidebarToggle.addEventListener('click', function (e) {
+            e.stopPropagation();
+            sidebarEl.classList.toggle('expanded');
+        });
+        // Tapping a nav link or filter closes it back up; tapping anywhere
+        // else outside the open sidebar does too.
+        document.addEventListener('click', function (e) {
+            if (sidebarEl.classList.contains('expanded') && !sidebarEl.contains(e.target) && e.target !== mobileSidebarToggle) {
+                sidebarEl.classList.remove('expanded');
+            }
+        });
+        sidebarEl.querySelectorAll('a[href$=".html"]').forEach(function (link) {
+            link.addEventListener('click', function () { sidebarEl.classList.remove('expanded'); });
+        });
+    }
 
     /* ---------------------------------------------------------
        TYPE / CONDITION-BAND DEFINITIONS
@@ -124,8 +148,13 @@
         return Math.round((d - today) / (1000 * 60 * 60 * 24 * 30.44));
     }
     /* ---------------------------------------------------------
-       DISTANCE - great-circle (haversine), km. No routing engine is
-       wired up, so this is straight-line, same caveat shown in the UI.
+       DISTANCE
+       Great-circle (haversine) is used as an instant fallback/heuristic
+       (route optimize order, and shown the moment a stop is added/moved
+       so the UI never waits on the network). The route actually shown
+       once >=2 stops are selected is upgraded to a real driving route
+       (roads, not straight lines) via the public OSRM routing API - see
+       fetchRoadRoute below.
        --------------------------------------------------------- */
     function haversineKm(a, b) {
         var R = 6371;
@@ -142,6 +171,47 @@
         return h + 'h ' + String(m).padStart(2, '0') + 'm';
     }
 
+    var OSRM_ROUTE_URL = 'https://router.project-osrm.org/route/v1/driving/';
+    // Straight-line stats, used both as the instant fallback and if the
+    // routing request fails/times out (no API key needed, but it's a
+    // shared public demo server - not guaranteed available).
+    function haversineRoute(ids) {
+        var n = ids.length, legs = [], totalKm = 0;
+        for (var i = 1; i < n; i++) {
+            var d = haversineKm(byId[ids[i - 1]], byId[ids[i]]);
+            legs.push(d); totalKm += d;
+        }
+        return {
+            totalKm: totalKm, totalMin: (totalKm / AVG_SPEED_KMH) * 60 + n * MIN_PER_STOP, legs: legs,
+            latlngs: ids.map(function (id) { var s = byId[id]; return [s.latitude, s.longitude]; }),
+            roaded: false
+        };
+    }
+    // Real driving route (roads, not straight lines) for the current stop
+    // order, via OSRM's public demo routing server - one request covers
+    // every leg at once (distance/duration per-leg plus a road-following
+    // geometry for the whole trip).
+    function fetchRoadRoute(ids) {
+        var coords = ids.map(function (id) { var s = byId[id]; return s.longitude + ',' + s.latitude; }).join(';');
+        // credentials:'omit' overrides fetch-credentials.js's site-wide patch
+        // (which defaults every fetch() to credentials:'include' so our own
+        // /api/* calls keep the session cookie) - OSRM is a third-party public
+        // server that returns Access-Control-Allow-Origin:'*', which browsers
+        // reject outright on a credentialed request.
+        return fetch(OSRM_ROUTE_URL + coords + '?overview=full&geometries=geojson', { credentials: 'omit' })
+            .then(function (r) { if (!r.ok) throw new Error('routing request failed'); return r.json(); })
+            .then(function (data) {
+                var route = data.routes && data.routes[0];
+                if (!route) throw new Error('no route found');
+                return {
+                    totalKm: route.distance / 1000, totalMin: route.duration / 60,
+                    legs: route.legs.map(function (l) { return l.distance / 1000; }),
+                    latlngs: route.geometry.coordinates.map(function (c) { return [c[1], c[0]]; }),
+                    roaded: true
+                };
+            });
+    }
+
     /* ---------------------------------------------------------
        STATE
        --------------------------------------------------------- */
@@ -150,7 +220,8 @@
     var state = {
         types: new Set(TYPES.map(function (t) { return t.id; })),
         bands: new Set(BANDS.map(function (b) { return b.id; })),
-        selected: []
+        selected: [],
+        showParking: false
     };
     var today = new Date();
 
@@ -213,9 +284,16 @@
        MAP (Leaflet) - same tile choices as map.js
        --------------------------------------------------------- */
     var map = L.map('routeMap', { zoomControl: false }).setView([54.0, -2.0], 6);
-    // 'bottomright', not 'topright' - the map-type/route-planning toolbar
-    // (see .map-toolbar in author/map.html) already owns that corner.
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
+    // 'topright', matching core map/map.html - map.css gives the real
+    // Leaflet zoom control a 100px top margin there specifically to clear
+    // this app's floating navbar. An earlier version of this page also
+    // guessed that exact same 100px/20px offset for a hand-built toolbar
+    // div, which put it in the literal same box as this control with zoom
+    // rendering on top - every click silently swallowed. Letting the
+    // route-toggle/select-tools controls below be genuine Leaflet controls
+    // too (not another guessed fixed div) means they stack under this
+    // automatically and that class of bug can't happen again.
+    L.control.zoom({ position: 'topright' }).addTo(map);
     L.control.scale({ metric: true, imperial: false, position: 'bottomleft' }).addTo(map);
 
     var openStreetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -224,17 +302,112 @@
     var satelliteMap = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
         maxZoom: 20, subdomains: ['mt0', 'mt1', 'mt2', 'mt3'], attribution: '&copy; Google Maps'
     });
-    var onSatellite = false;
-    document.getElementById('toolSat').addEventListener('click', function (e) {
-        onSatellite = !onSatellite;
-        if (onSatellite) { map.removeLayer(openStreetMap); satelliteMap.addTo(map); }
-        else { map.removeLayer(satelliteMap); openStreetMap.addTo(map); }
-        e.currentTarget.classList.toggle('active', onSatellite);
+    // Same CARTO dark basemap as core map/map.js - was missing here simply
+    // because this page's layer switcher was never given a third option.
+    var darkMap = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
     });
+    // The "type of map" selector - core's own native Leaflet layer switcher,
+    // not a custom satellite-only button, so it gets map.css's real styling
+    // and stacks under zoom for free.
+    var layersControl = L.control.layers({ 'Street': openStreetMap, 'Satellite': satelliteMap, 'Dark Mode': darkMap }, null, { position: 'topright' }).addTo(map);
+
+    /* ---------------------------------------------------------
+       THEME <-> BASEMAP SYNC
+       Picking "Dark Mode" from the layer switcher turns the app's own
+       night-mode on (and picking Street/Satellite turns it back off);
+       toggling night-mode via the navbar moon/sun icon does the same
+       thing in reverse, switching the basemap. syncMapLayerToTheme does
+       this by clicking the switcher's own radio input rather than
+       calling map.addLayer/removeLayer directly, so Leaflet's normal
+       'baselayerchange' handling (incl. updating which radio reads as
+       checked next time the dropdown opens) runs exactly as it would
+       for a real click - nothing to keep in sync by hand.
+       --------------------------------------------------------- */
+    function syncMapLayerToTheme(isNight) {
+        var wantLabel = isNight ? 'Dark Mode' : 'Street';
+        var labels = layersControl.getContainer().querySelectorAll('.leaflet-control-layers-base label');
+        for (var i = 0; i < labels.length; i++) {
+            if (labels[i].textContent.trim() !== wantLabel) continue;
+            var input = labels[i].querySelector('input[type="radio"]');
+            if (input && !input.checked) input.click();
+            return;
+        }
+    }
+    map.on('baselayerchange', function (e) {
+        var wantNight = e.name === 'Dark Mode';
+        if (wantNight === document.body.classList.contains('night-mode')) return;
+        document.body.classList.toggle('night-mode', wantNight);
+        toggleBtn.innerHTML = wantNight ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+        localStorage.setItem('nightMode', wantNight ? 'on' : 'off');
+    });
+    // Page can load already in night mode (localStorage / OS preference,
+    // see the preload script in author/map.html) - start on the matching
+    // basemap instead of always defaulting to Street.
+    if (document.body.classList.contains('night-mode')) syncMapLayerToTheme(true);
 
     var markersLayer = L.layerGroup().addTo(map);
     var markerById = {};
     var routeLine = L.polyline([], { color: '#2c5a57', weight: 2.6, dashArray: '1 8', lineCap: 'round' }).addTo(map);
+
+    /* ---------------------------------------------------------
+       NEAREST PARKING (Beta) - one Overpass lookup per selected stop,
+       cached by structure id so re-toggling or reordering the route
+       doesn't re-fetch stops already looked up this session.
+       --------------------------------------------------------- */
+    var OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
+    var PARKING_RADIUS_M = 600;
+    var parkingLayer = L.layerGroup().addTo(map);
+    var parkingCache = {}; // structure id -> Promise<{lat,lon,distKm,name}|null>
+    var parkingToken = 0;
+
+    function parkingIcon() {
+        return L.divIcon({
+            html: '<div style="width:22px;height:22px;border-radius:50%;background:#2563eb;border:2px solid #fff;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.3);">P</div>',
+            iconSize: [22, 22], iconAnchor: [11, 20], popupAnchor: [0, -18], className: ''
+        });
+    }
+    // Overpass has no "nearest to a point" primitive, so this pulls every
+    // parking node/way within PARKING_RADIUS_M and picks the closest
+    // client-side via the same haversine used elsewhere on this page.
+    function fetchNearestParking(lat, lon) {
+        var q = '[out:json][timeout:15];(node["amenity"="parking"](around:' + PARKING_RADIUS_M + ',' + lat + ',' + lon + ');way["amenity"="parking"](around:' + PARKING_RADIUS_M + ',' + lat + ',' + lon + '););out center 20;';
+        return fetch(OVERPASS_URL, {
+            method: 'POST', credentials: 'omit',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'data=' + encodeURIComponent(q)
+        })
+            .then(function (r) { if (!r.ok) throw new Error('overpass request failed'); return r.json(); })
+            .then(function (data) {
+                var here = { latitude: lat, longitude: lon };
+                var best = null;
+                (data.elements || []).forEach(function (el) {
+                    var plat = el.lat !== undefined ? el.lat : (el.center && el.center.lat);
+                    var plon = el.lon !== undefined ? el.lon : (el.center && el.center.lon);
+                    if (plat === undefined || plon === undefined) return;
+                    var d = haversineKm(here, { latitude: plat, longitude: plon });
+                    if (!best || d < best.distKm) best = { lat: plat, lon: plon, distKm: d, name: (el.tags && el.tags.name) || 'Parking' };
+                });
+                return best;
+            });
+    }
+    function refreshParkingMarkers() {
+        var token = ++parkingToken;
+        parkingLayer.clearLayers();
+        if (!state.showParking) return;
+        state.selected.forEach(function (id) {
+            var s = byId[id];
+            if (!parkingCache[id]) {
+                parkingCache[id] = fetchNearestParking(s.latitude, s.longitude).catch(function () { return null; });
+            }
+            parkingCache[id].then(function (spot) {
+                if (token !== parkingToken || !spot) return;
+                L.marker([spot.lat, spot.lon], { icon: parkingIcon() })
+                    .bindTooltip('Parking near ' + s.name + ' · ' + Math.round(spot.distKm * 1000) + 'm', { direction: 'top', offset: [0, -18] })
+                    .addTo(parkingLayer);
+            });
+        });
+    }
 
     function pinIcon(s, selIdx) {
         if (selIdx > -1) {
@@ -283,14 +456,22 @@
     var boxSelectMode = false;
     var toolPointer = document.getElementById('toolPointer');
     var toolBox = document.getElementById('toolBox');
-    toolPointer.addEventListener('click', function () { setBoxSelectMode(false); });
-    toolBox.addEventListener('click', function () { setBoxSelectMode(!boxSelectMode); });
+    toolPointer.addEventListener('click', function (e) { e.preventDefault(); setBoxSelectMode(false); });
+    toolBox.addEventListener('click', function (e) { e.preventDefault(); setBoxSelectMode(!boxSelectMode); });
     function setBoxSelectMode(on) {
         boxSelectMode = on;
         toolBox.classList.toggle('active', on);
         toolPointer.classList.toggle('active', !on);
         if (on) map.dragging.disable(); else map.dragging.enable();
     }
+
+    var toolParking = document.getElementById('toolParking');
+    toolParking.addEventListener('click', function (e) {
+        e.preventDefault();
+        state.showParking = !state.showParking;
+        toolParking.classList.toggle('active', state.showParking);
+        refreshParkingMarkers();
+    });
 
     var boxStart = null, boxRectEl = null;
     var mapContainer = map.getContainer();
@@ -340,22 +521,56 @@
        --------------------------------------------------------- */
     var routeModeBtn = document.getElementById('routeModeBtn');
     var routeRailEl = document.getElementById('routeRail');
-    var selectToolsEl = document.getElementById('selectTools');
+    var routeBodyEl = document.getElementById('routeBody');
+    var autoSelectBtn = document.getElementById('autoSelectBtn');
+    var exportBtn = document.getElementById('exportBtn');
     var mapSummaryEl = document.getElementById('mapSummary');
     var mapHintEl = document.getElementById('mapHint');
 
+    // The route-rail panel (author/map.html) is always docked under the
+    // layer switcher now - retracted, its header shows only the toggle
+    // icon; turning route mode on reveals auto-select/export beside it and
+    // expands the body (box-select tools, summary, itinerary) below, so it
+    // reads as one div "opening up" rather than a separate toggle plus a
+    // disconnected panel.
     function setRouteMode(on) {
         routeMode = on;
         routeModeBtn.classList.toggle('active', on);
         routeModeBtn.setAttribute('data-tip', on ? 'Exit route mode' : 'Plan a route');
-        routeRailEl.style.display = on ? 'flex' : 'none';
-        selectToolsEl.style.display = on ? 'flex' : 'none';
+        routeRailEl.classList.toggle('expanded', on);
+        routeBodyEl.style.display = on ? 'flex' : 'none';
+        autoSelectBtn.style.display = on ? 'flex' : 'none';
+        exportBtn.style.display = on ? 'flex' : 'none';
         mapSummaryEl.style.display = on ? 'flex' : 'none';
         mapHintEl.style.display = on ? 'block' : 'none';
-        if (!on) setBoxSelectMode(false);
+        if (!on) { setBoxSelectMode(false); parkingLayer.clearLayers(); }
         map.closePopup();
         renderPins();
+        repositionRouteRail();
     }
+
+    // The route-rail panel's top is anchored to wherever the layer switcher
+    // actually ends, live, rather than a guessed fixed offset - so when its
+    // dropdown opens (hover on desktop, tap on touch) and grows taller, the
+    // panel gets pushed down instead of the two overlapping. Its max-height
+    // is capped the same way against the chat toggle's real position, so an
+    // expanded itinerary list still can't grow down over the chat icon.
+    var layersContainerEl = document.querySelector('.leaflet-control-layers');
+    var chatToggleEl = document.querySelector('.chat-toggle');
+    function repositionRouteRail() {
+        if (!layersContainerEl) return;
+        var top = layersContainerEl.getBoundingClientRect().bottom + 8;
+        routeRailEl.style.top = top + 'px';
+        if (chatToggleEl) {
+            var chatTop = chatToggleEl.getBoundingClientRect().top;
+            routeRailEl.style.maxHeight = Math.max(60, chatTop - top - 16) + 'px';
+        }
+    }
+    repositionRouteRail();
+    if (layersContainerEl && window.MutationObserver) {
+        new MutationObserver(repositionRouteRail).observe(layersContainerEl, { attributes: true, attributeFilter: ['class'] });
+    }
+    window.addEventListener('resize', repositionRouteRail);
     routeModeBtn.addEventListener('click', function () { setRouteMode(!routeMode); });
     setRouteMode(false);
 
@@ -373,27 +588,23 @@
     var optimizeBtn = document.getElementById('optimizeBtn');
     var clearBtn = document.getElementById('clearBtn');
     var dragIndex = null;
+    var currentLegs = [];
+    var routeRequestToken = 0;
 
-    function renderRoute() {
+    function applyRoute(r) {
         var n = state.selected.length;
-        optimizeBtn.disabled = n < 3;
-        clearBtn.disabled = n === 0;
-
-        var totalKm = 0, legs = [];
-        for (var i = 1; i < n; i++) {
-            var d = haversineKm(byId[state.selected[i - 1]], byId[state.selected[i]]);
-            legs.push(d); totalKm += d;
-        }
-        var totalMin = (totalKm / AVG_SPEED_KMH) * 60 + n * MIN_PER_STOP;
-
-        document.getElementById('rsFigure').innerHTML = totalKm.toFixed(1) + '<small>km total</small>';
+        currentLegs = r.legs;
+        document.getElementById('rsFigure').innerHTML = r.totalKm.toFixed(1) + '<small>km total</small>';
         document.getElementById('rsStops').textContent = n;
-        document.getElementById('rsTime').textContent = n ? fmtTime(totalMin) : '0h 00m';
+        document.getElementById('rsTime').textContent = n ? fmtTime(r.totalMin) : '0h 00m';
         document.getElementById('chipCount').textContent = n;
-        document.getElementById('chipDist').textContent = totalKm.toFixed(1);
-        document.getElementById('chipTime').textContent = n ? fmtTime(totalMin) : '0h 00m';
-
-        routeLine.setLatLngs(state.selected.map(function (id) { var s = byId[id]; return [s.latitude, s.longitude]; }));
+        document.getElementById('chipDist').textContent = r.totalKm.toFixed(1);
+        document.getElementById('chipTime').textContent = n ? fmtTime(r.totalMin) : '0h 00m';
+        routeLine.setLatLngs(r.latlngs);
+        routeLine.setStyle({ dashArray: r.roaded ? null : '1 8' });
+        mapHintEl.textContent = r.roaded
+            ? 'Driving distances follow real roads'
+            : 'Route distances are straight-line, for planning only';
 
         routeListEl.innerHTML = '';
         if (!n) {
@@ -409,7 +620,7 @@
             li.className = 'route-item';
             li.draggable = true;
             li.dataset.index = i;
-            var legText = i === 0 ? 'Start' : legs[i - 1].toFixed(1) + ' km from previous stop';
+            var legText = i === 0 ? 'Start' : r.legs[i - 1].toFixed(1) + ' km from previous stop';
             li.innerHTML =
                 '<span class="ri-handle"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="8" cy="6" r="1.5"/><circle cx="8" cy="12" r="1.5"/><circle cx="8" cy="18" r="1.5"/><circle cx="16" cy="6" r="1.5"/><circle cx="16" cy="12" r="1.5"/><circle cx="16" cy="18" r="1.5"/></svg></span>' +
                 '<span class="ri-num">' + (i + 1) + '</span>' +
@@ -419,6 +630,25 @@
             addDrag(li);
             routeListEl.appendChild(li);
         });
+    }
+
+    // Straight-line stats render immediately (no network wait); once >=2
+    // stops are selected this is then upgraded in place to a real driving
+    // route. routeRequestToken drops any response that comes back after
+    // the selection/order has already changed again.
+    function renderRoute() {
+        var n = state.selected.length;
+        optimizeBtn.disabled = n < 3;
+        clearBtn.disabled = n === 0;
+
+        var ids = state.selected.slice();
+        applyRoute(haversineRoute(ids));
+
+        var token = ++routeRequestToken;
+        if (n < 2) return;
+        fetchRoadRoute(ids)
+            .then(function (r) { if (token === routeRequestToken) applyRoute(r); })
+            .catch(function () { /* stays on the straight-line fallback already shown */ });
     }
 
     function addDrag(li) {
@@ -453,11 +683,14 @@
 
     function exportRouteCsv() {
         if (!state.selected.length) return;
+        // currentLegs is whatever's currently on screen - real driving
+        // distances once the road route has loaded, the straight-line
+        // fallback otherwise - so the export always matches the panel.
         var rows = [['Order', 'Name', 'Location', 'Type', 'Latitude', 'Longitude', 'Leg (km)', 'Running total (km)']];
         var running = 0;
         state.selected.forEach(function (id, i) {
             var s = byId[id];
-            var leg = i === 0 ? 0 : haversineKm(byId[state.selected[i - 1]], s);
+            var leg = i === 0 ? 0 : (currentLegs[i - 1] || 0);
             running += leg;
             rows.push([i + 1, s.name, s.location || '', typeLabel(s.type), s.latitude, s.longitude, leg.toFixed(1), running.toFixed(1)]);
         });
@@ -471,7 +704,7 @@
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
     }
 
-    function renderAll() { renderPins(); renderRoute(); }
+    function renderAll() { renderPins(); renderRoute(); refreshParkingMarkers(); }
 
     /* ---------------------------------------------------------
        STRUCTURE DETAIL MODAL - close button + New Inspection, same

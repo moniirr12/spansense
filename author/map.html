@@ -135,27 +135,36 @@ a{color:inherit;}
 .night-mode .panel-head h2{ color:#d4dfe3; }
 .panel-head h2 svg{ width:15px; height:15px; color:var(--teal); }
 
-/* ---------- MAP OVERLAY CONTROLS (float directly over the map, top-right -
-   same corner core map.html's native Leaflet layer control would use) ---------- */
-.map-toolbar{
-  position:fixed; top:100px; right:20px; z-index:401;
-  display:flex; flex-direction:column; gap:5px;
-  background:rgba(255,255,255,.92); backdrop-filter:blur(10px);
-  border:1px solid var(--border); border-radius:12px; padding:5px;
-  box-shadow:0 4px 14px rgba(0,0,0,.1);
+/* ---------- MAP OVERLAY CONTROLS ----------
+   Zoom and the layer switcher ("type of map") are the only genuine Leaflet
+   controls, both 'topright' - map.css already styles+positions those (glass
+   pill, margin:100px 20px 8px 20px on zoom, 8px 20px 20px 20px on the layer
+   switcher, so they stack with an 8px gap, clear of the navbar). Route
+   planning used to be two more things stacked below that - a separate
+   floating toggle circle, then a gap, then the itinerary panel - which is
+   why it looked "different" and could drift into the chat button. It's now
+   a single div (.route-rail below) docked directly under the layer
+   switcher: the toggle/auto-select/export icons live in its own header,
+   and its body (incl. the box-select pointer/box tools) only expands once
+   route mode is on, capped so it can never grow down into the chat icon. */
+#routeModeBtn.active{ background:var(--teal); color:#fff; border-color:transparent; }
+.route-tools{ display:flex; align-items:center; gap:6px; padding:11px 15px; border-bottom:1px solid var(--border2); }
+.night-mode .route-tools{ border-color:#2f3e45; }
+.route-tools .icon-btn.active{ background:var(--teal); color:#fff; border-color:transparent; }
+.route-tools .icon-btn.active .beta-dot{ border-color:#fff; }
+.route-tools-div{ width:1px; height:18px; background:var(--border2); flex-shrink:0; }
+.night-mode .route-tools-div{ background:#2f3e45; }
+/* Small "beta" marker on the parking toggle - this is a new, unreviewed
+   data source (OpenStreetMap parking tags via Overpass), not yet as
+   trustworthy as the rest of the panel. */
+#toolParking{ position:relative; }
+.beta-dot{
+  position:absolute; top:-5px; right:-5px; width:15px; height:15px; border-radius:50%;
+  background:var(--ai); color:#fff; font-size:.55rem; font-weight:800; font-style:italic;
+  display:flex; align-items:center; justify-content:center; border:1.5px solid #fff; line-height:1;
 }
-.night-mode .map-toolbar{ background:rgba(33,47,51,.92); border-color:#2f3e45; }
-.select-tools{ display:none; flex-direction:column; gap:5px; }
-.map-tool{ width:32px; height:32px; border-radius:8px; border:none; background:none; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--text-mute); transition: all .12s; }
-.map-tool svg{ width:16px; height:16px; }
-.map-tool:hover{ background:var(--bg-soft); color:var(--teal-dark); }
-.night-mode .map-tool:hover{ background:#1e2a2f; color:#a0c8c4; }
-.map-tool.active{ background:var(--teal); color:#fff; }
-/* Route-mode toggle - sits directly under the satellite/"type of map" button
-   in the same toolbar strip; expands the route-rail panel below-right when on. */
-.map-toolbar hr{ border:none; border-top:1px solid var(--border); margin:1px 0; }
-.night-mode .map-toolbar hr{ border-color:#2f3e45; }
-#routeModeBtn.map-tool.active{ background:var(--teal); color:#fff; }
+.night-mode .beta-dot{ border-color:#212f33; }
+.route-body{ display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
 
 .map-summary-chip{
   position:fixed; top:100px; left:50%; transform:translateX(-50%); z-index:401;
@@ -182,10 +191,27 @@ a{color:inherit;}
 .rp-pin-num{ width:26px; height:26px; border-radius:50%; background:var(--teal-dark); border:2.5px solid #fff; color:#fff; font-size:.7rem; font-weight:800; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,.25); font-variant-numeric:tabular-nums; }
 .night-mode .rp-pin-num{ border-color:#212f33; }
 
-/* ---------- ROUTE RAIL (floating, right, route mode only) ---------- */
-/* Clears the map-toolbar above it (taller once route mode reveals the
-   box-select tools) rather than overlapping - see the toolbar's own comment. */
-.route-rail{ position:fixed; top:280px; right:20px; width:330px; max-height: calc(100vh - 300px); z-index:500; }
+/* ---------- ROUTE RAIL (floating, right, always docked under the layer
+   switcher; its body only shows once route mode is on) ---------- */
+/* Top clears zoom+layers (100+88+8+46 = ~262px); max-height is capped so
+   an expanded, full-length itinerary list still ends above the chat
+   toggle (fixed bottom:65px/height:44px on desktop, bottom:70px/height:48px
+   on mobile - see map.css) with a clear gap, instead of growing down over
+   it the way the old bottom-anchored mobile layout could. */
+.route-rail{ position:fixed; top:262px; right:20px; width:330px; max-height: calc(100vh - 262px - 125px); z-index:500; }
+/* Retracted (no .expanded), the panel sheds its card chrome entirely so
+   only the toggle icon itself shows - matching the plain zoom/layers
+   control look - instead of a wide bar with a "Plan / Route Planning"
+   label that has nothing yet to label. */
+.route-rail:not(.expanded){ width:auto; background:transparent; border:none; box-shadow:none; }
+.route-rail:not(.expanded) .route-rail-head{ padding:0; border-bottom:none; }
+.night-mode .route-rail:not(.expanded){ background:transparent; }
+.route-rail:not(.expanded) .rail-head-text{ display:none; }
+/* Same footprint as the chat toggle below it (44px, 48px on mobile - see
+   map.css's .chat-toggle) so the two read as a matched pair of circles-
+   worth of floating icons either side of the map. */
+.route-rail:not(.expanded) #routeModeBtn{ width:44px; height:44px; }
+.route-rail:not(.expanded) #routeModeBtn svg{ width:20px; height:20px; }
 .route-rail-head{ padding:13px 15px; border-bottom:1px solid var(--border2); display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .night-mode .route-rail-head{ border-color:#2f3e45; }
 .route-rail-head .rail-head-text{ min-width:0; }
@@ -208,6 +234,17 @@ a{color:inherit;}
 .route-actions .btn{ flex:1; justify-content:center; padding:8px 8px; font-size:.73rem; }
 
 .route-list{ list-style:none; overflow-y:auto; flex:1; padding:6px; min-height:80px; }
+/* Thin teal scrollbar matching the app's other custom scrollbars (e.g.
+   map.css's document list / inspection1.css's textareas) instead of the
+   chunky OS default. */
+.route-list{ scrollbar-width:thin; scrollbar-color:#c5dbd8 transparent; }
+.route-list::-webkit-scrollbar{ width:6px; }
+.route-list::-webkit-scrollbar-track{ background:transparent; margin:6px 0; }
+.route-list::-webkit-scrollbar-thumb{ background:#c5dbd8; border-radius:10px; }
+.route-list::-webkit-scrollbar-thumb:hover{ background:#8ab4b0; }
+.night-mode .route-list{ scrollbar-color:#2f4a48 transparent; }
+.night-mode .route-list::-webkit-scrollbar-thumb{ background:#2f4a48; }
+.night-mode .route-list::-webkit-scrollbar-thumb:hover{ background:#3a5c5a; }
 .route-item{ display:flex; align-items:flex-start; gap:9px; padding:9px 8px; border-radius:11px; background:var(--bg-soft); border:1px solid var(--border2); margin-bottom:6px; cursor:grab; }
 .night-mode .route-item{ background:#1e2a2f; border-color:#2f3e45; }
 .route-item.dragging{ opacity:.4; }
@@ -232,13 +269,36 @@ a{color:inherit;}
 :focus-visible{ outline:2px solid var(--teal); outline-offset:2px; }
 @media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
 
+.mobile-only{ display:none; }
+
 @media (max-width:900px){
   .route-rail{ width:260px; }
 }
-@media (max-width:760px){
-  .route-rail{ top:auto; bottom:16px; left:12px; right:12px; width:auto; max-height:50vh; }
-  .map-toolbar{ top:90px; right:12px; }
-  .map-summary-chip{ top:90px; padding:6px 12px; gap:8px; font-size:.68rem; }
+@media (max-width:768px){
+  /* map.css's own mobile .navbar rule (left/right:10px) assumes no
+     transform - it was written for core map.html's plain edge-anchored
+     navbar, not this page's centered pill (left:50%+translateX(-50%)).
+     Left stacked, the two together shove the whole navbar ~120px off-
+     screen to the left. Cancel the transform now that left/right:10px
+     already positions it without needing centering math. */
+  .navbar{ transform:none !important; }
+  /* Stays top-docked under zoom/layers rather than switching to a bottom
+     sheet - a bottom anchor is what let it drift down over the chat
+     button on narrow screens; top-anchored + the capped max-height above
+     keeps it clear at every width. Retracted, only `right` is set so it
+     hugs the toggle icon's own width instead of `left` forcing it to
+     stretch full-width with nothing in it yet; expanded, it spans the
+     same way the desktop panel's fixed width reads on a narrow screen. */
+  .route-rail{ right:12px; width:auto; max-height: calc(100vh - 262px - 134px); }
+  .route-rail.expanded{ left:12px; }
+  .route-rail:not(.expanded) #routeModeBtn{ width:48px; height:48px; }
+  .map-summary-chip{ top:76px; padding:6px 12px; gap:8px; font-size:.68rem; }
+  .mobile-only{
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    width:30px; height:30px; border-radius:50%; border:none; cursor:pointer;
+    background:rgba(91,140,138,.12); color:var(--text-mute); font-size:14px;
+  }
+  .night-mode .mobile-only{ background:rgba(138,180,176,.15); color:#9ab0b8; }
 }
 </style>
 </head>
@@ -247,15 +307,18 @@ a{color:inherit;}
 
 <nav class="navbar">
     <div class="left">
+        <!-- Mobile-only sidebar toggle - at <=768px map.css collapses
+             .sidebar to width:0/visibility:hidden and only reveals it via
+             :hover or .expanded; :hover doesn't fire reliably on touch, and
+             there's no button anywhere in core map.html/map.js that ever
+             adds .expanded either, so on a phone the sidebar (and with it,
+             all navigation) was permanently unreachable. This button is the
+             fix - lives inside the navbar's own flex row (not floated
+             separately) specifically so it can't collide with map.css's
+             mobile .navbar repositioning; hidden above 768px via
+             .mobile-only. -->
+        <button class="mobile-only" id="mobileSidebarToggle" aria-label="Menu"><i class="fas fa-bars"></i></button>
         <div class="logo">spanSense</div>
-        <!-- Author's own nav, not core's. -->
-        <div class="menu">
-            <a href="map.html" class="active"><i class="fas fa-map"></i>Map</a>
-            <a href="dashboard.html"><i class="fas fa-chart-pie"></i>Dashboard</a>
-            <a href="planning.html"><i class="fas fa-calendar-check"></i>Planning</a>
-            <a href="clients.html"><i class="fas fa-users"></i>Clients</a>
-            <a href="author.html"><i class="fas fa-feather-pointed"></i>Author</a>
-        </div>
     </div>
     <div class="search-bar">
         <input type="text" id="searchInput" placeholder="Search structures...">
@@ -270,12 +333,14 @@ a{color:inherit;}
     </div>
 </nav>
 
-<!-- ============ SIDEBAR - same View > Type > Condition filters as core map/map.html's
-     (reuses map.css's .sidebar rules unmodified). The Dashboard/Database/Planning/
-     twinView links core's sidebar also has are left out - Author already has its own
-     top navbar for that, and Database/twinView have no Author equivalent. ============ -->
+<!-- ============ SIDEBAR - same structure as core map/map.html's: View > Type >
+     Condition filters, then Author's own nav links below (core has Dashboard/
+     Database/Planning/twinView in the same spot) - reuses map.css's .sidebar
+     rules unmodified. Nav lives here, not in the navbar's .menu, to match core
+     exactly - a navbar-.menu approach crowds out at narrow/mobile widths since
+     the 280px search-bar alone doesn't leave room for 5 nav links too. ============ -->
 <div id="sidebar" class="sidebar">
-    <div class="sidebar-header"><h3>Filters</h3></div>
+    <div class="sidebar-header"><h3>Navigation</h3></div>
     <ul>
         <li>
             <a href="#" id="viewLink">
@@ -314,25 +379,22 @@ a{color:inherit;}
                 </div>
             </ul>
         </li>
+        <li><a href="map.html" class="active"><i class="fas fa-map"></i><span>Map</span></a></li>
+        <li><a href="dashboard.html"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a></li>
+        <li><a href="planning.html"><i class="fas fa-calendar-check"></i><span>Planning</span></a></li>
+        <li><a href="clients.html"><i class="fas fa-users"></i><span>Clients</span></a></li>
+        <li><a href="author.html"><i class="fas fa-feather-pointed"></i><span>Author</span></a></li>
     </ul>
 </div>
 
 <!-- ============ FULL-SCREEN MAP (behind the navbar, like map.html) ============ -->
+<!-- Zoom and the map-type (layer) switcher are genuine Leaflet controls,
+     added in map.js's map-init section, stacked in the 'topright' corner.
+     Route planning (toggle, auto-select/export, box-select tools, the
+     itinerary) all lives in the single .route-rail div below instead of
+     more floating controls - see that div's own comment. -->
 <div class="map-stage" id="mapStage">
     <div id="routeMap"></div>
-
-    <!-- Map-type toggle (satellite/street) on top, then the route-planning
-         toggle right under it in the same strip, then (route mode only)
-         the box-select tools - see the CSS comment on .map-toolbar. -->
-    <div class="map-toolbar">
-      <button class="map-tool" id="toolSat" data-tip="Toggle satellite backdrop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></button>
-      <hr>
-      <button class="map-tool" id="routeModeBtn" data-tip="Plan a route"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0 0 21 18.382V7.618a1 1 0 0 0-.553-.894L15 4m0 13V4m0 0L9 7"/></svg></button>
-      <div class="select-tools" id="selectTools">
-        <button class="map-tool active" id="toolPointer" data-tip="Select"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg></button>
-        <button class="map-tool" id="toolBox" data-tip="Box-select multiple (drag on map)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 3"><rect x="4" y="4" width="16" height="16" rx="2"/></svg></button>
-      </div>
-    </div>
 
     <div class="map-summary-chip" id="mapSummary">
       <span><b id="chipCount">0</b> selected</span>
@@ -410,31 +472,51 @@ a{color:inherit;}
     </div>
 </div>
 
-<!-- ============ FLOATING RIGHT: ROUTE ITINERARY (route mode only) ============ -->
+<!-- ============ FLOATING RIGHT: ROUTE PLANNING ============
+     One div for the whole feature - docked under zoom/the layer switcher
+     (repositioned live in map.js if the layer switcher's own dropdown is
+     open, so the two never overlap). Retracted, the header shows only the
+     toggle icon; clicking it turns route mode on, which reveals the
+     auto-select/export icons on the right of the same header and expands
+     the body (box-select tools + summary + actions + itinerary list)
+     below - one panel opening up, not several floating pieces. -->
 <div class="panel route-rail" id="routeRail">
   <div class="route-rail-head">
     <div class="rail-head-text">
-      <div class="eyebrow">Plan</div>
-      <h2><i class="fas fa-route"></i> Today's Route</h2>
+      <h2><i class="fas fa-route"></i> Route Planning</h2>
     </div>
     <div class="rail-head-actions">
-      <button class="icon-btn" id="autoSelectBtn" data-tip="Select due this month"><i class="fas fa-bolt"></i></button>
-      <button class="icon-btn primary" id="exportBtn" data-tip="Export route (CSV)"><i class="fas fa-file-export"></i></button>
+      <button type="button" class="icon-btn" id="autoSelectBtn" data-tip="Select due this month" style="display:none;"><i class="fas fa-bolt"></i></button>
+      <button type="button" class="icon-btn primary" id="exportBtn" data-tip="Export route (CSV)" style="display:none;"><i class="fas fa-file-export"></i></button>
+      <button type="button" class="icon-btn" id="routeModeBtn" data-tip="Plan a route" aria-label="Plan a route">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0 0 21 18.382V7.618a1 1 0 0 0-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+      </button>
     </div>
   </div>
-  <div class="route-summary">
-    <div class="rs-figure" id="rsFigure">0.0<small>km total</small></div>
-    <div class="rs-meta">
-      <span><b id="rsStops">0</b> stops</span>
-      <span><b id="rsTime">0h 00m</b> drive</span>
+  <div class="route-body" id="routeBody" style="display:none;">
+    <div class="route-tools">
+      <button type="button" class="icon-btn active" id="toolPointer" data-tip="Select"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg></button>
+      <button type="button" class="icon-btn" id="toolBox" data-tip="Box-select multiple (drag on map)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 3"><rect x="4" y="4" width="16" height="16" rx="2"/></svg></button>
+      <span class="route-tools-div"></span>
+      <button type="button" class="icon-btn" id="toolParking" data-tip="Show nearest parking (Beta)" aria-label="Show nearest parking">
+        <i class="fas fa-square-parking"></i>
+        <span class="beta-dot">β</span>
+      </button>
     </div>
+    <div class="route-summary">
+      <div class="rs-figure" id="rsFigure">0.0<small>km total</small></div>
+      <div class="rs-meta">
+        <span><b id="rsStops">0</b> stops</span>
+        <span><b id="rsTime">0h 00m</b> drive</span>
+      </div>
+    </div>
+    <div class="route-actions">
+      <button class="btn" id="optimizeBtn" disabled><i class="fas fa-route"></i>&nbsp;Optimize</button>
+      <button class="btn" id="clearBtn" disabled><i class="fas fa-trash-can"></i>&nbsp;Clear</button>
+    </div>
+    <ul class="route-list" id="routeList"></ul>
+    <div class="route-footnote">Route order is editable — drag stops to reorder.</div>
   </div>
-  <div class="route-actions">
-    <button class="btn" id="optimizeBtn" disabled><i class="fas fa-route"></i>&nbsp;Optimize</button>
-    <button class="btn" id="clearBtn" disabled><i class="fas fa-trash-can"></i>&nbsp;Clear</button>
-  </div>
-  <ul class="route-list" id="routeList"></ul>
-  <div class="route-footnote">Route order is editable — drag stops to reorder.</div>
 </div>
 
 <!-- ============ CHAT (same widget as core map/map.html, reuses map.css unmodified) ============ -->
