@@ -189,6 +189,15 @@ body.night-mode { background: #151f1d; }
 .night-mode .cal-pill{ background:#1e3a38; color:#8ab4b0; }
 .night-mode .cal-pill:hover{ background:var(--teal); color:#fff; }
 .cal-more{ font-size:.6rem; color:var(--text-mute); padding-left:2px; }
+.cal-leave-pill{ font-size:.62rem; font-weight:600; padding:2px 6px; border-radius:6px; background:var(--amber-bg); color:var(--amber); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:4px; }
+.cal-leave-pill i{ font-size:.56rem; flex-shrink:0; }
+.night-mode .cal-leave-pill{ background:rgba(186,117,23,.22); color:#e0a94a; }
+.cal-legend{ display:flex; align-items:center; gap:14px; margin-left:6px; font-size:.7rem; color:var(--text-mute); }
+.cal-legend span{ display:flex; align-items:center; gap:5px; }
+.cal-legend-dot{ width:8px; height:8px; border-radius:2px; display:inline-block; background:var(--bg-mint); }
+.cal-legend-dot.assign{ background:var(--teal); }
+.cal-legend-dot.leave{ background:var(--amber); }
+@media (max-width:900px){ .cal-legend{ display:none; } }
 @media (max-width:640px){
   .cal-cell{ min-height:60px; }
   .cal-dow{ font-size:.56rem; padding:6px 2px; }
@@ -323,6 +332,10 @@ body.night-mode { background: #151f1d; }
                     <button class="icon-btn" id="calPrev" data-tip="Previous month"><i class="fas fa-chevron-left"></i></button>
                     <div class="cal-month-label" id="calMonthLabel">--</div>
                     <button class="icon-btn" id="calNext" data-tip="Next month"><i class="fas fa-chevron-right"></i></button>
+                    <div class="cal-legend">
+                        <span><i class="cal-legend-dot assign"></i>Scheduled</span>
+                        <span><i class="cal-legend-dot leave"></i>Staff on leave</span>
+                    </div>
                     <button class="btn btn-sm" id="calToday" style="margin-left:auto;">Today</button>
                 </div>
                 <div class="cal-grid" id="calGrid"></div>

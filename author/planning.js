@@ -354,6 +354,11 @@
             var d = a.scheduled_date.slice(0, 10);
             (byDate[d] = byDate[d] || []).push(a);
         });
+        var leaveByDate = {};
+        leave.forEach(function (l) {
+            var d = l.leave_date.slice(0, 10);
+            (leaveByDate[d] = leaveByDate[d] || []).push(l);
+        });
 
         var firstOfMonth = new Date(year, month, 1);
         var startOffset = (firstOfMonth.getDay() + 6) % 7; // Monday-start grid
@@ -366,15 +371,22 @@
             var dStr = isoDate(cellDate);
             var inMonth = cellDate.getMonth() === month;
             var dayAssignments = byDate[dStr] || [];
+            var dayLeave = leaveByDate[dStr] || [];
             var holidayTitle = bankHolidays[dStr];
             var pills = dayAssignments.slice(0, 3).map(function (a) {
                 return '<div class="cal-pill" data-assign-id="' + a.id + '" data-tip="' + escapeHtml(a.bridge_name) + ' &middot; ' + escapeHtml(a.inspector_name || a.inspector_username) + '">' + escapeHtml(a.bridge_name) + '</div>';
             }).join('');
             var more = dayAssignments.length > 3 ? '<div class="cal-more">+' + (dayAssignments.length - 3) + ' more</div>' : '';
+            var leavePills = dayLeave.slice(0, 3).map(function (l) {
+                var s = staffById(l.user_id);
+                var name = s ? (s.full_name || s.username) : 'Staff';
+                return '<div class="cal-leave-pill" data-tip="' + escapeHtml(name) + (l.reason ? ' &middot; ' + escapeHtml(l.reason) : '') + '"><i class="fas fa-user-slash"></i>' + escapeHtml(name) + '</div>';
+            }).join('');
+            var leaveMore = dayLeave.length > 3 ? '<div class="cal-more">+' + (dayLeave.length - 3) + ' more off</div>' : '';
             html += '<div class="cal-cell' + (inMonth ? '' : ' other-month') + (dStr === todayStr ? ' today' : '') + '">' +
                 '<div class="cal-cell-head"><span class="cal-day-num">' + cellDate.getDate() + '</span>' +
                 (holidayTitle ? '<span class="cal-holiday" data-tip="' + escapeHtml(holidayTitle) + '"><i class="fas fa-calendar-day"></i></span>' : '') +
-                '</div>' + pills + more + '</div>';
+                '</div>' + leavePills + leaveMore + pills + more + '</div>';
         }
         var grid = document.getElementById('calGrid');
         grid.innerHTML = html;
@@ -411,7 +423,7 @@
             btn.addEventListener('click', function () {
                 fetch(API_BASE + '/api/author/staff-leave/' + btn.dataset.leaveId, { method: 'DELETE' })
                     .then(function () { return loadLeave(); })
-                    .then(function () { renderStaff(); });
+                    .then(function () { renderStaff(); renderCalendar(); });
             });
         });
 
@@ -428,7 +440,7 @@
             body: JSON.stringify({ user_id: Number(userId), leave_date: date })
         })
             .then(function () { document.getElementById('leaveDateInput').value = ''; return loadLeave(); })
-            .then(function () { renderStaff(); });
+            .then(function () { renderStaff(); renderCalendar(); });
     });
 
     /* ---------------------------------------------------------
