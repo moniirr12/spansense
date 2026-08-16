@@ -186,6 +186,13 @@ body {
     box-shadow: 0 10px 28px rgba(44, 90, 87, 0.1);
     flex-shrink: 0;
 }
+/* .info-card's own backdrop-filter creates a stacking context, which traps
+   .dropdown-menu's z-index:100 inside just this card - without this, the
+   Condition/BCI-trend cards below it (later in DOM, same z-index:auto
+   level) simply paint on top regardless, since z-index only competes
+   inside the nearest stacking context. .info-col is a flex container, so
+   z-index applies to this flex item directly with no position needed. */
+.info-card:has(.dropdown-menu) { z-index: 2; }
 .info-card .ic-eyebrow {
     font-size: 0.7rem;
     font-weight: 700;
@@ -1096,7 +1103,7 @@ body.night-mode .glass-scrollbar .thumb {
     border-color: rgba(255, 255, 255, 0.12);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
-.night-mode .info-card h3, .night-mode .panel-header h2, .night-mode .fact-row .fv, .night-mode .toast-content .toast-title {
+.night-mode .info-card h3, .night-mode .panel-header h2, .night-mode .viewer-card .vc-head h2, .night-mode .fact-row .fv, .night-mode .toast-content .toast-title {
     color: #d4dfe3;
 }
 .night-mode .struct-id, .night-mode .fact-row .fk, .night-mode .panel-header .sub, .night-mode .toast-content .toast-msg {
