@@ -56,22 +56,28 @@
     }
 
     /* ---------------------------------------------------------
-       ACCESS METHOD - derived from structure type, no API needed. Flags
-       the two categories that typically need extra kit/procedures booked
-       alongside the inspector (confined space entry, MEWP/overhead TM)
-       so a planner sees it while assigning, not on site.
+       ACCESS METHOD - defaults from structure type (culverts flag confined
+       space, sign gantries flag MEWP/overhead TM) but is a real per-
+       structure field (bridges.access_method) a planner can view and
+       override from the assign modal - a type-based guess isn't always
+       right (e.g. a culvert too shallow to enter, or a bridge that in
+       practice needs rope access), and there was previously no way to
+       correct it. Saved straight to the bridge (PATCH, not part of the
+       assignment) since it's a property of the structure, not the visit.
        --------------------------------------------------------- */
     function normType(t) { return (t || '').toLowerCase().replace(/\s+/g, '_'); }
     var ACCESS_METHOD = {
-        culvert: { label: 'Confined space entry', icon: 'fa-triangle-exclamation', warn: true },
-        sign_gantry: { label: 'MEWP / overhead TM', icon: 'fa-truck-ramp-box', warn: true },
-        bridge: { label: 'Standard access', icon: 'fa-person-walking', warn: false },
-        footbridge: { label: 'Standard access', icon: 'fa-person-walking', warn: false },
-        retaining_wall: { label: 'Standard access', icon: 'fa-person-walking', warn: false }
+        standard: { label: 'Standard access', icon: 'fa-person-walking', warn: false },
+        confined_space: { label: 'Confined space entry', icon: 'fa-triangle-exclamation', warn: true },
+        mewp: { label: 'MEWP / overhead TM', icon: 'fa-truck-ramp-box', warn: true },
+        rope_access: { label: 'Rope access', icon: 'fa-person-falling', warn: true },
+        water: { label: 'Access over/through water', icon: 'fa-water', warn: true }
     };
-    function accessMethodFor(b) {
-        return ACCESS_METHOD[normType(b && b.type)] || { label: 'Standard access', icon: 'fa-person-walking', warn: false };
+    var ACCESS_METHOD_TYPE_DEFAULT = { culvert: 'confined_space', sign_gantry: 'mewp' };
+    function accessMethodKeyFor(b) {
+        return (b && b.access_method) || ACCESS_METHOD_TYPE_DEFAULT[normType(b && b.type)] || 'standard';
     }
+    function accessMethodFor(b) { return ACCESS_METHOD[accessMethodKeyFor(b)] || ACCESS_METHOD.standard; }
 
     /* ---------------------------------------------------------
        BANK HOLIDAYS - gov.uk's public JSON, fetched once. england-and-wales
@@ -86,8 +92,22 @@
             .then(function (data) {
                 var events = (data['england-and-wales'] && data['england-and-wales'].events) || [];
                 events.forEach(function (e) { bankHolidays[e.date] = e.title; });
+                renderHolidayStrip();
             })
             .catch(function () { /* flags just won't show - not worth blocking the page over */ });
+    }
+    // Always-visible, independent of anything being scheduled - the only
+    // place bank holidays show without opening a specific assignment.
+    function renderHolidayStrip() {
+        var todayStr = new Date().toISOString().slice(0, 10);
+        var upcoming = Object.keys(bankHolidays).filter(function (d) { return d >= todayStr; }).sort().slice(0, 6);
+        var panel = document.getElementById('holidayPanel');
+        if (!upcoming.length) { panel.style.display = 'none'; return; }
+        document.getElementById('holidayStrip').innerHTML = upcoming.map(function (d) {
+            var dLabel = new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+            return '<div class="holiday-chip"><span class="hc-date">' + dLabel + '</span><span class="hc-title">' + escapeHtml(bankHolidays[d]) + '</span></div>';
+        }).join('');
+        panel.style.display = 'block';
     }
 
     /* ---------------------------------------------------------
@@ -204,10 +224,23 @@
                 '<div class="ur-name">' + escapeHtml(b.name) + '</div>' +
                 '<div class="ur-sub">' + escapeHtml(b.client_name || 'Unknown client') + '</div>' +
                 tagHtml + accessHtml +
+                '<span class="ur-live" id="ur-live-' + b.id + '"></span>' +
                 '</li>';
         }).join('');
         Array.prototype.forEach.call(list.querySelectorAll('.unsched-row'), function (row) {
             row.addEventListener('click', function () { openAssignModal({ bridgeId: Number(row.dataset.bridgeId) }); });
+        });
+
+        // Flood watch is real-time (not date-bound), so unlike weather it
+        // can show here even before anything's scheduled - cached by
+        // structure, same lookup the agenda uses.
+        due.forEach(function (x) {
+            var b = x.b;
+            if (b.latitude == null || b.longitude == null) return;
+            fetchFloodCount(b.latitude, b.longitude).then(function (count) {
+                var el = document.getElementById('ur-live-' + b.id);
+                if (el && count) el.innerHTML = '<span class="ur-access warn"><i class="fas fa-water"></i>Flood watch nearby<span class="beta-dot">&beta;</span></span>';
+            });
         });
     }
 
@@ -345,6 +378,11 @@
         var inspSel = document.getElementById('fInspector');
         inspSel.innerHTML = staff.map(function (s) { return '<option value="' + s.id + '">' + escapeHtml(s.full_name || s.username) + '</option>'; }).join('');
 
+        var accessSel = document.getElementById('fAccessMethod');
+        var typeDefault = ACCESS_METHOD[ACCESS_METHOD_TYPE_DEFAULT[normType(b && b.type)] || 'standard'];
+        accessSel.options[0].textContent = 'Auto (' + typeDefault.label + ')';
+        accessSel.value = (b && b.access_method) || '';
+
         if (isEdit) {
             var a = opts.assignment;
             inspSel.value = a.inspector_id;
@@ -424,6 +462,27 @@
     }
     document.getElementById('fInspector').addEventListener('change', refreshAdvisories);
     document.getElementById('fDate').addEventListener('change', refreshAdvisories);
+
+    // Access method belongs to the structure, not this visit, so it saves
+    // straight to the bridge as soon as it's changed rather than waiting
+    // on Save/Cancel of the assignment - and everywhere else showing it
+    // (Unscheduled, the agenda) is refreshed immediately to match.
+    document.getElementById('fAccessMethod').addEventListener('change', function () {
+        var bridgeId = Number(modal.dataset.bridgeId);
+        var value = this.value;
+        fetch(API_BASE + '/api/bridges/' + bridgeId + '/access-method', {
+            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accessMethod: value || null })
+        })
+            .then(function (r) { if (!r.ok) throw new Error('save failed'); })
+            .then(function () {
+                var b = bridgeById(bridgeId);
+                if (b) b.access_method = value || null;
+                renderUnscheduled();
+                renderAgenda();
+            })
+            .catch(function (err) { console.error(err); alert('Could not save access method.'); });
+    });
 
     document.getElementById('saveAssignBtn').addEventListener('click', function () {
         var date = document.getElementById('fDate').value;

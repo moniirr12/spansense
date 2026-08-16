@@ -555,6 +555,11 @@ async function initDatabase() {
         // client (null for spanSense's normal owner-direct structures).
         await pool.query(`ALTER TABLE bridges ADD COLUMN IF NOT EXISTS client_id INTEGER`);
 
+        // Manual override for how a structure is actually accessed on site
+        // (confined space entry, MEWP, rope access, etc). Null means "use
+        // the type-based default" - see Author Planning's accessMethodFor().
+        await pool.query(`ALTER TABLE bridges ADD COLUMN IF NOT EXISTS access_method TEXT`);
+
         // Author's Planning: day-level unavailability per inspector (holiday/
         // annual leave). Deliberately day granularity, not time-of-day - see
         // inspection_assignments below for the other half of "is this
@@ -1021,6 +1026,7 @@ app.get('/api/bridges', requireAuth, async (req, res) => {
             SELECT b.id, b.name, b.location, b.latitude, b.longitude, b.span, b.length,
                     b.built_year, b.type, b.span_number, b.OSE, b.OSN,
                     b.primary_material, b.secondary_material, b.organization_id, b.client_id,
+                    b.access_method,
                     latest_insp.overall_bciave AS bci_av,
                     b.gi_cycle_years, b.pi_cycle_years, b.next_inspection_override,
                     MAX(i.inspection_date) as last_inspected
@@ -1036,6 +1042,7 @@ app.get('/api/bridges', requireAuth, async (req, res) => {
             GROUP BY b.id, b.name, b.location, b.latitude, b.longitude, b.span, b.length,
                      b.built_year, b.type, b.span_number, b.OSE, b.OSN,
                      b.primary_material, b.secondary_material, b.organization_id, b.client_id,
+                     b.access_method,
                      latest_insp.overall_bciave,
                      b.gi_cycle_years, b.pi_cycle_years, b.next_inspection_override
             ORDER BY b.name
@@ -1071,6 +1078,25 @@ app.patch('/api/bridges/:id/schedule', requireAuth, requireEngineer, async (req,
         res.json({ success: true });
     } catch (err) {
         console.error('Update bridge schedule error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+// Manual override for how a structure is accessed on site (Author
+// Planning's "Access method" field) - null clears the override and falls
+// back to the type-based default computed client-side.
+const ACCESS_METHODS = ['standard', 'confined_space', 'mewp', 'rope_access', 'water'];
+app.patch('/api/bridges/:id/access-method', requireAuth, requireEngineer, async (req, res) => {
+    try {
+        const { accessMethod } = req.body;
+        const value = accessMethod || null;
+        if (value !== null && !ACCESS_METHODS.includes(value)) {
+            return res.status(400).json({ success: false, error: 'Invalid access method' });
+        }
+        await pool.query('UPDATE bridges SET access_method = $1 WHERE id = $2', [value, req.params.id]);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Update bridge access method error:', err);
         res.status(500).json({ success: false, error: err.message });
     }
 });
