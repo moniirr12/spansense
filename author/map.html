@@ -194,6 +194,11 @@ a{color:inherit;}
 .route-rail:not(.expanded) .route-rail-head{ padding:0; border-bottom:none; }
 .night-mode .route-rail:not(.expanded){ background:transparent; }
 .route-rail:not(.expanded) .rail-head-text{ display:none; }
+/* Same footprint as the chat toggle below it (44px, 48px on mobile - see
+   map.css's .chat-toggle) so the two read as a matched pair of circles-
+   worth of floating icons either side of the map. */
+.route-rail:not(.expanded) #routeModeBtn{ width:44px; height:44px; }
+.route-rail:not(.expanded) #routeModeBtn svg{ width:20px; height:20px; }
 .route-rail-head{ padding:13px 15px; border-bottom:1px solid var(--border2); display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .night-mode .route-rail-head{ border-color:#2f3e45; }
 .route-rail-head .rail-head-text{ min-width:0; }
@@ -216,6 +221,17 @@ a{color:inherit;}
 .route-actions .btn{ flex:1; justify-content:center; padding:8px 8px; font-size:.73rem; }
 
 .route-list{ list-style:none; overflow-y:auto; flex:1; padding:6px; min-height:80px; }
+/* Thin teal scrollbar matching the app's other custom scrollbars (e.g.
+   map.css's document list / inspection1.css's textareas) instead of the
+   chunky OS default. */
+.route-list{ scrollbar-width:thin; scrollbar-color:#c5dbd8 transparent; }
+.route-list::-webkit-scrollbar{ width:6px; }
+.route-list::-webkit-scrollbar-track{ background:transparent; margin:6px 0; }
+.route-list::-webkit-scrollbar-thumb{ background:#c5dbd8; border-radius:10px; }
+.route-list::-webkit-scrollbar-thumb:hover{ background:#8ab4b0; }
+.night-mode .route-list{ scrollbar-color:#2f4a48 transparent; }
+.night-mode .route-list::-webkit-scrollbar-thumb{ background:#2f4a48; }
+.night-mode .route-list::-webkit-scrollbar-thumb:hover{ background:#3a5c5a; }
 .route-item{ display:flex; align-items:flex-start; gap:9px; padding:9px 8px; border-radius:11px; background:var(--bg-soft); border:1px solid var(--border2); margin-bottom:6px; cursor:grab; }
 .night-mode .route-item{ background:#1e2a2f; border-color:#2f3e45; }
 .route-item.dragging{ opacity:.4; }
@@ -262,6 +278,7 @@ a{color:inherit;}
      same way the desktop panel's fixed width reads on a narrow screen. */
   .route-rail{ right:12px; width:auto; max-height: calc(100vh - 262px - 134px); }
   .route-rail.expanded{ left:12px; }
+  .route-rail:not(.expanded) #routeModeBtn{ width:48px; height:48px; }
   .map-summary-chip{ top:76px; padding:6px 12px; gap:8px; font-size:.68rem; }
   .mobile-only{
     display:flex; align-items:center; justify-content:center; flex-shrink:0;
@@ -453,7 +470,6 @@ a{color:inherit;}
 <div class="panel route-rail" id="routeRail">
   <div class="route-rail-head">
     <div class="rail-head-text">
-      <div class="eyebrow">Plan</div>
       <h2><i class="fas fa-route"></i> Route Planning</h2>
     </div>
     <div class="rail-head-actions">
