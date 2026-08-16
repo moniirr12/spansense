@@ -49,6 +49,37 @@
         return (words[0][0] + words[1][0]).toUpperCase();
     }
 
+    /* ---------------------------------------------------------
+       PER-CLIENT STATS - same badge/reports-bar treatment as Dashboard's
+       client cards (dashboard.js renderClients), reused here so this page
+       carries the same information density instead of just a bare roster.
+       --------------------------------------------------------- */
+    function clientStatsHtml(c) {
+        if (!c.structureCount) return '<div class="cr-empty">No structures assigned yet.</div>';
+
+        var badges = '';
+        if (c.overdueCount > 0) badges += '<span class="badge overdue">' + c.overdueCount + ' overdue</span>';
+        if (c.dueSoonCount > 0) badges += '<span class="badge soon">' + c.dueSoonCount + ' due soon</span>';
+        if (c.overdueCount === 0 && c.dueSoonCount === 0) badges += '<span class="badge ok">On schedule</span>';
+
+        var r = c.reports;
+        var total = r.submitted + r.approved + r.rejected;
+        var reportsHtml = total > 0 ?
+            '<div class="cr-reports">' +
+            (r.submitted ? '<span class="submitted" style="flex:' + r.submitted + '"></span>' : '') +
+            (r.approved ? '<span class="approved" style="flex:' + r.approved + '"></span>' : '') +
+            (r.rejected ? '<span class="rejected" style="flex:' + r.rejected + '"></span>' : '') +
+            '</div>' +
+            '<div class="cr-legend">' +
+            '<span><span class="dot submitted"></span>' + r.submitted + ' awaiting review</span>' +
+            '<span><span class="dot approved"></span>' + r.approved + ' approved</span>' +
+            (r.rejected ? '<span><span class="dot rejected"></span>' + r.rejected + ' rejected</span>' : '') +
+            '</div>' :
+            '<div class="cr-legend">No inspections recorded yet</div>';
+
+        return '<div class="cr-stats"><div class="cr-badges">' + badges + '</div>' + reportsHtml + '</div>';
+    }
+
     var clients = [];
     var editingId = null;
 
@@ -65,13 +96,16 @@
         el.innerHTML = clients.map(function (c) {
             var contactBits = [c.contact_name, c.contact_email, c.contact_phone].filter(Boolean);
             return '<div class="client-row" data-id="' + c.id + '">' +
+                '<div class="cr-head">' +
                 '<div class="cr-avatar">' + initials(c.name) + '</div>' +
                 '<div class="cr-main">' +
                 '<div class="cr-name">' + escapeHtml(c.name) + '</div>' +
                 '<div class="cr-sub">' + (contactBits.length ? escapeHtml(contactBits.join(' · ')) : 'No contact details yet') + '</div>' +
                 '</div>' +
-                '<span class="cr-count">' + c.structure_count + ' structure' + (c.structure_count === '1' ? '' : 's') + '</span>' +
+                '<span class="cr-count">' + c.structureCount + ' structure' + (c.structureCount === 1 ? '' : 's') + '</span>' +
                 '<div class="cr-actions"><button class="icon-btn edit-client" data-tip="Edit"><i class="fas fa-pen"></i></button></div>' +
+                '</div>' +
+                clientStatsHtml(c) +
                 '</div>';
         }).join('');
         Array.prototype.forEach.call(el.querySelectorAll('.edit-client'), function (btn) {

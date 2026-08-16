@@ -2795,6 +2795,60 @@ app.get('/api/inspection/full', requireAuth, async (req, res) => {
     }
 });
 
+// Per-client rollup shared by /api/author/clients and /api/author/dashboard -
+// overdue/due-soon counts (same computeNextDue + fakeHistory trick as
+// buildPortfolioSummary) and report status breakdown, keyed by client id.
+// Only ever called with client ids scoped to the caller's own org already,
+// so it doesn't re-check organization_id itself.
+async function computeClientStats(clientIds) {
+    const byClient = {};
+    clientIds.forEach((id) => {
+        byClient[id] = { structureCount: 0, overdueCount: 0, dueSoonCount: 0, reports: { submitted: 0, approved: 0, rejected: 0 } };
+    });
+    if (!clientIds.length) return byClient;
+
+    const bridges = await dbAll(`
+        SELECT b.id, b.client_id, b.gi_cycle_years, b.pi_cycle_years, b.next_inspection_override,
+               MAX(i.inspection_date) AS last_inspected, COUNT(i.id) AS inspection_count
+        FROM bridges b
+        LEFT JOIN inspections i ON i.structure_id = b.id
+        WHERE b.client_id = ANY($1)
+        GROUP BY b.id, b.client_id, b.gi_cycle_years, b.pi_cycle_years, b.next_inspection_override
+    `, [clientIds]);
+
+    const statusRows = await dbAll(`
+        SELECT b.client_id, i.status, COUNT(*) AS count
+        FROM inspections i
+        JOIN bridges b ON b.id = i.structure_id
+        WHERE b.client_id = ANY($1)
+        GROUP BY b.client_id, i.status
+    `, [clientIds]);
+
+    const today = new Date();
+    bridges.forEach((b) => {
+        const bucket = byClient[b.client_id];
+        if (!bucket) return;
+        bucket.structureCount++;
+        if (!b.last_inspected) { bucket.overdueCount++; return; }
+        const fakeHistory = Array.from({ length: Number(b.inspection_count) }, () => ({}));
+        fakeHistory[fakeHistory.length - 1] = { inspection_date: b.last_inspected };
+        const nextDue = computeNextDue(b, fakeHistory, b.next_inspection_override);
+        if (!nextDue) return;
+        const daysUntil = (new Date(nextDue.date) - today) / (1000 * 60 * 60 * 24);
+        if (daysUntil < 0) bucket.overdueCount++;
+        else if (daysUntil <= 90) bucket.dueSoonCount++;
+    });
+
+    statusRows.forEach((r) => {
+        const bucket = byClient[r.client_id];
+        if (!bucket) return;
+        const status = (r.status || 'submitted').toLowerCase();
+        if (bucket.reports[status] !== undefined) bucket.reports[status] = parseInt(r.count);
+    });
+
+    return byClient;
+}
+
 // Author's client list - the councils/asset owners this consultancy is
 // appointed by. Scoped to the logged-in user's own organization_id so one
 // consultancy never sees another's client roster, same scoping convention
@@ -2811,7 +2865,8 @@ app.get('/api/author/clients', requireAuth, async (req, res) => {
              ORDER BY c.name`,
             [req.session.organizationId ?? null]
         );
-        res.json(rows);
+        const stats = await computeClientStats(rows.map((c) => c.id));
+        res.json(rows.map((c) => Object.assign({}, c, stats[c.id])));
     } catch (err) {
         console.error('List clients error:', err);
         res.status(500).json({ error: 'Database error' });
@@ -2893,54 +2948,9 @@ app.get('/api/author/dashboard', requireAuth, async (req, res) => {
             [orgId]
         );
 
-        const bridges = await dbAll(`
-            SELECT b.id, b.client_id, b.name, b.gi_cycle_years, b.pi_cycle_years, b.next_inspection_override,
-                   MAX(i.inspection_date) AS last_inspected, COUNT(i.id) AS inspection_count
-            FROM bridges b
-            LEFT JOIN inspections i ON i.structure_id = b.id
-            WHERE b.client_id IS NOT NULL
-            GROUP BY b.id, b.client_id, b.name, b.gi_cycle_years, b.pi_cycle_years, b.next_inspection_override
-        `);
-
-        const statusRows = await dbAll(`
-            SELECT b.client_id, i.status, COUNT(*) AS count
-            FROM inspections i
-            JOIN bridges b ON b.id = i.structure_id
-            WHERE b.client_id IS NOT NULL
-            GROUP BY b.client_id, i.status
-        `);
-
-        const today = new Date();
+        const stats = await computeClientStats(clients.map((c) => c.id));
         const byClient = {};
-        clients.forEach((c) => {
-            byClient[c.id] = {
-                id: c.id, name: c.name,
-                structureCount: 0, overdueCount: 0, dueSoonCount: 0,
-                reports: { submitted: 0, approved: 0, rejected: 0 }
-            };
-        });
-
-        bridges.forEach((b) => {
-            const bucket = byClient[b.client_id];
-            if (!bucket) return; // structure tagged to a client outside this org - shouldn't happen, skip defensively
-            bucket.structureCount++;
-            if (!b.last_inspected) { bucket.overdueCount++; return; } // never inspected counts as needing attention
-            const fakeHistory = Array.from({ length: Number(b.inspection_count) }, () => ({}));
-            fakeHistory[fakeHistory.length - 1] = { inspection_date: b.last_inspected };
-            const nextDue = computeNextDue(b, fakeHistory, b.next_inspection_override);
-            if (!nextDue) return;
-            const dueDate = new Date(nextDue.date);
-            const daysUntil = (dueDate - today) / (1000 * 60 * 60 * 24);
-            if (daysUntil < 0) bucket.overdueCount++;
-            else if (daysUntil <= 90) bucket.dueSoonCount++;
-        });
-
-        statusRows.forEach((r) => {
-            const bucket = byClient[r.client_id];
-            if (!bucket) return;
-            const status = (r.status || 'submitted').toLowerCase();
-            if (bucket.reports[status] !== undefined) bucket.reports[status] = parseInt(r.count);
-        });
+        clients.forEach((c) => { byClient[c.id] = Object.assign({ id: c.id, name: c.name }, stats[c.id]); });
 
         const activity = await dbAll(`
             SELECT i.id, i.structure_id, i.structure_name, i.inspection_date, i.inspection_type,
