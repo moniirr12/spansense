@@ -567,6 +567,15 @@
         }
     }
     repositionRouteRail();
+    // map.css plays a ~0.3s entrance animation on the zoom/layers controls
+    // (.leaflet-control-zoom/.leaflet-control-layers { animation: floatIn
+    // ... }) - the call above runs before it settles, so it can capture a
+    // mid-animation position and leave the panel a few px off until
+    // something else (route mode, a resize, opening the dropdown)
+    // triggers a recompute against the real, final position. Re-running
+    // once the animation actually ends fixes that without waiting on a
+    // fixed timeout that could race the animation on a slower machine.
+    if (layersContainerEl) layersContainerEl.addEventListener('animationend', repositionRouteRail, { once: true });
     if (layersContainerEl && window.MutationObserver) {
         new MutationObserver(repositionRouteRail).observe(layersContainerEl, { attributes: true, attributeFilter: ['class'] });
     }

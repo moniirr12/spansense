@@ -209,8 +209,12 @@ a{color:inherit;}
 .route-rail:not(.expanded) .rail-head-text{ display:none; }
 /* Same footprint as the chat toggle below it (44px, 48px on mobile - see
    map.css's .chat-toggle) so the two read as a matched pair of circles-
-   worth of floating icons either side of the map. */
-.route-rail:not(.expanded) #routeModeBtn{ width:44px; height:44px; }
+   worth of floating icons either side of the map. Radius matches map.css's
+   .leaflet-control-zoom/.leaflet-control-layers (48px, effectively a full
+   circle at this size) instead of .icon-btn's own 9px default - the
+   smaller radius read as a rectangle awkwardly dropped into the same
+   pill-shaped stack as the real Leaflet controls above it. */
+.route-rail:not(.expanded) #routeModeBtn{ width:44px; height:44px; border-radius:48px; }
 .route-rail:not(.expanded) #routeModeBtn svg{ width:20px; height:20px; }
 .route-rail-head{ padding:13px 15px; border-bottom:1px solid var(--border2); display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .night-mode .route-rail-head{ border-color:#2f3e45; }
