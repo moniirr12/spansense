@@ -1,8 +1,9 @@
 // ============================================
 // spanSense - Author Clients
-// Simple CRUD over GET/POST/PATCH/DELETE /api/author/clients. Assigning a
-// structure to a client isn't done here - that happens from the Map's Add
-// Structure flow - this page is just the client roster itself.
+// Simple CRUD over GET/POST/PATCH/DELETE /api/author/clients. A structure
+// only ever gets attached to a client via Add Structure's own Client
+// picker (navAddStructureBtn below, or the equivalent on Map/Dashboard/
+// Planning/Author) - this page is just the client roster itself.
 // ============================================
 (function () {
     'use strict';
@@ -10,6 +11,19 @@
     var API_BASE = window.location.origin.includes('localhost')
         ? 'http://localhost:3000'
         : window.location.origin;
+
+    /* ---------------------------------------------------------
+       ADD STRUCTURE - same "go there, come back" trip as author/map.js's
+       own addStructureBtn, reusing addStructure.html rather than
+       rebuilding it here. authorAddStructure tells that form to show its
+       Client picker.
+       --------------------------------------------------------- */
+    document.getElementById('navAddStructureBtn').addEventListener('click', function (e) {
+        e.preventDefault();
+        sessionStorage.setItem('addStructureReturnTo', window.location.href);
+        sessionStorage.setItem('authorAddStructure', '1');
+        window.location.href = 'addStructure.html';
+    });
 
     var toggleBtn = document.getElementById('nightToggle');
     toggleBtn.innerHTML = document.body.classList.contains('night-mode') ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';

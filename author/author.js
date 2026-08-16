@@ -177,12 +177,26 @@ document.addEventListener('click', function(e){
 // "Add structure" next to the picker - same "go there, come back" trip as
 // goEditInInspection()/authorReturn below, just for a structure that
 // doesn't exist yet instead of an inspection that already does.
+// authorAddStructure tells addStructure.html to show its Client picker -
+// missing here previously, which meant a structure created this way had
+// no client_id and would've been invisible on Dashboard/Planning.
 document.getElementById('addStructureBtn').addEventListener('click', function(){
   sessionStorage.setItem('addStructureReturnTo', window.location.href);
-  window.location.href = '../structure/add-structure.html';
+  sessionStorage.setItem('authorAddStructure', '1');
+  window.location.href = 'addStructure.html';
 });
 
-// If we're arriving back from add-structure.html having just created a
+// Navbar shortcut (navAddStructureBtn) - same round trip as the button
+// above, just reachable from anywhere on the page instead of only next to
+// the structure picker.
+document.getElementById('navAddStructureBtn').addEventListener('click', function (e) {
+  e.preventDefault();
+  sessionStorage.setItem('addStructureReturnTo', window.location.href);
+  sessionStorage.setItem('authorAddStructure', '1');
+  window.location.href = 'addStructure.html';
+});
+
+// If we're arriving back from addStructure.html having just created a
 // structure, select it once loadStructures() has it in the list - same
 // consume-once pattern as resumeAuthorReturn() below.
 async function resumeNewStructure(){

@@ -60,6 +60,13 @@ a{color:inherit;}
 }
 .navbar .left { display: flex; align-items: center; gap: 24px; }
 .navbar .logo { font-size: 1.2rem; font-weight: 700; background: linear-gradient(135deg, #5b8c8a 0%, #7ba8a5 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+/* Small feather badge next to the wordmark - the only visual cue that
+   distinguishes an Author page from core spanSense at a glance, since
+   otherwise the two share the same navbar/logo treatment entirely. Resets
+   the gradient text-clip above (which would otherwise inherit onto this
+   icon too and render it invisible) back to a plain solid teal. */
+.navbar .logo .logo-author-mark{ font-size:.62rem; margin-left:6px; opacity:.85; vertical-align:3px; background:none; -webkit-text-fill-color:#5b8c8a; color:#5b8c8a; }
+.night-mode .navbar .logo .logo-author-mark{ -webkit-text-fill-color:#8ab4b0; color:#8ab4b0; }
 .navbar .menu { display: flex; gap: 16px; }
 .navbar .menu a { text-decoration: none; color: #4a5b6e; font-weight: 500; font-size: 0.85rem; transition: color 0.2s; display: flex; align-items: center; gap: 8px; }
 .navbar .menu a:hover, .navbar .menu a.active { color: #5b8c8a; }
@@ -193,12 +200,17 @@ a{color:inherit;}
 
 /* ---------- ROUTE RAIL (floating, right, always docked under the layer
    switcher; its body only shows once route mode is on) ---------- */
-/* Top clears zoom+layers (100+88+8+46 = ~262px); max-height is capped so
-   an expanded, full-length itinerary list still ends above the chat
-   toggle (fixed bottom:65px/height:44px on desktop, bottom:70px/height:48px
-   on mobile - see map.css) with a clear gap, instead of growing down over
-   it the way the old bottom-anchored mobile layout could. */
-.route-rail{ position:fixed; top:262px; right:20px; width:330px; max-height: calc(100vh - 262px - 125px); z-index:500; }
+/* Top clears zoom+layers (100+88+16+46 = ~266px - the 16 is zoom's own
+   8px bottom margin plus layers' 8px top margin adding rather than
+   collapsing, since map.css's Leaflet corner container is a flex column;
+   see repositionRouteRail()'s own comment in map.js, which is what
+   actually sets this - the value here is just the pre-JS fallback).
+   max-height is capped so an expanded, full-length itinerary list still
+   ends above the chat toggle (fixed bottom:65px/height:44px on desktop,
+   bottom:70px/height:48px on mobile - see map.css) with a clear gap,
+   instead of growing down over it the way the old bottom-anchored mobile
+   layout could. */
+.route-rail{ position:fixed; top:266px; right:20px; width:330px; max-height: calc(100vh - 266px - 125px); z-index:500; }
 /* Retracted (no .expanded), the panel sheds its card chrome entirely so
    only the toggle icon itself shows - matching the plain zoom/layers
    control look - instead of a wide bar with a "Plan / Route Planning"
@@ -209,8 +221,12 @@ a{color:inherit;}
 .route-rail:not(.expanded) .rail-head-text{ display:none; }
 /* Same footprint as the chat toggle below it (44px, 48px on mobile - see
    map.css's .chat-toggle) so the two read as a matched pair of circles-
-   worth of floating icons either side of the map. */
-.route-rail:not(.expanded) #routeModeBtn{ width:44px; height:44px; }
+   worth of floating icons either side of the map. Radius matches map.css's
+   .leaflet-control-zoom/.leaflet-control-layers (48px, effectively a full
+   circle at this size) instead of .icon-btn's own 9px default - the
+   smaller radius read as a rectangle awkwardly dropped into the same
+   pill-shaped stack as the real Leaflet controls above it. */
+.route-rail:not(.expanded) #routeModeBtn{ width:44px; height:44px; border-radius:48px; }
 .route-rail:not(.expanded) #routeModeBtn svg{ width:20px; height:20px; }
 .route-rail-head{ padding:13px 15px; border-bottom:1px solid var(--border2); display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .night-mode .route-rail-head{ border-color:#2f3e45; }
@@ -289,7 +305,7 @@ a{color:inherit;}
      hugs the toggle icon's own width instead of `left` forcing it to
      stretch full-width with nothing in it yet; expanded, it spans the
      same way the desktop panel's fixed width reads on a narrow screen. */
-  .route-rail{ right:12px; width:auto; max-height: calc(100vh - 262px - 134px); }
+  .route-rail{ right:12px; width:auto; max-height: calc(100vh - 266px - 134px); }
   .route-rail.expanded{ left:12px; }
   .route-rail:not(.expanded) #routeModeBtn{ width:48px; height:48px; }
   .map-summary-chip{ top:76px; padding:6px 12px; gap:8px; font-size:.68rem; }
@@ -318,7 +334,7 @@ a{color:inherit;}
              mobile .navbar repositioning; hidden above 768px via
              .mobile-only. -->
         <button class="mobile-only" id="mobileSidebarToggle" aria-label="Menu"><i class="fas fa-bars"></i></button>
-        <div class="logo">spanSense</div>
+        <div class="logo">spanSense<i class="fas fa-feather-pointed logo-author-mark" data-tip="Author"></i></div>
     </div>
     <div class="search-bar">
         <input type="text" id="searchInput" placeholder="Search structures...">
@@ -338,7 +354,10 @@ a{color:inherit;}
      Database/Planning/twinView in the same spot) - reuses map.css's .sidebar
      rules unmodified. Nav lives here, not in the navbar's .menu, to match core
      exactly - a navbar-.menu approach crowds out at narrow/mobile widths since
-     the 280px search-bar alone doesn't leave room for 5 nav links too. ============ -->
+     the 280px search-bar alone doesn't leave room for 5 nav links too. No
+     "Map" link, same as core's own sidebar doesn't link to itself; Add
+     Structure sits last, styled as a plain nav link (not a standalone CTA)
+     so it blends in with the pages above it instead of standing out. ============ -->
 <div id="sidebar" class="sidebar">
     <div class="sidebar-header"><h3>Navigation</h3></div>
     <ul>
@@ -379,11 +398,11 @@ a{color:inherit;}
                 </div>
             </ul>
         </li>
-        <li><a href="map.html" class="active"><i class="fas fa-map"></i><span>Map</span></a></li>
         <li><a href="dashboard.html"><i class="fas fa-chart-pie"></i><span>Dashboard</span></a></li>
         <li><a href="planning.html"><i class="fas fa-calendar-check"></i><span>Planning</span></a></li>
         <li><a href="clients.html"><i class="fas fa-users"></i><span>Clients</span></a></li>
         <li><a href="author.html"><i class="fas fa-feather-pointed"></i><span>Author</span></a></li>
+        <li><a href="#" id="addStructureBtn"><i class="fas fa-plus"></i><span>New</span></a></li>
     </ul>
 </div>
 

@@ -30,6 +30,19 @@
         }
     });
 
+    /* ---------------------------------------------------------
+       ADD STRUCTURE - same "go there, come back" trip as author/map.js's
+       own addStructureBtn, reusing addStructure.html rather than
+       rebuilding it here. authorAddStructure tells that form to show its
+       Client picker.
+       --------------------------------------------------------- */
+    document.getElementById('navAddStructureBtn').addEventListener('click', function (e) {
+        e.preventDefault();
+        sessionStorage.setItem('addStructureReturnTo', window.location.href);
+        sessionStorage.setItem('authorAddStructure', '1');
+        window.location.href = 'addStructure.html';
+    });
+
     function escapeHtml(v) {
         if (v == null) return '';
         return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -56,22 +69,28 @@
     }
 
     /* ---------------------------------------------------------
-       ACCESS METHOD - derived from structure type, no API needed. Flags
-       the two categories that typically need extra kit/procedures booked
-       alongside the inspector (confined space entry, MEWP/overhead TM)
-       so a planner sees it while assigning, not on site.
+       ACCESS METHOD - defaults from structure type (culverts flag confined
+       space, sign gantries flag MEWP/overhead TM) but is a real per-
+       structure field (bridges.access_method) a planner can view and
+       override from the assign modal - a type-based guess isn't always
+       right (e.g. a culvert too shallow to enter, or a bridge that in
+       practice needs rope access), and there was previously no way to
+       correct it. Saved straight to the bridge (PATCH, not part of the
+       assignment) since it's a property of the structure, not the visit.
        --------------------------------------------------------- */
     function normType(t) { return (t || '').toLowerCase().replace(/\s+/g, '_'); }
     var ACCESS_METHOD = {
-        culvert: { label: 'Confined space entry', icon: 'fa-triangle-exclamation', warn: true },
-        sign_gantry: { label: 'MEWP / overhead TM', icon: 'fa-truck-ramp-box', warn: true },
-        bridge: { label: 'Standard access', icon: 'fa-person-walking', warn: false },
-        footbridge: { label: 'Standard access', icon: 'fa-person-walking', warn: false },
-        retaining_wall: { label: 'Standard access', icon: 'fa-person-walking', warn: false }
+        standard: { label: 'Standard access', icon: 'fa-person-walking', warn: false },
+        confined_space: { label: 'Confined space entry', icon: 'fa-triangle-exclamation', warn: true },
+        mewp: { label: 'MEWP / overhead TM', icon: 'fa-truck-ramp-box', warn: true },
+        rope_access: { label: 'Rope access', icon: 'fa-person-falling', warn: true },
+        water: { label: 'Access over/through water', icon: 'fa-water', warn: true }
     };
-    function accessMethodFor(b) {
-        return ACCESS_METHOD[normType(b && b.type)] || { label: 'Standard access', icon: 'fa-person-walking', warn: false };
+    var ACCESS_METHOD_TYPE_DEFAULT = { culvert: 'confined_space', sign_gantry: 'mewp' };
+    function accessMethodKeyFor(b) {
+        return (b && b.access_method) || ACCESS_METHOD_TYPE_DEFAULT[normType(b && b.type)] || 'standard';
     }
+    function accessMethodFor(b) { return ACCESS_METHOD[accessMethodKeyFor(b)] || ACCESS_METHOD.standard; }
 
     /* ---------------------------------------------------------
        BANK HOLIDAYS - gov.uk's public JSON, fetched once. england-and-wales
@@ -86,8 +105,22 @@
             .then(function (data) {
                 var events = (data['england-and-wales'] && data['england-and-wales'].events) || [];
                 events.forEach(function (e) { bankHolidays[e.date] = e.title; });
+                renderHolidayStrip();
             })
             .catch(function () { /* flags just won't show - not worth blocking the page over */ });
+    }
+    // Always-visible, independent of anything being scheduled - the only
+    // place bank holidays show without opening a specific assignment.
+    function renderHolidayStrip() {
+        var todayStr = new Date().toISOString().slice(0, 10);
+        var upcoming = Object.keys(bankHolidays).filter(function (d) { return d >= todayStr; }).sort().slice(0, 6);
+        var panel = document.getElementById('holidayPanel');
+        if (!upcoming.length) { panel.style.display = 'none'; return; }
+        document.getElementById('holidayStrip').innerHTML = upcoming.map(function (d) {
+            var dLabel = new Date(d).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+            return '<div class="holiday-chip"><span class="hc-date">' + dLabel + '</span><span class="hc-title">' + escapeHtml(bankHolidays[d]) + '</span></div>';
+        }).join('');
+        panel.style.display = 'block';
     }
 
     /* ---------------------------------------------------------
@@ -204,10 +237,23 @@
                 '<div class="ur-name">' + escapeHtml(b.name) + '</div>' +
                 '<div class="ur-sub">' + escapeHtml(b.client_name || 'Unknown client') + '</div>' +
                 tagHtml + accessHtml +
+                '<span class="ur-live" id="ur-live-' + b.id + '"></span>' +
                 '</li>';
         }).join('');
         Array.prototype.forEach.call(list.querySelectorAll('.unsched-row'), function (row) {
             row.addEventListener('click', function () { openAssignModal({ bridgeId: Number(row.dataset.bridgeId) }); });
+        });
+
+        // Flood watch is real-time (not date-bound), so unlike weather it
+        // can show here even before anything's scheduled - cached by
+        // structure, same lookup the agenda uses.
+        due.forEach(function (x) {
+            var b = x.b;
+            if (b.latitude == null || b.longitude == null) return;
+            fetchFloodCount(b.latitude, b.longitude).then(function (count) {
+                var el = document.getElementById('ur-live-' + b.id);
+                if (el && count) el.innerHTML = '<span class="ur-access warn"><i class="fas fa-water"></i>Flood watch nearby<span class="beta-dot">&beta;</span></span>';
+            });
         });
     }
 
@@ -217,6 +263,7 @@
     var LANE_LABEL = { none: null, partial: 'Partial closure', full: 'Full closure' };
     function renderAgenda() {
         document.getElementById('agendaCount').textContent = assignments.length ? assignments.length + ' scheduled' : '';
+        renderCalendar();
         var el = document.getElementById('agenda');
         if (!assignments.length) {
             el.innerHTML = '<div class="empty-state"><i class="fas fa-route"></i>Nothing scheduled yet. Pick something from Unscheduled to get started.</div>';
@@ -283,6 +330,89 @@
     }
 
     /* ---------------------------------------------------------
+       CALENDAR VIEW - same Programme data as the agenda, laid out as a
+       month grid instead of a chronological list. Bank holidays get their
+       own marker; each day's assignments show as small pills (clicking one
+       opens the same edit modal as the list view's pencil icon). Kept in
+       sync with the agenda for free - renderAgenda() calls this every time
+       it re-renders, regardless of which view is currently showing, since
+       it's all local data (no extra network calls) and cheap to keep
+       current so switching views never shows stale data.
+       --------------------------------------------------------- */
+    var currentView = 'list';
+    var calendarDate = new Date(); calendarDate.setDate(1);
+    var WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+    function setView(view) {
+        currentView = view;
+        document.getElementById('agenda').style.display = view === 'list' ? 'block' : 'none';
+        document.getElementById('calendarView').style.display = view === 'calendar' ? 'block' : 'none';
+        document.getElementById('viewListBtn').classList.toggle('active', view === 'list');
+        document.getElementById('viewCalendarBtn').classList.toggle('active', view === 'calendar');
+    }
+    document.getElementById('viewListBtn').addEventListener('click', function () { setView('list'); });
+    document.getElementById('viewCalendarBtn').addEventListener('click', function () { setView('calendar'); });
+    document.getElementById('calPrev').addEventListener('click', function () { calendarDate.setMonth(calendarDate.getMonth() - 1); renderCalendar(); });
+    document.getElementById('calNext').addEventListener('click', function () { calendarDate.setMonth(calendarDate.getMonth() + 1); renderCalendar(); });
+    document.getElementById('calToday').addEventListener('click', function () { calendarDate = new Date(); calendarDate.setDate(1); renderCalendar(); });
+
+    function isoDate(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+
+    function renderCalendar() {
+        var year = calendarDate.getFullYear(), month = calendarDate.getMonth();
+        document.getElementById('calMonthLabel').textContent = calendarDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+
+        var byDate = {};
+        assignments.forEach(function (a) {
+            var d = a.scheduled_date.slice(0, 10);
+            (byDate[d] = byDate[d] || []).push(a);
+        });
+        var leaveByDate = {};
+        leave.forEach(function (l) {
+            var d = l.leave_date.slice(0, 10);
+            (leaveByDate[d] = leaveByDate[d] || []).push(l);
+        });
+
+        var firstOfMonth = new Date(year, month, 1);
+        var startOffset = (firstOfMonth.getDay() + 6) % 7; // Monday-start grid
+        var gridStart = new Date(year, month, 1 - startOffset);
+        var todayStr = isoDate(new Date());
+
+        var html = WEEKDAY_LABELS.map(function (d) { return '<div class="cal-dow">' + d + '</div>'; }).join('');
+        for (var i = 0; i < 42; i++) {
+            var cellDate = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i);
+            var dStr = isoDate(cellDate);
+            var inMonth = cellDate.getMonth() === month;
+            var dayAssignments = byDate[dStr] || [];
+            var dayLeave = leaveByDate[dStr] || [];
+            var holidayTitle = bankHolidays[dStr];
+            var pills = dayAssignments.slice(0, 3).map(function (a) {
+                return '<div class="cal-pill" data-assign-id="' + a.id + '" data-tip="' + escapeHtml(a.bridge_name) + ' &middot; ' + escapeHtml(a.inspector_name || a.inspector_username) + '">' + escapeHtml(a.bridge_name) + '</div>';
+            }).join('');
+            var more = dayAssignments.length > 3 ? '<div class="cal-more">+' + (dayAssignments.length - 3) + ' more</div>' : '';
+            var leavePills = dayLeave.slice(0, 3).map(function (l) {
+                var s = staffById(l.user_id);
+                var name = s ? (s.full_name || s.username) : 'Staff';
+                return '<div class="cal-leave-pill" data-tip="' + escapeHtml(name) + (l.reason ? ' &middot; ' + escapeHtml(l.reason) : '') + '"><i class="fas fa-user-slash"></i>' + escapeHtml(name) + '</div>';
+            }).join('');
+            var leaveMore = dayLeave.length > 3 ? '<div class="cal-more">+' + (dayLeave.length - 3) + ' more off</div>' : '';
+            html += '<div class="cal-cell' + (inMonth ? '' : ' other-month') + (dStr === todayStr ? ' today' : '') + '">' +
+                '<div class="cal-cell-head"><span class="cal-day-num">' + cellDate.getDate() + '</span>' +
+                (holidayTitle ? '<span class="cal-holiday" data-tip="' + escapeHtml(holidayTitle) + '"><i class="fas fa-calendar-day"></i></span>' : '') +
+                '</div>' + leavePills + leaveMore + pills + more + '</div>';
+        }
+        var grid = document.getElementById('calGrid');
+        grid.innerHTML = html;
+        Array.prototype.forEach.call(grid.querySelectorAll('.cal-pill'), function (pill) {
+            pill.addEventListener('click', function () {
+                var id = Number(pill.dataset.assignId);
+                var a = assignments.filter(function (x) { return x.id === id; })[0];
+                if (a) openAssignModal({ assignment: a });
+            });
+        });
+    }
+
+    /* ---------------------------------------------------------
        STAFF AVAILABILITY
        --------------------------------------------------------- */
     function renderStaff() {
@@ -306,7 +436,7 @@
             btn.addEventListener('click', function () {
                 fetch(API_BASE + '/api/author/staff-leave/' + btn.dataset.leaveId, { method: 'DELETE' })
                     .then(function () { return loadLeave(); })
-                    .then(function () { renderStaff(); });
+                    .then(function () { renderStaff(); renderCalendar(); });
             });
         });
 
@@ -323,7 +453,7 @@
             body: JSON.stringify({ user_id: Number(userId), leave_date: date })
         })
             .then(function () { document.getElementById('leaveDateInput').value = ''; return loadLeave(); })
-            .then(function () { renderStaff(); });
+            .then(function () { renderStaff(); renderCalendar(); });
     });
 
     /* ---------------------------------------------------------
@@ -344,6 +474,11 @@
 
         var inspSel = document.getElementById('fInspector');
         inspSel.innerHTML = staff.map(function (s) { return '<option value="' + s.id + '">' + escapeHtml(s.full_name || s.username) + '</option>'; }).join('');
+
+        var accessSel = document.getElementById('fAccessMethod');
+        var typeDefault = ACCESS_METHOD[ACCESS_METHOD_TYPE_DEFAULT[normType(b && b.type)] || 'standard'];
+        accessSel.options[0].textContent = 'Auto (' + typeDefault.label + ')';
+        accessSel.value = (b && b.access_method) || '';
 
         if (isEdit) {
             var a = opts.assignment;
@@ -424,6 +559,27 @@
     }
     document.getElementById('fInspector').addEventListener('change', refreshAdvisories);
     document.getElementById('fDate').addEventListener('change', refreshAdvisories);
+
+    // Access method belongs to the structure, not this visit, so it saves
+    // straight to the bridge as soon as it's changed rather than waiting
+    // on Save/Cancel of the assignment - and everywhere else showing it
+    // (Unscheduled, the agenda) is refreshed immediately to match.
+    document.getElementById('fAccessMethod').addEventListener('change', function () {
+        var bridgeId = Number(modal.dataset.bridgeId);
+        var value = this.value;
+        fetch(API_BASE + '/api/bridges/' + bridgeId + '/access-method', {
+            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accessMethod: value || null })
+        })
+            .then(function (r) { if (!r.ok) throw new Error('save failed'); })
+            .then(function () {
+                var b = bridgeById(bridgeId);
+                if (b) b.access_method = value || null;
+                renderUnscheduled();
+                renderAgenda();
+            })
+            .catch(function (err) { console.error(err); alert('Could not save access method.'); });
+    });
 
     document.getElementById('saveAssignBtn').addEventListener('click', function () {
         var date = document.getElementById('fDate').value;

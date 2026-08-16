@@ -496,7 +496,7 @@ async function fetchAndUpdateBridgeData(bridgeId) {
 let currentBridgeInfo = null;
 let selectedEditType = null;
 
-// Same 5 types/icons as Add Structure's type pills (structure/add-structure.html)
+// Same 5 types/icons as Add Structure's type pills (author/addStructure.html)
 // - kept in sync manually since neither page currently shares a JS module.
 const STRUCTURE_TYPES = [
     { value: 'bridge', label: 'Bridge', icon: 'fa-archway' },

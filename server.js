@@ -555,6 +555,11 @@ async function initDatabase() {
         // client (null for spanSense's normal owner-direct structures).
         await pool.query(`ALTER TABLE bridges ADD COLUMN IF NOT EXISTS client_id INTEGER`);
 
+        // Manual override for how a structure is actually accessed on site
+        // (confined space entry, MEWP, rope access, etc). Null means "use
+        // the type-based default" - see Author Planning's accessMethodFor().
+        await pool.query(`ALTER TABLE bridges ADD COLUMN IF NOT EXISTS access_method TEXT`);
+
         // Author's Planning: day-level unavailability per inspector (holiday/
         // annual leave). Deliberately day granularity, not time-of-day - see
         // inspection_assignments below for the other half of "is this
@@ -1021,6 +1026,7 @@ app.get('/api/bridges', requireAuth, async (req, res) => {
             SELECT b.id, b.name, b.location, b.latitude, b.longitude, b.span, b.length,
                     b.built_year, b.type, b.span_number, b.OSE, b.OSN,
                     b.primary_material, b.secondary_material, b.organization_id, b.client_id,
+                    b.access_method,
                     latest_insp.overall_bciave AS bci_av,
                     b.gi_cycle_years, b.pi_cycle_years, b.next_inspection_override,
                     MAX(i.inspection_date) as last_inspected
@@ -1036,6 +1042,7 @@ app.get('/api/bridges', requireAuth, async (req, res) => {
             GROUP BY b.id, b.name, b.location, b.latitude, b.longitude, b.span, b.length,
                      b.built_year, b.type, b.span_number, b.OSE, b.OSN,
                      b.primary_material, b.secondary_material, b.organization_id, b.client_id,
+                     b.access_method,
                      latest_insp.overall_bciave,
                      b.gi_cycle_years, b.pi_cycle_years, b.next_inspection_override
             ORDER BY b.name
@@ -1075,6 +1082,25 @@ app.patch('/api/bridges/:id/schedule', requireAuth, requireEngineer, async (req,
     }
 });
 
+// Manual override for how a structure is accessed on site (Author
+// Planning's "Access method" field) - null clears the override and falls
+// back to the type-based default computed client-side.
+const ACCESS_METHODS = ['standard', 'confined_space', 'mewp', 'rope_access', 'water'];
+app.patch('/api/bridges/:id/access-method', requireAuth, requireEngineer, async (req, res) => {
+    try {
+        const { accessMethod } = req.body;
+        const value = accessMethod || null;
+        if (value !== null && !ACCESS_METHODS.includes(value)) {
+            return res.status(400).json({ success: false, error: 'Invalid access method' });
+        }
+        await pool.query('UPDATE bridges SET access_method = $1 WHERE id = $2', [value, req.params.id]);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Update bridge access method error:', err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
 // Shared by POST /api/bridges (create) and PUT /api/bridges/:id/spans
 // (replace) below - always the full set for a structure, never a partial
 // patch, so span_number (set by the caller right after this) can never
@@ -1102,15 +1128,19 @@ async function replaceBridgeSpans(bridgeId, spans) {
     );
 }
 
-// Create a new structure - structure/add-structure.html's "Create Structure"
+// Create a new structure - author/addStructure.html's "Create Structure"
 // posts here. Engineer/admin only, same gating as schedule edits above -
 // this adds a record everyone else sees on Map/Database/Planning.
+// client_id is optional and only ever sent by Author's own "Add structure"
+// entry point (author/map.html) - null for spanSense's normal core callers,
+// exactly like the column's own default.
 app.post('/api/bridges', requireAuth, requireEngineer, async (req, res) => {
     try {
         const {
             name, type, location, latitude, longitude, span, length, width,
             span_number, built_year, load_capacity, primary_material,
-            secondary_material, description, OSE, OSN, gi_cycle_years, pi_cycle_years, spans
+            secondary_material, description, OSE, OSN, gi_cycle_years, pi_cycle_years, spans,
+            client_id
         } = req.body;
 
         if (!name || !name.trim()) {
@@ -1128,15 +1158,15 @@ app.post('/api/bridges', requireAuth, requireEngineer, async (req, res) => {
                 name, type, location, latitude, longitude, span, length, width,
                 span_number, built_year, load_capacity, primary_material,
                 secondary_material, description, OSE, OSN, gi_cycle_years, pi_cycle_years,
-                organization_id
-             ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+                organization_id, client_id
+             ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
              RETURNING id`,
             [
                 name.trim(), type || null, location || null, latitude ?? null, longitude ?? null,
                 span ?? null, length ?? null, width ?? null, spanNumber, built_year ?? null,
                 load_capacity ?? null, primary_material || null, secondary_material || null,
                 description || null, OSE || null, OSN || null, gi_cycle_years ?? null, pi_cycle_years ?? null,
-                req.session.organizationId ?? null
+                req.session.organizationId ?? null, client_id ?? null
             ]
         );
         if (Array.isArray(spans) && spans.length) await replaceBridgeSpans(row.id, spans);
@@ -3298,7 +3328,7 @@ app.post('/api/author/extract-previous-inspection', requireAuth, upload.single('
     }
 });
 
-// structure/add-structure.html's "Extract from document" option - pulls
+// author/addStructure.html's "Extract from document" option - pulls
 // structure identification facts (name, location, dimensions, materials,
 // built year) out of an uploaded BCI Pro forma or inspection report cover
 // sheet, to prefill the Add Structure form for review rather than typing

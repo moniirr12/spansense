@@ -52,6 +52,23 @@
     }
 
     /* ---------------------------------------------------------
+       ADD STRUCTURE - same "go there, come back" round trip as
+       author.js's own addStructureBtn wiring, reusing addStructure.html's
+       form (lives in author/ alongside this file) rather than rebuilding
+       it here. authorAddStructure additionally tells that form to show a
+       Client picker (see its own script) - without a client_id a
+       structure wouldn't show up anywhere else in Author (Dashboard/
+       Planning both filter on it). resumeNewStructure() below closes the
+       loop once STRUCTURES has reloaded.
+       --------------------------------------------------------- */
+    document.getElementById('addStructureBtn').addEventListener('click', function (e) {
+        e.preventDefault(); // plain nav-link markup (href="#") to blend in with the real links around it
+        sessionStorage.setItem('addStructureReturnTo', window.location.href);
+        sessionStorage.setItem('authorAddStructure', '1');
+        window.location.href = 'addStructure.html';
+    });
+
+    /* ---------------------------------------------------------
        TYPE / CONDITION-BAND DEFINITIONS
        Kept identical to map.js (map/map.js) so a structure reads the
        same colour/icon on both pages.
@@ -559,7 +576,14 @@
     var chatToggleEl = document.querySelector('.chat-toggle');
     function repositionRouteRail() {
         if (!layersContainerEl) return;
-        var top = layersContainerEl.getBoundingClientRect().bottom + 8;
+        // +16, not +8: zoom and layers are both real Leaflet controls in the
+        // same flex-column corner container, where map.css gives each an 8px
+        // margin on the side facing the other - those two margins add in a
+        // flex layout (no margin-collapsing the way block siblings get), so
+        // the real gap between them is 16px. route-rail isn't part of that
+        // flex flow (it's its own fixed-position div), so it only ever had
+        // a single 8px added here - visibly tighter than the gap above it.
+        var top = layersContainerEl.getBoundingClientRect().bottom + 16;
         routeRailEl.style.top = top + 'px';
         if (chatToggleEl) {
             var chatTop = chatToggleEl.getBoundingClientRect().top;
@@ -567,6 +591,15 @@
         }
     }
     repositionRouteRail();
+    // map.css plays a ~0.3s entrance animation on the zoom/layers controls
+    // (.leaflet-control-zoom/.leaflet-control-layers { animation: floatIn
+    // ... }) - the call above runs before it settles, so it can capture a
+    // mid-animation position and leave the panel a few px off until
+    // something else (route mode, a resize, opening the dropdown)
+    // triggers a recompute against the real, final position. Re-running
+    // once the animation actually ends fixes that without waiting on a
+    // fixed timeout that could race the animation on a slower machine.
+    if (layersContainerEl) layersContainerEl.addEventListener('animationend', repositionRouteRail, { once: true });
     if (layersContainerEl && window.MutationObserver) {
         new MutationObserver(repositionRouteRail).observe(layersContainerEl, { attributes: true, attributeFilter: ['class'] });
     }
@@ -746,10 +779,27 @@
             fuse = new Fuse(STRUCTURES, { keys: ['name', 'location', 'id'], threshold: 0.3 });
             initMarkers();
             renderAll();
+            resumeNewStructure();
         })
         .catch(function (err) {
             console.error('Author map: failed to load /api/bridges', err);
         });
+
+    // Arriving back from addStructure.html (see addStructureBtn above) -
+    // pan to and open the structure that was just created, same consume-
+    // once pattern as author.js's own resumeNewStructure(). A structure
+    // created without coordinates (lat/lng are optional on that form)
+    // won't be in STRUCTURES at all - it still exists, just nothing to
+    // pan to here yet, so this quietly does nothing rather than erroring.
+    function resumeNewStructure() {
+        var newId = sessionStorage.getItem('newStructureId');
+        if (!newId) return;
+        sessionStorage.removeItem('newStructureId');
+        var s = byId[Number(newId)];
+        if (!s) return;
+        map.setView([s.latitude, s.longitude], Math.max(map.getZoom(), 14));
+        openStructureModal(s);
+    }
 
     /* ---------------------------------------------------------
        NAVBAR SEARCH - same Fuse-powered jump-to-structure dropdown as
