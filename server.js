@@ -1131,12 +1131,16 @@ async function replaceBridgeSpans(bridgeId, spans) {
 // Create a new structure - structure/add-structure.html's "Create Structure"
 // posts here. Engineer/admin only, same gating as schedule edits above -
 // this adds a record everyone else sees on Map/Database/Planning.
+// client_id is optional and only ever sent by Author's own "Add structure"
+// entry point (author/map.html) - null for spanSense's normal core callers,
+// exactly like the column's own default.
 app.post('/api/bridges', requireAuth, requireEngineer, async (req, res) => {
     try {
         const {
             name, type, location, latitude, longitude, span, length, width,
             span_number, built_year, load_capacity, primary_material,
-            secondary_material, description, OSE, OSN, gi_cycle_years, pi_cycle_years, spans
+            secondary_material, description, OSE, OSN, gi_cycle_years, pi_cycle_years, spans,
+            client_id
         } = req.body;
 
         if (!name || !name.trim()) {
@@ -1154,15 +1158,15 @@ app.post('/api/bridges', requireAuth, requireEngineer, async (req, res) => {
                 name, type, location, latitude, longitude, span, length, width,
                 span_number, built_year, load_capacity, primary_material,
                 secondary_material, description, OSE, OSN, gi_cycle_years, pi_cycle_years,
-                organization_id
-             ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+                organization_id, client_id
+             ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
              RETURNING id`,
             [
                 name.trim(), type || null, location || null, latitude ?? null, longitude ?? null,
                 span ?? null, length ?? null, width ?? null, spanNumber, built_year ?? null,
                 load_capacity ?? null, primary_material || null, secondary_material || null,
                 description || null, OSE || null, OSN || null, gi_cycle_years ?? null, pi_cycle_years ?? null,
-                req.session.organizationId ?? null
+                req.session.organizationId ?? null, client_id ?? null
             ]
         );
         if (Array.isArray(spans) && spans.length) await replaceBridgeSpans(row.id, spans);

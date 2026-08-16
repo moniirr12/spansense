@@ -535,6 +535,15 @@ body {
                 </div>
             </div>
 
+            <!-- Only shown when arriving from Author (see the authorAddStructure
+                 sessionStorage flag below) - core structures have no concept
+                 of a client, so this stays out of the way entirely otherwise. -->
+            <div class="form-group" id="fClientGroup" style="display:none;">
+                <label for="fClient">Client</label>
+                <select id="fClient"><option value="">Select client…</option></select>
+                <p class="hint">Which client this structure is inspected on behalf of - it won't show up in Author's Dashboard or Planning without one.</p>
+            </div>
+
             <div class="form-group">
                 <label for="fLocation">Location <span class="opt">(address or place name)</span></label>
                 <input type="text" id="fLocation" placeholder="e.g. Newcastle upon Tyne">
@@ -942,6 +951,27 @@ var API_BASE = (window.location.hostname === 'localhost' || window.location.host
     ? 'http://localhost:3000'
     : 'https://spansense.onrender.com';
 
+// ---------- Client field (Author entry point only) ----------
+// author/map.js sets this flag right before sending the browser here, same
+// trip as addStructureReturnTo below - it's the only signal this otherwise
+// plain core form has that a client needs picking.
+var fromAuthor = sessionStorage.getItem('authorAddStructure') === '1';
+if (fromAuthor) {
+    document.getElementById('fClientGroup').style.display = '';
+    fetch(API_BASE + '/api/author/clients')
+        .then(function(res) { return res.ok ? res.json() : []; })
+        .then(function(clients) {
+            var sel = document.getElementById('fClient');
+            clients.forEach(function(c) {
+                var opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.name;
+                sel.appendChild(opt);
+            });
+        })
+        .catch(function() { /* field stays put with just its default option */ });
+}
+
 // ---------- Extract from document (BCI Pro forma / inspection report) ----------
 // Prefills the form below from whatever the AI can reliably read off a
 // cover sheet - name, location, dimensions, materials, built year. Never
@@ -1043,6 +1073,12 @@ document.getElementById('addStructureForm').addEventListener('submit', function(
         showToast('Missing type', 'Pick a structure type — Bridge, Footbridge, Culvert, Retaining Wall or Sign Gantry.', 'error');
         return;
     }
+    var clientId = fromAuthor ? document.getElementById('fClient').value : '';
+    if (fromAuthor && !clientId) {
+        showToast('Missing client', 'Pick which client this structure is inspected for.', 'error');
+        document.getElementById('fClient').focus();
+        return;
+    }
 
     // Only sent as a real spans array when at least one row has something in
     // it - otherwise span_number (from the plain stepper) is all the server
@@ -1081,7 +1117,8 @@ document.getElementById('addStructureForm').addEventListener('submit', function(
         OSE: document.getElementById('fOSE').value.trim() || null,
         OSN: document.getElementById('fOSN').value.trim() || null,
         gi_cycle_years: document.getElementById('fGiCycle').value ? parseInt(document.getElementById('fGiCycle').value, 10) : null,
-        pi_cycle_years: document.getElementById('fPiCycle').value ? parseInt(document.getElementById('fPiCycle').value, 10) : null
+        pi_cycle_years: document.getElementById('fPiCycle').value ? parseInt(document.getElementById('fPiCycle').value, 10) : null,
+        client_id: clientId ? parseInt(clientId, 10) : null
     };
 
     var createBtn = document.querySelector('.btn-create');

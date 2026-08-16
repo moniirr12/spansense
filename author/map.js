@@ -52,6 +52,22 @@
     }
 
     /* ---------------------------------------------------------
+       ADD STRUCTURE - same "go there, come back" round trip as
+       author.js's own addStructureBtn wiring, reusing core's actual
+       structure/add-structure.html form rather than rebuilding it here.
+       authorAddStructure additionally tells that form to show a Client
+       picker (see its own script) - without a client_id a structure
+       created from core wouldn't show up anywhere else in Author (Dashboard/
+       Planning both filter on it). resumeNewStructure() below closes the
+       loop once STRUCTURES has reloaded.
+       --------------------------------------------------------- */
+    document.getElementById('addStructureBtn').addEventListener('click', function () {
+        sessionStorage.setItem('addStructureReturnTo', window.location.href);
+        sessionStorage.setItem('authorAddStructure', '1');
+        window.location.href = '../structure/add-structure.html';
+    });
+
+    /* ---------------------------------------------------------
        TYPE / CONDITION-BAND DEFINITIONS
        Kept identical to map.js (map/map.js) so a structure reads the
        same colour/icon on both pages.
@@ -755,10 +771,27 @@
             fuse = new Fuse(STRUCTURES, { keys: ['name', 'location', 'id'], threshold: 0.3 });
             initMarkers();
             renderAll();
+            resumeNewStructure();
         })
         .catch(function (err) {
             console.error('Author map: failed to load /api/bridges', err);
         });
+
+    // Arriving back from add-structure.html (see addStructureBtn above) -
+    // pan to and open the structure that was just created, same consume-
+    // once pattern as author.js's own resumeNewStructure(). A structure
+    // created without coordinates (lat/lng are optional on that form)
+    // won't be in STRUCTURES at all - it still exists, just nothing to
+    // pan to here yet, so this quietly does nothing rather than erroring.
+    function resumeNewStructure() {
+        var newId = sessionStorage.getItem('newStructureId');
+        if (!newId) return;
+        sessionStorage.removeItem('newStructureId');
+        var s = byId[Number(newId)];
+        if (!s) return;
+        map.setView([s.latitude, s.longitude], Math.max(map.getZoom(), 14));
+        openStructureModal(s);
+    }
 
     /* ---------------------------------------------------------
        NAVBAR SEARCH - same Fuse-powered jump-to-structure dropdown as
