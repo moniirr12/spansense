@@ -61,7 +61,8 @@
        Planning both filter on it). resumeNewStructure() below closes the
        loop once STRUCTURES has reloaded.
        --------------------------------------------------------- */
-    document.getElementById('addStructureBtn').addEventListener('click', function () {
+    document.getElementById('addStructureBtn').addEventListener('click', function (e) {
+        e.preventDefault(); // plain nav-link markup (href="#") to blend in with the real links around it
         sessionStorage.setItem('addStructureReturnTo', window.location.href);
         sessionStorage.setItem('authorAddStructure', '1');
         window.location.href = '../structure/add-structure.html';
@@ -575,7 +576,14 @@
     var chatToggleEl = document.querySelector('.chat-toggle');
     function repositionRouteRail() {
         if (!layersContainerEl) return;
-        var top = layersContainerEl.getBoundingClientRect().bottom + 8;
+        // +16, not +8: zoom and layers are both real Leaflet controls in the
+        // same flex-column corner container, where map.css gives each an 8px
+        // margin on the side facing the other - those two margins add in a
+        // flex layout (no margin-collapsing the way block siblings get), so
+        // the real gap between them is 16px. route-rail isn't part of that
+        // flex flow (it's its own fixed-position div), so it only ever had
+        // a single 8px added here - visibly tighter than the gap above it.
+        var top = layersContainerEl.getBoundingClientRect().bottom + 16;
         routeRailEl.style.top = top + 'px';
         if (chatToggleEl) {
             var chatTop = chatToggleEl.getBoundingClientRect().top;
