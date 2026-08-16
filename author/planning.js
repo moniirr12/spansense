@@ -56,6 +56,113 @@
     }
 
     /* ---------------------------------------------------------
+       ACCESS METHOD - derived from structure type, no API needed. Flags
+       the two categories that typically need extra kit/procedures booked
+       alongside the inspector (confined space entry, MEWP/overhead TM)
+       so a planner sees it while assigning, not on site.
+       --------------------------------------------------------- */
+    function normType(t) { return (t || '').toLowerCase().replace(/\s+/g, '_'); }
+    var ACCESS_METHOD = {
+        culvert: { label: 'Confined space entry', icon: 'fa-triangle-exclamation', warn: true },
+        sign_gantry: { label: 'MEWP / overhead TM', icon: 'fa-truck-ramp-box', warn: true },
+        bridge: { label: 'Standard access', icon: 'fa-person-walking', warn: false },
+        footbridge: { label: 'Standard access', icon: 'fa-person-walking', warn: false },
+        retaining_wall: { label: 'Standard access', icon: 'fa-person-walking', warn: false }
+    };
+    function accessMethodFor(b) {
+        return ACCESS_METHOD[normType(b && b.type)] || { label: 'Standard access', icon: 'fa-person-walking', warn: false };
+    }
+
+    /* ---------------------------------------------------------
+       BANK HOLIDAYS - gov.uk's public JSON, fetched once. england-and-wales
+       covers the great majority of this app's structures; flagged on the
+       agenda and in the assign modal so a planner sees it before double-
+       booking someone's public holiday, not after.
+       --------------------------------------------------------- */
+    var bankHolidays = {}; // 'YYYY-MM-DD' -> title
+    function loadBankHolidays() {
+        return fetch('https://www.gov.uk/bank-holidays.json', { credentials: 'omit' })
+            .then(function (r) { if (!r.ok) throw new Error('bank holidays request failed'); return r.json(); })
+            .then(function (data) {
+                var events = (data['england-and-wales'] && data['england-and-wales'].events) || [];
+                events.forEach(function (e) { bankHolidays[e.date] = e.title; });
+            })
+            .catch(function () { /* flags just won't show - not worth blocking the page over */ });
+    }
+
+    /* ---------------------------------------------------------
+       WEATHER (Beta) - Open-Meteo forecast, no key. Only fetched for
+       assignments inside its ~16-day forecast horizon; cached per
+       structure+date so re-rendering the agenda doesn't re-fetch. Wind/
+       rain are what actually affect inspection safety (rope access, MEWP,
+       working over water), so those are what's surfaced, not a generic
+       "sunny/cloudy" summary.
+       --------------------------------------------------------- */
+    var WEATHER_HORIZON_DAYS = 15;
+    var WEATHER_CODE = {
+        0: { icon: 'fa-sun', label: 'Clear' }, 1: { icon: 'fa-cloud-sun', label: 'Mostly clear' },
+        2: { icon: 'fa-cloud-sun', label: 'Partly cloudy' }, 3: { icon: 'fa-cloud', label: 'Overcast' },
+        45: { icon: 'fa-smog', label: 'Fog' }, 48: { icon: 'fa-smog', label: 'Fog' },
+        51: { icon: 'fa-cloud-rain', label: 'Light drizzle' }, 53: { icon: 'fa-cloud-rain', label: 'Drizzle' }, 55: { icon: 'fa-cloud-rain', label: 'Heavy drizzle' },
+        61: { icon: 'fa-cloud-rain', label: 'Light rain' }, 63: { icon: 'fa-cloud-rain', label: 'Rain' }, 65: { icon: 'fa-cloud-showers-heavy', label: 'Heavy rain' },
+        71: { icon: 'fa-snowflake', label: 'Light snow' }, 73: { icon: 'fa-snowflake', label: 'Snow' }, 75: { icon: 'fa-snowflake', label: 'Heavy snow' },
+        80: { icon: 'fa-cloud-showers-heavy', label: 'Showers' }, 81: { icon: 'fa-cloud-showers-heavy', label: 'Showers' }, 82: { icon: 'fa-cloud-showers-heavy', label: 'Violent showers' },
+        95: { icon: 'fa-cloud-bolt', label: 'Thunderstorm' }, 96: { icon: 'fa-cloud-bolt', label: 'Thunderstorm' }, 99: { icon: 'fa-cloud-bolt', label: 'Thunderstorm' }
+    };
+    var weatherCache = {}; // "lat,lon,date" -> Promise<{code,windKmh,precipMm}|null>
+    function withinForecastWindow(dateStr) {
+        var days = Math.round((new Date(dateStr) - new Date(new Date().toDateString())) / 86400000);
+        return days >= 0 && days <= WEATHER_HORIZON_DAYS;
+    }
+    function fetchWeather(lat, lon, dateStr) {
+        var key = lat + ',' + lon + ',' + dateStr;
+        if (!weatherCache[key]) {
+            var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon +
+                '&daily=weathercode,windspeed_10m_max,precipitation_sum&timezone=auto&start_date=' + dateStr + '&end_date=' + dateStr;
+            weatherCache[key] = fetch(url, { credentials: 'omit' })
+                .then(function (r) { if (!r.ok) throw new Error('weather request failed'); return r.json(); })
+                .then(function (data) {
+                    if (!data.daily || !data.daily.time || !data.daily.time.length) return null;
+                    return { code: data.daily.weathercode[0], windKmh: data.daily.windspeed_10m_max[0], precipMm: data.daily.precipitation_sum[0] };
+                })
+                .catch(function () { return null; });
+        }
+        return weatherCache[key];
+    }
+    function weatherChipHtml(w) {
+        if (!w) return '';
+        var wc = WEATHER_CODE[w.code] || { icon: 'fa-cloud', label: 'Forecast' };
+        var sev = (w.windKmh >= 50 || w.precipMm >= 6) ? 'full' : (w.windKmh >= 35 || w.precipMm >= 2) ? 'partial' : '';
+        return '<span class="tm-chip weather ' + sev + '" data-tip="' + escapeHtml(wc.label) + ' &middot; ' + Math.round(w.windKmh) + 'km/h wind &middot; ' + w.precipMm.toFixed(1) + 'mm rain">' +
+            '<i class="fas ' + wc.icon + '"></i>' + Math.round(w.windKmh) + 'km/h wind<span class="beta-dot">&beta;</span></span>';
+    }
+
+    /* ---------------------------------------------------------
+       FLOOD WARNINGS (Beta) - Environment Agency's real-time flood-
+       monitoring API, no key. This is current-conditions data (not a
+       forecast for the assignment date), so it's framed as a "worth
+       checking closer to the day" nearby watch rather than a prediction -
+       still useful for chronically flood-prone river/culvert sites.
+       --------------------------------------------------------- */
+    var floodCache = {}; // "lat,lon" -> Promise<count>
+    function fetchFloodCount(lat, lon) {
+        var key = lat + ',' + lon;
+        if (!floodCache[key]) {
+            var url = 'https://environment.data.gov.uk/flood-monitoring/id/floods?lat=' + lat + '&long=' + lon + '&dist=10';
+            floodCache[key] = fetch(url, { credentials: 'omit' })
+                .then(function (r) { if (!r.ok) throw new Error('flood request failed'); return r.json(); })
+                .then(function (data) { return (data.items || []).length; })
+                .catch(function () { return 0; });
+        }
+        return floodCache[key];
+    }
+    function floodChipHtml(count) {
+        if (!count) return '';
+        return '<span class="tm-chip full" data-tip="Environment Agency flood warning/alert active within 10km right now">' +
+            '<i class="fas fa-water"></i>Flood watch nearby<span class="beta-dot">&beta;</span></span>';
+    }
+
+    /* ---------------------------------------------------------
        STATE
        --------------------------------------------------------- */
     var bridges = [], staff = [], leave = [], assignments = [];
@@ -91,10 +198,12 @@
                 : x.due < 0
                     ? '<span class="ur-due overdue">' + Math.abs(x.due) + 'mo overdue</span>'
                     : '<span class="ur-due soon">due ' + (x.due <= 0 ? 'this month' : 'in ' + x.due + 'mo') + '</span>';
+            var am = accessMethodFor(b);
+            var accessHtml = '<span class="ur-access' + (am.warn ? ' warn' : '') + '"><i class="fas ' + am.icon + '"></i>' + am.label + '</span>';
             return '<li class="unsched-row" data-bridge-id="' + b.id + '">' +
                 '<div class="ur-name">' + escapeHtml(b.name) + '</div>' +
                 '<div class="ur-sub">' + escapeHtml(b.client_name || 'Unknown client') + '</div>' +
-                tagHtml +
+                tagHtml + accessHtml +
                 '</li>';
         }).join('');
         Array.prototype.forEach.call(list.querySelectorAll('.unsched-row'), function (row) {
@@ -120,17 +229,21 @@
             byDate[a.scheduled_date].push(a);
         });
         el.innerHTML = order.map(function (date) {
+            var holidayTitle = bankHolidays[date];
             var rows = byDate[date].map(function (a) {
-                var chips = '';
+                var b = bridgeById(a.bridge_id);
+                var am = accessMethodFor(b);
+                var chips = '<span class="tm-chip' + (am.warn ? ' partial' : '') + '"><i class="fas ' + am.icon + '"></i>' + am.label + '</span>';
                 if (LANE_LABEL[a.tm_lane_closure]) chips += '<span class="tm-chip ' + a.tm_lane_closure + '">' + LANE_LABEL[a.tm_lane_closure] + '</span>';
                 if (a.tm_night_inspection) chips += '<span class="tm-chip night">Night inspection</span>';
+                if (holidayTitle) chips += '<span class="tm-chip partial" data-tip="' + escapeHtml(holidayTitle) + '"><i class="fas fa-calendar-day"></i>Bank holiday</span>';
                 if (a.tm_site_location) chips += '<span class="tm-chip">' + escapeHtml(a.tm_site_location) + '</span>';
                 return '<div class="agenda-row" data-assign-id="' + a.id + '">' +
                     '<div class="ar-avatar">' + initials(a.inspector_name || a.inspector_username) + '</div>' +
                     '<div class="ar-main">' +
                     '<div class="ar-title">' + escapeHtml(a.bridge_name) + '</div>' +
                     '<div class="ar-sub">' + escapeHtml(a.client_name || 'Unknown client') + ' &middot; ' + escapeHtml(a.inspector_name || a.inspector_username) + '</div>' +
-                    (chips ? '<div class="ar-tm">' + chips + '</div>' : '') +
+                    '<div class="ar-tm">' + chips + '<span class="ar-live" id="ar-live-' + a.id + '"></span></div>' +
                     '</div>' +
                     '<div class="ar-actions">' +
                     '<button class="icon-btn edit-assign" data-tip="Edit"><i class="fas fa-pen"></i></button>' +
@@ -145,6 +258,26 @@
                 var id = Number(btn.closest('.agenda-row').dataset.assignId);
                 var a = assignments.filter(function (x) { return x.id === id; })[0];
                 if (a) openAssignModal({ assignment: a });
+            });
+        });
+
+        // Weather + flood are fetched after the sync render, only for
+        // assignments inside the forecast window, and injected into each
+        // row's own placeholder once resolved - never blocks the agenda
+        // from showing everything else immediately.
+        assignments.forEach(function (a) {
+            if (!withinForecastWindow(a.scheduled_date)) return;
+            var b = bridgeById(a.bridge_id);
+            if (!b || b.latitude == null || b.longitude == null) return;
+            var liveEl = document.getElementById('ar-live-' + a.id);
+            if (!liveEl) return;
+            fetchWeather(b.latitude, b.longitude, a.scheduled_date.slice(0, 10)).then(function (w) {
+                var el2 = document.getElementById('ar-live-' + a.id);
+                if (el2) el2.insertAdjacentHTML('beforeend', weatherChipHtml(w));
+            });
+            fetchFloodCount(b.latitude, b.longitude).then(function (count) {
+                var el2 = document.getElementById('ar-live-' + a.id);
+                if (el2) el2.insertAdjacentHTML('beforeend', floodChipHtml(count));
             });
         });
     }
@@ -229,7 +362,7 @@
         }
         modal.dataset.bridgeId = bridgeId;
         conflictBanner.classList.remove('show');
-        checkConflict();
+        refreshAdvisories();
         modal.classList.add('show');
     }
     function closeAssignModal() { modal.classList.remove('show'); editingAssignmentId = null; }
@@ -237,24 +370,60 @@
     document.getElementById('cancelAssignBtn').addEventListener('click', closeAssignModal);
     modal.addEventListener('click', function (e) { if (e.target === modal) closeAssignModal(); });
 
-    function checkConflict() {
+    // Everything worth flagging before a planner commits to a date: an
+    // inspector clash/leave (from the server), a bank holiday, and -
+    // async, appended once resolved rather than delaying the sync checks -
+    // the weather forecast and any nearby flood watch for that structure.
+    // advisoryToken drops a stale async response if the date/inspector
+    // changes again before it comes back.
+    var advisoryToken = 0;
+    function refreshAdvisories() {
         var inspectorId = document.getElementById('fInspector').value;
         var date = document.getElementById('fDate').value;
-        if (!inspectorId || !date) { conflictBanner.classList.remove('show'); return; }
+        var token = ++advisoryToken;
+        var msgs = [];
+
+        if (date && bankHolidays[date]) msgs.push(bankHolidays[date] + ' is a bank holiday.');
+
+        function paint() {
+            if (token !== advisoryToken) return;
+            if (msgs.length) { conflictBanner.innerHTML = '<i class="fas fa-triangle-exclamation"></i> ' + msgs.join(' '); conflictBanner.classList.add('show'); }
+            else conflictBanner.classList.remove('show');
+        }
+
+        if (!inspectorId || !date) { paint(); return; }
         fetch(API_BASE + '/api/author/assignments/conflicts?inspector_id=' + inspectorId + '&date=' + date)
             .then(function (r) { return r.json(); })
             .then(function (data) {
+                if (token !== advisoryToken) return;
                 var otherClashes = (data.clashes || []).filter(function (c) { return c.id !== editingAssignmentId; });
-                var msgs = [];
                 if (data.onLeave) msgs.push((staffById(Number(inspectorId)) || {}).full_name + ' is marked as on leave that day' + (data.onLeave.reason ? ' (' + data.onLeave.reason + ')' : '') + '.');
                 if (otherClashes.length) msgs.push('Already booked on ' + otherClashes.map(function (c) { return c.bridge_name; }).join(', ') + ' that day.');
-                if (msgs.length) { conflictBanner.innerHTML = '<i class="fas fa-triangle-exclamation"></i> ' + msgs.join(' '); conflictBanner.classList.add('show'); }
-                else conflictBanner.classList.remove('show');
+                paint();
             })
-            .catch(function () { conflictBanner.classList.remove('show'); });
+            .catch(function () { paint(); });
+
+        var b = bridgeById(Number(modal.dataset.bridgeId));
+        if (b && b.latitude != null && b.longitude != null) {
+            if (withinForecastWindow(date)) {
+                fetchWeather(b.latitude, b.longitude, date).then(function (w) {
+                    if (token !== advisoryToken || !w) return;
+                    var wc = WEATHER_CODE[w.code] || { label: 'Forecast' };
+                    if (w.windKmh >= 35 || w.precipMm >= 2) {
+                        msgs.push('Forecast: ' + wc.label.toLowerCase() + ', ' + Math.round(w.windKmh) + 'km/h wind, ' + w.precipMm.toFixed(1) + 'mm rain.');
+                        paint();
+                    }
+                });
+            }
+            fetchFloodCount(b.latitude, b.longitude).then(function (count) {
+                if (token !== advisoryToken || !count) return;
+                msgs.push('Environment Agency flood warning active within 10km of this structure right now.');
+                paint();
+            });
+        }
     }
-    document.getElementById('fInspector').addEventListener('change', checkConflict);
-    document.getElementById('fDate').addEventListener('change', checkConflict);
+    document.getElementById('fInspector').addEventListener('change', refreshAdvisories);
+    document.getElementById('fDate').addEventListener('change', refreshAdvisories);
 
     document.getElementById('saveAssignBtn').addEventListener('click', function () {
         var date = document.getElementById('fDate').value;
@@ -295,7 +464,8 @@
         fetch(API_BASE + '/api/author/clients').then(function (r) { return r.json(); }),
         fetch(API_BASE + '/api/author/staff').then(function (r) { return r.json(); }),
         loadLeave(),
-        loadAssignments()
+        loadAssignments(),
+        loadBankHolidays()
     ]).then(function (results) {
         var allBridges = results[0], clients = results[1];
         staff = results[2];
