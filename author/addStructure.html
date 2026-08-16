@@ -304,6 +304,11 @@ body {
     grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
     gap: 14px;
 }
+/* No photos yet - the add-tile becomes a single, larger "default image"
+   box (own column, not stretched across the row) so Basic Info doesn't
+   read as an empty upload prompt right under the name. Once a photo
+   exists it shrinks back to a normal grid tile for adding more. */
+.photo-grid.empty { grid-template-columns: 1fr; max-width: 220px; }
 .add-photo-card {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     aspect-ratio: 1;
@@ -314,7 +319,10 @@ body {
     transition: all 0.3s ease;
 }
 .add-photo-card:hover { border-color: var(--teal); background: rgba(91, 140, 138, 0.08); transform: translateY(-2px); }
+.default-photo-icon { display: none; font-size: 34px; color: rgba(91, 140, 138, 0.35); margin-bottom: 10px; }
+.photo-grid.empty .default-photo-icon { display: block; }
 .plus-sign { font-size: 32px; font-weight: 300; color: var(--teal); line-height: 1; margin-bottom: 4px; }
+.photo-grid.empty .plus-sign { font-size: 22px; margin-bottom: 2px; }
 .add-text { font-size: 11px; color: var(--teal); font-weight: 500; letter-spacing: 0.3px; text-align: center; padding: 0 6px; }
 .preview-item-photo {
     position: relative; border-radius: 10px; overflow: hidden; background: white;
@@ -521,6 +529,19 @@ body.night-mode { background: #151f1d; color: var(--text); }
             </div>
 
             <div class="form-group">
+                <label>Photos <span class="opt">(optional)</span></label>
+                <div class="photo-grid empty" id="photoGrid">
+                    <div class="add-photo-card" id="addPhotoCard">
+                        <i class="fas fa-image default-photo-icon"></i>
+                        <div class="plus-sign">+</div>
+                        <div class="add-text">Add cover photo</div>
+                    </div>
+                </div>
+                <input type="file" id="photoInput" accept="image/*" multiple style="display:none;">
+                <p class="hint">The first photo becomes the cover photo shown on the Map.</p>
+            </div>
+
+            <div class="form-group">
                 <label>Type</label>
                 <div class="type-pills" id="typePills">
                     <button type="button" class="type-pill" data-type="bridge"><i class="fas fa-archway"></i>Bridge</button>
@@ -651,19 +672,6 @@ body.night-mode { background: #151f1d; color: var(--text); }
             <div class="form-group" style="margin-bottom:0;">
                 <textarea id="fDescription" class="field-narrow-wide" placeholder="Anything worth noting about this structure — history, access notes, known issues…"></textarea>
             </div>
-        </div>
-
-        <!-- PHOTOS -->
-        <div class="form-section">
-            <h2><i class="fas fa-camera"></i> Photos</h2>
-            <p class="section-sub">Add one or more photos with a short description each. The first photo becomes the cover photo shown on the Map.</p>
-            <div class="photo-grid" id="photoGrid">
-                <div class="add-photo-card" id="addPhotoCard">
-                    <div class="plus-sign">+</div>
-                    <div class="add-text">Add photos</div>
-                </div>
-            </div>
-            <input type="file" id="photoInput" accept="image/*" multiple style="display:none;">
         </div>
 
         <!-- ADVANCED -->
@@ -925,6 +933,11 @@ photoInput.addEventListener('change', function() {
 function renderPhotos() {
     // remove all preview cards, keep the add-tile
     Array.prototype.slice.call(photoGrid.querySelectorAll('.preview-item-photo')).forEach(function(el) { el.remove(); });
+    // .empty swaps the add-tile for a larger "default image" placeholder
+    // (see its own CSS) instead of a small grid tile once there's nothing
+    // to show yet.
+    photoGrid.classList.toggle('empty', photos.length === 0);
+    document.querySelector('#addPhotoCard .add-text').textContent = photos.length ? 'Add more' : 'Add cover photo';
     photos.forEach(function(photo, idx) {
         var card = document.createElement('div');
         card.className = 'preview-item-photo';
