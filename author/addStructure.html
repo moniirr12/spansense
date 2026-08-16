@@ -482,11 +482,11 @@ body {
     <div class="left">
         <div class="logo">spanSense<i class="fas fa-feather-pointed logo-author-mark" data-tip="Author"></i></div>
         <div class="menu">
-            <a href="../map/map.html"><i class="fas fa-map"></i>Map</a>
-            <a href="../dashboard/dashboard.html"><i class="fas fa-chart-pie"></i>Dashboard</a>
-            <a href="../database/database.html"><i class="fas fa-database"></i>Database</a>
-            <a href="../planning/planning.html"><i class="fas fa-calendar-alt"></i>Planning</a>
-            <a href="../twin/twin.html"><i class="fas fa-cube"></i>twinView</a>
+            <a href="map.html"><i class="fas fa-map"></i>Map</a>
+            <a href="dashboard.html"><i class="fas fa-chart-pie"></i>Dashboard</a>
+            <a href="planning.html"><i class="fas fa-calendar-check"></i>Planning</a>
+            <a href="clients.html"><i class="fas fa-users"></i>Clients</a>
+            <a href="author.html"><i class="fas fa-feather-pointed"></i>Author</a>
         </div>
     </div>
     <div class="right">
@@ -1181,7 +1181,13 @@ document.getElementById('addStructureForm').addEventListener('submit', function(
                 sessionStorage.setItem('newStructureId', data.id);
                 window.location.href = returnTo;
             } else {
-                window.location.href = '../database/database.html';
+                // Every real caller today sets addStructureReturnTo (see
+                // author.js/author/map.js/the navbar Add Structure links) -
+                // this only ever fires on a direct/bookmarked visit, so it
+                // falls back to Author's own structure browser rather than
+                // core's database page, which addStructure.html no longer
+                // links to anywhere else either.
+                window.location.href = 'map.html';
             }
         }, 900);
     })

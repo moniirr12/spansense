@@ -30,6 +30,19 @@
         }
     });
 
+    /* ---------------------------------------------------------
+       ADD STRUCTURE - same "go there, come back" trip as author/map.js's
+       own addStructureBtn, reusing addStructure.html rather than
+       rebuilding it here. authorAddStructure tells that form to show its
+       Client picker.
+       --------------------------------------------------------- */
+    document.getElementById('navAddStructureBtn').addEventListener('click', function (e) {
+        e.preventDefault();
+        sessionStorage.setItem('addStructureReturnTo', window.location.href);
+        sessionStorage.setItem('authorAddStructure', '1');
+        window.location.href = 'addStructure.html';
+    });
+
     function escapeHtml(v) {
         if (v == null) return '';
         return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');

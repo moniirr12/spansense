@@ -177,8 +177,22 @@ document.addEventListener('click', function(e){
 // "Add structure" next to the picker - same "go there, come back" trip as
 // goEditInInspection()/authorReturn below, just for a structure that
 // doesn't exist yet instead of an inspection that already does.
+// authorAddStructure tells addStructure.html to show its Client picker -
+// missing here previously, which meant a structure created this way had
+// no client_id and would've been invisible on Dashboard/Planning.
 document.getElementById('addStructureBtn').addEventListener('click', function(){
   sessionStorage.setItem('addStructureReturnTo', window.location.href);
+  sessionStorage.setItem('authorAddStructure', '1');
+  window.location.href = 'addStructure.html';
+});
+
+// Navbar shortcut (navAddStructureBtn) - same round trip as the button
+// above, just reachable from anywhere on the page instead of only next to
+// the structure picker.
+document.getElementById('navAddStructureBtn').addEventListener('click', function (e) {
+  e.preventDefault();
+  sessionStorage.setItem('addStructureReturnTo', window.location.href);
+  sessionStorage.setItem('authorAddStructure', '1');
   window.location.href = 'addStructure.html';
 });
 
