@@ -30,6 +30,7 @@
   --amber:#BA7517; --amber-bg:#fff8ee; --amber-border:#e8d4b8;
   --red:#c0392b; --red-bg:#fdecea; --red-border:#f0c4be;
   --ai:#6c5ce7; --ai-bg:#f1efff; --ai-border:#d9d3fb;
+  --font-display:'Source Serif 4', Georgia, serif;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body{font-family:'Inter','Segoe UI',Tahoma,sans-serif; color:var(--text); background:#f5f7fb; min-height:100vh; position:relative; transition: background 0.3s ease, color 0.3s ease; overflow-x: hidden;}
@@ -81,14 +82,16 @@ body.night-mode::before{
 .navbar .account-links a { text-decoration: none; color: #5f6b73; font-size: 1.2rem; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: color 0.2s, transform 0.15s, background 0.2s; }
 .navbar .account-links a:hover { background: #f0f4f8; color: #5b8c8a; transform: scale(1.1); }
 
-/* ---------- MAIN WRAPPER ---------- */
-.page-wrapper { max-width: 75%; margin: 0 auto; padding: 100px 0 60px 0; }
-@media (max-width: 1100px) { .page-wrapper { max-width: 90%; } }
+/* ---------- MAIN WRAPPER - same 1180px/padding as Dashboard, Planning,
+   Clients and Add Structure, so the page shell reads consistently across
+   Author regardless of what each page actually fills it with. ---------- */
+.page-wrapper { max-width: 1180px; margin: 0 auto; padding: 112px 28px 60px; }
 
-/* ---------- PAGE HEADER ---------- */
+/* ---------- PAGE HEADER - matches every other Author page's heading:
+   Source Serif display face, var(--green-dark), no left accent bar. ---------- */
 .page-header { margin-bottom: 28px; }
-.page-header h1 { font-size: 1.6rem; font-weight: 600; color: #2c5a57; border-left: 4px solid #8ab4b0; padding-left: 14px; margin-bottom: 8px; }
-.page-header p { color: #5f6b73; font-size: 0.85rem; padding-left: 18px; max-width: 640px; }
+.page-header h1 { font-family: var(--font-display); font-size: 1.9rem; font-weight: 600; color: var(--green-dark); margin-bottom: 6px; }
+.page-header p { color: var(--text-mute); font-size: 0.9rem; max-width: 640px; line-height: 1.5; }
 
 /* ===== SPANSENSE-STYLE THIN SCROLLBAR + GLASS SCROLLBAR ===== */
 html { scrollbar-width: none; -ms-overflow-style: none; }
@@ -318,8 +321,7 @@ body.modal-open{overflow:hidden;}
 .night-mode .navbar .account-links a:hover { background: #2f3e45; color: #8ab4b0; }
 .night-mode .night-mode-toggle { background: #2f3e45; color: #9ab0b8; }
 .night-mode .night-mode-toggle:hover { background: #3a4b53; color: #8ab4b0; }
-.night-mode .page-header h1 { color: #8ab4b0; }
-.night-mode .page-header p { color: #a8b8bf; }
+.night-mode .page-header h1 { color: #d4dfe3; }
 
 .night-mode .card{background:#212f33; border-color:#2f3e45; box-shadow:0 6px 20px rgba(0,0,0,.3);}
 .night-mode .card-title{color:#d4dfe3;}
