@@ -371,6 +371,7 @@
        building UI; everything selection-related stays hidden until then.
        --------------------------------------------------------- */
     var routeModeBtn = document.getElementById('routeModeBtn');
+    var routeRailEl = document.getElementById('routeRail');
     var routeBodyEl = document.getElementById('routeBody');
     var autoSelectBtn = document.getElementById('autoSelectBtn');
     var exportBtn = document.getElementById('exportBtn');
@@ -378,22 +379,48 @@
     var mapHintEl = document.getElementById('mapHint');
 
     // The route-rail panel (author/map.html) is always docked under the
-    // layer switcher now - only its body (box-select tools, summary,
-    // itinerary) expands/collapses here, so it reads as one div "opening
-    // up" rather than a separate toggle plus a disconnected panel.
+    // layer switcher now - retracted, its header shows only the toggle
+    // icon; turning route mode on reveals auto-select/export beside it and
+    // expands the body (box-select tools, summary, itinerary) below, so it
+    // reads as one div "opening up" rather than a separate toggle plus a
+    // disconnected panel.
     function setRouteMode(on) {
         routeMode = on;
         routeModeBtn.classList.toggle('active', on);
         routeModeBtn.setAttribute('data-tip', on ? 'Exit route mode' : 'Plan a route');
         routeBodyEl.style.display = on ? 'flex' : 'none';
-        autoSelectBtn.disabled = !on;
-        exportBtn.disabled = !on;
+        autoSelectBtn.style.display = on ? 'flex' : 'none';
+        exportBtn.style.display = on ? 'flex' : 'none';
         mapSummaryEl.style.display = on ? 'flex' : 'none';
         mapHintEl.style.display = on ? 'block' : 'none';
         if (!on) setBoxSelectMode(false);
         map.closePopup();
         renderPins();
+        repositionRouteRail();
     }
+
+    // The route-rail panel's top is anchored to wherever the layer switcher
+    // actually ends, live, rather than a guessed fixed offset - so when its
+    // dropdown opens (hover on desktop, tap on touch) and grows taller, the
+    // panel gets pushed down instead of the two overlapping. Its max-height
+    // is capped the same way against the chat toggle's real position, so an
+    // expanded itinerary list still can't grow down over the chat icon.
+    var layersContainerEl = document.querySelector('.leaflet-control-layers');
+    var chatToggleEl = document.querySelector('.chat-toggle');
+    function repositionRouteRail() {
+        if (!layersContainerEl) return;
+        var top = layersContainerEl.getBoundingClientRect().bottom + 8;
+        routeRailEl.style.top = top + 'px';
+        if (chatToggleEl) {
+            var chatTop = chatToggleEl.getBoundingClientRect().top;
+            routeRailEl.style.maxHeight = Math.max(60, chatTop - top - 16) + 'px';
+        }
+    }
+    repositionRouteRail();
+    if (layersContainerEl && window.MutationObserver) {
+        new MutationObserver(repositionRouteRail).observe(layersContainerEl, { attributes: true, attributeFilter: ['class'] });
+    }
+    window.addEventListener('resize', repositionRouteRail);
     routeModeBtn.addEventListener('click', function () { setRouteMode(!routeMode); });
     setRouteMode(false);
 

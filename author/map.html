@@ -147,9 +147,6 @@ a{color:inherit;}
    switcher: the toggle/auto-select/export icons live in its own header,
    and its body (incl. the box-select pointer/box tools) only expands once
    route mode is on, capped so it can never grow down into the chat icon. */
-.icon-btn:disabled{ opacity:.4; cursor:not-allowed; }
-.icon-btn:disabled:hover{ border-color:var(--border); color:var(--text-mute); }
-.night-mode .icon-btn:disabled:hover{ border-color:#3a4b53; color:#9ab0b8; }
 #routeModeBtn.active{ background:var(--teal); color:#fff; border-color:transparent; }
 .route-tools{ display:flex; gap:6px; padding:11px 15px; border-bottom:1px solid var(--border2); }
 .night-mode .route-tools{ border-color:#2f3e45; }
@@ -434,12 +431,13 @@ a{color:inherit;}
 </div>
 
 <!-- ============ FLOATING RIGHT: ROUTE PLANNING ============
-     One div for the whole feature - docked under zoom/the layer switcher.
-     The header (toggle + auto-select + export) is always visible; the body
-     (box-select tools + summary + actions + itinerary list) only expands
-     once #routeModeBtn turns route mode on, so this reads as a single
-     panel "opening up" rather than a separate floating toggle plus a
-     disconnected panel further down. -->
+     One div for the whole feature - docked under zoom/the layer switcher
+     (repositioned live in map.js if the layer switcher's own dropdown is
+     open, so the two never overlap). Retracted, the header shows only the
+     toggle icon; clicking it turns route mode on, which reveals the
+     auto-select/export icons on the right of the same header and expands
+     the body (box-select tools + summary + actions + itinerary list)
+     below - one panel opening up, not several floating pieces. -->
 <div class="panel route-rail" id="routeRail">
   <div class="route-rail-head">
     <div class="rail-head-text">
@@ -447,11 +445,11 @@ a{color:inherit;}
       <h2><i class="fas fa-route"></i> Route Planning</h2>
     </div>
     <div class="rail-head-actions">
+      <button type="button" class="icon-btn" id="autoSelectBtn" data-tip="Select due this month" style="display:none;"><i class="fas fa-bolt"></i></button>
+      <button type="button" class="icon-btn primary" id="exportBtn" data-tip="Export route (CSV)" style="display:none;"><i class="fas fa-file-export"></i></button>
       <button type="button" class="icon-btn" id="routeModeBtn" data-tip="Plan a route" aria-label="Plan a route">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20l-5.447-2.724A1 1 0 0 1 3 16.382V5.618a1 1 0 0 1 1.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0 0 21 18.382V7.618a1 1 0 0 0-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
       </button>
-      <button type="button" class="icon-btn" id="autoSelectBtn" data-tip="Select due this month" disabled><i class="fas fa-bolt"></i></button>
-      <button type="button" class="icon-btn primary" id="exportBtn" data-tip="Export route (CSV)" disabled><i class="fas fa-file-export"></i></button>
     </div>
   </div>
   <div class="route-body" id="routeBody" style="display:none;">
