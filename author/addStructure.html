@@ -58,6 +58,15 @@ body {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
+/* Small feather badge next to the wordmark - the only visual cue that
+   distinguishes an Author page from core spanSense at a glance. Resets
+   the gradient text-clip above (which would otherwise inherit onto this
+   icon too and render it invisible) back to a plain solid teal. Shown
+   unconditionally rather than gated on the authorAddStructure flag (like
+   the Client field is) - every actual caller of this page today is from
+   Author, core has no working link to it at all currently. */
+.navbar .logo .logo-author-mark{ font-size:.62rem; margin-left:6px; opacity:.85; vertical-align:3px; background:none; -webkit-text-fill-color:#5b8c8a; color:#5b8c8a; }
+.night-mode .navbar .logo .logo-author-mark{ -webkit-text-fill-color:#8ab4b0; color:#8ab4b0; }
 .navbar .menu { display: flex; gap: 16px; }
 .navbar .menu a {
     text-decoration: none;
@@ -471,7 +480,7 @@ body {
 <!-- FLOATING NAVBAR -->
 <div class="navbar">
     <div class="left">
-        <div class="logo">spanSense</div>
+        <div class="logo">spanSense<i class="fas fa-feather-pointed logo-author-mark" data-tip="Author"></i></div>
         <div class="menu">
             <a href="../map/map.html"><i class="fas fa-map"></i>Map</a>
             <a href="../dashboard/dashboard.html"><i class="fas fa-chart-pie"></i>Dashboard</a>
