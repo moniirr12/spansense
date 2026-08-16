@@ -18,13 +18,14 @@
     toggleBtn.innerHTML = document.body.classList.contains('night-mode') ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
     toggleBtn.addEventListener('click', function () {
         document.body.classList.toggle('night-mode');
-        if (document.body.classList.contains('night-mode')) {
-            toggleBtn.innerHTML = '<i class="fas fa-sun"></i>';
-            localStorage.setItem('nightMode', 'on');
-        } else {
-            toggleBtn.innerHTML = '<i class="fas fa-moon"></i>';
-            localStorage.setItem('nightMode', 'off');
-        }
+        var isNight = document.body.classList.contains('night-mode');
+        toggleBtn.innerHTML = isNight ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+        localStorage.setItem('nightMode', isNight ? 'on' : 'off');
+        // Keeps the basemap in sync with the UI theme - see syncMapLayerToTheme
+        // further down (map/tile layers don't exist yet at this point in the
+        // script, but this only ever runs from a later click, by which time
+        // they do).
+        syncMapLayerToTheme(isNight);
     });
 
     /* ---------------------------------------------------------
@@ -147,8 +148,13 @@
         return Math.round((d - today) / (1000 * 60 * 60 * 24 * 30.44));
     }
     /* ---------------------------------------------------------
-       DISTANCE - great-circle (haversine), km. No routing engine is
-       wired up, so this is straight-line, same caveat shown in the UI.
+       DISTANCE
+       Great-circle (haversine) is used as an instant fallback/heuristic
+       (route optimize order, and shown the moment a stop is added/moved
+       so the UI never waits on the network). The route actually shown
+       once >=2 stops are selected is upgraded to a real driving route
+       (roads, not straight lines) via the public OSRM routing API - see
+       fetchRoadRoute below.
        --------------------------------------------------------- */
     function haversineKm(a, b) {
         var R = 6371;
@@ -163,6 +169,47 @@
     function fmtTime(mins) {
         var h = Math.floor(mins / 60), m = Math.round(mins % 60);
         return h + 'h ' + String(m).padStart(2, '0') + 'm';
+    }
+
+    var OSRM_ROUTE_URL = 'https://router.project-osrm.org/route/v1/driving/';
+    // Straight-line stats, used both as the instant fallback and if the
+    // routing request fails/times out (no API key needed, but it's a
+    // shared public demo server - not guaranteed available).
+    function haversineRoute(ids) {
+        var n = ids.length, legs = [], totalKm = 0;
+        for (var i = 1; i < n; i++) {
+            var d = haversineKm(byId[ids[i - 1]], byId[ids[i]]);
+            legs.push(d); totalKm += d;
+        }
+        return {
+            totalKm: totalKm, totalMin: (totalKm / AVG_SPEED_KMH) * 60 + n * MIN_PER_STOP, legs: legs,
+            latlngs: ids.map(function (id) { var s = byId[id]; return [s.latitude, s.longitude]; }),
+            roaded: false
+        };
+    }
+    // Real driving route (roads, not straight lines) for the current stop
+    // order, via OSRM's public demo routing server - one request covers
+    // every leg at once (distance/duration per-leg plus a road-following
+    // geometry for the whole trip).
+    function fetchRoadRoute(ids) {
+        var coords = ids.map(function (id) { var s = byId[id]; return s.longitude + ',' + s.latitude; }).join(';');
+        // credentials:'omit' overrides fetch-credentials.js's site-wide patch
+        // (which defaults every fetch() to credentials:'include' so our own
+        // /api/* calls keep the session cookie) - OSRM is a third-party public
+        // server that returns Access-Control-Allow-Origin:'*', which browsers
+        // reject outright on a credentialed request.
+        return fetch(OSRM_ROUTE_URL + coords + '?overview=full&geometries=geojson', { credentials: 'omit' })
+            .then(function (r) { if (!r.ok) throw new Error('routing request failed'); return r.json(); })
+            .then(function (data) {
+                var route = data.routes && data.routes[0];
+                if (!route) throw new Error('no route found');
+                return {
+                    totalKm: route.distance / 1000, totalMin: route.duration / 60,
+                    legs: route.legs.map(function (l) { return l.distance / 1000; }),
+                    latlngs: route.geometry.coordinates.map(function (c) { return [c[1], c[0]]; }),
+                    roaded: true
+                };
+            });
     }
 
     /* ---------------------------------------------------------
@@ -262,7 +309,41 @@
     // The "type of map" selector - core's own native Leaflet layer switcher,
     // not a custom satellite-only button, so it gets map.css's real styling
     // and stacks under zoom for free.
-    L.control.layers({ 'Street': openStreetMap, 'Satellite': satelliteMap, 'Dark Mode': darkMap }, null, { position: 'topright' }).addTo(map);
+    var layersControl = L.control.layers({ 'Street': openStreetMap, 'Satellite': satelliteMap, 'Dark Mode': darkMap }, null, { position: 'topright' }).addTo(map);
+
+    /* ---------------------------------------------------------
+       THEME <-> BASEMAP SYNC
+       Picking "Dark Mode" from the layer switcher turns the app's own
+       night-mode on (and picking Street/Satellite turns it back off);
+       toggling night-mode via the navbar moon/sun icon does the same
+       thing in reverse, switching the basemap. syncMapLayerToTheme does
+       this by clicking the switcher's own radio input rather than
+       calling map.addLayer/removeLayer directly, so Leaflet's normal
+       'baselayerchange' handling (incl. updating which radio reads as
+       checked next time the dropdown opens) runs exactly as it would
+       for a real click - nothing to keep in sync by hand.
+       --------------------------------------------------------- */
+    function syncMapLayerToTheme(isNight) {
+        var wantLabel = isNight ? 'Dark Mode' : 'Street';
+        var labels = layersControl.getContainer().querySelectorAll('.leaflet-control-layers-base label');
+        for (var i = 0; i < labels.length; i++) {
+            if (labels[i].textContent.trim() !== wantLabel) continue;
+            var input = labels[i].querySelector('input[type="radio"]');
+            if (input && !input.checked) input.click();
+            return;
+        }
+    }
+    map.on('baselayerchange', function (e) {
+        var wantNight = e.name === 'Dark Mode';
+        if (wantNight === document.body.classList.contains('night-mode')) return;
+        document.body.classList.toggle('night-mode', wantNight);
+        toggleBtn.innerHTML = wantNight ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+        localStorage.setItem('nightMode', wantNight ? 'on' : 'off');
+    });
+    // Page can load already in night mode (localStorage / OS preference,
+    // see the preload script in author/map.html) - start on the matching
+    // basemap instead of always defaulting to Street.
+    if (document.body.classList.contains('night-mode')) syncMapLayerToTheme(true);
 
     var markersLayer = L.layerGroup().addTo(map);
     var markerById = {};
@@ -439,27 +520,23 @@
     var optimizeBtn = document.getElementById('optimizeBtn');
     var clearBtn = document.getElementById('clearBtn');
     var dragIndex = null;
+    var currentLegs = [];
+    var routeRequestToken = 0;
 
-    function renderRoute() {
+    function applyRoute(r) {
         var n = state.selected.length;
-        optimizeBtn.disabled = n < 3;
-        clearBtn.disabled = n === 0;
-
-        var totalKm = 0, legs = [];
-        for (var i = 1; i < n; i++) {
-            var d = haversineKm(byId[state.selected[i - 1]], byId[state.selected[i]]);
-            legs.push(d); totalKm += d;
-        }
-        var totalMin = (totalKm / AVG_SPEED_KMH) * 60 + n * MIN_PER_STOP;
-
-        document.getElementById('rsFigure').innerHTML = totalKm.toFixed(1) + '<small>km total</small>';
+        currentLegs = r.legs;
+        document.getElementById('rsFigure').innerHTML = r.totalKm.toFixed(1) + '<small>km total</small>';
         document.getElementById('rsStops').textContent = n;
-        document.getElementById('rsTime').textContent = n ? fmtTime(totalMin) : '0h 00m';
+        document.getElementById('rsTime').textContent = n ? fmtTime(r.totalMin) : '0h 00m';
         document.getElementById('chipCount').textContent = n;
-        document.getElementById('chipDist').textContent = totalKm.toFixed(1);
-        document.getElementById('chipTime').textContent = n ? fmtTime(totalMin) : '0h 00m';
-
-        routeLine.setLatLngs(state.selected.map(function (id) { var s = byId[id]; return [s.latitude, s.longitude]; }));
+        document.getElementById('chipDist').textContent = r.totalKm.toFixed(1);
+        document.getElementById('chipTime').textContent = n ? fmtTime(r.totalMin) : '0h 00m';
+        routeLine.setLatLngs(r.latlngs);
+        routeLine.setStyle({ dashArray: r.roaded ? null : '1 8' });
+        mapHintEl.textContent = r.roaded
+            ? 'Driving distances follow real roads'
+            : 'Route distances are straight-line, for planning only';
 
         routeListEl.innerHTML = '';
         if (!n) {
@@ -475,7 +552,7 @@
             li.className = 'route-item';
             li.draggable = true;
             li.dataset.index = i;
-            var legText = i === 0 ? 'Start' : legs[i - 1].toFixed(1) + ' km from previous stop';
+            var legText = i === 0 ? 'Start' : r.legs[i - 1].toFixed(1) + ' km from previous stop';
             li.innerHTML =
                 '<span class="ri-handle"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="8" cy="6" r="1.5"/><circle cx="8" cy="12" r="1.5"/><circle cx="8" cy="18" r="1.5"/><circle cx="16" cy="6" r="1.5"/><circle cx="16" cy="12" r="1.5"/><circle cx="16" cy="18" r="1.5"/></svg></span>' +
                 '<span class="ri-num">' + (i + 1) + '</span>' +
@@ -485,6 +562,25 @@
             addDrag(li);
             routeListEl.appendChild(li);
         });
+    }
+
+    // Straight-line stats render immediately (no network wait); once >=2
+    // stops are selected this is then upgraded in place to a real driving
+    // route. routeRequestToken drops any response that comes back after
+    // the selection/order has already changed again.
+    function renderRoute() {
+        var n = state.selected.length;
+        optimizeBtn.disabled = n < 3;
+        clearBtn.disabled = n === 0;
+
+        var ids = state.selected.slice();
+        applyRoute(haversineRoute(ids));
+
+        var token = ++routeRequestToken;
+        if (n < 2) return;
+        fetchRoadRoute(ids)
+            .then(function (r) { if (token === routeRequestToken) applyRoute(r); })
+            .catch(function () { /* stays on the straight-line fallback already shown */ });
     }
 
     function addDrag(li) {
@@ -519,11 +615,14 @@
 
     function exportRouteCsv() {
         if (!state.selected.length) return;
+        // currentLegs is whatever's currently on screen - real driving
+        // distances once the road route has loaded, the straight-line
+        // fallback otherwise - so the export always matches the panel.
         var rows = [['Order', 'Name', 'Location', 'Type', 'Latitude', 'Longitude', 'Leg (km)', 'Running total (km)']];
         var running = 0;
         state.selected.forEach(function (id, i) {
             var s = byId[id];
-            var leg = i === 0 ? 0 : haversineKm(byId[state.selected[i - 1]], s);
+            var leg = i === 0 ? 0 : (currentLegs[i - 1] || 0);
             running += leg;
             rows.push([i + 1, s.name, s.location || '', typeLabel(s.type), s.latitude, s.longitude, leg.toFixed(1), running.toFixed(1)]);
         });
