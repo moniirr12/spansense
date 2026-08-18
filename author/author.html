@@ -82,10 +82,12 @@ body.night-mode::before{
 .navbar .account-links a { text-decoration: none; color: #5f6b73; font-size: 1.2rem; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: color 0.2s, transform 0.15s, background 0.2s; }
 .navbar .account-links a:hover { background: #f0f4f8; color: #5b8c8a; transform: scale(1.1); }
 
-/* ---------- MAIN WRAPPER - same 1180px/padding as Dashboard, Planning,
-   Clients and Add Structure, so the page shell reads consistently across
-   Author regardless of what each page actually fills it with. ---------- */
-.page-wrapper { max-width: 1180px; margin: 0 auto; padding: 112px 28px 60px; }
+/* ---------- MAIN WRAPPER - matches Core's own content-wrapper convention
+   (dashboard/database/accounts/contacts/planning all use this same
+   75%-uncapped rule), same as every other Author page now too. ---------- */
+.page-wrapper { max-width: 75%; margin: 0 auto; padding: 100px 0 60px 0; }
+@media (max-width: 1100px) { .page-wrapper { max-width: 90%; } }
+@media (max-width: 860px) { .page-wrapper { max-width: 95%; } }
 
 /* ---------- PAGE HEADER - matches every other Author page's heading:
    Source Serif display face, var(--green-dark), no left accent bar. ---------- */
