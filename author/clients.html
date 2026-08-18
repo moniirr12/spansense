@@ -88,9 +88,10 @@ body.night-mode { background: #151f1d; }
 .panel{ background:#fff; border:1px solid var(--border2); border-radius:16px; box-shadow:0 6px 20px rgba(44,90,87,.05); overflow:hidden; }
 .night-mode .panel{ background:#1c2826; border-color:#2f3e45; box-shadow:0 6px 20px rgba(0,0,0,.3); }
 
-.client-row{ display:flex; align-items:center; gap:16px; padding:16px 20px; border-bottom:1px solid var(--border2); }
+.client-row{ display:flex; flex-direction:column; gap:12px; padding:18px 20px; border-bottom:1px solid var(--border2); }
 .night-mode .client-row{ border-color:#28353b; }
 .client-row:last-child{ border-bottom:none; }
+.client-row .cr-head{ display:flex; align-items:center; gap:16px; }
 .client-row .cr-avatar{ width:40px; height:40px; border-radius:12px; background:var(--bg-mint); color:var(--teal-dark); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:.85rem; flex-shrink:0; }
 .night-mode .client-row .cr-avatar{ background:#1e3a38; color:#8ab4b0; }
 .client-row .cr-main{ flex:1; min-width:0; }
@@ -100,10 +101,36 @@ body.night-mode { background: #151f1d; }
 .client-row .cr-count{ font-size:.72rem; color:var(--text-mute); background:var(--bg-soft); border:1px solid var(--border2); border-radius:20px; padding:4px 11px; flex-shrink:0; }
 .night-mode .client-row .cr-count{ background:#182320; border-color:#2f3e45; }
 .client-row .cr-actions{ display:flex; gap:6px; flex-shrink:0; }
-.icon-btn{ width:32px; height:32px; border-radius:9px; border:1px solid var(--border); background:#fff; color:var(--text-mute); display:flex; align-items:center; justify-content:center; cursor:pointer; transition: all .15s; }
+.icon-btn{ width:32px; height:32px; border-radius:9px; border:1px solid var(--border); background:#fff; color:var(--text-mute); display:flex; align-items:center; justify-content:center; cursor:pointer; transition: all .15s; text-decoration:none; }
 .icon-btn:hover{ border-color:var(--teal); color:var(--teal-dark); }
 .icon-btn.danger:hover{ border-color:var(--red); color:var(--red); }
 .night-mode .icon-btn{ background:#212f33; border-color:#2f3e45; color:#9ab0b8; }
+
+/* ---------- Per-client stats - same badge/reports-bar language as
+   Author's Dashboard client cards, so Clients reads as the fuller profile
+   of the same data rather than a plainer duplicate of it. ---------- */
+.cr-stats{ padding-left:56px; }
+.cr-badges{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
+.badge{ font-size:.68rem; font-weight:700; padding:3px 9px; border-radius:20px; }
+.badge.overdue{ background:var(--red-bg); color:var(--red); }
+.badge.soon{ background:var(--amber-bg); color:var(--amber); }
+.badge.ok{ background:var(--ok-bg); color:var(--ok); }
+.night-mode .badge.overdue{ background:rgba(192,57,43,.22); color:#e0645a; }
+.night-mode .badge.soon{ background:rgba(186,117,23,.22); color:#e0a94a; }
+.night-mode .badge.ok{ background:rgba(45,122,110,.22); color:#5fc4ae; }
+.cr-reports{ display:flex; align-items:center; gap:2px; height:6px; border-radius:6px; overflow:hidden; background:var(--bg-soft); margin-bottom:8px; max-width:360px; }
+.night-mode .cr-reports{ background:#182320; }
+.cr-reports span{ height:100%; }
+.cr-reports .submitted{ background:var(--amber); }
+.cr-reports .approved{ background:var(--ok); }
+.cr-reports .rejected{ background:var(--red); }
+.cr-legend{ display:flex; gap:12px; font-size:.68rem; color:var(--text-mute); flex-wrap:wrap; }
+.cr-legend span{ display:flex; align-items:center; gap:4px; }
+.cr-legend .dot{ width:7px; height:7px; border-radius:50%; }
+.cr-legend .dot.submitted{ background:var(--amber); }
+.cr-legend .dot.approved{ background:var(--ok); }
+.cr-legend .dot.rejected{ background:var(--red); }
+.cr-empty{ padding-left:56px; font-size:.75rem; color:var(--text-mute); }
 
 .empty-state{ padding:40px 20px; text-align:center; color:var(--text-mute); font-size:.85rem; }
 .empty-state i{ font-size:1.6rem; margin-bottom:10px; display:block; color:var(--border); }

@@ -230,6 +230,16 @@ body {
 .field-narrow { max-width: 480px; }
 .field-narrow-wide { max-width: 640px; }
 
+/* ---------- BASIC INFO LAYOUT - name/type/client/location on the left,
+   photos on the right rather than stacked above the name (matches the
+   cover-photo's job: it's what represents this structure on the Map, so
+   it sits alongside the fields that identify it, not buried between
+   them). Right column is a fixed width rather than 1fr so it doesn't
+   stretch the photo grid past a sensible size on wide screens. ---------- */
+.basic-info-grid { display: grid; grid-template-columns: 1fr 300px; gap: 28px; align-items: start; }
+.bi-fields .form-group:last-child { margin-bottom: 0; }
+.bi-photo { margin-bottom: 0; }
+
 /* ---------- TYPE PILLS ---------- */
 .type-pills { display: flex; gap: 8px; flex-wrap: wrap; }
 .type-pill {
@@ -394,6 +404,8 @@ body {
     .navbar .menu { display: none; }
     .navbar { width: 90%; padding: 0 18px; }
     .form-row, .form-row.three { grid-template-columns: 1fr; }
+    .basic-info-grid { grid-template-columns: 1fr; }
+    .bi-photo { order: -1; }
 }
 @media (max-width: 600px) {
     .form-actions { flex-direction: column-reverse; }
@@ -523,60 +535,64 @@ body.night-mode { background: #151f1d; color: var(--text); }
             <h2><i class="fas fa-signature"></i> Basic info</h2>
             <p class="section-sub">The name, type and location every other page uses to identify this structure.</p>
 
-            <div class="form-group">
-                <label for="fName">Name</label>
-                <input type="text" id="fName" class="field-narrow" placeholder="e.g. Ouseburn Viaduct" required>
-            </div>
-
-            <div class="form-group">
-                <label>Photos <span class="opt">(optional)</span></label>
-                <div class="photo-grid empty" id="photoGrid">
-                    <div class="add-photo-card" id="addPhotoCard">
-                        <i class="fas fa-image default-photo-icon"></i>
-                        <div class="plus-sign">+</div>
-                        <div class="add-text">Add cover photo</div>
+            <div class="basic-info-grid">
+                <div class="bi-fields">
+                    <div class="form-group">
+                        <label for="fName">Name</label>
+                        <input type="text" id="fName" class="field-narrow" placeholder="e.g. Ouseburn Viaduct" required>
                     </div>
-                </div>
-                <input type="file" id="photoInput" accept="image/*" multiple style="display:none;">
-                <p class="hint">The first photo becomes the cover photo shown on the Map.</p>
-            </div>
 
-            <div class="form-group">
-                <label>Type</label>
-                <div class="type-pills" id="typePills">
-                    <button type="button" class="type-pill" data-type="bridge"><i class="fas fa-archway"></i>Bridge</button>
-                    <button type="button" class="type-pill" data-type="footbridge"><i class="fas fa-person-walking"></i>Footbridge</button>
-                    <button type="button" class="type-pill" data-type="culvert"><i class="fas fa-water"></i>Culvert</button>
-                    <button type="button" class="type-pill" data-type="retaining_wall"><i class="fas fa-grip-lines-vertical"></i>Ret. Wall</button>
-                    <button type="button" class="type-pill" data-type="sign_gantry"><i class="fas fa-sign-hanging"></i>Sign Gantry</button>
+                    <div class="form-group">
+                        <label>Type</label>
+                        <div class="type-pills" id="typePills">
+                            <button type="button" class="type-pill" data-type="bridge"><i class="fas fa-archway"></i>Bridge</button>
+                            <button type="button" class="type-pill" data-type="footbridge"><i class="fas fa-person-walking"></i>Footbridge</button>
+                            <button type="button" class="type-pill" data-type="culvert"><i class="fas fa-water"></i>Culvert</button>
+                            <button type="button" class="type-pill" data-type="retaining_wall"><i class="fas fa-grip-lines-vertical"></i>Ret. Wall</button>
+                            <button type="button" class="type-pill" data-type="sign_gantry"><i class="fas fa-sign-hanging"></i>Sign Gantry</button>
+                        </div>
+                    </div>
+
+                    <!-- Only shown when arriving from Author (see the authorAddStructure
+                         sessionStorage flag below) - core structures have no concept
+                         of a client, so this stays out of the way entirely otherwise. -->
+                    <div class="form-group" id="fClientGroup" style="display:none;">
+                        <label for="fClient">Client</label>
+                        <select id="fClient" class="field-narrow"><option value="">Select client…</option></select>
+                        <p class="hint">Which client this structure is inspected on behalf of - it won't show up in Author's Dashboard or Planning without one.</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="fLocation">Location <span class="opt">(address or place name)</span></label>
+                        <input type="text" id="fLocation" class="field-narrow" placeholder="e.g. Newcastle upon Tyne">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fLat">Latitude <span class="opt">(optional)</span></label>
+                            <input type="number" id="fLat" step="any" placeholder="54.9738">
+                        </div>
+                        <div class="form-group">
+                            <label for="fLng">Longitude <span class="opt">(optional)</span></label>
+                            <input type="number" id="fLng" step="any" placeholder="-1.6131">
+                        </div>
+                    </div>
+                    <p class="hint" style="margin-top:-8px;">Leave coordinates blank if you'd rather drop a pin for this on the Map page later — the OS grid reference gets derived from these automatically.</p>
+                </div>
+
+                <div class="bi-photo form-group">
+                    <label>Photos <span class="opt">(optional)</span></label>
+                    <div class="photo-grid empty" id="photoGrid">
+                        <div class="add-photo-card" id="addPhotoCard">
+                            <i class="fas fa-image default-photo-icon"></i>
+                            <div class="plus-sign">+</div>
+                            <div class="add-text">Add cover photo</div>
+                        </div>
+                    </div>
+                    <input type="file" id="photoInput" accept="image/*" multiple style="display:none;">
+                    <p class="hint">The first photo becomes the cover photo shown on the Map.</p>
                 </div>
             </div>
-
-            <!-- Only shown when arriving from Author (see the authorAddStructure
-                 sessionStorage flag below) - core structures have no concept
-                 of a client, so this stays out of the way entirely otherwise. -->
-            <div class="form-group" id="fClientGroup" style="display:none;">
-                <label for="fClient">Client</label>
-                <select id="fClient" class="field-narrow"><option value="">Select client…</option></select>
-                <p class="hint">Which client this structure is inspected on behalf of - it won't show up in Author's Dashboard or Planning without one.</p>
-            </div>
-
-            <div class="form-group">
-                <label for="fLocation">Location <span class="opt">(address or place name)</span></label>
-                <input type="text" id="fLocation" class="field-narrow" placeholder="e.g. Newcastle upon Tyne">
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="fLat">Latitude <span class="opt">(optional)</span></label>
-                    <input type="number" id="fLat" step="any" placeholder="54.9738">
-                </div>
-                <div class="form-group">
-                    <label for="fLng">Longitude <span class="opt">(optional)</span></label>
-                    <input type="number" id="fLng" step="any" placeholder="-1.6131">
-                </div>
-            </div>
-            <p class="hint" style="margin-top:-8px;">Leave coordinates blank if you'd rather drop a pin for this on the Map page later — the OS grid reference gets derived from these automatically.</p>
         </div>
 
         <!-- STRUCTURE DETAILS -->
