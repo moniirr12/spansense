@@ -243,6 +243,19 @@ body {
 .basic-info-grid { display: grid; grid-template-columns: 3fr 2fr; gap: 28px; align-items: start; }
 .bi-fields .form-group:last-child { margin-bottom: 0; }
 
+/* Structure details/Materials fold into this column too, below the
+   coordinates - the photo+map column runs noticeably taller than name/
+   type/location/coordinates on their own, so this fills that leftover
+   space instead of leaving it empty. */
+.bi-subhead { margin: 4px 0 12px; padding-top: 16px; border-top: 1px solid var(--border2); }
+.bi-subhead h3 {
+    font-family: var(--font-display); font-size: 0.92rem; font-weight: 600;
+    color: var(--green-dark); display: flex; align-items: center; gap: 7px;
+}
+.bi-subhead h3 i { color: var(--teal); font-size: 0.8rem; }
+.night-mode .bi-subhead { border-color: #2f3e45; }
+.night-mode .bi-subhead h3 { color: #d4dfe3; }
+
 /* Right column stacks the photo uploader and the location map as two
    independent form-groups, each square, so the pair reads as a matched
    set rather than the photo box floating alone above empty space. */
@@ -323,17 +336,15 @@ body {
 .form-section.collapsed .adv-body { display: none; }
 .adv-body { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border2); }
 
-/* ---------- PHOTO GRID - a big square cover slot (photos[0], same width
-   as the location map below it) plus a horizontal strip of small
-   thumbnails for anything beyond the cover shot. ---------- */
-.photo-grid { display: flex; flex-direction: column; gap: 10px; }
+/* ---------- PHOTO - a single 16:9 slot, same width as the location map
+   below it. ---------- */
+.photo-grid { display: flex; flex-direction: column; }
 .photo-grid:not(.empty) #addPhotoCard,
-.photo-grid.empty .cover-slot,
-.photo-grid.empty .photo-strip { display: none; }
+.photo-grid.empty .cover-slot { display: none; }
 
 .add-photo-card {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    width: 100%; aspect-ratio: 1;
+    width: 100%; aspect-ratio: 16 / 9;
     border: 1.5px dashed rgba(91, 140, 138, 0.35);
     border-radius: 10px;
     /* Soft wave motif rather than a flat tint - echoes the water a bridge
@@ -357,29 +368,12 @@ body {
 .add-photo-card:hover .add-photo-icon-badge { background: var(--teal); color: #fff; transform: scale(1.06); }
 .add-text { font-size: 12.5px; color: var(--teal-dark); font-weight: 600; letter-spacing: 0.2px; text-align: center; padding: 0 6px; }
 
-.cover-slot .preview-item-photo { width: 100%; aspect-ratio: 1; }
-
-/* Strip: everything past the cover shot, small and scrollable rather than
-   wrapping into more big squares - these never get their own caption, so
-   they don't need the room a full tile would give them. */
-.photo-strip { display: flex; align-items: center; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
-.strip-thumb { position: relative; flex: 0 0 auto; width: 56px; height: 56px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
-.strip-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.strip-thumb .remove-photo { width: 18px; height: 18px; font-size: 10px; top: 3px; right: 3px; opacity: 1; background: rgba(20,20,20,.55); }
-.strip-add-btn {
-    flex: 0 0 auto; width: 56px; height: 56px; border-radius: 8px;
-    border: 1.5px dashed rgba(91, 140, 138, 0.4); background: var(--bg-mint); color: var(--teal);
-    font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center;
-    transition: all 0.2s ease; font-family: inherit;
-}
-.strip-add-btn:hover { border-color: var(--teal); background: rgba(91, 140, 138, .14); }
-
+.cover-slot .preview-item-photo { width: 100%; aspect-ratio: 16 / 9; }
 .preview-item-photo {
     position: relative; border-radius: 10px; overflow: hidden; background: white;
     box-shadow: 0 2px 10px rgba(0,0,0,0.06); transition: all 0.25s ease;
-    display: flex; flex-direction: column;
 }
-.preview-item-photo img { width: 100%; flex: 1; object-fit: cover; display: block; min-height: 0; }
+.preview-item-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .remove-photo {
     position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 50%;
     border: none; background: rgba(220, 38, 38, 0.85); color: white; font-size: 16px; line-height: 1;
@@ -388,18 +382,6 @@ body {
 }
 .preview-item-photo:hover .remove-photo { opacity: 1; }
 .remove-photo:hover { transform: scale(1.1); background: #dc2626; }
-.photo-description-input {
-    width: 100%; padding: 8px 10px; border: none; border-top: 1px solid rgba(0,0,0,0.06);
-    font-size: 11px; color: #444; background: rgba(255,255,255,0.95); resize: none; outline: none;
-    font-family: inherit; line-height: 1.4; min-height: 36px;
-}
-.photo-description-input::placeholder { color: #bbb; }
-.photo-description-input:focus { background: white; }
-.cover-badge {
-    position: absolute; top: 8px; left: 8px; z-index: 2;
-    background: rgba(45, 122, 110, 0.9); color: white; font-size: 9.5px; font-weight: 700;
-    padding: 3px 8px; border-radius: 20px; letter-spacing: 0.03em;
-}
 
 /* ---------- BUTTONS - same .btn/.btn.primary component as every other
    Author page (Planning's modal, Map's route panel, etc). .btn-cancel/
@@ -514,12 +496,7 @@ body.night-mode { background: #151f1d; color: var(--text); }
 .night-mode .add-photo-card:hover .add-photo-icon-badge { background: var(--teal); color: #fff; }
 .night-mode .add-text { color: #8ab4b0; }
 .night-mode .preview-item-photo { background: #182320; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
-.night-mode .strip-add-btn { background: #1e3a38; border-color: rgba(138, 180, 176, 0.35); color: #8ab4b0; }
-.night-mode .strip-add-btn:hover { border-color: #8ab4b0; background: rgba(138, 180, 176, .18); }
 .night-mode .location-map { border-color: #3a4b53; background: #182320; }
-.night-mode .photo-description-input { background: rgba(24, 35, 32, 0.95); border-color: #2f3e45; color: #c5d3d9; }
-.night-mode .photo-description-input:focus { background: #182320; }
-.night-mode .photo-description-input::placeholder { color: #647680; }
 
 .night-mode .toast { background: #1c2826; border-color: #2f3e45; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35); }
 .night-mode .toast-content .toast-title { color: #d4dfe3; }
@@ -581,7 +558,7 @@ body.night-mode { background: #151f1d; color: var(--text); }
         <!-- BASIC INFO -->
         <div class="form-section">
             <h2><i class="fas fa-signature"></i> Basic info</h2>
-            <p class="section-sub">The name, type and location every other page uses to identify this structure.</p>
+            <p class="section-sub">The name, type, location, dimensions and materials every other page uses to identify this structure.</p>
 
             <div class="basic-info-grid">
                 <div class="bi-fields">
@@ -629,23 +606,92 @@ body.night-mode { background: #151f1d; color: var(--text); }
                             <input type="number" id="fLng" step="any" placeholder="-1.6131">
                         </div>
                     </div>
+
+                    <div class="bi-subhead"><h3><i class="fas fa-ruler-combined"></i> Structure details</h3></div>
+
+                    <div class="form-row three">
+                        <div class="form-group">
+                            <label for="fSpan">Span length <span class="opt">(m)</span></label>
+                            <input type="number" id="fSpan" min="0" placeholder="e.g. 24">
+                        </div>
+                        <div class="form-group">
+                            <label for="fLength">Total length <span class="opt">(m)</span></label>
+                            <input type="number" id="fLength" min="0" placeholder="e.g. 72">
+                        </div>
+                        <div class="form-group">
+                            <label for="fWidth">Deck width <span class="opt">(m)</span></label>
+                            <input type="number" id="fWidth" min="0" step="0.1" placeholder="e.g. 8.5">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Number of spans</label>
+                            <div class="stepper">
+                                <button type="button" id="spanMinus">−</button>
+                                <span id="spanCount">1</span>
+                                <button type="button" id="spanPlus">+</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="fBuiltYear">Built year <span class="opt">(optional)</span></label>
+                            <input type="number" id="fBuiltYear" min="1700" max="2100" placeholder="e.g. 1876">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="fLoadCapacity">Load capacity <span class="opt">(tonnes, optional)</span></label>
+                        <input type="number" id="fLoadCapacity" min="0" placeholder="e.g. 44">
+                    </div>
+
+                    <div class="bi-subhead"><h3><i class="fas fa-layer-group"></i> Materials</h3></div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fMaterialPrimary">Primary material</label>
+                            <select id="fMaterialPrimary">
+                                <option value="">Select material…</option>
+                                <option>Steel</option>
+                                <option>Concrete</option>
+                                <option>Masonry / Brick</option>
+                                <option>Stone</option>
+                                <option>Wrought iron</option>
+                                <option>Cast iron</option>
+                                <option>Timber</option>
+                                <option>Composite / FRP</option>
+                                <option>Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="fMaterialSecondary">Secondary material <span class="opt">(optional)</span></label>
+                            <select id="fMaterialSecondary">
+                                <option value="">None</option>
+                                <option>Steel</option>
+                                <option>Concrete</option>
+                                <option>Masonry / Brick</option>
+                                <option>Stone</option>
+                                <option>Wrought iron</option>
+                                <option>Cast iron</option>
+                                <option>Timber</option>
+                                <option>Composite / FRP</option>
+                                <option>Other</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="bi-side">
                     <div class="bi-photo form-group">
-                        <label>Photos <span class="opt">(optional)</span></label>
+                        <label>Photo <span class="opt">(optional)</span></label>
                         <div class="photo-grid empty" id="photoGrid">
                             <div class="add-photo-card" id="addPhotoCard">
                                 <div class="add-photo-icon-badge"><i class="fas fa-camera-retro"></i></div>
                                 <div class="add-text">Add cover photo</div>
                             </div>
                             <div class="cover-slot" id="coverSlot"></div>
-                            <div class="photo-strip" id="photoStrip">
-                                <button type="button" class="strip-add-btn" id="stripAddBtn" data-tip="Add another photo"><i class="fas fa-plus"></i></button>
-                            </div>
                         </div>
-                        <input type="file" id="photoInput" accept="image/*" multiple style="display:none;">
-                        <p class="hint">The first photo becomes the cover photo shown on the Map.</p>
+                        <input type="file" id="photoInput" accept="image/*" style="display:none;">
+                        <p class="hint">Shown as the cover photo on the Map.</p>
                     </div>
 
                     <div class="bi-map form-group">
@@ -653,85 +699,6 @@ body.night-mode { background: #151f1d; color: var(--text); }
                         <div class="location-map" id="locationMapWidget"></div>
                         <p class="hint">Click to drop a pin, or drag it to fine-tune — fills in Latitude/Longitude on the left.</p>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- STRUCTURE DETAILS -->
-        <div class="form-section">
-            <h2><i class="fas fa-ruler-combined"></i> Structure details</h2>
-            <p class="section-sub">Dimensions and age — used across BCI scoring, planning cycles and reports.</p>
-
-            <div class="form-row three">
-                <div class="form-group">
-                    <label for="fSpan">Span length <span class="opt">(m)</span></label>
-                    <input type="number" id="fSpan" min="0" placeholder="e.g. 24">
-                </div>
-                <div class="form-group">
-                    <label for="fLength">Total length <span class="opt">(m)</span></label>
-                    <input type="number" id="fLength" min="0" placeholder="e.g. 72">
-                </div>
-                <div class="form-group">
-                    <label for="fWidth">Deck width <span class="opt">(m)</span></label>
-                    <input type="number" id="fWidth" min="0" step="0.1" placeholder="e.g. 8.5">
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Number of spans</label>
-                    <div class="stepper">
-                        <button type="button" id="spanMinus">−</button>
-                        <span id="spanCount">1</span>
-                        <button type="button" id="spanPlus">+</button>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="fBuiltYear">Built year <span class="opt">(optional)</span></label>
-                    <input type="number" id="fBuiltYear" min="1700" max="2100" placeholder="e.g. 1876">
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="fLoadCapacity">Load capacity <span class="opt">(tonnes, optional)</span></label>
-                <input type="number" id="fLoadCapacity" min="0" placeholder="e.g. 44">
-            </div>
-        </div>
-
-        <!-- MATERIALS -->
-        <div class="form-section">
-            <h2><i class="fas fa-layer-group"></i> Materials</h2>
-            <p class="section-sub">Primary is required for BCI element scoring to pick sensible defaults.</p>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="fMaterialPrimary">Primary material</label>
-                    <select id="fMaterialPrimary">
-                        <option value="">Select material…</option>
-                        <option>Steel</option>
-                        <option>Concrete</option>
-                        <option>Masonry / Brick</option>
-                        <option>Stone</option>
-                        <option>Wrought iron</option>
-                        <option>Cast iron</option>
-                        <option>Timber</option>
-                        <option>Composite / FRP</option>
-                        <option>Other</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="fMaterialSecondary">Secondary material <span class="opt">(optional)</span></label>
-                    <select id="fMaterialSecondary">
-                        <option value="">None</option>
-                        <option>Steel</option>
-                        <option>Concrete</option>
-                        <option>Masonry / Brick</option>
-                        <option>Stone</option>
-                        <option>Wrought iron</option>
-                        <option>Cast iron</option>
-                        <option>Timber</option>
-                        <option>Composite / FRP</option>
-                        <option>Other</option>
-                    </select>
                 </div>
             </div>
         </div>
@@ -759,7 +726,6 @@ body.night-mode { background: #151f1d; color: var(--text); }
                 <i class="fas fa-chevron-down chev"></i>
             </div>
             <div class="adv-body">
-                <p class="section-sub">OS grid reference and inspection cycle overrides. Fine to skip — sensible defaults (2-year General, 6-year Principal) apply until these are set.</p>
                 <div class="form-row">
                     <div class="form-group">
                         <label for="fOSE">OS Grid Easting</label>
@@ -987,72 +953,36 @@ document.getElementById('advToggle').addEventListener('click', function() {
     document.getElementById('advSection').classList.toggle('collapsed');
 });
 
-// ---------- Photos (big cover slot + a small strip for anything past it) ----------
-// Only photos[0] is ever actually submitted (see the create-structure fetch
-// below, which uploads it alone as the structure's cover photo) - the strip
-// exists purely so a multi-photo pick has somewhere sane to preview and
-// reorder-by-removing before creating, not because the extras get saved.
-var photos = []; // { id, dataURL, description }
+// ---------- Photo (single cover shot, same width as the location map) ----------
+var photo = null; // { dataURL }
 var photoGrid = document.getElementById('photoGrid');
 var addPhotoCard = document.getElementById('addPhotoCard');
 var coverSlot = document.getElementById('coverSlot');
-var photoStrip = document.getElementById('photoStrip');
-var stripAddBtn = document.getElementById('stripAddBtn');
 var photoInput = document.getElementById('photoInput');
 
 addPhotoCard.addEventListener('click', function() { photoInput.click(); });
-stripAddBtn.addEventListener('click', function() { photoInput.click(); });
 
 photoInput.addEventListener('change', function() {
-    Array.prototype.forEach.call(photoInput.files, function(file) {
-        if (!file.type.startsWith('image/')) return;
-        var reader = new FileReader();
-        reader.onload = function(e) {
-            var photo = { id: 'p' + Date.now() + Math.random().toString(36).slice(2), dataURL: e.target.result, description: '' };
-            photos.push(photo);
-            renderPhotos();
-        };
-        reader.readAsDataURL(file);
-    });
+    var file = photoInput.files[0];
     photoInput.value = '';
+    if (!file || !file.type.startsWith('image/')) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        photo = { dataURL: e.target.result };
+        renderPhoto();
+    };
+    reader.readAsDataURL(file);
 });
 
-function removePhoto(id) {
-    photos = photos.filter(function(p) { return p.id !== id; });
-    renderPhotos();
-}
-
-function renderPhotos() {
-    photoGrid.classList.toggle('empty', photos.length === 0);
-    if (photos.length === 0) {
-        coverSlot.innerHTML = '';
-        Array.prototype.slice.call(photoStrip.querySelectorAll('.strip-thumb')).forEach(function(el) { el.remove(); });
-        return;
-    }
-
-    var cover = photos[0];
+function renderPhoto() {
+    photoGrid.classList.toggle('empty', !photo);
+    coverSlot.innerHTML = '';
+    if (!photo) return;
     var card = document.createElement('div');
     card.className = 'preview-item-photo';
-    card.innerHTML =
-        '<div class="cover-badge">COVER</div>' +
-        '<button type="button" class="remove-photo">&times;</button>' +
-        '<img src="' + cover.dataURL + '" alt="">' +
-        '<textarea class="photo-description-input" placeholder="Add description…"></textarea>';
-    card.querySelector('.remove-photo').addEventListener('click', function() { removePhoto(cover.id); });
-    var textarea = card.querySelector('.photo-description-input');
-    textarea.value = cover.description;
-    textarea.addEventListener('input', function() { cover.description = textarea.value; });
-    coverSlot.innerHTML = '';
+    card.innerHTML = '<button type="button" class="remove-photo">&times;</button><img src="' + photo.dataURL + '" alt="">';
+    card.querySelector('.remove-photo').addEventListener('click', function() { photo = null; renderPhoto(); });
     coverSlot.appendChild(card);
-
-    Array.prototype.slice.call(photoStrip.querySelectorAll('.strip-thumb')).forEach(function(el) { el.remove(); });
-    photos.slice(1).forEach(function(photo) {
-        var thumb = document.createElement('div');
-        thumb.className = 'strip-thumb';
-        thumb.innerHTML = '<img src="' + photo.dataURL + '" alt=""><button type="button" class="remove-photo">&times;</button>';
-        thumb.querySelector('.remove-photo').addEventListener('click', function() { removePhoto(photo.id); });
-        photoStrip.insertBefore(thumb, stripAddBtn);
-    });
 }
 
 // ---------- Location map (click/drag to set coordinates) ----------
@@ -1330,10 +1260,9 @@ document.getElementById('addStructureForm').addEventListener('submit', function(
         return res.json();
     })
     .then(function(data) {
-        var coverPhoto = photos[0];
-        if (!coverPhoto) return data;
+        if (!photo) return data;
         return Promise.all([
-            fetch(coverPhoto.dataURL).then(function(r) { return r.blob(); }),
+            fetch(photo.dataURL).then(function(r) { return r.blob(); }),
             fetch('/api/me/settings').then(function(r) { return r.ok ? r.json() : {}; }).catch(function() { return {}; })
         ])
             .then(function(results) {
