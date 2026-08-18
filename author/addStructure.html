@@ -13,6 +13,7 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="../assets/sunIcon.css">
     <base target="_self">
 <style>
@@ -219,7 +220,8 @@ body {
     box-shadow: 0 0 0 3px rgba(138, 180, 176, 0.15);
 }
 .form-group .hint { font-size: 0.72rem; color: #a7b4bd; margin-top: 6px; line-height: 1.4; }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+.form-row:last-child { margin-bottom: 0; }
 .form-row.three { grid-template-columns: 1fr 1fr 1fr; }
 
 /* Caps just the free-standing single-column fields (name/location/client/
@@ -238,13 +240,24 @@ body {
    stretch the photo grid past a sensible size on wide screens. ---------- */
 .basic-info-grid { display: grid; grid-template-columns: 1fr 300px; gap: 28px; align-items: start; }
 .bi-fields .form-group:last-child { margin-bottom: 0; }
-.bi-photo { margin-bottom: 0; }
+
+/* Right column stacks the photo uploader and the location map as two
+   independent form-groups, each square, so the pair reads as a matched
+   set rather than the photo box floating alone above empty space. */
+.bi-side { display: flex; flex-direction: column; gap: 16px; }
+.bi-side .form-group { margin-bottom: 0; }
+
+.location-map { width: 100%; aspect-ratio: 1; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--bg-soft); }
+.location-map .leaflet-control-zoom { border: none !important; box-shadow: 0 2px 8px rgba(0,0,0,.14) !important; }
+.location-map .leaflet-control-zoom a { border-radius: 6px !important; }
 
 /* ---------- TYPE PILLS ---------- */
-.type-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+/* Two explicit rows (2 then 3) rather than flex-wrap - five pills wrapping
+   left Sign Gantry stretched alone across a full row on its own. */
+.type-pills { display: flex; flex-direction: column; gap: 8px; }
+.type-pill-row { display: flex; gap: 8px; }
+.type-pill-row .type-pill { flex: 1 1 0; min-width: 0; }
 .type-pill {
-    flex: 1 1 auto;
-    min-width: 108px;
     border: 1px solid var(--border);
     background: var(--bg-soft);
     color: var(--text-mute2);
@@ -322,18 +335,29 @@ body {
 .add-photo-card {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     aspect-ratio: 1;
-    border: 2px dashed rgba(91, 140, 138, 0.3);
+    border: 1.5px dashed rgba(91, 140, 138, 0.35);
     border-radius: 10px;
-    background: var(--bg-mint);
+    background: linear-gradient(150deg, var(--bg-mint) 0%, #fff 100%);
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.25s ease;
 }
-.add-photo-card:hover { border-color: var(--teal); background: rgba(91, 140, 138, 0.08); transform: translateY(-2px); }
-.default-photo-icon { display: none; font-size: 34px; color: rgba(91, 140, 138, 0.35); margin-bottom: 10px; }
-.photo-grid.empty .default-photo-icon { display: block; }
-.plus-sign { font-size: 32px; font-weight: 300; color: var(--teal); line-height: 1; margin-bottom: 4px; }
-.photo-grid.empty .plus-sign { font-size: 22px; margin-bottom: 2px; }
-.add-text { font-size: 11px; color: var(--teal); font-weight: 500; letter-spacing: 0.3px; text-align: center; padding: 0 6px; }
+.add-photo-card:hover { border-color: var(--teal); background: linear-gradient(150deg, rgba(91, 140, 138, 0.14) 0%, #fff 100%); transform: translateY(-2px); box-shadow: 0 6px 18px rgba(91, 140, 138, .14); }
+/* Single circular badge rather than a ghost icon + separate plus sign -
+   one focal element instead of two competing ones. Bigger in the empty
+   "no photos yet" state, smaller once it's just the add-more tile in a
+   grid of real previews. */
+.add-photo-icon-badge {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: #fff; color: var(--teal);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; margin-bottom: 6px;
+    box-shadow: 0 2px 8px rgba(44, 90, 87, .12);
+    transition: all 0.25s ease;
+}
+.add-photo-card:hover .add-photo-icon-badge { background: var(--teal); color: #fff; transform: scale(1.06); }
+.photo-grid.empty .add-photo-icon-badge { width: 52px; height: 52px; font-size: 20px; margin-bottom: 10px; }
+.add-text { font-size: 11px; color: var(--teal-dark); font-weight: 600; letter-spacing: 0.2px; text-align: center; padding: 0 6px; }
+.photo-grid.empty .add-text { font-size: 12.5px; }
 .preview-item-photo {
     position: relative; border-radius: 10px; overflow: hidden; background: white;
     box-shadow: 0 2px 10px rgba(0,0,0,0.06); transition: all 0.25s ease;
@@ -405,7 +429,7 @@ body {
     .navbar { width: 90%; padding: 0 18px; }
     .form-row, .form-row.three { grid-template-columns: 1fr; }
     .basic-info-grid { grid-template-columns: 1fr; }
-    .bi-photo { order: -1; }
+    .bi-side { order: -1; }
 }
 @media (max-width: 600px) {
     .form-actions { flex-direction: column-reverse; }
@@ -466,9 +490,13 @@ body.night-mode { background: #151f1d; color: var(--text); }
 
 .night-mode .span-row-head { color: #8ab4b0; }
 
-.night-mode .add-photo-card { background: rgba(138, 180, 176, 0.05); border-color: rgba(138, 180, 176, 0.3); }
-.night-mode .add-photo-card:hover { background: rgba(138, 180, 176, 0.1); border-color: rgba(138, 180, 176, 0.55); }
+.night-mode .add-photo-card { background: linear-gradient(150deg, rgba(138, 180, 176, 0.08) 0%, #182320 100%); border-color: rgba(138, 180, 176, 0.3); }
+.night-mode .add-photo-card:hover { background: linear-gradient(150deg, rgba(138, 180, 176, 0.16) 0%, #182320 100%); border-color: rgba(138, 180, 176, 0.55); }
+.night-mode .add-photo-icon-badge { background: #182320; color: #8ab4b0; }
+.night-mode .add-photo-card:hover .add-photo-icon-badge { background: var(--teal); color: #fff; }
+.night-mode .add-text { color: #8ab4b0; }
 .night-mode .preview-item-photo { background: #182320; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+.night-mode .location-map { border-color: #3a4b53; background: #182320; }
 .night-mode .photo-description-input { background: rgba(24, 35, 32, 0.95); border-color: #2f3e45; color: #c5d3d9; }
 .night-mode .photo-description-input:focus { background: #182320; }
 .night-mode .photo-description-input::placeholder { color: #647680; }
@@ -545,11 +573,15 @@ body.night-mode { background: #151f1d; color: var(--text); }
                     <div class="form-group">
                         <label>Type</label>
                         <div class="type-pills" id="typePills">
-                            <button type="button" class="type-pill" data-type="bridge"><i class="fas fa-archway"></i>Bridge</button>
-                            <button type="button" class="type-pill" data-type="footbridge"><i class="fas fa-person-walking"></i>Footbridge</button>
-                            <button type="button" class="type-pill" data-type="culvert"><i class="fas fa-water"></i>Culvert</button>
-                            <button type="button" class="type-pill" data-type="retaining_wall"><i class="fas fa-grip-lines-vertical"></i>Ret. Wall</button>
-                            <button type="button" class="type-pill" data-type="sign_gantry"><i class="fas fa-sign-hanging"></i>Sign Gantry</button>
+                            <div class="type-pill-row">
+                                <button type="button" class="type-pill" data-type="bridge"><i class="fas fa-archway"></i>Bridge</button>
+                                <button type="button" class="type-pill" data-type="footbridge"><i class="fas fa-person-walking"></i>Footbridge</button>
+                            </div>
+                            <div class="type-pill-row">
+                                <button type="button" class="type-pill" data-type="culvert"><i class="fas fa-water"></i>Culvert</button>
+                                <button type="button" class="type-pill" data-type="retaining_wall"><i class="fas fa-grip-lines-vertical"></i>Ret. Wall</button>
+                                <button type="button" class="type-pill" data-type="sign_gantry"><i class="fas fa-sign-hanging"></i>Sign Gantry</button>
+                            </div>
                         </div>
                     </div>
 
@@ -577,20 +609,27 @@ body.night-mode { background: #151f1d; color: var(--text); }
                             <input type="number" id="fLng" step="any" placeholder="-1.6131">
                         </div>
                     </div>
-                    <p class="hint" style="margin-top:-8px;">Leave coordinates blank if you'd rather drop a pin for this on the Map page later — the OS grid reference gets derived from these automatically.</p>
+                    <p class="hint">Leave coordinates blank if you'd rather drop a pin for this on the Map page later — the OS grid reference gets derived from these automatically.</p>
                 </div>
 
-                <div class="bi-photo form-group">
-                    <label>Photos <span class="opt">(optional)</span></label>
-                    <div class="photo-grid empty" id="photoGrid">
-                        <div class="add-photo-card" id="addPhotoCard">
-                            <i class="fas fa-image default-photo-icon"></i>
-                            <div class="plus-sign">+</div>
-                            <div class="add-text">Add cover photo</div>
+                <div class="bi-side">
+                    <div class="bi-photo form-group">
+                        <label>Photos <span class="opt">(optional)</span></label>
+                        <div class="photo-grid empty" id="photoGrid">
+                            <div class="add-photo-card" id="addPhotoCard">
+                                <div class="add-photo-icon-badge"><i class="fas fa-camera-retro"></i></div>
+                                <div class="add-text">Add cover photo</div>
+                            </div>
                         </div>
+                        <input type="file" id="photoInput" accept="image/*" multiple style="display:none;">
+                        <p class="hint">The first photo becomes the cover photo shown on the Map.</p>
                     </div>
-                    <input type="file" id="photoInput" accept="image/*" multiple style="display:none;">
-                    <p class="hint">The first photo becomes the cover photo shown on the Map.</p>
+
+                    <div class="bi-map form-group">
+                        <label>Pick location <span class="opt">(optional)</span></label>
+                        <div class="location-map" id="locationMapWidget"></div>
+                        <p class="hint">Click to drop a pin, or drag it to fine-tune — fills in Latitude/Longitude on the left.</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -630,7 +669,7 @@ body.night-mode { background: #151f1d; color: var(--text); }
                 </div>
             </div>
 
-            <div class="form-group" style="margin-bottom:0;">
+            <div class="form-group">
                 <label for="fLoadCapacity">Load capacity <span class="opt">(tonnes, optional)</span></label>
                 <input type="number" id="fLoadCapacity" min="0" placeholder="e.g. 44">
             </div>
@@ -708,7 +747,7 @@ body.night-mode { background: #151f1d; color: var(--text); }
                         <input type="text" id="fOSN" placeholder="e.g. 564200">
                     </div>
                 </div>
-                <div class="form-row" style="margin-top:16px;">
+                <div class="form-row">
                     <div class="form-group" style="margin-bottom:0;">
                         <label for="fGiCycle">General inspection cycle <span class="opt">(years)</span></label>
                         <input type="number" id="fGiCycle" min="1" placeholder="2">
@@ -731,6 +770,7 @@ body.night-mode { background: #151f1d; color: var(--text); }
 
 <div class="toast-container" id="toastContainer"></div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ---------- Night mode toggle (matches database.js wiring) ----------
 (function() {
@@ -972,6 +1012,67 @@ function renderPhotos() {
         photoGrid.appendChild(card);
     });
 }
+
+// ---------- Location map (click/drag to set coordinates) ----------
+(function() {
+    var mapEl = document.getElementById('locationMapWidget');
+    if (!mapEl || typeof L === 'undefined') return;
+
+    var fLat = document.getElementById('fLat');
+    var fLng = document.getElementById('fLng');
+    var hasCoords = fLat.value && fLng.value;
+    var startLat = hasCoords ? parseFloat(fLat.value) : 54.5;
+    var startLng = hasCoords ? parseFloat(fLng.value) : -3.2;
+
+    var locMap = L.map(mapEl, { attributionControl: false, zoomControl: true }).setView([startLat, startLng], hasCoords ? 13 : 6);
+
+    // Same two tile sources core Map already uses, swapped on the same
+    // night-mode toggle so this widget matches the rest of spanSense.
+    var lightTiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 });
+    var darkTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 });
+    (document.body.classList.contains('night-mode') ? darkTiles : lightTiles).addTo(locMap);
+
+    var marker = hasCoords ? L.marker([startLat, startLng], { draggable: true }).addTo(locMap) : null;
+    if (marker) marker.on('dragend', function() { var p = marker.getLatLng(); setCoords(p.lat, p.lng, false); });
+
+    function setCoords(lat, lng, moveMap) {
+        fLat.value = lat.toFixed(5);
+        fLng.value = lng.toFixed(5);
+        if (!marker) {
+            marker = L.marker([lat, lng], { draggable: true }).addTo(locMap);
+            marker.on('dragend', function() { var p = marker.getLatLng(); setCoords(p.lat, p.lng, false); });
+        } else {
+            marker.setLatLng([lat, lng]);
+        }
+        if (moveMap) locMap.setView([lat, lng], Math.max(locMap.getZoom(), 13));
+    }
+
+    locMap.on('click', function(e) { setCoords(e.latlng.lat, e.latlng.lng, false); });
+
+    // Typing coordinates in by hand moves the pin too - the map and the
+    // fields stay in sync whichever one is edited.
+    [fLat, fLng].forEach(function(input) {
+        input.addEventListener('change', function() {
+            var lat = parseFloat(fLat.value), lng = parseFloat(fLng.value);
+            if (!isNaN(lat) && !isNaN(lng)) setCoords(lat, lng, true);
+        });
+    });
+
+    var nmToggle = document.getElementById('nightModeToggle');
+    if (nmToggle) {
+        nmToggle.addEventListener('click', function() {
+            setTimeout(function() {
+                var dark = document.body.classList.contains('night-mode');
+                locMap.removeLayer(dark ? lightTiles : darkTiles);
+                (dark ? darkTiles : lightTiles).addTo(locMap);
+            }, 0);
+        });
+    }
+
+    // The map card can start at a stale size if layout shifts after Leaflet
+    // measures its container - tell it to recheck once things settle.
+    setTimeout(function() { locMap.invalidateSize(); }, 300);
+})();
 
 var API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? 'http://localhost:3000'
