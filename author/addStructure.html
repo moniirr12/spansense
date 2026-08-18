@@ -188,10 +188,6 @@ body {
 /* ---------- FORM FIELDS - matches Planning's assign-modal .field
    convention: uppercase letter-spaced label, var(--bg-soft) fill. ---------- */
 .form-group { margin-bottom: 16px; }
-/* Nudges Client's own bottom edge down so it lines up with Photo's bottom
-   on the right - without this the two natural heights land a few px apart
-   and Location/Pick location start on slightly different lines. */
-#fClientGroup { padding-bottom: 7px; }
 .form-group:last-child { margin-bottom: 0; }
 .form-group label {
     display: block;
@@ -235,25 +231,24 @@ body {
    a sensible width from the grid itself and doesn't need this. */
 .field-narrow { max-width: 480px; }
 
-/* ---------- STRUCTURE INFO LAYOUT - name/type/client/location/description
-   on the left, photo on the right rather than stacked above the name
-   (matches the cover-photo's job: it's what represents this structure on
-   the Map, so it sits alongside the fields that identify it, not buried
-   between them). 60/40 split (fields/photo+map) via fr units rather than
-   a fixed px right column, so the photo and map stay proportional to the
-   page instead of a fixed width that reads oddly narrow or wide depending
-   on viewport. ---------- */
-.basic-info-grid { display: grid; grid-template-columns: 3fr 2fr; gap: 28px; align-items: start; }
-.bi-fields .form-group:last-child { margin-bottom: 0; }
+/* ---------- STRUCTURE INFO LAYOUT - two grid ROWS, not one tall column
+   next to one tall column: row 1 is Name/Type/Client paired with Photo,
+   row 2 is Location/Lat-Lng/Description paired with the map. 60/40 split
+   via fr units rather than a fixed px right column, so photo/map stay
+   proportional to the page at any viewport width.
 
-/* Right column stacks the photo uploader and the location map as two
-   independent form-groups, each square, so the pair reads as a matched
-   set rather than the photo box floating alone above empty space. */
-.bi-side { display: flex; flex-direction: column; gap: 16px; }
-.bi-side .form-group { margin-bottom: 0; }
-/* Nudges the map group's own bottom edge down to meet Description's
-   bottom on the left, the same trick used on Client/Photo above. */
-.bi-map { padding-bottom: 8px; }
+   Each row's default align-items:stretch (grid's initial value - nothing
+   below overrides it) makes both cells in a row exactly as tall as the
+   taller one. The shorter cell is a flex column whose LAST field gets
+   margin-top:auto (below), which packs everything above it normally but
+   pins that last field flush to the row's bottom - so Client lines up
+   with Photo's bottom and Description with the map's, at any screen
+   width, without a single hardcoded pixel value to fall out of date. ---------- */
+.basic-info-grid { display: grid; grid-template-columns: 3fr 2fr; column-gap: 28px; row-gap: 16px; }
+.bi-row-top, .bi-row-bottom { display: flex; flex-direction: column; }
+#fClientGroup, #fDescriptionGroup { margin-top: auto; margin-bottom: 0; }
+
+.bi-photo, .bi-map { margin-bottom: 0; }
 
 .location-map { width: 100%; aspect-ratio: 16 / 9; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--bg-soft); }
 .location-map .leaflet-control-zoom { border: none !important; box-shadow: 0 2px 8px rgba(0,0,0,.14) !important; }
@@ -419,7 +414,6 @@ body {
     .navbar { width: 90%; padding: 0 18px; }
     .form-row, .form-row.three { grid-template-columns: 1fr; }
     .basic-info-grid { grid-template-columns: 1fr; }
-    .bi-side { order: -1; }
 }
 @media (max-width: 600px) {
     .form-actions { flex-direction: column-reverse; }
@@ -554,7 +548,7 @@ body.night-mode { background: #151f1d; color: var(--text); }
             <p class="section-sub">The name, type, location and description every other page uses to identify this structure.</p>
 
             <div class="basic-info-grid">
-                <div class="bi-fields">
+                <div class="bi-row-top">
                     <div class="form-group">
                         <label for="fName">Name</label>
                         <input type="text" id="fName" placeholder="e.g. Ouseburn Viaduct" required>
@@ -577,13 +571,31 @@ body.night-mode { background: #151f1d; color: var(--text); }
 
                     <!-- Only shown when arriving from Author (see the authorAddStructure
                          sessionStorage flag below) - core structures have no concept
-                         of a client, so this stays out of the way entirely otherwise. -->
+                         of a client, so this stays out of the way entirely otherwise.
+                         Last visible field in this row - margin-top:auto (see CSS)
+                         pins it to the row's bottom so it lines up with Photo's
+                         bottom regardless of viewport width. -->
                     <div class="form-group" id="fClientGroup" style="display:none;">
                         <label for="fClient">Client</label>
                         <select id="fClient"><option value="">Select client…</option></select>
                         <p class="hint">Needed for this structure to appear in Author's Dashboard or Planning.</p>
                     </div>
+                </div>
 
+                <div class="bi-photo form-group">
+                    <label>Photo</label>
+                    <div class="photo-grid empty" id="photoGrid">
+                        <div class="add-photo-card" id="addPhotoCard">
+                            <div class="add-photo-icon-badge"><i class="fas fa-camera-retro"></i></div>
+                            <div class="add-text">Add cover photo</div>
+                        </div>
+                        <div class="cover-slot" id="coverSlot"></div>
+                    </div>
+                    <input type="file" id="photoInput" accept="image/*" style="display:none;">
+                    <p class="hint">Shown as the cover photo on the Map.</p>
+                </div>
+
+                <div class="bi-row-bottom">
                     <div class="form-group">
                         <label for="fLocation">Location <span class="opt">(address or place name)</span></label>
                         <input type="text" id="fLocation" placeholder="e.g. Newcastle upon Tyne">
@@ -600,32 +612,20 @@ body.night-mode { background: #151f1d; color: var(--text); }
                         </div>
                     </div>
 
-                    <div class="form-group" style="margin-bottom:0;">
+                    <!-- Last field in this row - margin-top:auto (see CSS) pins it
+                         to the row's bottom so it lines up with the map's bottom
+                         regardless of viewport width. -->
+                    <div class="form-group" id="fDescriptionGroup">
                         <label for="fDescription">Description</label>
                         <textarea id="fDescription" placeholder="Anything worth noting about this structure — history, access notes, known issues…"></textarea>
                         <p class="hint">Shown on the structure's Span Info panel.</p>
                     </div>
                 </div>
 
-                <div class="bi-side">
-                    <div class="bi-photo form-group">
-                        <label>Photo</label>
-                        <div class="photo-grid empty" id="photoGrid">
-                            <div class="add-photo-card" id="addPhotoCard">
-                                <div class="add-photo-icon-badge"><i class="fas fa-camera-retro"></i></div>
-                                <div class="add-text">Add cover photo</div>
-                            </div>
-                            <div class="cover-slot" id="coverSlot"></div>
-                        </div>
-                        <input type="file" id="photoInput" accept="image/*" style="display:none;">
-                        <p class="hint">Shown as the cover photo on the Map.</p>
-                    </div>
-
-                    <div class="bi-map form-group">
-                        <label>Pick location</label>
-                        <div class="location-map" id="locationMapWidget"></div>
-                        <p class="hint">Click or drag the pin to set Latitude/Longitude on the left.</p>
-                    </div>
+                <div class="bi-map form-group">
+                    <label>Pick location</label>
+                    <div class="location-map" id="locationMapWidget"></div>
+                    <p class="hint">Click or drag the pin to set Latitude/Longitude on the left.</p>
                 </div>
             </div>
         </div>
