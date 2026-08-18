@@ -13,6 +13,7 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="../assets/sunIcon.css">
     <base target="_self">
 <style>
@@ -186,6 +187,10 @@ body {
 /* ---------- FORM FIELDS - matches Planning's assign-modal .field
    convention: uppercase letter-spaced label, var(--bg-soft) fill. ---------- */
 .form-group { margin-bottom: 16px; }
+/* Nudges Client's own bottom edge down so it lines up with Photo's bottom
+   on the right - without this the two natural heights land a few px apart
+   and Location/Pick location start on slightly different lines. */
+#fClientGroup { padding-bottom: 7px; }
 .form-group:last-child { margin-bottom: 0; }
 .form-group label {
     display: block;
@@ -219,32 +224,47 @@ body {
     box-shadow: 0 0 0 3px rgba(138, 180, 176, 0.15);
 }
 .form-group .hint { font-size: 0.72rem; color: #a7b4bd; margin-top: 6px; line-height: 1.4; }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+.form-row:last-child { margin-bottom: 0; }
 .form-row.three { grid-template-columns: 1fr 1fr 1fr; }
 
-/* Caps just the free-standing single-column fields (name/location/client/
-   description) at a comfortable reading width, rather than letting them
-   stretch edge-to-edge across the full 1180px page - everything inside a
-   .form-row grid (spans/materials/etc) is already a sensible width from
-   the grid itself and doesn't need this. */
+/* Caps just the free-standing single-column fields (name/location/client)
+   at a comfortable reading width, rather than letting them stretch edge-
+   to-edge across the page - everything inside a .form-row grid is already
+   a sensible width from the grid itself and doesn't need this. */
 .field-narrow { max-width: 480px; }
-.field-narrow-wide { max-width: 640px; }
 
-/* ---------- BASIC INFO LAYOUT - name/type/client/location on the left,
-   photos on the right rather than stacked above the name (matches the
-   cover-photo's job: it's what represents this structure on the Map, so
-   it sits alongside the fields that identify it, not buried between
-   them). Right column is a fixed width rather than 1fr so it doesn't
-   stretch the photo grid past a sensible size on wide screens. ---------- */
-.basic-info-grid { display: grid; grid-template-columns: 1fr 300px; gap: 28px; align-items: start; }
+/* ---------- STRUCTURE INFO LAYOUT - name/type/client/location/description
+   on the left, photo on the right rather than stacked above the name
+   (matches the cover-photo's job: it's what represents this structure on
+   the Map, so it sits alongside the fields that identify it, not buried
+   between them). 60/40 split (fields/photo+map) via fr units rather than
+   a fixed px right column, so the photo and map stay proportional to the
+   page instead of a fixed width that reads oddly narrow or wide depending
+   on viewport. ---------- */
+.basic-info-grid { display: grid; grid-template-columns: 3fr 2fr; gap: 28px; align-items: start; }
 .bi-fields .form-group:last-child { margin-bottom: 0; }
-.bi-photo { margin-bottom: 0; }
+
+/* Right column stacks the photo uploader and the location map as two
+   independent form-groups, each square, so the pair reads as a matched
+   set rather than the photo box floating alone above empty space. */
+.bi-side { display: flex; flex-direction: column; gap: 16px; }
+.bi-side .form-group { margin-bottom: 0; }
+/* Nudges the map group's own bottom edge down to meet Description's
+   bottom on the left, the same trick used on Client/Photo above. */
+.bi-map { padding-bottom: 8px; }
+
+.location-map { width: 100%; aspect-ratio: 16 / 9; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--bg-soft); }
+.location-map .leaflet-control-zoom { border: none !important; box-shadow: 0 2px 8px rgba(0,0,0,.14) !important; }
+.location-map .leaflet-control-zoom a { border-radius: 6px !important; }
 
 /* ---------- TYPE PILLS ---------- */
-.type-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+/* Two explicit rows (2 then 3) rather than flex-wrap - five pills wrapping
+   left Sign Gantry stretched alone across a full row on its own. */
+.type-pills { display: flex; flex-direction: column; gap: 8px; }
+.type-pill-row { display: flex; gap: 8px; }
+.type-pill-row .type-pill { flex: 1 1 0; min-width: 0; }
 .type-pill {
-    flex: 1 1 auto;
-    min-width: 108px;
     border: 1px solid var(--border);
     background: var(--bg-soft);
     color: var(--text-mute2);
@@ -308,39 +328,44 @@ body {
 .form-section.collapsed .adv-body { display: none; }
 .adv-body { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border2); }
 
-/* ---------- PHOTO GRID (reused from inspection.html's photo widget) ---------- */
-.photo-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-    gap: 14px;
-}
-/* No photos yet - the add-tile becomes a single, larger "default image"
-   box (own column, not stretched across the row) so Basic Info doesn't
-   read as an empty upload prompt right under the name. Once a photo
-   exists it shrinks back to a normal grid tile for adding more. */
-.photo-grid.empty { grid-template-columns: 1fr; max-width: 220px; }
+/* ---------- PHOTO - a single 16:9 slot, same width as the location map
+   below it. ---------- */
+.photo-grid { display: flex; flex-direction: column; }
+.photo-grid:not(.empty) #addPhotoCard,
+.photo-grid.empty .cover-slot { display: none; }
+
 .add-photo-card {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    aspect-ratio: 1;
-    border: 2px dashed rgba(91, 140, 138, 0.3);
+    width: 100%; aspect-ratio: 16 / 9;
+    border: 1.5px dashed rgba(91, 140, 138, 0.35);
     border-radius: 10px;
-    background: var(--bg-mint);
+    /* Soft wave motif rather than a flat tint - echoes the water a bridge
+       crosses, so an empty photo slot still feels like it belongs to
+       spanSense rather than a generic upload box. */
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%20400%20400%27%20preserveAspectRatio%3D%27none%27%3E%3Crect%20width%3D%27400%27%20height%3D%27400%27%20fill%3D%27%23eef4f2%27/%3E%3Cpath%20d%3D%27M0%2C255%20C70%2C225%20130%2C285%20200%2C258%20C270%2C232%20330%2C278%20400%2C248%20L400%2C400%20L0%2C400%20Z%27%20fill%3D%27%235b8c8a%27%20fill-opacity%3D%270.10%27/%3E%3Cpath%20d%3D%27M0%2C300%20C80%2C272%20150%2C318%20220%2C296%20C290%2C275%20340%2C308%20400%2C290%20L400%2C400%20L0%2C400%20Z%27%20fill%3D%27%235b8c8a%27%20fill-opacity%3D%270.16%27/%3E%3C/svg%3E");
+    background-size: cover;
+    background-position: center;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.25s ease;
 }
-.add-photo-card:hover { border-color: var(--teal); background: rgba(91, 140, 138, 0.08); transform: translateY(-2px); }
-.default-photo-icon { display: none; font-size: 34px; color: rgba(91, 140, 138, 0.35); margin-bottom: 10px; }
-.photo-grid.empty .default-photo-icon { display: block; }
-.plus-sign { font-size: 32px; font-weight: 300; color: var(--teal); line-height: 1; margin-bottom: 4px; }
-.photo-grid.empty .plus-sign { font-size: 22px; margin-bottom: 2px; }
-.add-text { font-size: 11px; color: var(--teal); font-weight: 500; letter-spacing: 0.3px; text-align: center; padding: 0 6px; }
+.add-photo-card:hover { border-color: var(--teal); box-shadow: 0 6px 18px rgba(91, 140, 138, .14); }
+.add-photo-icon-badge {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: #fff; color: var(--teal);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; margin-bottom: 10px;
+    box-shadow: 0 2px 8px rgba(44, 90, 87, .12);
+    transition: all 0.25s ease;
+}
+.add-photo-card:hover .add-photo-icon-badge { background: var(--teal); color: #fff; transform: scale(1.06); }
+.add-text { font-size: 12.5px; color: var(--teal-dark); font-weight: 600; letter-spacing: 0.2px; text-align: center; padding: 0 6px; }
+
+.cover-slot .preview-item-photo { width: 100%; aspect-ratio: 16 / 9; }
 .preview-item-photo {
     position: relative; border-radius: 10px; overflow: hidden; background: white;
     box-shadow: 0 2px 10px rgba(0,0,0,0.06); transition: all 0.25s ease;
-    aspect-ratio: 1; display: flex; flex-direction: column;
 }
-.preview-item-photo:hover { transform: translateY(-3px); box-shadow: 0 8px 22px rgba(0,0,0,0.12); }
-.preview-item-photo img { width: 100%; flex: 1; object-fit: cover; display: block; min-height: 0; }
+.preview-item-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .remove-photo {
     position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 50%;
     border: none; background: rgba(220, 38, 38, 0.85); color: white; font-size: 16px; line-height: 1;
@@ -349,18 +374,6 @@ body {
 }
 .preview-item-photo:hover .remove-photo { opacity: 1; }
 .remove-photo:hover { transform: scale(1.1); background: #dc2626; }
-.photo-description-input {
-    width: 100%; padding: 8px 10px; border: none; border-top: 1px solid rgba(0,0,0,0.06);
-    font-size: 11px; color: #444; background: rgba(255,255,255,0.95); resize: none; outline: none;
-    font-family: inherit; line-height: 1.4; min-height: 36px;
-}
-.photo-description-input::placeholder { color: #bbb; }
-.photo-description-input:focus { background: white; }
-.cover-badge {
-    position: absolute; top: 8px; left: 8px; z-index: 2;
-    background: rgba(45, 122, 110, 0.9); color: white; font-size: 9.5px; font-weight: 700;
-    padding: 3px 8px; border-radius: 20px; letter-spacing: 0.03em;
-}
 
 /* ---------- BUTTONS - same .btn/.btn.primary component as every other
    Author page (Planning's modal, Map's route panel, etc). .btn-cancel/
@@ -405,7 +418,7 @@ body {
     .navbar { width: 90%; padding: 0 18px; }
     .form-row, .form-row.three { grid-template-columns: 1fr; }
     .basic-info-grid { grid-template-columns: 1fr; }
-    .bi-photo { order: -1; }
+    .bi-side { order: -1; }
 }
 @media (max-width: 600px) {
     .form-actions { flex-direction: column-reverse; }
@@ -466,12 +479,16 @@ body.night-mode { background: #151f1d; color: var(--text); }
 
 .night-mode .span-row-head { color: #8ab4b0; }
 
-.night-mode .add-photo-card { background: rgba(138, 180, 176, 0.05); border-color: rgba(138, 180, 176, 0.3); }
-.night-mode .add-photo-card:hover { background: rgba(138, 180, 176, 0.1); border-color: rgba(138, 180, 176, 0.55); }
+.night-mode .add-photo-card {
+    border-color: rgba(138, 180, 176, 0.3);
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%20400%20400%27%20preserveAspectRatio%3D%27none%27%3E%3Crect%20width%3D%27400%27%20height%3D%27400%27%20fill%3D%27%231e3a38%27/%3E%3Cpath%20d%3D%27M0%2C255%20C70%2C225%20130%2C285%20200%2C258%20C270%2C232%20330%2C278%20400%2C248%20L400%2C400%20L0%2C400%20Z%27%20fill%3D%27%238ab4b0%27%20fill-opacity%3D%270.08%27/%3E%3Cpath%20d%3D%27M0%2C300%20C80%2C272%20150%2C318%20220%2C296%20C290%2C275%20340%2C308%20400%2C290%20L400%2C400%20L0%2C400%20Z%27%20fill%3D%27%238ab4b0%27%20fill-opacity%3D%270.14%27/%3E%3C/svg%3E");
+}
+.night-mode .add-photo-card:hover { border-color: rgba(138, 180, 176, 0.55); }
+.night-mode .add-photo-icon-badge { background: #182320; color: #8ab4b0; }
+.night-mode .add-photo-card:hover .add-photo-icon-badge { background: var(--teal); color: #fff; }
+.night-mode .add-text { color: #8ab4b0; }
 .night-mode .preview-item-photo { background: #182320; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
-.night-mode .photo-description-input { background: rgba(24, 35, 32, 0.95); border-color: #2f3e45; color: #c5d3d9; }
-.night-mode .photo-description-input:focus { background: #182320; }
-.night-mode .photo-description-input::placeholder { color: #647680; }
+.night-mode .location-map { border-color: #3a4b53; background: #182320; }
 
 .night-mode .toast { background: #1c2826; border-color: #2f3e45; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35); }
 .night-mode .toast-content .toast-title { color: #d4dfe3; }
@@ -519,8 +536,8 @@ body.night-mode { background: #151f1d; color: var(--text); }
 
     <div class="form-container">
     <div class="form-section extract-section">
-        <h2><i class="fas fa-wand-magic-sparkles"></i> Extract from document <span class="opt">(optional)</span></h2>
-        <p class="section-sub">Upload a BCI Pro forma or inspection report and spanSense will try to pull the structure's name, location, dimensions, materials and build year into the form below — condition scores and defects aren't read, and everything extracted is still yours to review before creating.</p>
+        <h2><i class="fas fa-wand-magic-sparkles"></i> Extract from document</h2>
+        <p class="section-sub">Upload a BCI Pro forma or inspection report and spanSense will try to pull the structure's name, location, dimensions and build year into the form below — condition scores and defects aren't read, and everything extracted is still yours to review before creating.</p>
         <div class="extract-upload-row">
             <button type="button" class="btn-extract btn primary" id="extractBtn"><i class="fas fa-file-arrow-up"></i> Upload document</button>
             <input type="file" id="extractFileInput" accept=".pdf,.doc,.docx" style="display:none;">
@@ -533,23 +550,27 @@ body.night-mode { background: #151f1d; color: var(--text); }
         <!-- BASIC INFO -->
         <div class="form-section">
             <h2><i class="fas fa-signature"></i> Basic info</h2>
-            <p class="section-sub">The name, type and location every other page uses to identify this structure.</p>
+            <p class="section-sub">The name, type, location and description every other page uses to identify this structure.</p>
 
             <div class="basic-info-grid">
                 <div class="bi-fields">
                     <div class="form-group">
                         <label for="fName">Name</label>
-                        <input type="text" id="fName" class="field-narrow" placeholder="e.g. Ouseburn Viaduct" required>
+                        <input type="text" id="fName" placeholder="e.g. Ouseburn Viaduct" required>
                     </div>
 
                     <div class="form-group">
                         <label>Type</label>
                         <div class="type-pills" id="typePills">
-                            <button type="button" class="type-pill" data-type="bridge"><i class="fas fa-archway"></i>Bridge</button>
-                            <button type="button" class="type-pill" data-type="footbridge"><i class="fas fa-person-walking"></i>Footbridge</button>
-                            <button type="button" class="type-pill" data-type="culvert"><i class="fas fa-water"></i>Culvert</button>
-                            <button type="button" class="type-pill" data-type="retaining_wall"><i class="fas fa-grip-lines-vertical"></i>Ret. Wall</button>
-                            <button type="button" class="type-pill" data-type="sign_gantry"><i class="fas fa-sign-hanging"></i>Sign Gantry</button>
+                            <div class="type-pill-row">
+                                <button type="button" class="type-pill" data-type="bridge"><i class="fas fa-archway"></i>Bridge</button>
+                                <button type="button" class="type-pill" data-type="footbridge"><i class="fas fa-person-walking"></i>Footbridge</button>
+                            </div>
+                            <div class="type-pill-row">
+                                <button type="button" class="type-pill" data-type="culvert"><i class="fas fa-water"></i>Culvert</button>
+                                <button type="button" class="type-pill" data-type="retaining_wall"><i class="fas fa-grip-lines-vertical"></i>Ret. Wall</button>
+                                <button type="button" class="type-pill" data-type="sign_gantry"><i class="fas fa-sign-hanging"></i>Sign Gantry</button>
+                            </div>
                         </div>
                     </div>
 
@@ -558,39 +579,52 @@ body.night-mode { background: #151f1d; color: var(--text); }
                          of a client, so this stays out of the way entirely otherwise. -->
                     <div class="form-group" id="fClientGroup" style="display:none;">
                         <label for="fClient">Client</label>
-                        <select id="fClient" class="field-narrow"><option value="">Select client…</option></select>
-                        <p class="hint">Which client this structure is inspected on behalf of - it won't show up in Author's Dashboard or Planning without one.</p>
+                        <select id="fClient"><option value="">Select client…</option></select>
+                        <p class="hint">Needed for this structure to appear in Author's Dashboard or Planning.</p>
                     </div>
 
                     <div class="form-group">
                         <label for="fLocation">Location <span class="opt">(address or place name)</span></label>
-                        <input type="text" id="fLocation" class="field-narrow" placeholder="e.g. Newcastle upon Tyne">
+                        <input type="text" id="fLocation" placeholder="e.g. Newcastle upon Tyne">
                     </div>
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="fLat">Latitude <span class="opt">(optional)</span></label>
+                            <label for="fLat">Latitude</label>
                             <input type="number" id="fLat" step="any" placeholder="54.9738">
                         </div>
                         <div class="form-group">
-                            <label for="fLng">Longitude <span class="opt">(optional)</span></label>
+                            <label for="fLng">Longitude</label>
                             <input type="number" id="fLng" step="any" placeholder="-1.6131">
                         </div>
                     </div>
-                    <p class="hint" style="margin-top:-8px;">Leave coordinates blank if you'd rather drop a pin for this on the Map page later — the OS grid reference gets derived from these automatically.</p>
+
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label for="fDescription">Description</label>
+                        <textarea id="fDescription" placeholder="Anything worth noting about this structure — history, access notes, known issues…"></textarea>
+                        <p class="hint">Shown on the structure's Span Info panel.</p>
+                    </div>
                 </div>
 
-                <div class="bi-photo form-group">
-                    <label>Photos <span class="opt">(optional)</span></label>
-                    <div class="photo-grid empty" id="photoGrid">
-                        <div class="add-photo-card" id="addPhotoCard">
-                            <i class="fas fa-image default-photo-icon"></i>
-                            <div class="plus-sign">+</div>
-                            <div class="add-text">Add cover photo</div>
+                <div class="bi-side">
+                    <div class="bi-photo form-group">
+                        <label>Photo</label>
+                        <div class="photo-grid empty" id="photoGrid">
+                            <div class="add-photo-card" id="addPhotoCard">
+                                <div class="add-photo-icon-badge"><i class="fas fa-camera-retro"></i></div>
+                                <div class="add-text">Add cover photo</div>
+                            </div>
+                            <div class="cover-slot" id="coverSlot"></div>
                         </div>
+                        <input type="file" id="photoInput" accept="image/*" style="display:none;">
+                        <p class="hint">Shown as the cover photo on the Map.</p>
                     </div>
-                    <input type="file" id="photoInput" accept="image/*" multiple style="display:none;">
-                    <p class="hint">The first photo becomes the cover photo shown on the Map.</p>
+
+                    <div class="bi-map form-group">
+                        <label>Pick location</label>
+                        <div class="location-map" id="locationMapWidget"></div>
+                        <p class="hint">Click or drag the pin to set Latitude/Longitude on the left.</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -615,7 +649,7 @@ body.night-mode { background: #151f1d; color: var(--text); }
                 </div>
             </div>
 
-            <div class="form-row">
+            <div class="form-row three">
                 <div class="form-group">
                     <label>Number of spans</label>
                     <div class="stepper">
@@ -628,66 +662,18 @@ body.night-mode { background: #151f1d; color: var(--text); }
                     <label for="fBuiltYear">Built year <span class="opt">(optional)</span></label>
                     <input type="number" id="fBuiltYear" min="1700" max="2100" placeholder="e.g. 1876">
                 </div>
-            </div>
-
-            <div class="form-group" style="margin-bottom:0;">
-                <label for="fLoadCapacity">Load capacity <span class="opt">(tonnes, optional)</span></label>
-                <input type="number" id="fLoadCapacity" min="0" placeholder="e.g. 44">
-            </div>
-        </div>
-
-        <!-- MATERIALS -->
-        <div class="form-section">
-            <h2><i class="fas fa-layer-group"></i> Materials</h2>
-            <p class="section-sub">Primary is required for BCI element scoring to pick sensible defaults.</p>
-            <div class="form-row">
                 <div class="form-group">
-                    <label for="fMaterialPrimary">Primary material</label>
-                    <select id="fMaterialPrimary">
-                        <option value="">Select material…</option>
-                        <option>Steel</option>
-                        <option>Concrete</option>
-                        <option>Masonry / Brick</option>
-                        <option>Stone</option>
-                        <option>Wrought iron</option>
-                        <option>Cast iron</option>
-                        <option>Timber</option>
-                        <option>Composite / FRP</option>
-                        <option>Other</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="fMaterialSecondary">Secondary material <span class="opt">(optional)</span></label>
-                    <select id="fMaterialSecondary">
-                        <option value="">None</option>
-                        <option>Steel</option>
-                        <option>Concrete</option>
-                        <option>Masonry / Brick</option>
-                        <option>Stone</option>
-                        <option>Wrought iron</option>
-                        <option>Cast iron</option>
-                        <option>Timber</option>
-                        <option>Composite / FRP</option>
-                        <option>Other</option>
-                    </select>
+                    <label for="fLoadCapacity">Load capacity <span class="opt">(tonnes)</span></label>
+                    <input type="number" id="fLoadCapacity" min="0" placeholder="e.g. 44">
                 </div>
             </div>
         </div>
 
         <!-- PER-SPAN BREAKDOWN -->
         <div class="form-section">
-            <h2><i class="fas fa-ruler-horizontal"></i> Per-span breakdown <span class="opt">(optional)</span></h2>
+            <h2><i class="fas fa-ruler-horizontal"></i> Per-span breakdown</h2>
             <p class="section-sub">Length, width, and BCI Pro forma deck form/material codes for each individual span — useful when spans differ (e.g. an original span next to a later widening). Leave any of this blank and the structure's own span length/width above still apply; there's no per-span requirement to fill any of it in.</p>
             <div id="spanBreakdownList"></div>
-        </div>
-
-        <!-- DESCRIPTION -->
-        <div class="form-section">
-            <h2><i class="fas fa-align-left"></i> Description</h2>
-            <p class="section-sub">Free text — shown on the structure's Span Info panel.</p>
-            <div class="form-group" style="margin-bottom:0;">
-                <textarea id="fDescription" class="field-narrow-wide" placeholder="Anything worth noting about this structure — history, access notes, known issues…"></textarea>
-            </div>
         </div>
 
         <!-- ADVANCED -->
@@ -697,18 +683,7 @@ body.night-mode { background: #151f1d; color: var(--text); }
                 <i class="fas fa-chevron-down chev"></i>
             </div>
             <div class="adv-body">
-                <p class="section-sub">OS grid reference and inspection cycle overrides. Fine to skip — sensible defaults (2-year General, 6-year Principal) apply until these are set.</p>
                 <div class="form-row">
-                    <div class="form-group">
-                        <label for="fOSE">OS Grid Easting</label>
-                        <input type="text" id="fOSE" placeholder="e.g. 425600">
-                    </div>
-                    <div class="form-group">
-                        <label for="fOSN">OS Grid Northing</label>
-                        <input type="text" id="fOSN" placeholder="e.g. 564200">
-                    </div>
-                </div>
-                <div class="form-row" style="margin-top:16px;">
                     <div class="form-group" style="margin-bottom:0;">
                         <label for="fGiCycle">General inspection cycle <span class="opt">(years)</span></label>
                         <input type="number" id="fGiCycle" min="1" placeholder="2">
@@ -731,6 +706,7 @@ body.night-mode { background: #151f1d; color: var(--text); }
 
 <div class="toast-container" id="toastContainer"></div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ---------- Night mode toggle (matches database.js wiring) ----------
 (function() {
@@ -903,8 +879,8 @@ function renderSpanBreakdown() {
                 '<div class="form-group"><label>Primary material</label><select class="span-primary-material">' + codeOptions(MATERIAL_CODES, 'Select material…') + '</select></div>' +
             '</div>' +
             '<div class="form-row">' +
-                '<div class="form-group"><label>Secondary form <span class="opt">(optional)</span></label><select class="span-secondary-form">' + codeOptions(SECONDARY_FORM_CODES, 'None') + '</select></div>' +
-                '<div class="form-group"><label>Secondary material <span class="opt">(optional)</span></label><select class="span-secondary-material">' + codeOptions(SECONDARY_MATERIAL_CODES, 'None') + '</select></div>' +
+                '<div class="form-group"><label>Secondary form</label><select class="span-secondary-form">' + codeOptions(SECONDARY_FORM_CODES, 'None') + '</select></div>' +
+                '<div class="form-group"><label>Secondary material</label><select class="span-secondary-material">' + codeOptions(SECONDARY_MATERIAL_CODES, 'None') + '</select></div>' +
             '</div>' +
         '</div>';
     }).join('');
@@ -924,54 +900,122 @@ document.getElementById('advToggle').addEventListener('click', function() {
     document.getElementById('advSection').classList.toggle('collapsed');
 });
 
-// ---------- Photos (multi-photo grid with per-photo description) ----------
-var photos = []; // { id, dataURL, description }
+// ---------- Photo (single cover shot, same width as the location map) ----------
+var photo = null; // { dataURL }
 var photoGrid = document.getElementById('photoGrid');
 var addPhotoCard = document.getElementById('addPhotoCard');
+var coverSlot = document.getElementById('coverSlot');
 var photoInput = document.getElementById('photoInput');
 
 addPhotoCard.addEventListener('click', function() { photoInput.click(); });
 
 photoInput.addEventListener('change', function() {
-    Array.prototype.forEach.call(photoInput.files, function(file) {
-        if (!file.type.startsWith('image/')) return;
-        var reader = new FileReader();
-        reader.onload = function(e) {
-            var photo = { id: 'p' + Date.now() + Math.random().toString(36).slice(2), dataURL: e.target.result, description: '' };
-            photos.push(photo);
-            renderPhotos();
-        };
-        reader.readAsDataURL(file);
-    });
+    var file = photoInput.files[0];
     photoInput.value = '';
+    if (!file || !file.type.startsWith('image/')) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        photo = { dataURL: e.target.result };
+        renderPhoto();
+    };
+    reader.readAsDataURL(file);
 });
 
-function renderPhotos() {
-    // remove all preview cards, keep the add-tile
-    Array.prototype.slice.call(photoGrid.querySelectorAll('.preview-item-photo')).forEach(function(el) { el.remove(); });
-    // .empty swaps the add-tile for a larger "default image" placeholder
-    // (see its own CSS) instead of a small grid tile once there's nothing
-    // to show yet.
-    photoGrid.classList.toggle('empty', photos.length === 0);
-    document.querySelector('#addPhotoCard .add-text').textContent = photos.length ? 'Add more' : 'Add cover photo';
-    photos.forEach(function(photo, idx) {
-        var card = document.createElement('div');
-        card.className = 'preview-item-photo';
-        card.innerHTML =
-            (idx === 0 ? '<div class="cover-badge">COVER</div>' : '') +
-            '<button type="button" class="remove-photo">&times;</button>' +
-            '<img src="' + photo.dataURL + '" alt="">' +
-            '<textarea class="photo-description-input" placeholder="Add description…"></textarea>';
-        card.querySelector('.remove-photo').addEventListener('click', function() {
-            photos = photos.filter(function(p) { return p.id !== photo.id; });
-            renderPhotos();
-        });
-        var textarea = card.querySelector('.photo-description-input');
-        textarea.value = photo.description;
-        textarea.addEventListener('input', function() { photo.description = textarea.value; });
-        photoGrid.appendChild(card);
-    });
+function renderPhoto() {
+    photoGrid.classList.toggle('empty', !photo);
+    coverSlot.innerHTML = '';
+    if (!photo) return;
+    var card = document.createElement('div');
+    card.className = 'preview-item-photo';
+    card.innerHTML = '<button type="button" class="remove-photo">&times;</button><img src="' + photo.dataURL + '" alt="">';
+    card.querySelector('.remove-photo').addEventListener('click', function() { photo = null; renderPhoto(); });
+    coverSlot.appendChild(card);
 }
+
+// ---------- Location map (click/drag to set coordinates) ----------
+(function() {
+    var mapEl = document.getElementById('locationMapWidget');
+    if (!mapEl || typeof L === 'undefined') return;
+
+    var fLat = document.getElementById('fLat');
+    var fLng = document.getElementById('fLng');
+    var fLocation = document.getElementById('fLocation');
+    var hasCoords = fLat.value && fLng.value;
+
+    // Reverse-geocodes via Nominatim (same OSM stack as the tiles above,
+    // no key needed) - only fills Location if it's still blank, so this
+    // never overwrites something the user already typed in themselves.
+    var geocodeRequestId = 0;
+    function reverseGeocodeLocation(lat, lng) {
+        if (fLocation.value.trim()) return;
+        var thisRequest = ++geocodeRequestId;
+        fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=' + lat + '&lon=' + lng + '&zoom=17&addressdetails=1')
+            .then(function(res) { return res.ok ? res.json() : null; })
+            .then(function(data) {
+                // Stale if the pin moved again (or the user typed something)
+                // while this was in flight.
+                if (!data || thisRequest !== geocodeRequestId || fLocation.value.trim()) return;
+                var a = data.address || {};
+                var road = a.road || a.pedestrian || a.footway || a.cycleway || '';
+                var place = a.city || a.town || a.village || a.suburb || a.county || '';
+                var label = [road, place].filter(Boolean).join(', ') || data.display_name;
+                if (label) fLocation.value = label;
+            })
+            .catch(function() { /* reverse geocoding is a convenience, not required - fail silently */ });
+    }
+    var startLat = hasCoords ? parseFloat(fLat.value) : 54.5;
+    var startLng = hasCoords ? parseFloat(fLng.value) : -3.2;
+
+    var locMap = L.map(mapEl, { attributionControl: false, zoomControl: true }).setView([startLat, startLng], hasCoords ? 13 : 6);
+
+    // Same two tile sources core Map already uses, swapped on the same
+    // night-mode toggle so this widget matches the rest of spanSense.
+    var lightTiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 });
+    var darkTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 });
+    (document.body.classList.contains('night-mode') ? darkTiles : lightTiles).addTo(locMap);
+
+    var marker = hasCoords ? L.marker([startLat, startLng], { draggable: true }).addTo(locMap) : null;
+    if (marker) marker.on('dragend', function() { var p = marker.getLatLng(); setCoords(p.lat, p.lng, false); });
+
+    function setCoords(lat, lng, moveMap) {
+        fLat.value = lat.toFixed(5);
+        fLng.value = lng.toFixed(5);
+        if (!marker) {
+            marker = L.marker([lat, lng], { draggable: true }).addTo(locMap);
+            marker.on('dragend', function() { var p = marker.getLatLng(); setCoords(p.lat, p.lng, false); });
+        } else {
+            marker.setLatLng([lat, lng]);
+        }
+        if (moveMap) locMap.setView([lat, lng], Math.max(locMap.getZoom(), 13));
+        reverseGeocodeLocation(lat, lng);
+    }
+
+    locMap.on('click', function(e) { setCoords(e.latlng.lat, e.latlng.lng, false); });
+
+    // Typing coordinates in by hand moves the pin too - the map and the
+    // fields stay in sync whichever one is edited.
+    [fLat, fLng].forEach(function(input) {
+        input.addEventListener('change', function() {
+            var lat = parseFloat(fLat.value), lng = parseFloat(fLng.value);
+            if (!isNaN(lat) && !isNaN(lng)) setCoords(lat, lng, true);
+        });
+    });
+
+    var nmToggle = document.getElementById('nightModeToggle');
+    if (nmToggle) {
+        nmToggle.addEventListener('click', function() {
+            setTimeout(function() {
+                var dark = document.body.classList.contains('night-mode');
+                locMap.removeLayer(dark ? lightTiles : darkTiles);
+                (dark ? darkTiles : lightTiles).addTo(locMap);
+            }, 0);
+        });
+    }
+
+    // The map card can start at a stale size if layout shifts after Leaflet
+    // measures its container - tell it to recheck once things settle.
+    setTimeout(function() { locMap.invalidateSize(); }, 300);
+})();
 
 var API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? 'http://localhost:3000'
@@ -1005,17 +1049,6 @@ if (fromAuthor) {
 // extractStructureInfoWithGemini deliberately doesn't ask for those - see
 // its comment). Everything it fills in stays fully editable; nothing here
 // submits on its own.
-function setSelectByClosestMatch(selectId, value) {
-    var select = document.getElementById(selectId);
-    var val = (value || '').toLowerCase().trim();
-    if (!val) return;
-    var options = Array.prototype.slice.call(select.options);
-    var match = options.find(function(o) {
-        return o.value && (val.indexOf(o.value.toLowerCase()) !== -1 || o.value.toLowerCase().indexOf(val) !== -1);
-    });
-    if (match) select.value = match.value;
-}
-
 function applyExtractedInfo(info) {
     if (!info) return;
     if (info.name) document.getElementById('fName').value = info.name;
@@ -1038,12 +1071,7 @@ function applyExtractedInfo(info) {
     }
     if (info.builtYear != null) document.getElementById('fBuiltYear').value = info.builtYear;
     if (info.loadCapacity != null) document.getElementById('fLoadCapacity').value = info.loadCapacity;
-    if (info.primaryMaterial) setSelectByClosestMatch('fMaterialPrimary', info.primaryMaterial);
-    if (info.secondaryMaterial) setSelectByClosestMatch('fMaterialSecondary', info.secondaryMaterial);
     if (info.description) document.getElementById('fDescription').value = info.description;
-    if (info.ose) document.getElementById('fOSE').value = info.ose;
-    if (info.osn) document.getElementById('fOSN').value = info.osn;
-    if (info.ose || info.osn) document.getElementById('advSection').classList.remove('collapsed');
 }
 
 var extractBtn = document.getElementById('extractBtn');
@@ -1137,11 +1165,7 @@ document.getElementById('addStructureForm').addEventListener('submit', function(
         spans: spansPayload,
         built_year: document.getElementById('fBuiltYear').value ? parseInt(document.getElementById('fBuiltYear').value, 10) : null,
         load_capacity: document.getElementById('fLoadCapacity').value ? parseFloat(document.getElementById('fLoadCapacity').value) : null,
-        primary_material: document.getElementById('fMaterialPrimary').value || null,
-        secondary_material: document.getElementById('fMaterialSecondary').value || null,
         description: document.getElementById('fDescription').value.trim() || null,
-        OSE: document.getElementById('fOSE').value.trim() || null,
-        OSN: document.getElementById('fOSN').value.trim() || null,
         gi_cycle_years: document.getElementById('fGiCycle').value ? parseInt(document.getElementById('fGiCycle').value, 10) : null,
         pi_cycle_years: document.getElementById('fPiCycle').value ? parseInt(document.getElementById('fPiCycle').value, 10) : null,
         client_id: clientId ? parseInt(clientId, 10) : null
@@ -1163,10 +1187,9 @@ document.getElementById('addStructureForm').addEventListener('submit', function(
         return res.json();
     })
     .then(function(data) {
-        var coverPhoto = photos[0];
-        if (!coverPhoto) return data;
+        if (!photo) return data;
         return Promise.all([
-            fetch(coverPhoto.dataURL).then(function(r) { return r.blob(); }),
+            fetch(photo.dataURL).then(function(r) { return r.blob(); }),
             fetch('/api/me/settings').then(function(r) { return r.ok ? r.json() : {}; }).catch(function() { return {}; })
         ])
             .then(function(results) {
