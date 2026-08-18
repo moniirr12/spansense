@@ -545,7 +545,7 @@ body.night-mode { background: #151f1d; color: var(--text); }
     <div class="form-container">
     <div class="form-section extract-section">
         <h2><i class="fas fa-wand-magic-sparkles"></i> Extract from document <span class="opt">(optional)</span></h2>
-        <p class="section-sub">Upload a BCI Pro forma or inspection report and spanSense will try to pull the structure's name, location, dimensions, materials and build year into the form below — condition scores and defects aren't read, and everything extracted is still yours to review before creating.</p>
+        <p class="section-sub">Upload a BCI Pro forma or inspection report and spanSense will try to pull the structure's name, location, dimensions and build year into the form below — condition scores and defects aren't read, and everything extracted is still yours to review before creating.</p>
         <div class="extract-upload-row">
             <button type="button" class="btn-extract btn primary" id="extractBtn"><i class="fas fa-file-arrow-up"></i> Upload document</button>
             <input type="file" id="extractFileInput" accept=".pdf,.doc,.docx" style="display:none;">
@@ -558,7 +558,7 @@ body.night-mode { background: #151f1d; color: var(--text); }
         <!-- BASIC INFO -->
         <div class="form-section">
             <h2><i class="fas fa-signature"></i> Basic info</h2>
-            <p class="section-sub">The name, type, location, dimensions and materials every other page uses to identify this structure.</p>
+            <p class="section-sub">The name, type, location and dimensions every other page uses to identify this structure.</p>
 
             <div class="basic-info-grid">
                 <div class="bi-fields">
@@ -642,41 +642,6 @@ body.night-mode { background: #151f1d; color: var(--text); }
                     <div class="form-group">
                         <label for="fLoadCapacity">Load capacity <span class="opt">(tonnes, optional)</span></label>
                         <input type="number" id="fLoadCapacity" min="0" placeholder="e.g. 44">
-                    </div>
-
-                    <div class="bi-subhead"><h3><i class="fas fa-layer-group"></i> Materials</h3></div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="fMaterialPrimary">Primary material</label>
-                            <select id="fMaterialPrimary">
-                                <option value="">Select material…</option>
-                                <option>Steel</option>
-                                <option>Concrete</option>
-                                <option>Masonry / Brick</option>
-                                <option>Stone</option>
-                                <option>Wrought iron</option>
-                                <option>Cast iron</option>
-                                <option>Timber</option>
-                                <option>Composite / FRP</option>
-                                <option>Other</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="fMaterialSecondary">Secondary material <span class="opt">(optional)</span></label>
-                            <select id="fMaterialSecondary">
-                                <option value="">None</option>
-                                <option>Steel</option>
-                                <option>Concrete</option>
-                                <option>Masonry / Brick</option>
-                                <option>Stone</option>
-                                <option>Wrought iron</option>
-                                <option>Cast iron</option>
-                                <option>Timber</option>
-                                <option>Composite / FRP</option>
-                                <option>Other</option>
-                            </select>
-                        </div>
                     </div>
                 </div>
 
@@ -1102,17 +1067,6 @@ if (fromAuthor) {
 // extractStructureInfoWithGemini deliberately doesn't ask for those - see
 // its comment). Everything it fills in stays fully editable; nothing here
 // submits on its own.
-function setSelectByClosestMatch(selectId, value) {
-    var select = document.getElementById(selectId);
-    var val = (value || '').toLowerCase().trim();
-    if (!val) return;
-    var options = Array.prototype.slice.call(select.options);
-    var match = options.find(function(o) {
-        return o.value && (val.indexOf(o.value.toLowerCase()) !== -1 || o.value.toLowerCase().indexOf(val) !== -1);
-    });
-    if (match) select.value = match.value;
-}
-
 function applyExtractedInfo(info) {
     if (!info) return;
     if (info.name) document.getElementById('fName').value = info.name;
@@ -1135,8 +1089,6 @@ function applyExtractedInfo(info) {
     }
     if (info.builtYear != null) document.getElementById('fBuiltYear').value = info.builtYear;
     if (info.loadCapacity != null) document.getElementById('fLoadCapacity').value = info.loadCapacity;
-    if (info.primaryMaterial) setSelectByClosestMatch('fMaterialPrimary', info.primaryMaterial);
-    if (info.secondaryMaterial) setSelectByClosestMatch('fMaterialSecondary', info.secondaryMaterial);
     if (info.description) document.getElementById('fDescription').value = info.description;
     if (info.ose) document.getElementById('fOSE').value = info.ose;
     if (info.osn) document.getElementById('fOSN').value = info.osn;
@@ -1234,8 +1186,6 @@ document.getElementById('addStructureForm').addEventListener('submit', function(
         spans: spansPayload,
         built_year: document.getElementById('fBuiltYear').value ? parseInt(document.getElementById('fBuiltYear').value, 10) : null,
         load_capacity: document.getElementById('fLoadCapacity').value ? parseFloat(document.getElementById('fLoadCapacity').value) : null,
-        primary_material: document.getElementById('fMaterialPrimary').value || null,
-        secondary_material: document.getElementById('fMaterialSecondary').value || null,
         description: document.getElementById('fDescription').value.trim() || null,
         OSE: document.getElementById('fOSE').value.trim() || null,
         OSN: document.getElementById('fOSN').value.trim() || null,
