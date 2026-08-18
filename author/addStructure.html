@@ -118,15 +118,16 @@ body {
 }
 .navbar .account-links a:hover { background: #f0f4f8; color: #5b8c8a; transform: scale(1.1); }
 
-/* ---------- MAIN WRAPPER - same 1180px/padding shell as every other
-   Author page, full width like the rest rather than its own narrower
-   column. Individual free-text fields are capped instead (see
-   .field-narrow below) - that fixes the single-line-input-stretched-
-   super-wide look without shrinking the page itself. ---------- */
+/* ---------- MAIN WRAPPER - matches Core's own content-wrapper convention
+   (dashboard/database/accounts/contacts/planning all use this same
+   75%-uncapped rule), same as every other Author page now too. Individual
+   free-text fields are capped instead (see .field-narrow below) - that
+   fixes the single-line-input-stretched-super-wide look without shrinking
+   the page itself. ---------- */
 .page-wrapper {
-    max-width: 1180px;
+    max-width: 75%;
     margin: 0 auto;
-    padding: 112px 28px 60px;
+    padding: 100px 0 60px 0;
 }
 .form-container { max-width: none; }
 
@@ -411,9 +412,9 @@ body {
 .toast-close:hover { background: #e9ecef; color: var(--text); }
 
 /* ---------- RESPONSIVE ---------- */
-@media (max-width: 1100px) { .navbar { width: 78%; } }
+@media (max-width: 1100px) { .navbar { width: 78%; } .page-wrapper { max-width: 90%; } }
 @media (max-width: 860px) {
-    .page-wrapper { max-width: 92%; }
+    .page-wrapper { max-width: 95%; }
     .navbar .menu { display: none; }
     .navbar { width: 90%; padding: 0 18px; }
     .form-row, .form-row.three { grid-template-columns: 1fr; }
