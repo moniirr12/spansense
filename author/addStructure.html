@@ -236,9 +236,11 @@ body {
    photos on the right rather than stacked above the name (matches the
    cover-photo's job: it's what represents this structure on the Map, so
    it sits alongside the fields that identify it, not buried between
-   them). Right column is a fixed width rather than 1fr so it doesn't
-   stretch the photo grid past a sensible size on wide screens. ---------- */
-.basic-info-grid { display: grid; grid-template-columns: 1fr 300px; gap: 28px; align-items: start; }
+   them). 60/40 split (fields/photo+map) via fr units rather than a fixed
+   px right column, so the photo and map stay proportional to the page
+   instead of a fixed width that reads oddly narrow or wide depending on
+   viewport. ---------- */
+.basic-info-grid { display: grid; grid-template-columns: 3fr 2fr; gap: 28px; align-items: start; }
 .bi-fields .form-group:last-child { margin-bottom: 0; }
 
 /* Right column stacks the photo uploader and the location map as two
@@ -321,49 +323,62 @@ body {
 .form-section.collapsed .adv-body { display: none; }
 .adv-body { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border2); }
 
-/* ---------- PHOTO GRID (reused from inspection.html's photo widget) ---------- */
-.photo-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-    gap: 14px;
-}
-/* No photos yet - the add-tile becomes a single, larger "default image"
-   box (own column, not stretched across the row) so Basic Info doesn't
-   read as an empty upload prompt right under the name. Once a photo
-   exists it shrinks back to a normal grid tile for adding more. */
-.photo-grid.empty { grid-template-columns: 1fr; max-width: 220px; }
+/* ---------- PHOTO GRID - a big square cover slot (photos[0], same width
+   as the location map below it) plus a horizontal strip of small
+   thumbnails for anything beyond the cover shot. ---------- */
+.photo-grid { display: flex; flex-direction: column; gap: 10px; }
+.photo-grid:not(.empty) #addPhotoCard,
+.photo-grid.empty .cover-slot,
+.photo-grid.empty .photo-strip { display: none; }
+
 .add-photo-card {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    aspect-ratio: 1;
+    width: 100%; aspect-ratio: 1;
     border: 1.5px dashed rgba(91, 140, 138, 0.35);
     border-radius: 10px;
-    background: linear-gradient(150deg, var(--bg-mint) 0%, #fff 100%);
+    /* Soft wave motif rather than a flat tint - echoes the water a bridge
+       crosses, so an empty photo slot still feels like it belongs to
+       spanSense rather than a generic upload box. */
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%20400%20400%27%20preserveAspectRatio%3D%27none%27%3E%3Crect%20width%3D%27400%27%20height%3D%27400%27%20fill%3D%27%23eef4f2%27/%3E%3Cpath%20d%3D%27M0%2C255%20C70%2C225%20130%2C285%20200%2C258%20C270%2C232%20330%2C278%20400%2C248%20L400%2C400%20L0%2C400%20Z%27%20fill%3D%27%235b8c8a%27%20fill-opacity%3D%270.10%27/%3E%3Cpath%20d%3D%27M0%2C300%20C80%2C272%20150%2C318%20220%2C296%20C290%2C275%20340%2C308%20400%2C290%20L400%2C400%20L0%2C400%20Z%27%20fill%3D%27%235b8c8a%27%20fill-opacity%3D%270.16%27/%3E%3C/svg%3E");
+    background-size: cover;
+    background-position: center;
     cursor: pointer;
     transition: all 0.25s ease;
 }
-.add-photo-card:hover { border-color: var(--teal); background: linear-gradient(150deg, rgba(91, 140, 138, 0.14) 0%, #fff 100%); transform: translateY(-2px); box-shadow: 0 6px 18px rgba(91, 140, 138, .14); }
-/* Single circular badge rather than a ghost icon + separate plus sign -
-   one focal element instead of two competing ones. Bigger in the empty
-   "no photos yet" state, smaller once it's just the add-more tile in a
-   grid of real previews. */
+.add-photo-card:hover { border-color: var(--teal); transform: translateY(-2px); box-shadow: 0 6px 18px rgba(91, 140, 138, .14); }
 .add-photo-icon-badge {
-    width: 34px; height: 34px; border-radius: 50%;
+    width: 52px; height: 52px; border-radius: 50%;
     background: #fff; color: var(--teal);
     display: flex; align-items: center; justify-content: center;
-    font-size: 14px; margin-bottom: 6px;
+    font-size: 20px; margin-bottom: 10px;
     box-shadow: 0 2px 8px rgba(44, 90, 87, .12);
     transition: all 0.25s ease;
 }
 .add-photo-card:hover .add-photo-icon-badge { background: var(--teal); color: #fff; transform: scale(1.06); }
-.photo-grid.empty .add-photo-icon-badge { width: 52px; height: 52px; font-size: 20px; margin-bottom: 10px; }
-.add-text { font-size: 11px; color: var(--teal-dark); font-weight: 600; letter-spacing: 0.2px; text-align: center; padding: 0 6px; }
-.photo-grid.empty .add-text { font-size: 12.5px; }
+.add-text { font-size: 12.5px; color: var(--teal-dark); font-weight: 600; letter-spacing: 0.2px; text-align: center; padding: 0 6px; }
+
+.cover-slot .preview-item-photo { width: 100%; aspect-ratio: 1; }
+
+/* Strip: everything past the cover shot, small and scrollable rather than
+   wrapping into more big squares - these never get their own caption, so
+   they don't need the room a full tile would give them. */
+.photo-strip { display: flex; align-items: center; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+.strip-thumb { position: relative; flex: 0 0 auto; width: 56px; height: 56px; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+.strip-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.strip-thumb .remove-photo { width: 18px; height: 18px; font-size: 10px; top: 3px; right: 3px; opacity: 1; background: rgba(20,20,20,.55); }
+.strip-add-btn {
+    flex: 0 0 auto; width: 56px; height: 56px; border-radius: 8px;
+    border: 1.5px dashed rgba(91, 140, 138, 0.4); background: var(--bg-mint); color: var(--teal);
+    font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s ease; font-family: inherit;
+}
+.strip-add-btn:hover { border-color: var(--teal); background: rgba(91, 140, 138, .14); }
+
 .preview-item-photo {
     position: relative; border-radius: 10px; overflow: hidden; background: white;
     box-shadow: 0 2px 10px rgba(0,0,0,0.06); transition: all 0.25s ease;
-    aspect-ratio: 1; display: flex; flex-direction: column;
+    display: flex; flex-direction: column;
 }
-.preview-item-photo:hover { transform: translateY(-3px); box-shadow: 0 8px 22px rgba(0,0,0,0.12); }
 .preview-item-photo img { width: 100%; flex: 1; object-fit: cover; display: block; min-height: 0; }
 .remove-photo {
     position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 50%;
@@ -490,12 +505,17 @@ body.night-mode { background: #151f1d; color: var(--text); }
 
 .night-mode .span-row-head { color: #8ab4b0; }
 
-.night-mode .add-photo-card { background: linear-gradient(150deg, rgba(138, 180, 176, 0.08) 0%, #182320 100%); border-color: rgba(138, 180, 176, 0.3); }
-.night-mode .add-photo-card:hover { background: linear-gradient(150deg, rgba(138, 180, 176, 0.16) 0%, #182320 100%); border-color: rgba(138, 180, 176, 0.55); }
+.night-mode .add-photo-card {
+    border-color: rgba(138, 180, 176, 0.3);
+    background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%20400%20400%27%20preserveAspectRatio%3D%27none%27%3E%3Crect%20width%3D%27400%27%20height%3D%27400%27%20fill%3D%27%231e3a38%27/%3E%3Cpath%20d%3D%27M0%2C255%20C70%2C225%20130%2C285%20200%2C258%20C270%2C232%20330%2C278%20400%2C248%20L400%2C400%20L0%2C400%20Z%27%20fill%3D%27%238ab4b0%27%20fill-opacity%3D%270.08%27/%3E%3Cpath%20d%3D%27M0%2C300%20C80%2C272%20150%2C318%20220%2C296%20C290%2C275%20340%2C308%20400%2C290%20L400%2C400%20L0%2C400%20Z%27%20fill%3D%27%238ab4b0%27%20fill-opacity%3D%270.14%27/%3E%3C/svg%3E");
+}
+.night-mode .add-photo-card:hover { border-color: rgba(138, 180, 176, 0.55); }
 .night-mode .add-photo-icon-badge { background: #182320; color: #8ab4b0; }
 .night-mode .add-photo-card:hover .add-photo-icon-badge { background: var(--teal); color: #fff; }
 .night-mode .add-text { color: #8ab4b0; }
 .night-mode .preview-item-photo { background: #182320; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+.night-mode .strip-add-btn { background: #1e3a38; border-color: rgba(138, 180, 176, 0.35); color: #8ab4b0; }
+.night-mode .strip-add-btn:hover { border-color: #8ab4b0; background: rgba(138, 180, 176, .18); }
 .night-mode .location-map { border-color: #3a4b53; background: #182320; }
 .night-mode .photo-description-input { background: rgba(24, 35, 32, 0.95); border-color: #2f3e45; color: #c5d3d9; }
 .night-mode .photo-description-input:focus { background: #182320; }
@@ -609,7 +629,6 @@ body.night-mode { background: #151f1d; color: var(--text); }
                             <input type="number" id="fLng" step="any" placeholder="-1.6131">
                         </div>
                     </div>
-                    <p class="hint">Leave coordinates blank if you'd rather drop a pin for this on the Map page later — the OS grid reference gets derived from these automatically.</p>
                 </div>
 
                 <div class="bi-side">
@@ -619,6 +638,10 @@ body.night-mode { background: #151f1d; color: var(--text); }
                             <div class="add-photo-card" id="addPhotoCard">
                                 <div class="add-photo-icon-badge"><i class="fas fa-camera-retro"></i></div>
                                 <div class="add-text">Add cover photo</div>
+                            </div>
+                            <div class="cover-slot" id="coverSlot"></div>
+                            <div class="photo-strip" id="photoStrip">
+                                <button type="button" class="strip-add-btn" id="stripAddBtn" data-tip="Add another photo"><i class="fas fa-plus"></i></button>
                             </div>
                         </div>
                         <input type="file" id="photoInput" accept="image/*" multiple style="display:none;">
@@ -964,13 +987,21 @@ document.getElementById('advToggle').addEventListener('click', function() {
     document.getElementById('advSection').classList.toggle('collapsed');
 });
 
-// ---------- Photos (multi-photo grid with per-photo description) ----------
+// ---------- Photos (big cover slot + a small strip for anything past it) ----------
+// Only photos[0] is ever actually submitted (see the create-structure fetch
+// below, which uploads it alone as the structure's cover photo) - the strip
+// exists purely so a multi-photo pick has somewhere sane to preview and
+// reorder-by-removing before creating, not because the extras get saved.
 var photos = []; // { id, dataURL, description }
 var photoGrid = document.getElementById('photoGrid');
 var addPhotoCard = document.getElementById('addPhotoCard');
+var coverSlot = document.getElementById('coverSlot');
+var photoStrip = document.getElementById('photoStrip');
+var stripAddBtn = document.getElementById('stripAddBtn');
 var photoInput = document.getElementById('photoInput');
 
 addPhotoCard.addEventListener('click', function() { photoInput.click(); });
+stripAddBtn.addEventListener('click', function() { photoInput.click(); });
 
 photoInput.addEventListener('change', function() {
     Array.prototype.forEach.call(photoInput.files, function(file) {
@@ -986,30 +1017,41 @@ photoInput.addEventListener('change', function() {
     photoInput.value = '';
 });
 
+function removePhoto(id) {
+    photos = photos.filter(function(p) { return p.id !== id; });
+    renderPhotos();
+}
+
 function renderPhotos() {
-    // remove all preview cards, keep the add-tile
-    Array.prototype.slice.call(photoGrid.querySelectorAll('.preview-item-photo')).forEach(function(el) { el.remove(); });
-    // .empty swaps the add-tile for a larger "default image" placeholder
-    // (see its own CSS) instead of a small grid tile once there's nothing
-    // to show yet.
     photoGrid.classList.toggle('empty', photos.length === 0);
-    document.querySelector('#addPhotoCard .add-text').textContent = photos.length ? 'Add more' : 'Add cover photo';
-    photos.forEach(function(photo, idx) {
-        var card = document.createElement('div');
-        card.className = 'preview-item-photo';
-        card.innerHTML =
-            (idx === 0 ? '<div class="cover-badge">COVER</div>' : '') +
-            '<button type="button" class="remove-photo">&times;</button>' +
-            '<img src="' + photo.dataURL + '" alt="">' +
-            '<textarea class="photo-description-input" placeholder="Add description…"></textarea>';
-        card.querySelector('.remove-photo').addEventListener('click', function() {
-            photos = photos.filter(function(p) { return p.id !== photo.id; });
-            renderPhotos();
-        });
-        var textarea = card.querySelector('.photo-description-input');
-        textarea.value = photo.description;
-        textarea.addEventListener('input', function() { photo.description = textarea.value; });
-        photoGrid.appendChild(card);
+    if (photos.length === 0) {
+        coverSlot.innerHTML = '';
+        Array.prototype.slice.call(photoStrip.querySelectorAll('.strip-thumb')).forEach(function(el) { el.remove(); });
+        return;
+    }
+
+    var cover = photos[0];
+    var card = document.createElement('div');
+    card.className = 'preview-item-photo';
+    card.innerHTML =
+        '<div class="cover-badge">COVER</div>' +
+        '<button type="button" class="remove-photo">&times;</button>' +
+        '<img src="' + cover.dataURL + '" alt="">' +
+        '<textarea class="photo-description-input" placeholder="Add description…"></textarea>';
+    card.querySelector('.remove-photo').addEventListener('click', function() { removePhoto(cover.id); });
+    var textarea = card.querySelector('.photo-description-input');
+    textarea.value = cover.description;
+    textarea.addEventListener('input', function() { cover.description = textarea.value; });
+    coverSlot.innerHTML = '';
+    coverSlot.appendChild(card);
+
+    Array.prototype.slice.call(photoStrip.querySelectorAll('.strip-thumb')).forEach(function(el) { el.remove(); });
+    photos.slice(1).forEach(function(photo) {
+        var thumb = document.createElement('div');
+        thumb.className = 'strip-thumb';
+        thumb.innerHTML = '<img src="' + photo.dataURL + '" alt=""><button type="button" class="remove-photo">&times;</button>';
+        thumb.querySelector('.remove-photo').addEventListener('click', function() { removePhoto(photo.id); });
+        photoStrip.insertBefore(thumb, stripAddBtn);
     });
 }
 
@@ -1020,7 +1062,30 @@ function renderPhotos() {
 
     var fLat = document.getElementById('fLat');
     var fLng = document.getElementById('fLng');
+    var fLocation = document.getElementById('fLocation');
     var hasCoords = fLat.value && fLng.value;
+
+    // Reverse-geocodes via Nominatim (same OSM stack as the tiles above,
+    // no key needed) - only fills Location if it's still blank, so this
+    // never overwrites something the user already typed in themselves.
+    var geocodeRequestId = 0;
+    function reverseGeocodeLocation(lat, lng) {
+        if (fLocation.value.trim()) return;
+        var thisRequest = ++geocodeRequestId;
+        fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=' + lat + '&lon=' + lng + '&zoom=17&addressdetails=1')
+            .then(function(res) { return res.ok ? res.json() : null; })
+            .then(function(data) {
+                // Stale if the pin moved again (or the user typed something)
+                // while this was in flight.
+                if (!data || thisRequest !== geocodeRequestId || fLocation.value.trim()) return;
+                var a = data.address || {};
+                var road = a.road || a.pedestrian || a.footway || a.cycleway || '';
+                var place = a.city || a.town || a.village || a.suburb || a.county || '';
+                var label = [road, place].filter(Boolean).join(', ') || data.display_name;
+                if (label) fLocation.value = label;
+            })
+            .catch(function() { /* reverse geocoding is a convenience, not required - fail silently */ });
+    }
     var startLat = hasCoords ? parseFloat(fLat.value) : 54.5;
     var startLng = hasCoords ? parseFloat(fLng.value) : -3.2;
 
@@ -1045,6 +1110,7 @@ function renderPhotos() {
             marker.setLatLng([lat, lng]);
         }
         if (moveMap) locMap.setView([lat, lng], Math.max(locMap.getZoom(), 13));
+        reverseGeocodeLocation(lat, lng);
     }
 
     locMap.on('click', function(e) { setCoords(e.latlng.lat, e.latlng.lng, false); });
