@@ -239,18 +239,36 @@ body {
 
    Each row's default align-items:stretch (grid's initial value - nothing
    below overrides it) makes both cells in a row exactly as tall as the
-   taller one. The shorter cell is a flex column whose LAST field gets
-   margin-top:auto (below), which packs everything above it normally but
-   pins that last field flush to the row's bottom - so Client lines up
-   with Photo's bottom and Description with the map's, at any screen
-   width, without a single hardcoded pixel value to fall out of date. ---------- */
+   taller one. Whichever side ends up shorter needs its own trailing
+   content pushed down to meet that row bottom, or the row's real height
+   never shows - it happens twice over, in opposite directions, since
+   either side can be the taller one depending on viewport width:
+     - Left side taller (common - Location/Lat-Lng/Description's stack,
+       especially the description textarea, easily outgrows a 16:9 map
+       at moderate widths): the map has no text-driven content of its own
+       to grow, so its BOX grows instead (flex:1, aspect-ratio dropped)
+       to soak up the extra height directly.
+     - Right side taller (common for Photo, which stays a fixed 16:9
+       shape rather than stretching): Photo can't grow, so instead its
+       trailing hint gets margin-top:auto, pushing just that line down
+       to the row's bottom while the box above it keeps its true ratio.
+   Net effect either way: Client lines up with Photo's bottom, and
+   Description with the map's, at any screen width, without a hardcoded
+   pixel value to fall out of date. ---------- */
 .basic-info-grid { display: grid; grid-template-columns: 3fr 2fr; column-gap: 28px; row-gap: 16px; }
-.bi-row-top, .bi-row-bottom { display: flex; flex-direction: column; }
-#fClientGroup, #fDescriptionGroup { margin-top: auto; margin-bottom: 0; }
+.bi-row-top, .bi-row-bottom, .bi-photo, .bi-map { display: flex; flex-direction: column; }
+#fClientGroup, #fDescriptionGroup, .bi-photo .hint { margin-top: auto; margin-bottom: 0; }
 
 .bi-photo, .bi-map { margin-bottom: 0; }
 
 .location-map { width: 100%; aspect-ratio: 16 / 9; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--bg-soft); }
+/* Only lets the map grow beyond 16:9 in the two-column desktop layout,
+   where it's sharing a grid row with the taller text-field column below
+   860px .basic-info-grid drops to one column and this pairing no longer
+   applies, so the map goes back to a clean fixed 16:9 shape. */
+@media (min-width: 861px) {
+    .location-map { aspect-ratio: unset; flex: 1 1 auto; min-height: 240px; }
+}
 .location-map .leaflet-control-zoom { border: none !important; box-shadow: 0 2px 8px rgba(0,0,0,.14) !important; }
 .location-map .leaflet-control-zoom a { border-radius: 6px !important; }
 
