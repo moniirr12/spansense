@@ -12,14 +12,14 @@
      backdrop-filter - this app runs offline on field devices, where the
      compositing cost of blur isn't worth it for a tint that's mostly
      sitting over the flat --bg anyway. */
-  --surface-glass:linear-gradient(160deg, rgba(255,255,255,.92), rgba(244,248,247,.8));
+  --surface-glass:rgba(255,255,255,.92);
   --border-glass:rgba(138,180,176,.3);
 }
 body.night-mode{
   --bg:#1a2428; --surface:#232e34; --surface-2:#212f33;
   --ink:#d4dfe3; --ink-dim:#9ab0b8; --ink-faint:#7f979f;
   --border:#2f3e45; --pop:#0f1a1c;
-  --surface-glass:linear-gradient(160deg, rgba(51,68,79,.92), rgba(36,48,56,.82));
+  --surface-glass:rgba(51,68,79,.92);
   --border-glass:rgba(255,255,255,.12);
 }
 
@@ -59,7 +59,7 @@ button, input, textarea{ font-family:inherit; }
 .screen#screen-login{
   position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
   transform:none; z-index:100;
-  background:linear-gradient(160deg, var(--teal-700), var(--teal-500));
+  background:var(--teal-700);
   padding:24px;
 }
 .login-wrap{ width:100%; max-width:360px; }
@@ -359,7 +359,7 @@ body.night-mode .map-recenter-btn:hover{ background:#2a4a48; }
 }
 .structures-map-popup .top{ display:flex; align-items:center; gap:10px; margin-bottom:10px; }
 .structures-map-popup .view-btn{
-  width:100%; background:linear-gradient(135deg,var(--teal-300),var(--teal-500)); color:#fff; border:none;
+  width:100%; background:var(--teal-300); color:#fff; border:none;
   border-radius:14px; padding:10px; font-size:12.5px; font-weight:700; font-family:inherit; cursor:pointer;
 }
 
@@ -418,7 +418,7 @@ body.night-mode .map-north{ color:#8ab4b0; }
 
 .fab{
   position:absolute; right:18px; bottom:calc(24px + env(safe-area-inset-bottom)); width:56px; height:56px; border-radius:50%;
-  background:linear-gradient(135deg,var(--teal-300),var(--teal-500)); border:none; color:#fff;
+  background:var(--teal-300); border:none; color:#fff;
   display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(91,140,138,.4);
   cursor:pointer; z-index:30;
 }
@@ -517,7 +517,7 @@ body.night-mode .edit-banner{ background:#3a2f1a; border-color:#5a4a2a; color:#e
 }
 .btn{ border:none; border-radius:24px; padding:13px; font-size:14px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; }
 .btn svg{ width:16px; height:16px; }
-.btn-primary{ flex:1; background:linear-gradient(135deg,var(--teal-300),var(--teal-500)); color:#fff; box-shadow:0 6px 16px rgba(91,140,138,.3); }
+.btn-primary{ flex:1; background:var(--teal-300); color:#fff; box-shadow:0 6px 16px rgba(91,140,138,.3); }
 .btn-primary:active{ transform:scale(.98); }
 .btn-secondary{ flex:1; background:var(--surface-2); color:var(--ink); border:1px solid var(--border); }
 .btn-block{ width:100%; }
