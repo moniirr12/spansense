@@ -14,16 +14,17 @@
 <link rel="stylesheet" href="assets/sunIcon.css">
 <style>
 /* ============================================
-   SPANSENSE - PREMIUM GLASSY LANDING PAGE
-   With Arch Bridge Animation & Full Dark Mode
+   SPANSENSE - LANDING PAGE
+   Flat surfaces, line-art bridge hero animation, full dark mode
    ============================================ */
 
 :root {
     /* Light Mode (Default) */
     --bg-primary: #f5f7fb;
     --bg-secondary: #ffffff;
-    --bg-glass: linear-gradient(135deg, rgba(238, 244, 242, 0.68), rgba(255, 255, 255, 0.42));
-    --bg-glass-solid: linear-gradient(135deg, rgba(244, 248, 247, 0.92), rgba(255, 255, 255, 0.85));
+    --bg-surface-tint: #eef2f1;
+    --bg-surface: #ffffff;
+    --navbar-bg: rgba(255, 255, 255, 0.78);
     --text-primary: #2c3e44;
     /* text-secondary/text-muted were #6a7c8e/#8a9ba8 - 4.30:1 and 2.86:1
        against --bg-secondary (#fff), both under WCAG AA's 4.5:1. Neutral,
@@ -45,19 +46,17 @@
 
     /* Deliberately NOT redefined under body.night-mode - used for the
        flagship dark-accent card and the CTA band, which should stay a
-       deep teal in both themes. --text-primary flips to near-white in
-       night mode (it's a text color, not a surface color), so pairing
-       a gradient with it inverted those elements to a washed-out white
-       card in dark mode instead of staying a dark accent. */
+       deep teal in both themes rather than following --primary's flip
+       to a lighter tone under night mode. */
     --accent-deep-1: #2c645c;
-    --accent-deep-2: #14262b;
 }
 
 body.night-mode {
     --bg-primary: #0f1419;
     --bg-secondary: #1a2027;
-    --bg-glass: linear-gradient(135deg, rgba(51, 68, 79, 0.62), rgba(26, 32, 39, 0.5));
-    --bg-glass-solid: linear-gradient(135deg, rgba(51, 68, 79, 0.92), rgba(26, 32, 39, 0.88));
+    --bg-surface-tint: #161d22;
+    --bg-surface: #1a2027;
+    --navbar-bg: rgba(26, 32, 39, 0.8);
     --text-primary: #e8edf2;
     --text-secondary: #bcc8ce;
     --text-muted: #a8b8bf;
@@ -90,63 +89,6 @@ body {
 }
 
 /* ============================================
-   ANIMATED BACKGROUND
-   ============================================ */
-.animated-bg {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 0;
-    overflow: hidden;
-    pointer-events: none;
-}
-
-.gradient-orb {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(80px);
-    opacity: 0.4;
-    animation: float 20s ease-in-out infinite;
-}
-
-.orb-1 {
-    width: 500px;
-    height: 500px;
-    background: radial-gradient(circle, var(--primary-light), transparent);
-    top: -150px;
-    left: -150px;
-    animation-delay: 0s;
-}
-
-.orb-2 {
-    width: 400px;
-    height: 400px;
-    background: radial-gradient(circle, var(--primary), transparent);
-    bottom: -100px;
-    right: -100px;
-    animation-delay: -7s;
-}
-
-.orb-3 {
-    width: 300px;
-    height: 300px;
-    background: radial-gradient(circle, var(--accent), transparent);
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    animation-delay: -14s;
-    opacity: 0.2;
-}
-
-@keyframes float {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    33% { transform: translate(30px, -30px) scale(1.1); }
-    66% { transform: translate(-20px, 20px) scale(0.95); }
-}
-
-/* ============================================
    NAVIGATION - Floating Island (Dashboard Style)
    ============================================ */
 .navbar {
@@ -156,7 +98,7 @@ body {
     transform: translateX(-50%);
     width: 67%;
     max-width: 1190px;
-    background: linear-gradient(135deg, rgba(238, 244, 242, 0.75), rgba(255, 255, 255, 0.45));
+    background: var(--navbar-bg);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-radius: 60px;
@@ -263,7 +205,6 @@ body {
 
 /* Dark mode navbar styles */
 .night-mode .navbar {
-    background: rgba(47, 62, 72, 0.85);
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -347,7 +288,7 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: var(--bg-glass-solid);
+    background: var(--bg-surface);
     padding: 7px 16px 7px 12px;
     border-radius: 40px;
     font-size: 0.68rem;
@@ -404,7 +345,7 @@ body {
     gap: 8px;
     padding: 8px 16px;
     border-radius: 30px;
-    background: var(--bg-glass-solid);
+    background: var(--bg-surface);
     border: 1px solid var(--border-light);
     font-size: 0.78rem;
     font-weight: 600;
@@ -433,7 +374,7 @@ body {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    background: var(--primary);
     color: white;
     box-shadow: 0 4px 14px var(--glow-primary);
 }
@@ -444,15 +385,13 @@ body {
 }
 
 .btn-secondary {
-    background: var(--bg-glass);
-    backdrop-filter: blur(10px) saturate(160%);
-    -webkit-backdrop-filter: blur(10px) saturate(160%);
+    background: var(--bg-surface-tint);
     color: var(--text-secondary);
     border: 1px solid var(--border-light);
 }
 
 .btn-secondary:hover {
-    background: var(--bg-glass-solid);
+    background: var(--bg-surface);
     border-color: var(--primary);
     color: var(--primary);
     transform: translateY(-2px);
@@ -529,12 +468,10 @@ body {
 }
 
 /* ============================================
-   AUTH CARD - GLASSY MORPHISM
+   AUTH CARD
    ============================================ */
 .auth-card {
-    background: var(--bg-glass-solid);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    background: var(--bg-surface);
     border-radius: 28px;
     padding: 36px;
     width: 380px;
@@ -623,7 +560,7 @@ body {
 .input-group input {
     width: 100%;
     padding: 14px 16px;
-    background: var(--bg-glass-solid);
+    background: var(--bg-surface);
     border: 1px solid var(--border-light);
     border-radius: 16px;
     font-size: 0.85rem;
@@ -671,7 +608,7 @@ body {
 }
 
 .btn-enter {
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    background: var(--primary);
     color: white;
 }
 
@@ -687,15 +624,14 @@ body {
 }
 
 .btn-register {
-    background: transparent;
+    background: var(--bg-surface-tint);
     color: var(--text-secondary);
-    border: 1px solid var(--border-light);
+    border: 1px solid var(--border);
 }
 
 .btn-register:hover {
     border-color: var(--primary);
     color: var(--primary);
-    background: var(--bg-glass);
 }
 
 .auth-footer {
@@ -723,9 +659,7 @@ body {
    ============================================ */
 .features {
     padding: 80px 48px;
-    background: var(--bg-glass);
-    backdrop-filter: blur(10px) saturate(160%);
-    -webkit-backdrop-filter: blur(10px) saturate(160%);
+    background: var(--bg-surface-tint);
     border-top: 1px solid var(--border-light);
     position: relative;
     z-index: 10;
@@ -769,7 +703,7 @@ body {
     grid-column: span 2;
     text-align: left;
     padding: 26px;
-    background: var(--bg-glass-solid);
+    background: var(--bg-surface);
     border-radius: 22px;
     transition: all 0.3s ease;
     border: 1px solid var(--border-light);
@@ -791,23 +725,13 @@ body {
     box-shadow: var(--shadow-lg);
 }
 
-.feature-card .feature-glow {
-    position: absolute;
-    top: -40px;
-    right: -40px;
-    width: 160px;
-    height: 160px;
-    border-radius: 50%;
-    background: radial-gradient(circle, var(--glow-primary), transparent 70%);
-}
-
 .feature-icon {
     position: absolute;
     top: 22px;
     left: 24px;
     width: 44px;
     height: 44px;
-    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    background: var(--primary);
     border-radius: 13px;
     display: flex;
     align-items: center;
@@ -817,7 +741,7 @@ body {
 }
 
 .feature-card.dark {
-    background: linear-gradient(135deg, var(--accent-deep-1), var(--accent-deep-2));
+    background: var(--accent-deep-1);
     border-color: var(--accent-deep-1);
 }
 .feature-card.dark .feature-icon { background: rgba(255,255,255,0.16); }
@@ -843,9 +767,7 @@ body {
    ============================================ */
 .workflow {
     padding: 60px 48px 80px;
-    background: var(--bg-glass);
-    backdrop-filter: blur(10px) saturate(160%);
-    -webkit-backdrop-filter: blur(10px) saturate(160%);
+    background: var(--bg-surface-tint);
     position: relative;
     z-index: 10;
 }
@@ -880,7 +802,7 @@ body {
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: var(--bg-glass-solid);
+    background: var(--bg-surface);
     border: 2px solid var(--primary);
     display: flex;
     align-items: center;
@@ -928,7 +850,7 @@ body {
 .cta-band-inner {
     position: relative;
     overflow: hidden;
-    background: linear-gradient(135deg, var(--accent-deep-1), var(--accent-deep-2));
+    background: var(--accent-deep-1);
     border-radius: 32px;
     padding: 64px 48px;
     text-align: center;
@@ -971,9 +893,7 @@ body {
     padding: 40px 48px;
     text-align: center;
     border-top: 1px solid var(--border-light);
-    background: var(--bg-glass);
-    backdrop-filter: blur(10px) saturate(160%);
-    -webkit-backdrop-filter: blur(10px) saturate(160%);
+    background: var(--bg-surface-tint);
     position: relative;
     z-index: 10;
 }
@@ -1168,9 +1088,7 @@ body.night-mode .glass-scrollbar .thumb {
 .confirm-modal-overlay.active { display: flex; }
 
 .confirm-modal-card {
-    background: var(--bg-glass-solid);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    background: var(--bg-surface);
     border: 1px solid var(--border-light);
     border-radius: 24px;
     width: 100%;
@@ -1228,17 +1146,17 @@ body.night-mode .glass-scrollbar .thumb {
     transition: all 0.2s;
 }
 .confirm-modal-btn.secondary {
-    background: var(--bg-glass);
+    background: var(--bg-surface-tint);
     color: var(--text-secondary);
     border: 1px solid var(--border-light);
 }
 .confirm-modal-btn.secondary:hover {
-    background: var(--bg-glass-solid);
+    background: var(--bg-surface);
     border-color: var(--primary);
     color: var(--primary);
 }
 .confirm-modal-btn.primary {
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    background: var(--primary);
     color: #fff;
 }
 .confirm-modal-btn.primary:hover {
@@ -1270,9 +1188,7 @@ body.night-mode .glass-scrollbar .thumb {
     position: relative;
     width: 100%;
     max-width: 420px;
-    background: var(--bg-glass-solid);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    background: var(--bg-surface);
     border-radius: 28px;
     border: 1px solid var(--border-light);
     box-shadow: var(--shadow-xl);
@@ -1330,13 +1246,6 @@ body.night-mode .glass-scrollbar .thumb {
 
 <body>
 <script>if(document.documentElement.classList.contains('nm-preload'))document.body.classList.add('night-mode');</script>
-
-<!-- ANIMATED BACKGROUND -->
-<div class="animated-bg">
-    <div class="gradient-orb orb-1"></div>
-    <div class="gradient-orb orb-2"></div>
-    <div class="gradient-orb orb-3"></div>
-</div>
 
 <!-- NAVIGATION -->
 <nav class="navbar">
@@ -1460,49 +1369,41 @@ body.night-mode .glass-scrollbar .thumb {
         </div>
         <div class="features-grid">
             <div class="feature-card big dark reveal" style="transition-delay: 0.1s;">
-                <div class="feature-glow"></div>
                 <div class="feature-icon"><i class="fas fa-cube"></i></div>
                 <h3>3D twinView</h3>
                 <p>Visualize structures in three dimensions and pinpoint defects exactly where they occur on the model.</p>
             </div>
             <div class="feature-card reveal" style="transition-delay: 0.2s;">
-                <div class="feature-glow"></div>
                 <div class="feature-icon"><i class="fas fa-clipboard-list"></i></div>
                 <h3>Digital Inspections</h3>
                 <p>Structured GI, PI, and SI workflows that replace paper forms entirely</p>
             </div>
             <div class="feature-card reveal" style="transition-delay: 0.3s;">
-                <div class="feature-glow"></div>
                 <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
                 <h3>Condition Ratings</h3>
                 <p>Industry-standard BCI scoring with automatic deterioration tracking across spans</p>
             </div>
             <div class="feature-card reveal" style="transition-delay: 0.4s;">
-                <div class="feature-glow"></div>
                 <div class="feature-icon"><i class="fas fa-camera"></i></div>
                 <h3>Photo Management</h3>
                 <p>Geotagged media linked directly to structural elements and defects</p>
             </div>
             <div class="feature-card reveal" style="transition-delay: 0.5s;">
-                <div class="feature-glow"></div>
                 <div class="feature-icon"><i class="fas fa-calendar-alt"></i></div>
                 <h3>Inspection Planning</h3>
                 <p>Gantt-based scheduling across 1 or 10-year windows, synced to the GI/PI cycle</p>
             </div>
             <div class="feature-card reveal" style="transition-delay: 0.6s;">
-                <div class="feature-glow"></div>
                 <div class="feature-icon"><i class="fas fa-map"></i></div>
                 <h3>Structure Map</h3>
                 <p>Every asset plotted on an interactive map with instant access to its history</p>
             </div>
             <div class="feature-card reveal" style="transition-delay: 0.7s;">
-                <div class="feature-glow"></div>
                 <div class="feature-icon"><i class="fas fa-mobile-alt"></i></div>
                 <h3>Field App</h3>
                 <p>Installable on-site app for logging defects and photos - keeps working offline and syncs the moment signal returns</p>
             </div>
             <div class="feature-card reveal" style="transition-delay: 0.8s;">
-                <div class="feature-glow"></div>
                 <div class="feature-icon"><i class="fas fa-file-invoice"></i></div>
                 <h3>Proformas &amp; Reports</h3>
                 <p>Auto-generated BCI proformas and DOCX/PDF reports, ready to sign and send in one click</p>
