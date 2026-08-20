@@ -56,7 +56,7 @@ body.night-mode::before{
 .navbar {
     position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
     width: 67%; max-width: 1190px;
-    background: linear-gradient(135deg, rgba(238, 244, 242, 0.75), rgba(255, 255, 255, 0.45));
+    background: rgba(255, 255, 255, 0.78);
     backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-radius: 60px; border: 1px solid rgba(138, 180, 176, 0.35);
     box-shadow: 0 8px 28px rgba(44, 90, 87, 0.12);
@@ -120,7 +120,7 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 @keyframes fadeIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
 
 .card{background:#fff; border:1px solid var(--border2); border-radius:24px; box-shadow:0 10px 28px rgba(44,90,87,.06); padding:26px 28px; position:relative;}
-.card::before{content:''; position:absolute; top:0; left:28px; right:28px; height:3px; border-radius:0 0 3px 3px; background:linear-gradient(90deg,var(--teal),var(--ai)); opacity:.55;}
+.card::before{content:''; position:absolute; top:0; left:28px; right:28px; height:3px; border-radius:0 0 3px 3px; background:var(--teal); opacity:.55;}
 .card + .card{margin-top:20px;}
 .card-title{font-size:1.08rem; font-weight:700; color:var(--green-dark); margin:0 0 4px; display:flex; align-items:center; gap:8px;}
 
@@ -151,7 +151,7 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .selector-dropdown{position:relative; width:100%;}
 .dd-trigger{display:flex; align-items:center; gap:12px; padding:9px 16px; border-radius:40px; border:1px solid var(--border); background:var(--bg-soft); cursor:pointer; transition:.2s; width:100%; font-family:inherit;}
 .dd-trigger:hover{border-color:#8ab4b0; background:#fff;}
-.dd-trigger .dd-icon{width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,var(--bg-mint),#e0ecea); display:flex; align-items:center; justify-content:center; color:var(--teal); font-size:.72rem; flex-shrink:0;}
+.dd-trigger .dd-icon{width:28px; height:28px; border-radius:50%; background:var(--bg-mint); display:flex; align-items:center; justify-content:center; color:var(--teal); font-size:.72rem; flex-shrink:0;}
 .dd-trigger .dd-text{flex:1; min-width:0; text-align:left;}
 .dd-trigger .dd-name{font-size:.86rem; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .dd-trigger .dd-name.placeholder{color:var(--text-mute); font-weight:500;}
@@ -183,7 +183,7 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .dd-item{display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px; cursor:pointer; transition:.15s;}
 .dd-item:hover{background:#f5f9f8;}
 .dd-item.selected{background:var(--bg-mint);}
-.dd-item .dd-icon{width:26px; height:26px; border-radius:6px; background:linear-gradient(135deg,var(--bg-mint),#e0ecea); display:flex; align-items:center; justify-content:center; color:var(--teal); font-size:.65rem; flex-shrink:0;}
+.dd-item .dd-icon{width:26px; height:26px; border-radius:6px; background:var(--bg-mint); display:flex; align-items:center; justify-content:center; color:var(--teal); font-size:.65rem; flex-shrink:0;}
 .dd-item .dd-text{flex:1; min-width:0;}
 .dd-item .dd-name{font-size:.82rem; font-weight:500; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .dd-item .dd-id{font-size:.65rem; color:var(--text-mute); font-family:'SFMono-Regular',Consolas,monospace;}
@@ -193,7 +193,7 @@ body.night-mode .glass-scrollbar .thumb { background: linear-gradient(180deg, #f
 .dd-empty i{font-size:1.2rem; margin-bottom:6px; display:block; color:var(--border);}
 #sourceRecords, #sourceUpload{margin-top:18px;}
 .picker-field select:disabled{opacity:.55; cursor:not-allowed;}
-.btn-load{flex-shrink:0; height:48px; padding:0 22px; border-radius:12px; border:none; background:linear-gradient(135deg,var(--teal),var(--teal-dark)); color:#fff; font-weight:700; font-size:.85rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:.2s;}
+.btn-load{flex-shrink:0; height:48px; padding:0 22px; border-radius:12px; border:none; background:var(--teal); color:#fff; font-weight:700; font-size:.85rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:.2s;}
 .btn-load:hover{transform:translateY(-1px);}
 .btn-load:disabled{opacity:.5; cursor:not-allowed; transform:none;}
 
@@ -263,7 +263,7 @@ img.logo-preview{max-width:100%; max-height:56px; display:block; margin:0 auto;}
 
 .mini-lbl{font-size:.62rem; font-weight:700; text-transform:uppercase; color:var(--text-mute); display:block; margin-bottom:4px;}
 
-.btn-primary-lg{background:linear-gradient(135deg,var(--teal),var(--teal-dark)); color:#fff; border:none; padding:14px 26px; border-radius:30px; font-size:.9rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:10px; box-shadow:0 8px 22px rgba(91,140,138,.35); transition:.2s;}
+.btn-primary-lg{background:var(--teal); color:#fff; border:none; padding:14px 26px; border-radius:30px; font-size:.9rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:10px; box-shadow:0 8px 22px rgba(91,140,138,.35); transition:.2s;}
 .btn-primary-lg:hover{transform:translateY(-1px);}
 .btn-primary-lg:disabled{opacity:.5; cursor:not-allowed; transform:none;}
 
@@ -347,8 +347,8 @@ body.modal-open{overflow:hidden;}
 .night-mode .selector-dropdown.disabled .dd-trigger{background:#1e2a2f; border-color:#3a4b53;}
 .night-mode .selector-dropdown.disabled .dd-trigger:hover{background:#1e2a2f; border-color:#3a4b53;}
 .night-mode .dd-trigger .dd-name{color:#d4dfe3;}
-.night-mode .dd-trigger .dd-icon{background:linear-gradient(135deg,#2f4a48,#1e3a38); color:#8ab4b0;}
-.night-mode .dd-item .dd-icon{background:linear-gradient(135deg,#2f4a48,#1e3a38); color:#8ab4b0;}
+.night-mode .dd-trigger .dd-icon{background:#2f4a48; color:#8ab4b0;}
+.night-mode .dd-item .dd-icon{background:#2f4a48; color:#8ab4b0;}
 .night-mode .dropdown-menu{background:#232e34; border-color:#3a4b53;}
 .night-mode .dd-search{border-color:#2a3a40;}
 .night-mode .dd-search input{background:#1a2428; border-color:#3a4b53; color:#d4dfe3;}

@@ -29,7 +29,7 @@ body {
     transform: translateX(-50%);
     width: 67%;
     max-width: 1190px;
-    background: linear-gradient(135deg, rgba(238, 244, 242, 0.75), rgba(255, 255, 255, 0.45));
+    background: rgba(255, 255, 255, 0.78);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-radius: 60px;
@@ -112,7 +112,7 @@ body {
     gap: 8px;
     padding: 8px 18px;
     border-radius: 30px;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(238, 244, 242, 0.62));
+    background: rgba(255, 255, 255, 0.82);
     backdrop-filter: blur(12px) saturate(160%);
     -webkit-backdrop-filter: blur(12px) saturate(160%);
     border: 1px solid rgba(138, 180, 176, 0.3);
@@ -181,7 +181,7 @@ body {
 }
 
 .metric {
-    background: linear-gradient(160deg, rgba(255, 255, 255, 0.88), rgba(244, 248, 247, 0.72));
+    background: rgba(255, 255, 255, 0.88);
     backdrop-filter: blur(20px) saturate(160%);
     -webkit-backdrop-filter: blur(20px) saturate(160%);
     border-radius: 24px;
@@ -354,7 +354,7 @@ body {
 }
 
 .chart-card {
-    background: linear-gradient(160deg, rgba(255, 255, 255, 0.88), rgba(244, 248, 247, 0.72));
+    background: rgba(255, 255, 255, 0.88);
     backdrop-filter: blur(20px) saturate(160%);
     -webkit-backdrop-filter: blur(20px) saturate(160%);
     border-radius: 28px;
@@ -560,7 +560,7 @@ body {
    the one number that answers "is the portfolio as a whole getting worse,"
    which matters more than any individual row. */
 .fc-portfolio-card {
-    background: linear-gradient(160deg, rgba(255, 255, 255, 0.88), rgba(244, 248, 247, 0.72));
+    background: rgba(255, 255, 255, 0.88);
     backdrop-filter: blur(20px) saturate(160%);
     -webkit-backdrop-filter: blur(20px) saturate(160%);
     border: 1px solid rgba(138, 180, 176, 0.28);
@@ -568,7 +568,7 @@ body {
     padding: 22px 26px 18px;
 }
 .night-mode .fc-portfolio-card {
-    background: linear-gradient(160deg, rgba(51, 68, 79, 0.88), rgba(36, 48, 56, 0.72));
+    background: rgba(51, 68, 79, 0.88);
     border-color: rgba(255, 255, 255, 0.1);
 }
 
@@ -1086,13 +1086,13 @@ body {
 
 .night-mode .metric,
 .night-mode .chart-card {
-    background: linear-gradient(160deg, rgba(51, 68, 79, 0.88), rgba(36, 48, 56, 0.72));
+    background: rgba(51, 68, 79, 0.88);
     border-color: rgba(255, 255, 255, 0.1);
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
 }
 
 .night-mode .back-button {
-    background: linear-gradient(135deg, rgba(51, 68, 79, 0.82), rgba(36, 48, 56, 0.68));
+    background: rgba(51, 68, 79, 0.82);
     border-color: rgba(255, 255, 255, 0.12);
     color: #8ab4b0;
 }
@@ -1599,7 +1599,7 @@ html.night-mode .glass-scrollbar .thumb {
     pointer-events: auto;
 }
 .modal-card {
-    background: linear-gradient(135deg, rgba(244, 248, 247, 0.92) 0%, rgba(255, 255, 255, 0.85) 100%);
+    background: rgba(244, 248, 247, 0.92);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-radius: 32px;
@@ -1649,12 +1649,12 @@ html.night-mode .glass-scrollbar .thumb {
     font-family: inherit;
 }
 .modal-btn.primary {
-    background: linear-gradient(135deg, #5b8c8a 0%, #7ba8a5 100%);
+    background: #5b8c8a;
     color: white;
     box-shadow: 0 4px 16px rgba(91, 140, 138, 0.25);
 }
 .modal-btn.primary:hover {
-    background: linear-gradient(135deg, #4a7876 0%, #6a9a97 100%);
+    background: #4a7876;
     box-shadow: 0 6px 20px rgba(91, 140, 138, 0.35);
     transform: translateY(-2px);
 }
@@ -1669,12 +1669,12 @@ html.night-mode .glass-scrollbar .thumb {
     color: #5b8c8a;
 }
 .modal-btn.danger {
-    background: linear-gradient(135deg, #c07070 0%, #a85a5a 100%);
+    background: #c07070;
     color: white;
     box-shadow: 0 4px 16px rgba(192, 112, 112, 0.2);
 }
 .modal-btn.danger:hover {
-    background: linear-gradient(135deg, #a85a5a 0%, #944848 100%);
+    background: #a85a5a;
     box-shadow: 0 6px 20px rgba(192, 112, 112, 0.3);
     transform: translateY(-2px);
 }
@@ -1719,7 +1719,7 @@ html.night-mode .glass-scrollbar .thumb {
 
 .night-mode .modal-overlay { background: rgba(15, 24, 28, 0.5); }
 .night-mode .modal-card {
-    background: linear-gradient(135deg, rgba(51, 68, 79, 0.92) 0%, rgba(35, 46, 52, 0.86) 100%);
+    background: rgba(51, 68, 79, 0.92);
     border-color: rgba(255, 255, 255, 0.12);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 24px 48px rgba(0, 0, 0, 0.3);
 }

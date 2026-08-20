@@ -25,7 +25,7 @@ body {
     transform: translateX(-50%);
     width: 67%;
     max-width: 1190px;
-    background: linear-gradient(135deg, rgba(238, 244, 242, 0.75), rgba(255, 255, 255, 0.45));
+    background: rgba(255, 255, 255, 0.78);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-radius: 60px;
@@ -142,7 +142,7 @@ body {
 }
 
 .sidebar-card {
-    background: linear-gradient(160deg, rgba(255, 255, 255, 0.88), rgba(244, 248, 247, 0.72));
+    background: rgba(255, 255, 255, 0.88);
     backdrop-filter: blur(20px) saturate(160%);
     -webkit-backdrop-filter: blur(20px) saturate(160%);
     border-radius: 28px;
@@ -176,7 +176,7 @@ body {
 .mock-image {
     width: 100%;
     height: 140px;
-    background: linear-gradient(135deg, #c5dbd8 0%, #a8c4c0 100%);
+    background: #c5dbd8;
     border-radius: 20px;
     display: flex;
     align-items: center;
@@ -310,7 +310,7 @@ body {
 }
 
 .info-card {
-    background: linear-gradient(160deg, rgba(255, 255, 255, 0.88), rgba(244, 248, 247, 0.72));
+    background: rgba(255, 255, 255, 0.88);
     backdrop-filter: blur(20px) saturate(160%);
     -webkit-backdrop-filter: blur(20px) saturate(160%);
     border-radius: 22px;
@@ -450,7 +450,7 @@ body {
 }
 
 .progress {
-    background: linear-gradient(90deg, #8ab4b0, #5b8c8a);
+    background: #8ab4b0;
     width: 0%;
     height: 100%;
     transition: width 0.3s;
@@ -494,7 +494,7 @@ body {
 }
 
 #form-content {
-    background: linear-gradient(160deg, rgba(255, 255, 255, 0.88), rgba(244, 248, 247, 0.72));
+    background: rgba(255, 255, 255, 0.88);
     backdrop-filter: blur(20px) saturate(160%);
     -webkit-backdrop-filter: blur(20px) saturate(160%);
     border-radius: 28px;
@@ -560,7 +560,7 @@ body {
     opacity: 0;
     overflow: hidden;
     flex-shrink: 0;
-    background: linear-gradient(135deg, rgba(244, 248, 247, 0.92) 0%, rgba(255, 255, 255, 0.85) 100%);
+    background: rgba(244, 248, 247, 0.92);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid rgba(138, 180, 176, 0.32);
@@ -1041,7 +1041,7 @@ textarea,
 
 /* Sidebar */
 .night-mode .sidebar-card {
-    background: linear-gradient(160deg, rgba(51, 68, 79, 0.88), rgba(36, 48, 56, 0.72));
+    background: rgba(51, 68, 79, 0.88);
     border-color: rgba(255, 255, 255, 0.1);
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
 }
@@ -1073,7 +1073,7 @@ textarea,
 }
 
 .night-mode .mock-image {
-    background: linear-gradient(135deg, #2f4a48, #1e3a38);
+    background: #2f4a48;
 }
 
 .night-mode .mock-image i {
@@ -1082,7 +1082,7 @@ textarea,
 
 /* Info Cards */
 .night-mode .info-card {
-    background: linear-gradient(160deg, rgba(51, 68, 79, 0.88), rgba(36, 48, 56, 0.72));
+    background: rgba(51, 68, 79, 0.88);
     border-color: rgba(255, 255, 255, 0.1);
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
 }
@@ -1137,7 +1137,7 @@ textarea,
 
 /* Form Content */
 .night-mode #form-content {
-    background: linear-gradient(160deg, rgba(51, 68, 79, 0.88), rgba(36, 48, 56, 0.72));
+    background: rgba(51, 68, 79, 0.88);
     border-color: rgba(255, 255, 255, 0.1);
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
 }
@@ -1154,7 +1154,7 @@ textarea,
 }
 
 .night-mode .bridge-info-panel {
-    background: linear-gradient(135deg, rgba(51, 68, 79, 0.92) 0%, rgba(35, 46, 52, 0.86) 100%);
+    background: rgba(51, 68, 79, 0.92);
     border-color: rgba(255, 255, 255, 0.12);
 }
 
@@ -1475,7 +1475,7 @@ html.night-mode .glass-scrollbar .thumb {
 }
 
 .modal-card {
-    background: linear-gradient(135deg, rgba(244, 248, 247, 0.92) 0%, rgba(255, 255, 255, 0.85) 100%);
+    background: rgba(244, 248, 247, 0.92);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-radius: 32px;
@@ -1505,28 +1505,28 @@ html.night-mode .glass-scrollbar .thumb {
     justify-content: center;
     margin: 0 auto 24px;
     font-size: 1.6rem;
-    background: linear-gradient(135deg, #e8f5f2 0%, #d4ede8 100%);
+    background: #e8f5f2;
     color: #5b8c8a;
     box-shadow: 0 4px 16px rgba(91, 140, 138, 0.12);
 }
 
 /* Warning — warm amber (not aggressive red) */
 .modal-icon.warning {
-    background: linear-gradient(135deg, #fef9e8 0%, #fdf2d0 100%);
+    background: #fef9e8;
     color: #c9a227;
     box-shadow: 0 4px 16px rgba(201, 162, 39, 0.12);
 }
 
 /* Success — deeper teal */
 .modal-icon.success {
-    background: linear-gradient(135deg, #d4ede8 0%, #b8ddd6 100%);
+    background: #d4ede8;
     color: #3a6b62;
     box-shadow: 0 4px 16px rgba(91, 140, 138, 0.15);
 }
 
 /* Error — soft rose (gentle, not alarm-red) */
 .modal-icon.error {
-    background: linear-gradient(135deg, #fdf2f2 0%, #f5dcdc 100%);
+    background: #fdf2f2;
     color: #c07070;
     box-shadow: 0 4px 16px rgba(192, 112, 112, 0.1);
 }
@@ -1566,14 +1566,14 @@ html.night-mode .glass-scrollbar .thumb {
 
 /* Primary — your teal gradient */
 .modal-btn.primary {
-    background: linear-gradient(135deg, #5b8c8a 0%, #7ba8a5 100%);
+    background: #5b8c8a;
     border: none;
     color: white;
     box-shadow: 0 4px 16px rgba(91, 140, 138, 0.25);
 }
 
 .modal-btn.primary:hover {
-    background: linear-gradient(135deg, #4a7876 0%, #6a9a97 100%);
+    background: #4a7876;
     box-shadow: 0 6px 20px rgba(91, 140, 138, 0.35);
     transform: translateY(-2px);
 }
@@ -1595,14 +1595,14 @@ html.night-mode .glass-scrollbar .thumb {
 
 /* Danger — only if you really need it, kept subtle */
 .modal-btn.danger {
-    background: linear-gradient(135deg, #c07070 0%, #a85a5a 100%);
+    background: #c07070;
     border: none;
     color: white;
     box-shadow: 0 4px 16px rgba(192, 112, 112, 0.2);
 }
 
 .modal-btn.danger:hover {
-    background: linear-gradient(135deg, #a85a5a 0%, #944848 100%);
+    background: #a85a5a;
     box-shadow: 0 6px 20px rgba(192, 112, 112, 0.3);
     transform: translateY(-2px);
 }
@@ -1613,7 +1613,7 @@ html.night-mode .glass-scrollbar .thumb {
 }
 
 .night-mode .modal-card {
-    background: linear-gradient(135deg, rgba(51, 68, 79, 0.92) 0%, rgba(35, 46, 52, 0.86) 100%);
+    background: rgba(51, 68, 79, 0.92);
     border-color: rgba(255, 255, 255, 0.12);
     box-shadow:
         0 8px 24px rgba(0, 0, 0, 0.2),
@@ -1629,33 +1629,33 @@ html.night-mode .glass-scrollbar .thumb {
 }
 
 .night-mode .modal-icon {
-    background: linear-gradient(135deg, #1e3a36 0%, #162e2a 100%);
+    background: #1e3a36;
     color: #8ab4b0;
     box-shadow: 0 4px 16px rgba(138, 180, 176, 0.1);
 }
 
 .night-mode .modal-icon.warning {
-    background: linear-gradient(135deg, #3a2f1a 0%, #2a2515 100%);
+    background: #3a2f1a;
     color: #d4b86a;
 }
 
 .night-mode .modal-icon.success {
-    background: linear-gradient(135deg, #1e3a36 0%, #162e2a 100%);
+    background: #1e3a36;
     color: #8ab4b0;
 }
 
 .night-mode .modal-icon.error {
-    background: linear-gradient(135deg, #3a2020 0%, #2a1818 100%);
+    background: #3a2020;
     color: #c07070;
 }
 
 .night-mode .modal-btn.primary {
-    background: linear-gradient(135deg, #3a6b62 0%, #4a8a80 100%);
+    background: #3a6b62;
     box-shadow: 0 4px 16px rgba(58, 107, 98, 0.25);
 }
 
 .night-mode .modal-btn.primary:hover {
-    background: linear-gradient(135deg, #2d5a52 0%, #3a7a70 100%);
+    background: #2d5a52;
     box-shadow: 0 6px 20px rgba(58, 107, 98, 0.35);
 }
 
@@ -1672,12 +1672,12 @@ html.night-mode .glass-scrollbar .thumb {
 }
 
 .night-mode .modal-btn.danger {
-    background: linear-gradient(135deg, #8a4a4a 0%, #703838 100%);
+    background: #8a4a4a;
     box-shadow: 0 4px 16px rgba(138, 74, 74, 0.2);
 }
 
 .night-mode .modal-btn.danger:hover {
-    background: linear-gradient(135deg, #703838 0%, #5c2c2c 100%);
+    background: #703838;
     box-shadow: 0 6px 20px rgba(138, 74, 74, 0.3);
 }
 
