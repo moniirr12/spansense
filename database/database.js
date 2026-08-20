@@ -1195,6 +1195,12 @@
         currentCategory = cat;
         currentFilter   = 'all';
         searchQuery     = '';
+
+        var saviPanel = document.getElementById('saviExportPanel');
+        var genericPanel = document.getElementById('genericExportPanel');
+        if (saviPanel) saviPanel.style.display = 'none';
+        if (genericPanel) genericPanel.style.display = '';
+
         var searchInput = document.getElementById('dbSearchInput');
         if (searchInput) {
             searchInput.value = '';
@@ -1938,6 +1944,210 @@
         setTimeout(function() { toast.classList.add('show'); }, 10);
         setTimeout(function() { toast.classList.remove('show'); setTimeout(function() { toast.remove(); }, 400); }, 4000);
     }
+
+    // ============================================
+    // SAVI ASSET VALUATION EXPORT PANEL
+    // ============================================
+    // Deliberately kept separate from the bridges/inspections/reports
+    // machinery above (own table, own selection state) rather than folding
+    // into COLUMN_DEFS/activeColumns/rebuildXTable - this card's row shape
+    // (structure + computed element rows) and its export (a single XLSM
+    // template patch, not CSV/JSON/XML/PDF) don't fit that shared pattern,
+    // and reusing it would mean threading savi-specific branches through
+    // code the other three cards depend on. It does reuse bridgesData,
+    // fetched once by fetchBridges() at page load.
+    var saviSelectedIds = new Set();
+    var saviFilter = 'all';
+    var saviSearch = '';
+    var saviElementCounts = {}; // bridge id -> element row count, filled in lazily
+    var saviPreviewToken = 0; // guards against a stale fetch overwriting a newer one
+
+    function saviFilteredBridges() {
+        return bridgesData.filter(function(b) {
+            if (saviFilter !== 'all' && b.type !== saviFilter) return false;
+            if (saviSearch) {
+                var hay = (String(b.id) + ' ' + (b.name || '')).toLowerCase();
+                if (hay.indexOf(saviSearch) === -1) return false;
+            }
+            return true;
+        });
+    }
+
+    window.selectSaviCategory = function() {
+        document.querySelectorAll('.export-card').forEach(function(card) { card.classList.remove('active'); });
+        var card = document.querySelector('.export-card[data-category="savi"]');
+        if (card) card.classList.add('active');
+
+        var genericPanel = document.getElementById('genericExportPanel');
+        var saviPanel = document.getElementById('saviExportPanel');
+        if (genericPanel) genericPanel.style.display = 'none';
+        if (saviPanel) saviPanel.style.display = '';
+
+        if (bridgesData.length === 0) {
+            fetchBridges().then(loadSaviPanel);
+        } else {
+            loadSaviPanel();
+        }
+    };
+
+    window.refreshSaviData = function() {
+        bridgesData = [];
+        saviElementCounts = {};
+        fetchBridges().then(loadSaviPanel);
+    };
+
+    function loadSaviPanel() {
+        updateCardCount('savi', bridgesData.length);
+        renderSaviTable();
+        updateSaviSelectionInfo();
+    }
+
+    window.setSaviFilter = function(btn, filterId) {
+        saviFilter = filterId;
+        document.querySelectorAll('#saviFiltersBar .filter-chip').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        renderSaviTable();
+    };
+
+    window.onSaviSearchInput = function(value) {
+        saviSearch = (value || '').trim().toLowerCase();
+        renderSaviTable();
+    };
+
+    function renderSaviTable() {
+        var tbody = document.getElementById('saviTableBody');
+        if (!tbody) return;
+        var rows = saviFilteredBridges();
+
+        if (rows.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:#8a9ba8;">No structures match this filter</td></tr>';
+        } else {
+            tbody.innerHTML = rows.map(function(b) {
+                var checked = saviSelectedIds.has(b.id) ? 'checked' : '';
+                var typeLabel = b.type || 'Bridge';
+                var countLabel = saviElementCounts.hasOwnProperty(b.id) ? saviElementCounts[b.id] : '&hellip;';
+                var lastInsp = b.last_inspected ? new Date(b.last_inspected).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '&mdash;';
+                return '<tr>' +
+                    '<td class="col-check"><input type="checkbox" ' + checked + ' onclick="toggleSaviRow(' + b.id + ', this.checked)"></td>' +
+                    '<td>' + b.id + '</td>' +
+                    '<td class="struct-name">' + escapeSaviHtml(b.name || 'Untitled') + '<span class="meta">' + escapeSaviHtml(b.location || '') + '</span></td>' +
+                    '<td>' + typeLabel + '</td>' +
+                    '<td class="el-count">' + countLabel + '</td>' +
+                    '<td>' + lastInsp + '</td>' +
+                '</tr>';
+            }).join('');
+        }
+
+        var selectAll = document.getElementById('saviSelectAll');
+        if (selectAll) {
+            var allChecked = rows.length > 0 && rows.every(function(b) { return saviSelectedIds.has(b.id); });
+            selectAll.checked = allChecked;
+        }
+
+        enrichSaviElementCounts(rows);
+    }
+
+    function escapeSaviHtml(str) {
+        var div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    // Element counts aren't in bridgesData - fetching them means one
+    // /api/latest-defects call per structure, so this runs in the
+    // background after the table's already rendered rather than blocking
+    // it, and is capped so a very large filtered list can't fire off an
+    // unbounded burst of requests.
+    function enrichSaviElementCounts(rows) {
+        var pending = rows.filter(function(b) { return !saviElementCounts.hasOwnProperty(b.id); }).slice(0, 50);
+        pending.forEach(function(b) {
+            SaviExport.fetchElementRows([b], API_BASE).then(function(result) {
+                saviElementCounts[b.id] = result.rows.length;
+                var cell = document.querySelector('#saviTableBody tr td.col-check input[onclick^="toggleSaviRow(' + b.id + ',"]');
+                if (cell) {
+                    var row = cell.closest('tr');
+                    var countCell = row && row.querySelector('.el-count');
+                    if (countCell) countCell.textContent = result.rows.length;
+                }
+            }).catch(function() { saviElementCounts[b.id] = 0; });
+        });
+    }
+
+    window.toggleSaviRow = function(bridgeId, checked) {
+        if (checked) saviSelectedIds.add(bridgeId);
+        else saviSelectedIds.delete(bridgeId);
+        renderSaviTable();
+        updateSaviSelectionInfo();
+    };
+
+    window.toggleSaviSelectAll = function(checked) {
+        saviFilteredBridges().forEach(function(b) {
+            if (checked) saviSelectedIds.add(b.id);
+            else saviSelectedIds.delete(b.id);
+        });
+        renderSaviTable();
+        updateSaviSelectionInfo();
+    };
+
+    function updateSaviSelectionInfo() {
+        var info = document.getElementById('saviSelectionInfo');
+        var selected = bridgesData.filter(function(b) { return saviSelectedIds.has(b.id); });
+        if (info) {
+            info.innerHTML = '<strong>' + selected.length + '</strong> of <strong>' + bridgesData.length + '</strong> structures selected';
+        }
+        var btn = document.getElementById('saviExportBtn');
+        if (btn) btn.disabled = selected.length === 0;
+
+        var token = ++saviPreviewToken;
+        var previewBody = document.getElementById('saviPreviewBody');
+        if (selected.length === 0) {
+            if (previewBody) previewBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#8a9ba8;">Select at least one structure to preview rows</td></tr>';
+            return;
+        }
+        if (previewBody) previewBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#8a9ba8;"><i class="fas fa-spinner fa-spin"></i> Loading preview&hellip;</td></tr>';
+
+        SaviExport.fetchElementRows(selected, API_BASE).then(function(result) {
+            if (token !== saviPreviewToken) return; // a newer selection change superseded this fetch
+            if (info) {
+                info.innerHTML = '<strong>' + selected.length + '</strong> of <strong>' + bridgesData.length + '</strong> structures selected &middot; <strong>' +
+                    result.rows.length + '</strong> element row' + (result.rows.length === 1 ? '' : 's') +
+                    (result.rows.length > SaviExport.MAX_ROWS ? ' <span style="color:#c79a4b;">(only first ' + SaviExport.MAX_ROWS + ' will be written)</span>' : '');
+            }
+            if (!previewBody) return;
+            if (result.rows.length === 0) {
+                previewBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#8a9ba8;">No condition data on the selected structures maps to a SAVI element</td></tr>';
+                return;
+            }
+            previewBody.innerHTML = result.rows.slice(0, 5).map(function(r) {
+                return '<tr><td>' + r.structureId + '</td><td>' + escapeSaviHtml(r.elementName) + '</td>' +
+                    '<td>' + (r.materialType ? escapeSaviHtml(r.materialType) : '<span class="blank">&mdash;</span>') + '</td>' +
+                    '<td>' + r.condition + '</td>' +
+                    '<td class="blank">&mdash;</td><td class="blank">&mdash;</td><td class="blank">&mdash;</td></tr>';
+            }).join('');
+        }).catch(function(err) {
+            if (token !== saviPreviewToken) return;
+            if (previewBody) previewBody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#c0392b;">Could not load preview: ' + escapeSaviHtml(err.message) + '</td></tr>';
+        });
+    }
+
+    window.generateSaviWorkbook = function() {
+        var selected = bridgesData.filter(function(b) { return saviSelectedIds.has(b.id); });
+        if (selected.length === 0) return;
+
+        var btn = document.getElementById('saviExportBtn');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating&hellip;'; }
+
+        SaviExport.build(selected, API_BASE).then(function(stats) {
+            var msg = 'SAVI workbook downloaded &mdash; ' + stats.writtenRows + ' element row' + (stats.writtenRows === 1 ? '' : 's') + ' written.';
+            if (stats.truncated) msg += ' ' + (stats.totalRows - stats.writtenRows) + ' additional rows didn\'t fit in one file (100-row template limit) and were left out.';
+            if (stats.skippedNoMapping) msg += ' ' + stats.skippedNoMapping + ' element(s) had no SAVI equivalent and were skipped.';
+            showToast(msg, 'success');
+        }).catch(function(err) {
+            showToast('SAVI export failed: ' + err.message, 'error');
+        }).finally(function() {
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-download"></i> Generate SAVI Workbook'; }
+        });
+    };
 
     // ============================================
     // INIT
