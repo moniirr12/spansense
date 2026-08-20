@@ -88,10 +88,20 @@
                 </div>
                 <div class="card-arrow"><i class="fas fa-arrow-right"></i></div>
             </div>
+            <div class="export-card savi" data-category="savi" onclick="selectSaviCategory()">
+                <div class="card-icon"><i class="fas fa-file-export"></i></div>
+                <div class="card-title">Asset Valuation <span class="std-badge">New</span></div>
+                <div class="card-desc">Structure and element condition data, ready to drop into SAVI</div>
+                <div class="card-meta">
+                    <span class="count" id="savi-count">Loading...</span>
+                    <span><i class="fas fa-file-excel"></i> XLSM &middot; SAVI v1.10</span>
+                </div>
+                <div class="card-arrow"><i class="fas fa-arrow-right"></i></div>
+            </div>
         </div>
 
         <!-- EXPORT PANEL -->
-        <div class="export-panel">
+        <div class="export-panel" id="genericExportPanel">
             <div class="panel-header">
                 <h2 id="panelTitle"><i class="fas fa-list-check"></i> Structure Records</h2>
                 <div class="panel-actions">
@@ -213,6 +223,96 @@
             </div>
         </div>
 
+        <!-- SAVI ASSET VALUATION EXPORT PANEL -->
+        <div class="export-panel" id="saviExportPanel" style="display:none;">
+            <div class="panel-header">
+                <h2><i class="fas fa-file-export ic"></i> Asset Valuation &mdash; SAVI Export <span class="std-badge">UKRLG SAVI v1.10</span></h2>
+                <div class="panel-actions">
+                    <button class="btn-icon" data-tip="Refresh" onclick="refreshSaviData()"><i class="fas fa-sync-alt"></i></button>
+                </div>
+            </div>
+
+            <div class="filters-row">
+                <div class="filters-bar" id="saviFiltersBar">
+                    <button class="filter-chip active" data-tip="All Structures" onclick="setSaviFilter(this, 'all')"><i class="fas fa-check"></i> <span class="chip-label">All Structures</span></button>
+                    <button class="filter-chip" data-tip="Bridges" onclick="setSaviFilter(this, 'Bridge')"><span class="chip-label">Bridges</span></button>
+                    <button class="filter-chip" data-tip="Footbridges" onclick="setSaviFilter(this, 'Footbridge')"><span class="chip-label">Footbridges</span></button>
+                    <button class="filter-chip" data-tip="Retaining Walls" onclick="setSaviFilter(this, 'Retaining wall')"><span class="chip-label">Retaining Walls</span></button>
+                    <button class="filter-chip" data-tip="Culverts" onclick="setSaviFilter(this, 'Culvert')"><span class="chip-label">Culverts</span></button>
+                    <button class="filter-chip" data-tip="Sign Gantries" onclick="setSaviFilter(this, 'Sign Gantry')"><span class="chip-label">Sign Gantries</span></button>
+                </div>
+                <div class="db-search-wrap">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="saviSearchInput" placeholder="Search structure ID or name..." oninput="onSaviSearchInput(this.value)">
+                </div>
+            </div>
+
+            <div class="data-table-wrap">
+                <table class="data-table" id="saviDataTable">
+                    <thead>
+                        <tr>
+                            <th class="col-check"><input type="checkbox" id="saviSelectAll" onclick="toggleSaviSelectAll(this.checked)"></th>
+                            <th>Structure ID</th>
+                            <th>Structure Name</th>
+                            <th>Type</th>
+                            <th>Elements Recorded</th>
+                            <th>Last Inspection</th>
+                        </tr>
+                    </thead>
+                    <tbody id="saviTableBody">
+                        <tr><td colspan="6" style="text-align:center;padding:40px;color:#8a9ba8;"><i class="fas fa-spinner fa-spin" style="font-size:2rem;margin-bottom:12px;display:block;"></i>Loading structures...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="export-options">
+                <div class="option-group">
+                    <h3><i class="fas fa-file-export"></i> Export Format</h3>
+                    <div class="format-fixed"><i class="fas fa-lock"></i> XLSM &mdash; SAVI v1.10 Template</div>
+                    <p class="format-note">SAVI is a locked macro workbook, not an open format &mdash; spanSense writes values into a copy of its official blank template, in the exact column order SAVI expects, rather than generating a plain spreadsheet.</p>
+                </div>
+                <div class="option-group">
+                    <h3><i class="fas fa-map-signs"></i> Field Mapping &mdash; Elements Tab</h3>
+                    <div class="map-list">
+                        <div class="map-row"><span class="fld">Structure Identifier</span><span class="map-pill ok"><i class="fas fa-check"></i> Mapped</span></div>
+                        <div class="map-row"><span class="fld">Full Name of Element<small>CSS Appendix G hierarchy</small></span><span class="map-pill ok"><i class="fas fa-check"></i> Mapped</span></div>
+                        <div class="map-row"><span class="fld">Component / Material Type<small>Table 4 codes &rarr; SAVI's list (best fit)</small></span><span class="map-pill ok"><i class="fas fa-check"></i> Mapped</span></div>
+                        <div class="map-row"><span class="fld">Condition at Last Inspection<small>Severity + Extent &rarr; 1A&ndash;5E</small></span><span class="map-pill ok"><i class="fas fa-check"></i> Mapped</span></div>
+                        <div class="map-row"><span class="fld">Proximity to Traffic Spray Zone</span><span class="map-pill warn"><i class="fas fa-triangle-exclamation"></i> Fill in SAVI</span></div>
+                        <div class="map-row"><span class="fld">Priority Factors</span><span class="map-pill warn"><i class="fas fa-triangle-exclamation"></i> Fill in SAVI</span></div>
+                        <div class="map-row"><span class="fld">Intervention Threshold</span><span class="map-pill warn"><i class="fas fa-triangle-exclamation"></i> Fill in SAVI</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="scope-callout">
+                <span class="t">Scope of this export</span>
+                This populates SAVI's <strong>Elements tab only</strong> &mdash; the condition data spanSense already records, up to <strong>100 element rows</strong> per file (the number SAVI's blank template ships pre-built for). The <strong>Structures tab</strong> needs <code>Location</code>, <code>Route Type</code>, <code>Traffic</code> and <code>Obstacle Crossed</code>, which aren't captured in spanSense yet, so it's left for manual completion in SAVI. The <strong>Planned</strong> and <strong>Routine</strong> tabs (works programme, budget policy) are human policy inputs, not something inspection data can fill in &mdash; also left to SAVI itself. Component/Material Type is a best-fit default from spanSense's Table 4 codes onto SAVI's more granular material list &mdash; worth a quick review in SAVI.
+            </div>
+
+            <div class="preview-block">
+                <h3><i class="fas fa-eye"></i> Preview &mdash; first 5 rows</h3>
+                <p class="sub">Exactly what will be written into SAVI's Elements sheet for the selected structures.</p>
+                <div class="preview-wrap">
+                    <table class="preview">
+                        <thead>
+                            <tr><th>Structure ID</th><th>Full Name of Element</th><th>Component/Material</th><th>Condition</th><th>Spray Zone</th><th>Priority Factor</th><th>Intervention Threshold</th></tr>
+                        </thead>
+                        <tbody id="saviPreviewBody">
+                            <tr><td colspan="7" style="text-align:center;padding:20px;color:#8a9ba8;">Select at least one structure to preview rows</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="export-action-bar">
+                <div class="selection-info" id="saviSelectionInfo"><strong>0</strong> of <strong>0</strong> structures selected</div>
+                <button class="btn-export" id="saviExportBtn" onclick="generateSaviWorkbook()">
+                    <i class="fas fa-download"></i> Generate SAVI Workbook
+                </button>
+            </div>
+        </div>
+
         <!-- ACTIVITY LOG -->
         <div class="activity-panel">
             <h2><i class="fas fa-history"></i> Recent Exports</h2>
@@ -259,6 +359,8 @@
     <script src="../map/reportFull.docx.js"></script>
     <script src="../test.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="saviMapping.js"></script>
+    <script src="saviExport.js"></script>
     <script src="database.js"></script>
 
 </body>
