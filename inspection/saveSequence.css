@@ -82,7 +82,7 @@
 .progress-fill {
     height: 100%;
     width: 0%;
-    background: linear-gradient(90deg, #8ab4b0, #5b8c8a);
+    background: #8ab4b0;
     border-radius: 4px;
     box-shadow: 0 0 10px rgba(91, 140, 138, 0.3);
     animation: progressFill 2.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
@@ -107,7 +107,7 @@
     width: 72px;
     height: 72px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #2d7a6e, #5b8c8a);
+    background: #2d7a6e;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -210,7 +210,7 @@
 
 /* Success banner */
 .success-banner {
-    background: linear-gradient(135deg, #e8f5f0, #f0f7f4);
+    background: #e8f5f0;
     border-radius: 16px;
     padding: 20px;
     text-align: center;
@@ -222,7 +222,7 @@
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #2d7a6e, #5b8c8a);
+    background: #2d7a6e;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -500,7 +500,7 @@
 }
 
 .night-mode .success-banner {
-    background: linear-gradient(135deg, #1e3a3e, #243a3e);
+    background: #1e3a3e;
     border-color: rgba(91, 140, 138, 0.2);
 }
 

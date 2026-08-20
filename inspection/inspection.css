@@ -24,7 +24,7 @@ body {
     transform: translateX(-50%);
     width: 67%;
     max-width: 1190px;
-    background: linear-gradient(135deg, rgba(238, 244, 242, 0.75), rgba(255, 255, 255, 0.45));
+    background: rgba(255, 255, 255, 0.78);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-radius: 60px;
@@ -163,7 +163,7 @@ body {
 
 
 .stat-card {
-    background: linear-gradient(160deg, rgba(255, 255, 255, 0.88), rgba(244, 248, 247, 0.72));
+    background: rgba(255, 255, 255, 0.88);
     backdrop-filter: blur(20px) saturate(160%);
     -webkit-backdrop-filter: blur(20px) saturate(160%);
     border-radius: 22px;
@@ -1023,7 +1023,7 @@ body {
     position: absolute;
     top: 0;
     left: 0;
-    background: linear-gradient(135deg, #8ab4b0, #6e9c98);
+    background: #8ab4b0;
     color: white;
     padding: 5px 14px 5px 10px;
     /* Top-left matches the card's own radius so the ribbon's corner doesn't
@@ -1061,7 +1061,7 @@ body {
     position: absolute;
     top: 0;
     left: 0;
-    background: linear-gradient(135deg, #5b8c8a, #4a706e);
+    background: #5b8c8a;
     color: white;
     padding: 5px 14px 5px 10px;
     border-radius: 20px 0 12px 0;
@@ -1386,7 +1386,7 @@ body {
     border-color: #3a5a60;
 }
 .night-mode #inspectionElementsTable tr.retrieved-defect .retrieved-ribbon {
-    background: linear-gradient(135deg, #2f4a48, #3a5c5a);
+    background: #2f4a48;
     box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
 .night-mode #inspectionElementsTable tr.retrieved-defect .btn-edit {
@@ -1485,7 +1485,7 @@ body {
 .modal.active, .modal-overlay-photo.active, .split-modal-overlay.active { display: flex; }
 
 .modal-content, .modal-photo {
-    background: linear-gradient(135deg, rgba(244, 248, 247, 0.92) 0%, rgba(255, 255, 255, 0.85) 100%);
+    background: rgba(244, 248, 247, 0.92);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-radius: 24px;
@@ -1583,7 +1583,7 @@ body {
     display: none;
     flex-direction: column;
     gap: 4px;
-    background: linear-gradient(135deg, rgba(244, 248, 247, 0.92) 0%, rgba(255, 255, 255, 0.85) 100%);
+    background: rgba(244, 248, 247, 0.92);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-radius: 20px;
@@ -1613,7 +1613,7 @@ body {
 .bci-impact-panel.worse .bci-impact-body #bciPreviewAfter { color: #c0392b; }
 .bci-impact-panel.better .bci-impact-body #bciPreviewAfter { color: #2d7a6e; }
 .night-mode .bci-impact-panel {
-    background: linear-gradient(135deg, rgba(51, 68, 79, 0.92) 0%, rgba(35, 46, 52, 0.86) 100%);
+    background: rgba(51, 68, 79, 0.92);
     border-color: rgba(255, 255, 255, 0.12);
 }
 .night-mode .bci-impact-header { color: #8ab4b0; }
@@ -1626,7 +1626,7 @@ body {
     flex-direction: column;
     width: 100%;
     max-height: calc(80vh - 60px);
-    background: linear-gradient(135deg, rgba(244, 248, 247, 0.92) 0%, rgba(255, 255, 255, 0.85) 100%);
+    background: rgba(244, 248, 247, 0.92);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-radius: 24px;
@@ -1720,7 +1720,7 @@ body {
 }
 
 .night-mode .defect-guidance-panel {
-    background: linear-gradient(135deg, rgba(51, 68, 79, 0.92) 0%, rgba(35, 46, 52, 0.86) 100%);
+    background: rgba(51, 68, 79, 0.92);
     border-color: rgba(255, 255, 255, 0.12);
 }
 .night-mode .dgp-header { color: #8ab4b0; }
@@ -2360,7 +2360,7 @@ body {
 .notes-panel {
     position: fixed; right: 24px; top: 50%; transform: translateY(-50%) translateX(440px);
     z-index: 1002; width: 340px; max-height: 78vh;
-    background: linear-gradient(135deg, rgba(244, 248, 247, 0.92) 0%, rgba(255, 255, 255, 0.85) 100%);
+    background: rgba(244, 248, 247, 0.92);
     backdrop-filter: blur(20px) saturate(180%); -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid rgba(138, 180, 176, 0.32);
     border-radius: 24px; box-shadow: 0 20px 44px rgba(44, 90, 87, 0.16); overflow: hidden;
@@ -2369,7 +2369,7 @@ body {
 }
 .notes-panel.open { transform: translateY(-50%) translateX(0); opacity: 1; }
 .night-mode .notes-panel {
-    background: linear-gradient(135deg, rgba(51, 68, 79, 0.92) 0%, rgba(35, 46, 52, 0.86) 100%);
+    background: rgba(51, 68, 79, 0.92);
     border-color: rgba(255, 255, 255, 0.12);
 }
 
@@ -2422,7 +2422,7 @@ body {
 .notes-add-hint { font-size: 9.5px; color: #a7b4bd; }
 .notes-add-btn {
     border: none; border-radius: 20px; padding: 7px 16px; font-size: 0.72rem; font-weight: 700; cursor: pointer;
-    background: linear-gradient(135deg, #7a6fd1, #6355c2); color: white;
+    background: #7a6fd1; color: white;
 }
 .notes-add-btn:disabled { opacity: 0.45; cursor: default; }
 
@@ -2435,7 +2435,7 @@ body {
     height: 67vh;
 }
 .conclusions-modal, .defects-panel-modal {
-    background: linear-gradient(135deg, rgba(244, 248, 247, 0.92) 0%, rgba(255, 255, 255, 0.85) 100%);
+    background: rgba(244, 248, 247, 0.92);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-radius: 28px;
@@ -2547,13 +2547,13 @@ body {
 
 .night-mode .stat-card,
 .night-mode .modal-content, .night-mode .modal-photo {
-    background: linear-gradient(160deg, rgba(51, 68, 79, 0.88), rgba(36, 48, 56, 0.72));
+    background: rgba(51, 68, 79, 0.88);
     border-color: rgba(255, 255, 255, 0.1);
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
 }
 
 .night-mode .conclusions-modal, .night-mode .defects-panel-modal {
-    background: linear-gradient(160deg, rgba(51, 68, 79, 0.88), rgba(36, 48, 56, 0.72));
+    background: rgba(51, 68, 79, 0.88);
     border-color: rgba(255, 255, 255, 0.1);
     box-shadow: 0 20px 44px rgba(0, 0, 0, 0.35);
 }
@@ -3684,7 +3684,7 @@ body.modal-photo-open .glass-scrollbar {
 .severity-stepper .stepper-value { color: #2d7a6e; }
 
 .severity-stepper .progress-bar-fill {
-    background: linear-gradient(90deg, #2d7a6e, #c0392b);
+    background: #2d7a6e;
 }
 
 .severity-stepper .stepper-step.sev-1:hover { background: rgba(45,122,110,0.12); color: #2d7a6e; }
@@ -3727,7 +3727,7 @@ body.modal-photo-open .glass-scrollbar {
 .extent-stepper .stepper-value { color: #378ADD; }
 
 .extent-stepper .progress-bar-fill {
-    background: linear-gradient(90deg, #5b8c8a, #378ADD);
+    background: #5b8c8a;
 }
 
 .extent-stepper .stepper-step:hover { background: rgba(55,138,221,0.1); color: #378ADD; }
@@ -4484,7 +4484,7 @@ body.night-mode.contracted-rows #inspectionElementsTable tr.expandable-row .grid
     pointer-events: auto;
 }
 .modal-card {
-    background: linear-gradient(135deg, rgba(244, 248, 247, 0.92) 0%, rgba(255, 255, 255, 0.85) 100%);
+    background: rgba(244, 248, 247, 0.92);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-radius: 32px;
@@ -4511,22 +4511,22 @@ body.night-mode.contracted-rows #inspectionElementsTable tr.expandable-row .grid
     justify-content: center;
     margin: 0 auto 24px;
     font-size: 1.6rem;
-    background: linear-gradient(135deg, #e8f5f2 0%, #d4ede8 100%);
+    background: #e8f5f2;
     color: #5b8c8a;
     box-shadow: 0 4px 16px rgba(91, 140, 138, 0.12);
 }
 .modal-icon.warning {
-    background: linear-gradient(135deg, #fef9e8 0%, #fdf2d0 100%);
+    background: #fef9e8;
     color: #c9a227;
     box-shadow: 0 4px 16px rgba(201, 162, 39, 0.12);
 }
 .modal-icon.success {
-    background: linear-gradient(135deg, #d4ede8 0%, #b8ddd6 100%);
+    background: #d4ede8;
     color: #3a6b62;
     box-shadow: 0 4px 16px rgba(91, 140, 138, 0.15);
 }
 .modal-icon.error {
-    background: linear-gradient(135deg, #fdf2f2 0%, #f5dcdc 100%);
+    background: #fdf2f2;
     color: #c07070;
     box-shadow: 0 4px 16px rgba(192, 112, 112, 0.1);
 }
@@ -4561,12 +4561,12 @@ body.night-mode.contracted-rows #inspectionElementsTable tr.expandable-row .grid
     border: none;
 }
 .modal-btn.primary {
-    background: linear-gradient(135deg, #5b8c8a 0%, #7ba8a5 100%);
+    background: #5b8c8a;
     color: white;
     box-shadow: 0 4px 16px rgba(91, 140, 138, 0.25);
 }
 .modal-btn.primary:hover {
-    background: linear-gradient(135deg, #4a7876 0%, #6a9a97 100%);
+    background: #4a7876;
     box-shadow: 0 6px 20px rgba(91, 140, 138, 0.35);
     transform: translateY(-2px);
 }
@@ -4583,38 +4583,38 @@ body.night-mode.contracted-rows #inspectionElementsTable tr.expandable-row .grid
     box-shadow: 0 4px 12px rgba(91, 140, 138, 0.08);
 }
 .modal-btn.danger {
-    background: linear-gradient(135deg, #c07070 0%, #a85a5a 100%);
+    background: #c07070;
     color: white;
     box-shadow: 0 4px 16px rgba(192, 112, 112, 0.2);
 }
 .modal-btn.danger:hover {
-    background: linear-gradient(135deg, #a85a5a 0%, #944848 100%);
+    background: #a85a5a;
     box-shadow: 0 6px 20px rgba(192, 112, 112, 0.3);
     transform: translateY(-2px);
 }
 .night-mode .modal-overlay { background: rgba(15, 24, 28, 0.5); }
 .night-mode .modal-card {
-    background: linear-gradient(135deg, rgba(51, 68, 79, 0.92) 0%, rgba(35, 46, 52, 0.86) 100%);
+    background: rgba(51, 68, 79, 0.92);
     border-color: rgba(255, 255, 255, 0.12);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 24px 48px rgba(0, 0, 0, 0.3);
 }
 .night-mode .modal-title { color: #d4dfe3; }
 .night-mode .modal-message { color: #a8b8bf; }
 .night-mode .modal-icon {
-    background: linear-gradient(135deg, #1e3a36 0%, #162e2a 100%);
+    background: #1e3a36;
     color: #8ab4b0;
     box-shadow: 0 4px 16px rgba(138, 180, 176, 0.1);
 }
 .night-mode .modal-icon.warning {
-    background: linear-gradient(135deg, #3a2f1a 0%, #2a2515 100%);
+    background: #3a2f1a;
     color: #d4b86a;
 }
 .night-mode .modal-icon.success {
-    background: linear-gradient(135deg, #1e3a36 0%, #162e2a 100%);
+    background: #1e3a36;
     color: #8ab4b0;
 }
 .night-mode .modal-icon.error {
-    background: linear-gradient(135deg, #3a2020 0%, #2a1818 100%);
+    background: #3a2020;
     color: #c07070;
 }
 
@@ -4681,7 +4681,7 @@ body.night-mode.contracted-rows #inspectionElementsTable tr.expandable-row .grid
     transform: translateY(-50%);
     width: 240px;
     max-height: calc(72vh - 54px);
-    background: linear-gradient(135deg, rgba(244, 248, 247, 0.92) 0%, rgba(255, 255, 255, 0.85) 100%);
+    background: rgba(244, 248, 247, 0.92);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-radius: 24px;
@@ -4695,7 +4695,7 @@ body.night-mode.contracted-rows #inspectionElementsTable tr.expandable-row .grid
 }
 .prev-defects-panel.prev-collapsed { width: 48px; }
 .night-mode .prev-defects-panel {
-    background: linear-gradient(135deg, rgba(51, 68, 79, 0.92) 0%, rgba(35, 46, 52, 0.86) 100%);
+    background: rgba(51, 68, 79, 0.92);
     border-color: rgba(255, 255, 255, 0.12);
 }
 
@@ -4775,7 +4775,7 @@ body.night-mode.contracted-rows #inspectionElementsTable tr.expandable-row .grid
 .prev-card:hover { border-color: #8ab4b0; box-shadow: 0 4px 14px rgba(91,140,138,0.12); }
 .prev-card.prev-selected {
     border-color: #2d7a6e;
-    background: linear-gradient(135deg, #f4fbf9, #f0f8f5);
+    background: #f4fbf9;
     box-shadow: 0 4px 14px rgba(45,122,110,0.14);
 }
 .prev-card.prev-selected::before {
