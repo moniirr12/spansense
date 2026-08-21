@@ -1483,8 +1483,6 @@ table.preview tr:last-child td { border-bottom: none; }
 table.preview td.blank { color: #c3cdd4; }
 .night-mode table.preview td.blank { color: #4a5a62; }
 
-.struct-name .meta { display: block; font-size: 0.7rem; color: #5f6b73; margin-top: 1px; }
-.night-mode .struct-name .meta { color: #8399a2; }
 .el-count { font-variant-numeric: tabular-nums; }
 
 .btn-export:disabled {

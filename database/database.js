@@ -2030,7 +2030,7 @@
                 return '<tr>' +
                     '<td class="col-check"><input type="checkbox" ' + checked + ' onclick="toggleSaviRow(' + b.id + ', this.checked)"></td>' +
                     '<td>' + b.id + '</td>' +
-                    '<td class="struct-name">' + escapeSaviHtml(b.name || 'Untitled') + '<span class="meta">' + escapeSaviHtml(b.location || '') + '</span></td>' +
+                    '<td class="bridge-name">' + escapeSaviHtml(b.name || 'Untitled') + '<span class="meta">' + escapeSaviHtml(b.location || '') + '</span></td>' +
                     '<td>' + typeLabel + '</td>' +
                     '<td class="el-count">' + countLabel + '</td>' +
                     '<td>' + lastInsp + '</td>' +
