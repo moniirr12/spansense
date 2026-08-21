@@ -2041,7 +2041,7 @@
                 var typeMeta = typeCircleMeta[typeKey] || typeCircleMeta.bridge;
                 var typeIconHtml = svgIcons[typeKey] ? svgIcons[typeKey](13) : '<i class="fas ' + typeMeta.icon + '"></i>';
                 var countLabel = saviElementCounts.hasOwnProperty(b.id) ? saviElementCounts[b.id] : '&hellip;';
-                var lastInsp = b.last_inspected ? new Date(b.last_inspected).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '&mdash;';
+                var lastInsp = b.last_inspected ? new Date(b.last_inspected).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '--';
                 return '<tr>' +
                     '<td class="col-check"><input type="checkbox" ' + checked + ' onclick="toggleSaviRow(' + b.id + ', this.checked)"></td>' +
                     '<td>' + b.id + '</td>' +
@@ -2135,9 +2135,9 @@
             }
             previewBody.innerHTML = result.rows.slice(0, 5).map(function(r) {
                 return '<tr><td>' + r.structureId + '</td><td>' + escapeSaviHtml(r.elementName) + '</td>' +
-                    '<td>' + (r.materialType ? escapeSaviHtml(r.materialType) : '<span class="blank">&mdash;</span>') + '</td>' +
+                    '<td>' + (r.materialType ? escapeSaviHtml(r.materialType) : '<span class="blank">--</span>') + '</td>' +
                     '<td>' + r.condition + '</td>' +
-                    '<td class="blank">&mdash;</td><td class="blank">&mdash;</td><td class="blank">&mdash;</td></tr>';
+                    '<td class="blank">--</td><td class="blank">--</td><td class="blank">--</td></tr>';
             }).join('');
         }).catch(function(err) {
             if (token !== saviPreviewToken) return;
@@ -2153,7 +2153,7 @@
         if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating&hellip;'; }
 
         SaviExport.build(selected, API_BASE).then(function(stats) {
-            var msg = 'SAVI workbook downloaded &mdash; ' + stats.writtenRows + ' element row' + (stats.writtenRows === 1 ? '' : 's') + ' written.';
+            var msg = 'SAVI workbook downloaded: ' + stats.writtenRows + ' element row' + (stats.writtenRows === 1 ? '' : 's') + ' written.';
             if (stats.truncated) msg += ' ' + (stats.totalRows - stats.writtenRows) + ' additional rows didn\'t fit in one file (100-row template limit) and were left out.';
             if (stats.skippedNoMapping) msg += ' ' + stats.skippedNoMapping + ' element(s) had no SAVI equivalent and were skipped.';
             showToast(msg, 'success');

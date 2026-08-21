@@ -220,7 +220,7 @@
         <!-- SAVI ASSET VALUATION EXPORT PANEL -->
         <div class="export-panel" id="saviExportPanel" style="display:none;">
             <div class="panel-header">
-                <h2><i class="fas fa-file-export ic"></i> Asset Valuation &mdash; SAVI Export <span class="std-badge">UKRLG SAVI v1.10</span></h2>
+                <h2><i class="fas fa-file-export ic"></i> SAVI Export <span class="std-badge">UKRLG SAVI v1.10</span></h2>
                 <div class="panel-actions">
                     <button class="btn-icon" data-tip="Refresh" onclick="refreshSaviData()"><i class="fas fa-sync-alt"></i></button>
                 </div>
@@ -262,11 +262,11 @@
             <div class="export-options">
                 <div class="option-group">
                     <h3><i class="fas fa-file-export"></i> Export Format</h3>
-                    <div class="format-fixed"><i class="fas fa-lock"></i> XLSM &mdash; SAVI v1.10 Template</div>
-                    <p class="format-note">SAVI is a locked macro workbook, not an open format &mdash; spanSense writes values into a copy of its official blank template, in the exact column order SAVI expects, rather than generating a plain spreadsheet.</p>
+                    <div class="format-fixed"><i class="fas fa-lock"></i> XLSM &middot; SAVI v1.10 Template</div>
+                    <p class="format-note">SAVI is a locked macro workbook, not an open format, so spanSense writes values into a copy of its official blank template, in the exact column order SAVI expects, rather than generating a plain spreadsheet.</p>
                 </div>
                 <div class="option-group">
-                    <h3><i class="fas fa-map-signs"></i> Field Mapping &mdash; Elements Tab</h3>
+                    <h3><i class="fas fa-map-signs"></i> Field Mapping: Elements Tab</h3>
                     <div class="map-list">
                         <div class="map-row"><span class="fld">Structure Identifier</span><span class="map-pill ok"><i class="fas fa-check"></i> Mapped</span></div>
                         <div class="map-row"><span class="fld">Full Name of Element<small>CSS Appendix G hierarchy</small></span><span class="map-pill ok"><i class="fas fa-check"></i> Mapped</span></div>
@@ -281,11 +281,11 @@
 
             <div class="scope-callout">
                 <span class="t">Scope of this export</span>
-                This populates SAVI's <strong>Elements tab only</strong> &mdash; the condition data spanSense already records, up to <strong>100 element rows</strong> per file (the number SAVI's blank template ships pre-built for). The <strong>Structures tab</strong> needs <code>Location</code>, <code>Route Type</code>, <code>Traffic</code> and <code>Obstacle Crossed</code>, which aren't captured in spanSense yet, so it's left for manual completion in SAVI. The <strong>Planned</strong> and <strong>Routine</strong> tabs (works programme, budget policy) are human policy inputs, not something inspection data can fill in &mdash; also left to SAVI itself. Component/Material Type is a best-fit default from spanSense's Table 4 codes onto SAVI's more granular material list &mdash; worth a quick review in SAVI.
+                This populates SAVI's <strong>Elements tab only</strong>, the condition data spanSense already records, up to <strong>100 element rows</strong> per file (the number SAVI's blank template ships pre-built for). The <strong>Structures tab</strong> needs <code>Location</code>, <code>Route Type</code>, <code>Traffic</code> and <code>Obstacle Crossed</code>, which aren't captured in spanSense yet, so it's left for manual completion in SAVI. The <strong>Planned</strong> and <strong>Routine</strong> tabs (works programme, budget policy) are human policy inputs, not something inspection data can fill in, so those are also left to SAVI itself. Component/Material Type is a best-fit default from spanSense's Table 4 codes onto SAVI's more granular material list, worth a quick review in SAVI.
             </div>
 
             <div class="preview-block">
-                <h3><i class="fas fa-eye"></i> Preview &mdash; first 5 rows</h3>
+                <h3><i class="fas fa-eye"></i> Preview: first 5 rows</h3>
                 <p class="sub">Exactly what will be written into SAVI's Elements sheet for the selected structures.</p>
                 <div class="preview-wrap">
                     <table class="preview">
