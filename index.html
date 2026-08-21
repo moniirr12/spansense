@@ -588,6 +588,12 @@ body {
     color: var(--text-muted);
 }
 
+.input-hint-icon {
+    font-size: 0.85rem;
+    color: var(--primary);
+    flex-shrink: 0;
+}
+
 .auth-actions {
     display: flex;
     flex-direction: column;
@@ -1318,7 +1324,7 @@ body.night-mode .glass-scrollbar .thumb {
                     <label>User ID</label>
                     <input type="text" id="engineerId" placeholder="e.g. john.doe@agency.gov" autocomplete="username">
                     <div class="input-hint">
-                        <span class="input-hint-icon">i</span>
+                        <i class="fas fa-circle-info input-hint-icon"></i>
                         <span>Use your registered email or ID</span>
                     </div>
                 </div>
@@ -1340,7 +1346,7 @@ body.night-mode .glass-scrollbar .thumb {
                     <label>Authenticator Code</label>
                     <input type="text" id="twoFACode" placeholder="6-digit code" inputmode="numeric" autocomplete="one-time-code" maxlength="6">
                     <div class="input-hint">
-                        <span class="input-hint-icon">i</span>
+                        <i class="fas fa-circle-info input-hint-icon"></i>
                         <span>Enter the code from your authenticator app</span>
                     </div>
                 </div>
