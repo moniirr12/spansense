@@ -70,27 +70,17 @@
             </div>
             <div class="export-card inspections" data-category="inspections" onclick="selectCategory('inspections')">
                 <div class="card-icon"><i class="fas fa-clipboard-check"></i></div>
-                <div class="card-title">Inspections</div>
-                <div class="card-desc">Export inspection history with dates, inspectors, and condition scores</div>
+                <div class="card-title">Reports</div>
+                <div class="card-desc">Export inspection records, or generate BCI/Word/PDF reports from them</div>
                 <div class="card-meta">
                     <span class="count" id="inspections-count">Loading...</span>
-                    <span><i class="fas fa-file-csv"></i> CSV, PDF, XLSX</span>
-                </div>
-                <div class="card-arrow"><i class="fas fa-arrow-right"></i></div>
-            </div>
-            <div class="export-card reports" data-category="reports" onclick="selectCategory('reports')">
-                <div class="card-icon"><i class="fas fa-file-alt"></i></div>
-                <div class="card-title">Reports</div>
-                <div class="card-desc">Export generated inspection reports and summary documents</div>
-                <div class="card-meta">
-                    <span class="count" id="reports-count">—</span>
-                    <span><i class="fas fa-file-invoice"></i> BCI, DOCX, PDF</span>
+                    <span><i class="fas fa-file-csv"></i> CSV, XLSX, BCI, DOCX, PDF</span>
                 </div>
                 <div class="card-arrow"><i class="fas fa-arrow-right"></i></div>
             </div>
             <div class="export-card savi" data-category="savi" onclick="selectSaviCategory()">
                 <div class="card-icon"><i class="fas fa-file-export"></i></div>
-                <div class="card-title">Asset Valuation <span class="std-badge">New</span></div>
+                <div class="card-title">Asset Valuation <span class="std-badge">Beta</span></div>
                 <div class="card-desc">Structure and element condition data, ready to drop into SAVI</div>
                 <div class="card-meta">
                     <span class="count" id="savi-count">Loading...</span>
@@ -105,6 +95,10 @@
             <div class="panel-header">
                 <h2 id="panelTitle"><i class="fas fa-list-check"></i> Structure Records</h2>
                 <div class="panel-actions">
+                    <div class="view-toggle" id="inspReportsToggle" style="display:none;">
+                        <button class="view-toggle-btn active" id="viewToggleRecords" onclick="selectCategory('inspections')">Records</button>
+                        <button class="view-toggle-btn" id="viewToggleReports" onclick="selectCategory('reports')">Reports</button>
+                    </div>
                     <button class="btn-icon" data-tip="Refresh" onclick="refreshData()"><i class="fas fa-sync-alt"></i></button>
                 </div>
             </div>
@@ -235,11 +229,11 @@
             <div class="filters-row">
                 <div class="filters-bar" id="saviFiltersBar">
                     <button class="filter-chip active" data-tip="All Structures" onclick="setSaviFilter(this, 'all')"><i class="fas fa-check"></i> <span class="chip-label">All Structures</span></button>
-                    <button class="filter-chip" data-tip="Bridges" onclick="setSaviFilter(this, 'Bridge')"><span class="chip-label">Bridges</span></button>
-                    <button class="filter-chip" data-tip="Footbridges" onclick="setSaviFilter(this, 'Footbridge')"><span class="chip-label">Footbridges</span></button>
-                    <button class="filter-chip" data-tip="Retaining Walls" onclick="setSaviFilter(this, 'Retaining wall')"><span class="chip-label">Retaining Walls</span></button>
-                    <button class="filter-chip" data-tip="Culverts" onclick="setSaviFilter(this, 'Culvert')"><span class="chip-label">Culverts</span></button>
-                    <button class="filter-chip" data-tip="Sign Gantries" onclick="setSaviFilter(this, 'Sign Gantry')"><span class="chip-label">Sign Gantries</span></button>
+                    <button class="filter-chip" data-tip="Bridges" onclick="setSaviFilter(this, 'Bridge')"><svg viewBox="0 0 20 20" width="13" height="13" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-width="1.9" style="color:#5b8c8a;"><line x1="2" y1="6" x2="18" y2="6"/><line x1="5" y1="6" x2="5" y2="13"/><line x1="10" y1="6" x2="10" y2="13"/><line x1="15" y1="6" x2="15" y2="13"/><path d="M1 16 Q5 13.5 9 16 T17 16"/></svg> <span class="chip-label">Bridges</span></button>
+                    <button class="filter-chip" data-tip="Footbridges" onclick="setSaviFilter(this, 'Footbridge')"><i class="fas fa-person-walking" style="color:#8ab4b0;"></i> <span class="chip-label">Footbridges</span></button>
+                    <button class="filter-chip" data-tip="Retaining Walls" onclick="setSaviFilter(this, 'Retaining wall')"><svg viewBox="0 0 20 20" width="13" height="13" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-width="1.9" style="color:#eab308;"><rect x="2" y="5" width="16" height="11" rx="1.5"/><line x1="2" y1="10.5" x2="18" y2="10.5"/><line x1="7" y1="5" x2="7" y2="10.5"/><line x1="13" y1="10.5" x2="13" y2="16"/></svg> <span class="chip-label">Retaining Walls</span></button>
+                    <button class="filter-chip" data-tip="Culverts" onclick="setSaviFilter(this, 'Culvert')"><svg viewBox="0 0 20 20" width="13" height="13" stroke="currentColor" stroke-linecap="round" fill="none" stroke-width="1.9" style="color:#f97316;"><circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="3"/><line x1="3" y1="17" x2="17" y2="17"/></svg> <span class="chip-label">Culverts</span></button>
+                    <button class="filter-chip" data-tip="Sign Gantries" onclick="setSaviFilter(this, 'Sign Gantry')"><i class="fas fa-sign" style="color:#7c6fc4;"></i> <span class="chip-label">Sign Gantries</span></button>
                 </div>
                 <div class="db-search-wrap">
                     <i class="fas fa-search"></i>
@@ -248,7 +242,7 @@
             </div>
 
             <div class="data-table-wrap">
-                <table class="data-table" id="saviDataTable">
+                <table class="data-table card-rows" id="saviDataTable">
                     <thead>
                         <tr>
                             <th class="col-check"><input type="checkbox" id="saviSelectAll" onclick="toggleSaviSelectAll(this.checked)"></th>

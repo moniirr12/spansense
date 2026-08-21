@@ -1483,8 +1483,6 @@ table.preview tr:last-child td { border-bottom: none; }
 table.preview td.blank { color: #c3cdd4; }
 .night-mode table.preview td.blank { color: #4a5a62; }
 
-.struct-name .meta { display: block; font-size: 0.7rem; color: #5f6b73; margin-top: 1px; }
-.night-mode .struct-name .meta { color: #8399a2; }
 .el-count { font-variant-numeric: tabular-nums; }
 
 .btn-export:disabled {
@@ -1493,4 +1491,33 @@ table.preview td.blank { color: #c3cdd4; }
     transform: none !important;
     box-shadow: none !important;
 }
+
+/* ---------- INSPECTIONS/REPORTS VIEW TOGGLE ----------
+   Records and Reports share one card (see database.js's selectCategory) -
+   this switches between them without leaving the panel. */
+.view-toggle {
+    display: flex;
+    padding: 3px;
+    border-radius: 30px;
+    background: #eef2f6;
+    border: 1px solid #e2e8f0;
+    gap: 2px;
+}
+.night-mode .view-toggle { background: #1e2a2f; border-color: #2f3e45; }
+.view-toggle-btn {
+    padding: 6px 16px;
+    border: none;
+    border-radius: 24px;
+    background: transparent;
+    color: #5f6b73;
+    font-size: 0.78rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.night-mode .view-toggle-btn { color: #9ab0b8; }
+.view-toggle-btn.active { background: #5b8c8a; color: white; box-shadow: 0 2px 8px rgba(91, 140, 138, 0.3); }
+.view-toggle-btn:not(.active):hover { color: #2c5a57; }
+.night-mode .view-toggle-btn:not(.active):hover { color: #d4dfe3; }
 }

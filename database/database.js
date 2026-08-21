@@ -1215,8 +1215,20 @@
         if (searchClear) searchClear.style.display = 'none';
 
         document.querySelectorAll('.export-card').forEach(function(card) { card.classList.remove('active'); });
-        var activeCard = document.querySelector('.export-card[data-category="' + cat + '"]');
+        // The Reports view lives inside the same card as Inspections now
+        // (see the view-toggle below) - there's no separate .export-card
+        // for it to mark active.
+        var activeCard = document.querySelector('.export-card[data-category="' + (cat === 'reports' ? 'inspections' : cat) + '"]');
         if (activeCard) activeCard.classList.add('active');
+
+        var toggle = document.getElementById('inspReportsToggle');
+        if (toggle) {
+            toggle.style.display = (cat === 'inspections' || cat === 'reports') ? '' : 'none';
+            var recordsBtn = document.getElementById('viewToggleRecords');
+            var reportsBtn = document.getElementById('viewToggleReports');
+            if (recordsBtn) recordsBtn.classList.toggle('active', cat === 'inspections');
+            if (reportsBtn) reportsBtn.classList.toggle('active', cat === 'reports');
+        }
 
         var titles = { bridges: 'Structure Records', inspections: 'Inspection Records', reports: 'Report Files' };
         document.getElementById('panelTitle').innerHTML = '<i class="fas fa-list-check"></i> ' + titles[cat];
@@ -2025,13 +2037,16 @@
             tbody.innerHTML = rows.map(function(b) {
                 var checked = saviSelectedIds.has(b.id) ? 'checked' : '';
                 var typeLabel = b.type || 'Bridge';
+                var typeKey = (b.type || '').toLowerCase().replace(/\s+/g, '_');
+                var typeMeta = typeCircleMeta[typeKey] || typeCircleMeta.bridge;
+                var typeIconHtml = svgIcons[typeKey] ? svgIcons[typeKey](13) : '<i class="fas ' + typeMeta.icon + '"></i>';
                 var countLabel = saviElementCounts.hasOwnProperty(b.id) ? saviElementCounts[b.id] : '&hellip;';
                 var lastInsp = b.last_inspected ? new Date(b.last_inspected).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '&mdash;';
                 return '<tr>' +
                     '<td class="col-check"><input type="checkbox" ' + checked + ' onclick="toggleSaviRow(' + b.id + ', this.checked)"></td>' +
                     '<td>' + b.id + '</td>' +
-                    '<td class="struct-name">' + escapeSaviHtml(b.name || 'Untitled') + '<span class="meta">' + escapeSaviHtml(b.location || '') + '</span></td>' +
-                    '<td>' + typeLabel + '</td>' +
+                    '<td class="bridge-name">' + escapeSaviHtml(b.name || 'Untitled') + '<span class="meta">' + escapeSaviHtml(b.location || '') + '</span></td>' +
+                    '<td><span class="type-circle" style="background:' + typeMeta.color + '">' + typeIconHtml + '</span>' + typeLabel + '</td>' +
                     '<td class="el-count">' + countLabel + '</td>' +
                     '<td>' + lastInsp + '</td>' +
                 '</tr>';
